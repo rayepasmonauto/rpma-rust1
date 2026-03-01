@@ -21,7 +21,7 @@ import {
   SummaryStats,
 } from '@/domains/tasks';
 import { toast } from 'sonner';
-import { reportsService } from '@/domains/reports';
+import { documentReportOperations } from '@/domains/documents';
 import { getUserFullName } from '@/shared/utils';
 import { useInterventionData, useWorkflowStepData, PPF_STEP_CONFIG, getPPFStepPath } from '@/domains/interventions';
 import type { Intervention } from '@/shared/types';
@@ -113,8 +113,8 @@ export default function TaskCompletedPage() {
     try {
       toast.info(t('reports.openingSaveDialog'));
 
-      console.log('Page: Calling reportsService.saveInterventionReport for intervention:', fullInterventionData.id);
-      const response = await reportsService.saveInterventionReport(fullInterventionData.id);
+      console.log('Page: Calling documentReportOperations.saveInterventionReport for intervention:', fullInterventionData.id);
+      const response = await documentReportOperations.saveInterventionReport(fullInterventionData.id);
 
       console.log('Page: saveInterventionReport response:', {
         success: response.success,
@@ -188,7 +188,7 @@ export default function TaskCompletedPage() {
       setExportProgress(t('reports.generatingPdf'));
 
       console.log('Starting export for intervention:', freshInterventionData.id);
-      const response = await reportsService.exportInterventionReport(
+      const response = await documentReportOperations.exportInterventionReport(
         freshInterventionData.id,
         { maxRetries: 2, retryDelay: 1500 }
       );

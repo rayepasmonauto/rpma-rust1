@@ -1,11 +1,15 @@
 'use client';
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { DragDropContext } from '@hello-pangea/dnd';
-import { CalendarHeader, MonthView, WeekView, DayView, AgendaView, useCalendarStore } from '@/domains/calendar';
-import { QuickAddDialog, FilterDrawer } from '@/domains/tasks';
-import { useCalendar } from '@/domains/calendar';
+import { CalendarHeader } from './CalendarHeader';
+import { MonthView } from './MonthView';
+import { WeekView } from './WeekView';
+import { DayView } from './DayView';
+import { AgendaView } from './AgendaView';
+import { useCalendarStore } from '../stores/calendarStore';
+import { useCalendar } from '../hooks/useCalendar';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -14,10 +18,6 @@ export function CalendarDashboard() {
   const {
     currentView,
     currentDate,
-    isFilterDrawerOpen,
-    isQuickAddOpen,
-    toggleFilterDrawer,
-    toggleQuickAdd,
     setCurrentView,
     setCurrentDate,
     goToToday,
@@ -25,29 +25,16 @@ export function CalendarDashboard() {
 
   const { tasks, isLoading } = useCalendar(currentDate, currentView);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (isFilterDrawerOpen) toggleFilterDrawer();
-        if (isQuickAddOpen) toggleQuickAdd();
-      }
-
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        toggleQuickAdd();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFilterDrawerOpen, isQuickAddOpen, toggleFilterDrawer, toggleQuickAdd]);
-
   const handleDragEnd = () => {
     // Drag-and-drop rescheduling is not yet implemented
   };
 
   const handleTaskClick = useCallback((task: { id: string }) => {
     router.push(`/tasks/${task.id}`);
+  }, [router]);
+
+  const handleCreateTask = useCallback(() => {
+    router.push('/tasks/new');
   }, [router]);
 
   const renderView = () => {
@@ -121,17 +108,14 @@ export function CalendarDashboard() {
 
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2">
         <Button
-          onClick={toggleQuickAdd}
+          onClick={handleCreateTask}
           className="h-11 px-6 rounded-full shadow-[var(--rpma-shadow-soft)] bg-[hsl(var(--rpma-teal))] text-white hover:bg-[hsl(var(--rpma-teal))]/90"
-          aria-label="Ajouter une nouvelle tâche"
+          aria-label="Ajouter une nouvelle tache"
         >
           <Plus className="h-5 w-5 mr-2" />
           + Add
         </Button>
       </div>
-
-      <FilterDrawer isOpen={isFilterDrawerOpen} onClose={toggleFilterDrawer} />
-      <QuickAddDialog isOpen={isQuickAddOpen} onClose={toggleQuickAdd} />
     </div>
   );
 }

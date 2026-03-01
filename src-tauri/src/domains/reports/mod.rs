@@ -1,6 +1,6 @@
-mod facade;
-#[cfg(test)]
-pub(crate) use facade::NotificationsFacade;
+﻿mod facade;
+
+pub(crate) use facade::ReportsFacade;
 pub(crate) mod application;
 #[cfg(feature = "export-types")]
 pub mod domain;
@@ -10,6 +10,3 @@ pub(crate) mod infrastructure;
 pub(crate) mod ipc;
 #[cfg(test)]
 pub(crate) mod tests;
-
-#[cfg(feature = "export-types")]
-pub use application::{SendNotificationRequest, UpdateNotificationConfigRequest};

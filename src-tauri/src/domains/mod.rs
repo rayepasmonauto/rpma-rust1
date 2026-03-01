@@ -44,5 +44,4 @@ pub mod sync;
 pub mod tasks;
 pub mod users;
 
-pub mod analytics;
 pub mod notifications;

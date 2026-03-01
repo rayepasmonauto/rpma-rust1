@@ -72,32 +72,9 @@ export const IPC_COMMANDS = {
   MATERIAL_GET_EXPIRED_MATERIALS: 'material_get_expired_materials',
   MATERIAL_GET_INVENTORY_MOVEMENT_SUMMARY: 'material_get_inventory_movement_summary',
 
-  // Report commands
-  GET_TASK_COMPLETION_REPORT: 'get_task_completion_report',
-  GET_TECHNICIAN_PERFORMANCE_REPORT: 'get_technician_performance_report',
-  GET_CLIENT_ANALYTICS_REPORT: 'get_client_analytics_report',
-  GET_QUALITY_COMPLIANCE_REPORT: 'get_quality_compliance_report',
-  GET_MATERIAL_USAGE_REPORT: 'get_material_usage_report',
-  GET_GEOGRAPHIC_REPORT: 'get_geographic_report',
-  GET_OVERVIEW_REPORT: 'get_overview_report',
-  EXPORT_REPORT_DATA: 'export_report_data',
+  // Document report commands
   EXPORT_INTERVENTION_REPORT: 'export_intervention_report',
   SAVE_INTERVENTION_REPORT: 'save_intervention_report',
-  GET_REPORT_STATUS: 'get_report_status',
-  CANCEL_REPORT: 'cancel_report',
-  GET_AVAILABLE_REPORT_TYPES: 'get_available_report_types',
-  SEARCH_RECORDS: 'search_records',
-  SEARCH_TASKS: 'search_tasks',
-  SEARCH_CLIENTS: 'search_clients',
-  SEARCH_INTERVENTIONS: 'search_interventions',
-  GET_ENTITY_COUNTS: 'get_entity_counts',
-  GET_SEASONAL_REPORT: 'get_seasonal_report',
-  GET_OPERATIONAL_INTELLIGENCE_REPORT: 'get_operational_intelligence_report',
-  GENERATE_INTERVENTION_PDF_REPORT: 'generate_intervention_pdf_report',
-  TEST_PDF_GENERATION: 'test_pdf_generation',
-  SUBMIT_REPORT_JOB: 'submit_report_job',
-  SUBMIT_TASK_COMPLETION_REPORT_JOB: 'submit_task_completion_report_job',
-  GET_REPORT_JOB_RESULT: 'get_report_job_result',
 
   // Document / Photo commands (backed by the documents bounded context)
   DOCUMENT_STORE_PHOTO: 'document_store_photo',
@@ -161,9 +138,6 @@ export const IPC_COMMANDS = {
   DELETE_USER_ACCOUNT: 'delete_user_account',
   GET_DATA_CONSENT: 'get_data_consent',
   UPDATE_DATA_CONSENT: 'update_data_consent',
-
-  // Analytics commands
-  ANALYTICS_GET_SUMMARY: 'analytics_get_summary',
 
   // Dashboard commands
   DASHBOARD_GET_STATS: 'dashboard_get_stats',

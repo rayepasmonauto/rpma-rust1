@@ -187,5 +187,3 @@ pub async fn update_user_notifications(
         })
         .map_err(|e| handle_settings_error(e, "Update user notifications"))
 }
-
-

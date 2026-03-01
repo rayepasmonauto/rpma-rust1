@@ -16,9 +16,6 @@ pub use crate::domains::interventions::infrastructure::intervention_repository::
 pub use crate::domains::clients::infrastructure::client::ClientService;
 pub use crate::domains::clients::infrastructure::client::ClientStat;
 
-// --- Analytics / prediction ---
-pub use crate::domains::analytics::infrastructure::prediction::CompletionTimePrediction;
-
 // --- Settings ---
 pub use crate::domains::settings::infrastructure::settings::SettingsService;
 

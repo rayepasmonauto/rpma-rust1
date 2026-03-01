@@ -91,5 +91,3 @@ pub async fn update_user_accessibility(
         })
         .map_err(|e| handle_settings_error(e, "Update user accessibility"))
 }
-
-

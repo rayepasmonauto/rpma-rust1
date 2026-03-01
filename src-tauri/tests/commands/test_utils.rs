@@ -76,8 +76,6 @@ pub async fn create_test_db() -> TestContext {
     ));
     let cache_service =
         Arc::new(rpma_ppf_intervention::services::cache::CacheService::new(100).unwrap());
-    let report_job_service =
-        Arc::new(rpma_ppf_intervention::services::report_jobs::ReportJobService::new(db.clone()));
     let performance_monitor_service = Arc::new(
         rpma_ppf_intervention::services::performance_monitor::PerformanceMonitorService::new(),
     );
@@ -116,7 +114,6 @@ pub async fn create_test_db() -> TestContext {
         two_factor_service,
         settings_service,
         cache_service,
-        report_job_service,
         performance_monitor_service,
         command_performance_tracker,
         prediction_service,
@@ -197,3 +194,4 @@ pub async fn create_test_technician(
     )
     .unwrap()
 }
+

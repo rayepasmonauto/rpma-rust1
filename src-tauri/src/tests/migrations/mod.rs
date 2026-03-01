@@ -14,7 +14,6 @@ mod test_021_client_statistics;
 mod test_022_task_history;
 mod test_023_messaging_tables;
 mod test_024_inventory_management;
-mod test_025_analytics_dashboard;
 mod test_026_user_settings;
 mod test_027_task_constraints;
 mod test_029_user_name_backfill;

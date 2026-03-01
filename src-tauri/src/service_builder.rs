@@ -38,7 +38,7 @@ use crate::shared::event_bus::{register_handler, set_global_event_bus};
 use crate::shared::repositories::Repositories;
 use crate::shared::services::event_bus::InMemoryEventBus;
 use crate::shared::services::websocket_event_handler::WebSocketEventHandler;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 
 /// Service Builder
 ///
@@ -86,14 +86,6 @@ impl ServiceBuilder {
         let client_service = Arc::new(
             crate::domains::clients::infrastructure::client::ClientService::new(
                 self.repositories.client.clone(),
-            ),
-        );
-        let dashboard_repo = Arc::new(crate::domains::analytics::infrastructure::dashboard_repository::DashboardRepository::new(Arc::new(
-            db_instance.clone(),
-        )));
-        let dashboard_service = Arc::new(
-            crate::domains::analytics::infrastructure::dashboard::DashboardService::new(
-                dashboard_repo,
             ),
         );
         let intervention_service = Arc::new(
@@ -195,13 +187,6 @@ impl ServiceBuilder {
         // Create async database wrapper
         let async_db = Arc::new(self.db.as_async());
 
-        // Initialize Analytics Service (depends on DB)
-        let analytics_service = Arc::new(
-            crate::domains::analytics::infrastructure::analytics::AnalyticsService::new(
-                db_instance.clone(),
-            ),
-        );
-
         // Initialize Performance Monitor Service (depends on DB)
         let performance_monitor_service = Arc::new(
             crate::shared::services::performance_monitor::PerformanceMonitorService::new(
@@ -213,13 +198,6 @@ impl ServiceBuilder {
         let command_performance_tracker = Arc::new(
             crate::shared::services::performance_monitor::CommandPerformanceTracker::new(
                 performance_monitor_service.clone(),
-            ),
-        );
-
-        // Initialize Prediction Service (depends on DB)
-        let prediction_service = Arc::new(
-            crate::domains::analytics::infrastructure::prediction::PredictionService::new(
-                db_instance.clone(),
             ),
         );
 
@@ -254,23 +232,19 @@ impl ServiceBuilder {
             task_service,
             client_service,
             task_import_service,
-            dashboard_service,
             intervention_service,
             material_service,
             inventory_service,
             message_service,
             photo_service,
             quote_service,
-            analytics_service,
             auth_service,
             session_service,
             settings_service,
             user_service,
             cache_service,
-            report_job_service: OnceLock::new(),
             performance_monitor_service,
             command_performance_tracker,
-            prediction_service,
             sync_queue,
             background_sync,
             event_bus,

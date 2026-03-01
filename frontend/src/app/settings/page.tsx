@@ -321,37 +321,37 @@ export default function SettingsPage() {
                <div className="mt-4 md:mt-6">
                  <TabsContent value="profile" className="mt-0">
                    <Suspense fallback={<LoadingState message="Chargement du profil..." />}>
-                     <ProfileSettingsTab user={user} profile={profile} />
+                      <ProfileSettingsTab user={user ?? undefined} profile={profile ?? undefined} />
                    </Suspense>
                  </TabsContent>
 
                  <TabsContent value="preferences" className="mt-0">
                    <Suspense fallback={<LoadingState message="Chargement des préférences..." />}>
-                     <PreferencesTab user={user} profile={profile} />
+                      <PreferencesTab user={user ?? undefined} profile={profile ?? undefined} />
                    </Suspense>
                  </TabsContent>
 
                  <TabsContent value="security" className="mt-0">
                    <Suspense fallback={<LoadingState message="Chargement de la sécurité..." />}>
-                     <SecurityTab user={user} profile={profile} />
+                      <SecurityTab user={user ?? undefined} profile={profile ?? undefined} />
                    </Suspense>
                  </TabsContent>
 
                  <TabsContent value="performance" className="mt-0">
                    <Suspense fallback={<LoadingState message="Chargement des performances..." />}>
-                     <PerformanceTab user={user} profile={profile} />
+                      <PerformanceTab user={user ?? undefined} profile={profile ?? undefined} />
                    </Suspense>
                  </TabsContent>
 
                  <TabsContent value="accessibility" className="mt-0">
                    <Suspense fallback={<LoadingState message="Chargement de l'accessibilité..." />}>
-                     <AccessibilityTab user={user} profile={profile} />
+                      <AccessibilityTab user={user ?? undefined} profile={profile ?? undefined} />
                    </Suspense>
                  </TabsContent>
 
                  <TabsContent value="notifications" className="mt-0">
                    <Suspense fallback={<LoadingState message="Chargement des notifications..." />}>
-                     <NotificationsTab user={user} profile={profile} />
+                      <NotificationsTab user={user ?? undefined} profile={profile ?? undefined} />
                    </Suspense>
                  </TabsContent>
                </div>

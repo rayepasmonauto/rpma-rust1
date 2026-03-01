@@ -101,10 +101,10 @@ export default function NotFound() {
                 <div className="text-[hsl(var(--rpma-teal))] font-medium text-sm">Calendrier</div>
               </Link>
               <Link
-                href="/reports"
+                href="/configuration"
                 className="p-3 bg-white rounded-lg border border-[hsl(var(--rpma-border))] hover:bg-[hsl(var(--rpma-surface))] transition-all duration-base text-center"
               >
-                <div className="text-[hsl(var(--rpma-teal))] font-medium text-sm">Rapports</div>
+                <div className="text-[hsl(var(--rpma-teal))] font-medium text-sm">Configuration</div>
               </Link>
             </div>
           </motion.div>

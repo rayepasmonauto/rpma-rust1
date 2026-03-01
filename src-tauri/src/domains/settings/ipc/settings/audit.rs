@@ -102,5 +102,3 @@ mod tests {
         assert_eq!(consent.consent_version, "1.0");
     }
 }
-
-

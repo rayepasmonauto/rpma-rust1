@@ -1,6 +1,5 @@
 //! Integration tests module
 
-pub mod analytics_integration_tests;
 pub mod audit_repository_test;
 pub mod client_task_intervention_material_flow;
 pub mod cross_domain_integration_tests;

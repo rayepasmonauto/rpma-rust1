@@ -9,7 +9,7 @@
     "dev:strict": "npm run types:sync && npm run types:drift-check && npm run tauri dev",
     "build": "npm run types:sync && npm run tauri build",
     "tauri": "tauri",
-    "types:sync": "cd src-tauri && cargo run --bin export-types | node ../scripts/write-types.js",
+    "types:sync": "cd src-tauri && cargo run --features export-types --bin export-types | node ../scripts/write-types.js",
     "types:watch": "node scripts/watch-types.js",
     "frontend:dev": "cd frontend && npm run dev",
     "frontend:build": "cd frontend && npm run build",
