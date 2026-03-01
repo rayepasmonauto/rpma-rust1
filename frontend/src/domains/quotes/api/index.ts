@@ -27,3 +27,6 @@ export type {
   QuoteItemsTableProps,
   QuoteTotalsProps,
 } from '../components';
+
+export { computeQuoteStats } from '../utils/quote-stats';
+export type { QuotePageStats } from '../utils/quote-stats';
