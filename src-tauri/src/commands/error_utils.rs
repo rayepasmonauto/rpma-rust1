@@ -5,30 +5,29 @@
 //! are logged server-side but never leaked to the frontend.
 
 use crate::commands::AppError;
+use crate::shared::error;
 
 /// Convert a database error into a sanitized AppError::Database.
 ///
 /// The raw error is logged internally but the message returned to the frontend
 /// is generic to prevent leaking database details.
 pub fn db_error<E: std::fmt::Display>(operation: &str, error: E) -> AppError {
-    tracing::error!(operation = operation, error = %error, "Database operation failed");
-    AppError::Database(format!("{} failed", operation))
+    error::map_database(operation, error)
 }
 
 /// Convert a database error into a sanitized AppError::Database with a standard message format.
 pub fn db_op_error<E: std::fmt::Display>(operation: &str, error: E) -> AppError {
-    tracing::error!(operation = operation, error = %error, "Database operation failed");
-    AppError::Database(format!("Database operation '{}' failed", operation))
+    error::map_database(operation, error)
 }
 
 /// Create a validation error (safe to return — contains user-actionable info)
 pub fn validation_error<E: std::fmt::Display>(field: &str, error: E) -> AppError {
-    AppError::Validation(format!("Validation failed for '{}': {}", field, error))
+    error::map_validation(format!("Validation failed for '{}': {}", field, error))
 }
 
 /// Create an authorization error (safe to return — contains user-actionable info)
 pub fn auth_error<E: std::fmt::Display>(operation: &str, error: E) -> AppError {
-    AppError::Authorization(format!(
+    error::map_forbidden(format!(
         "Authorization failed for '{}': {}",
         operation, error
     ))
@@ -36,13 +35,12 @@ pub fn auth_error<E: std::fmt::Display>(operation: &str, error: E) -> AppError {
 
 /// Create a not found error (safe to return — contains user-actionable info)
 pub fn not_found_error(resource: &str, id: &str) -> AppError {
-    AppError::NotFound(format!("{} with id '{}' not found", resource, id))
+    error::map_not_found(resource, id)
 }
 
 /// Create a sanitized internal error that logs the raw details.
 pub fn internal_error<E: std::fmt::Display>(operation: &str, error: E) -> AppError {
-    tracing::error!(operation = operation, error = %error, "Internal operation failed");
-    AppError::Internal("An internal error occurred. Please try again.".to_string())
+    error::map_internal(operation, error)
 }
 
 /// Extension trait for Result types to provide convenient error mapping

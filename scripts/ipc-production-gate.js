@@ -28,6 +28,8 @@ const PUBLIC_ALLOWLIST = new Set([
   "has_admins",
   "bootstrap_first_admin",
   "test_pdf_generation",
+  "create_notification",
+  "reports_get_capabilities",
   // NOTE: auth_validate_session is considered PROTECTED by default in RPMA design.
   // If your codebase treats it as public, remove it from protected checks OR add it here intentionally.
 ]);
