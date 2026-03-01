@@ -7,7 +7,6 @@ use crate::shared::ipc::errors::AppError;
 ///
 /// Provides quote lifecycle management — create, send, accept/reject —
 /// with input validation and error mapping.
-#[derive(Debug)]
 pub struct QuotesFacade {
     quote_service: Arc<QuoteService>,
 }

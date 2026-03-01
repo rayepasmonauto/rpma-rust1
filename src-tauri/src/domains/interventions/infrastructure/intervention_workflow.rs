@@ -22,6 +22,8 @@ use crate::shared::contracts::common::TimestampString;
 use crate::shared::event_bus::{publish_event, InterventionFinalized};
 use crate::shared::logging::{LogDomain, RPMARequestLogger};
 use serde_json::json;
+use chrono::Utc;
+use tracing::info;
 
 use std::sync::Arc;
 
@@ -893,6 +895,87 @@ impl InterventionWorkflowService {
         self.data.update_intervention(&intervention.id, updates)?;
 
         Ok(intervention)
+    }
+
+    /// Start an intervention from a quote
+    pub fn start_intervention_from_quote(
+        &self,
+        task_id: &str,
+        quote_id: &str,
+    ) -> InterventionResult<Intervention> {
+        info!(
+            task_id = %task_id,
+            quote_id = %quote_id,
+            "Starting intervention from quote"
+        );
+
+        // Check if an active intervention already exists for this task
+        let existing_intervention = self.data.get_active_intervention_by_task(task_id)?;
+        if existing_intervention.is_some() {
+            info!(
+                task_id = %task_id,
+                "Active intervention already exists for task, skipping creation"
+            );
+            return Err(InterventionError::BusinessRule(
+                "An active intervention already exists for this task".to_string(),
+            ));
+        }
+
+        // Create a simple intervention from the quote
+        let intervention_id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().timestamp_millis();
+
+        // Use intervention data service to create the intervention
+        let result = self.db.with_transaction(|tx| {
+            let intervention = self
+                .data
+                .create_intervention_with_tx(
+                    tx,
+                    &crate::domains::interventions::infrastructure::intervention_types::StartInterventionRequest {
+                        task_id: task_id.to_string(),
+                        technician_id: "system".to_string(), // Auto-created from quote
+                        intervention_number: None,
+                        ppf_zones: vec![],
+                        custom_zones: None,
+                        film_type: "standard".to_string(),
+                        film_brand: None,
+                        film_model: None,
+                        weather_condition: "unknown".to_string(),
+                        lighting_condition: "unknown".to_string(),
+                        work_location: "workshop".to_string(),
+                        temperature: None,
+                        humidity: None,
+                        assistant_ids: None,
+                        scheduled_start: Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+                        estimated_duration: 60, // Default 60 minutes
+                        gps_coordinates: None,
+                        address: None,
+                        notes: Some(format!("Intervention created from quote {}", quote_id)),
+                        customer_requirements: None,
+                        special_instructions: None,
+                    },
+                    "system",
+                )
+                .map_err(|e| e.to_string())?;
+
+            info!(
+                intervention_id = %intervention.id,
+                "Intervention created from quote successfully"
+            );
+
+            Ok(intervention)
+        })
+        .map_err(|e| InterventionError::Database(e))?;
+
+        Ok(result)
+    }
+
+    /// Get an active intervention by task ID
+    pub fn get_active_intervention_by_task(
+        &self,
+        task_id: &str,
+    ) -> InterventionResult<Option<Intervention>> {
+        self.data.get_active_intervention_by_task(task_id)
     }
 
     /// Get an intervention by ID

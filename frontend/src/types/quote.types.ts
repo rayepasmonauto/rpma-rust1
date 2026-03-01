@@ -3,12 +3,17 @@
 /**
  * Quote status matching Rust QuoteStatus enum
  */
-export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
+export type QuoteStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted' | 'changes_requested';
 
 /**
  * Quote item kind matching Rust QuoteItemKind enum
  */
 export type QuoteItemKind = 'labor' | 'material' | 'service' | 'discount';
+
+/**
+ * Attachment type matching Rust AttachmentType enum
+ */
+export type AttachmentType = 'image' | 'document' | 'other';
 
 /**
  * Quote entity matching Rust Quote struct
@@ -25,6 +30,9 @@ export interface Quote {
   subtotal: number;
   tax_total: number;
   total: number;
+  discount_type?: string | null;
+  discount_value?: number | null;
+  discount_amount?: number | null;
   vehicle_plate: string | null;
   vehicle_make: string | null;
   vehicle_model: string | null;
@@ -52,6 +60,22 @@ export interface QuoteItem {
   position: number;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * Quote attachment entity matching Rust QuoteAttachment struct
+ */
+export interface QuoteAttachment {
+  id: string;
+  quote_id: string;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  attachment_type: AttachmentType;
+  description: string | null;
+  created_at: string;
+  created_by: string | null;
 }
 
 /**
@@ -103,6 +127,8 @@ export interface UpdateQuoteRequest {
   valid_until?: number | null;
   notes?: string | null;
   terms?: string | null;
+  discount_type?: string | null;
+  discount_value?: number | null;
   vehicle_plate?: string | null;
   vehicle_make?: string | null;
   vehicle_model?: string | null;
@@ -136,6 +162,26 @@ export interface UpdateQuoteItemRequest {
   tax_rate?: number | null;
   material_id?: string | null;
   position?: number;
+}
+
+/**
+ * Create quote attachment request
+ */
+export interface CreateQuoteAttachmentRequest {
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  mime_type: string;
+  attachment_type?: AttachmentType | null;
+  description?: string | null;
+}
+
+/**
+ * Update quote attachment request
+ */
+export interface UpdateQuoteAttachmentRequest {
+  description?: string | null;
+  attachment_type?: AttachmentType | null;
 }
 
 /**

@@ -73,4 +73,30 @@ export const quotesIpc = {
     safeInvoke('quote_export_pdf', {
       request: { session_token: sessionToken, id }
     }),
+
+  getAttachments: (quoteId: string, sessionToken: string) =>
+    safeInvoke('quote_attachments_get', {
+      request: { session_token: sessionToken, quote_id: quoteId }
+    }),
+
+  createAttachment: async (quoteId: string, data: JsonObject, sessionToken: string) => {
+    const result = await safeInvoke('quote_attachment_create', {
+      request: { session_token: sessionToken, quote_id: quoteId, data }
+    });
+    return result;
+  },
+
+  updateAttachment: async (quoteId: string, attachmentId: string, data: JsonObject, sessionToken: string) => {
+    const result = await safeInvoke('quote_attachment_update', {
+      request: { session_token: sessionToken, quote_id: quoteId, attachment_id: attachmentId, data }
+    });
+    return result;
+  },
+
+  deleteAttachment: async (quoteId: string, attachmentId: string, sessionToken: string) => {
+    const result = await safeInvoke('quote_attachment_delete', {
+      request: { session_token: sessionToken, quote_id: quoteId, attachment_id: attachmentId }
+    });
+    return result;
+  },
 };

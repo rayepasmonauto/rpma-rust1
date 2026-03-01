@@ -3,7 +3,9 @@
 //! Provides database access patterns for Quote and QuoteItem entities.
 
 use crate::db::Database;
-use crate::domains::quotes::domain::models::quote::{Quote, QuoteItem, QuoteQuery, QuoteStatus};
+use crate::domains::quotes::domain::models::quote::{
+    AttachmentType, Quote, QuoteAttachment, CreateQuoteAttachmentRequest, QuoteItem, QuoteQuery, QuoteStatus, UpdateQuoteAttachmentRequest,
+};
 use crate::shared::repositories::base::{RepoError, RepoResult};
 use crate::shared::repositories::cache::{ttl, Cache, CacheKeyBuilder};
 use rusqlite::params;
@@ -46,9 +48,10 @@ impl QuoteRepository {
                     id, quote_number, client_id, task_id, status,
                     valid_until, notes, terms,
                     subtotal, tax_total, total,
+                    discount_type, discount_value, discount_amount,
                     vehicle_plate, vehicle_make, vehicle_model, vehicle_year, vehicle_vin,
                     created_at, updated_at, created_by
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 "#,
                 params![
                     quote.id,
@@ -62,6 +65,9 @@ impl QuoteRepository {
                     quote.subtotal,
                     quote.tax_total,
                     quote.total,
+                    quote.discount_type,
+                    quote.discount_value,
+                    quote.discount_amount,
                     quote.vehicle_plate,
                     quote.vehicle_make,
                     quote.vehicle_model,
@@ -92,6 +98,7 @@ impl QuoteRepository {
                 id, quote_number, client_id, task_id, status,
                 valid_until, notes, terms,
                 subtotal, tax_total, total,
+                discount_type, discount_value, discount_amount,
                 vehicle_plate, vehicle_make, vehicle_model, vehicle_year, vehicle_vin,
                 created_at, updated_at, created_by
             FROM quotes
@@ -147,6 +154,7 @@ impl QuoteRepository {
                 id, quote_number, client_id, task_id, status,
                 valid_until, notes, terms,
                 subtotal, tax_total, total,
+                discount_type, discount_value, discount_amount,
                 vehicle_plate, vehicle_make, vehicle_model, vehicle_year, vehicle_vin,
                 created_at, updated_at, created_by
             FROM quotes
@@ -190,6 +198,14 @@ impl QuoteRepository {
         if let Some(ref v) = req.terms {
             sets.push("terms = ?");
             params_vec.push(v.clone().into());
+        }
+        if let Some(ref v) = req.discount_type {
+            sets.push("discount_type = ?");
+            params_vec.push(v.clone().into());
+        }
+        if let Some(v) = req.discount_value {
+            sets.push("discount_value = ?");
+            params_vec.push(v.into());
         }
         if let Some(ref v) = req.vehicle_plate {
             sets.push("vehicle_plate = ?");
@@ -300,6 +316,26 @@ impl QuoteRepository {
                 params![subtotal, tax_total, total, id],
             )
             .map_err(|e| RepoError::Database(format!("Failed to update quote totals: {}", e)))?;
+
+        self.invalidate_cache(id);
+        Ok(())
+    }
+
+    /// Update quote totals including discount
+    pub fn update_totals_with_discount(
+        &self,
+        id: &str,
+        subtotal: i64,
+        discount_amount: i64,
+        tax_total: i64,
+        total: i64,
+    ) -> RepoResult<()> {
+        self.db
+            .execute(
+                "UPDATE quotes SET subtotal = ?, discount_amount = ?, tax_total = ?, total = ?, updated_at = (unixepoch() * 1000) WHERE id = ?",
+                params![subtotal, discount_amount, tax_total, total, id],
+            )
+            .map_err(|e| RepoError::Database(format!("Failed to update quote totals with discount: {}", e)))?;
 
         self.invalidate_cache(id);
         Ok(())
@@ -439,6 +475,141 @@ impl QuoteRepository {
         Ok(rows > 0)
     }
 
+    // --- Quote Attachments ---
+
+    /// Find all attachments for a quote
+    pub fn find_attachments_by_quote_id(&self, quote_id: &str) -> RepoResult<Vec<QuoteAttachment>> {
+        self.db
+            .query_as::<QuoteAttachment>(
+                r#"
+                SELECT id, quote_id, file_name, file_path, file_size, mime_type,
+                       attachment_type, description, created_at, created_by
+                FROM quote_attachments
+                WHERE quote_id = ?
+                ORDER BY created_at DESC
+                "#,
+                params![quote_id],
+            )
+            .map_err(|e| RepoError::Database(format!("Failed to find quote attachments: {}", e)))
+    }
+
+    /// Find a single attachment by ID
+    pub fn find_attachment_by_id(&self, id: &str) -> RepoResult<Option<QuoteAttachment>> {
+        self.db
+            .query_single_as::<QuoteAttachment>(
+                r#"
+                SELECT id, quote_id, file_name, file_path, file_size, mime_type,
+                       attachment_type, description, created_at, created_by
+                FROM quote_attachments
+                WHERE id = ?
+                "#,
+                params![id],
+            )
+            .map_err(|e| RepoError::Database(format!("Failed to find attachment: {}", e)))
+    }
+
+    /// Create a new attachment
+    pub fn create_attachment(
+        &self,
+        quote_id: &str,
+        req: &CreateQuoteAttachmentRequest,
+        created_by: Option<&str>,
+    ) -> RepoResult<String> {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().timestamp_millis();
+        let attachment_type = req
+            .attachment_type
+            .as_ref()
+            .unwrap_or(&AttachmentType::Other)
+            .to_string();
+
+        self.db
+            .execute(
+                r#"
+                INSERT INTO quote_attachments (
+                    id, quote_id, file_name, file_path, file_size, mime_type,
+                    attachment_type, description, created_at, created_by
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                "#,
+                params![
+                    id,
+                    quote_id,
+                    req.file_name,
+                    req.file_path,
+                    req.file_size,
+                    req.mime_type,
+                    attachment_type,
+                    req.description,
+                    now,
+                    created_by,
+                ],
+            )
+            .map_err(|e| RepoError::Database(format!("Failed to create attachment: {}", e)))?;
+
+        self.invalidate_cache(quote_id);
+        Ok(id)
+    }
+
+    /// Update an attachment
+    pub fn update_attachment(
+        &self,
+        id: &str,
+        quote_id: &str,
+        req: &UpdateQuoteAttachmentRequest,
+    ) -> RepoResult<()> {
+        let mut sets = Vec::new();
+        let mut params_vec: Vec<rusqlite::types::Value> = Vec::new();
+
+        if let Some(ref v) = req.description {
+            sets.push("description = ?");
+            params_vec.push(v.clone().into());
+        }
+        if let Some(ref v) = req.attachment_type {
+            sets.push("attachment_type = ?");
+            params_vec.push(v.to_string().into());
+        }
+
+        if sets.is_empty() {
+            return Ok(());
+        }
+
+        params_vec.push(id.to_string().into());
+        params_vec.push(quote_id.to_string().into());
+
+        let sql = format!(
+            "UPDATE quote_attachments SET {} WHERE id = ? AND quote_id = ?",
+            sets.join(", ")
+        );
+
+        let rows = self
+            .db
+            .execute(&sql, rusqlite::params_from_iter(params_vec.iter()))
+            .map_err(|e| RepoError::Database(format!("Failed to update attachment: {}", e)))?;
+
+        if rows == 0 {
+            return Err(RepoError::NotFound("Attachment not found".to_string()));
+        }
+
+        self.invalidate_cache(quote_id);
+        Ok(())
+    }
+
+    /// Delete an attachment
+    pub fn delete_attachment(&self, id: &str, quote_id: &str) -> RepoResult<bool> {
+        let rows = self
+            .db
+            .execute(
+                "DELETE FROM quote_attachments WHERE id = ? AND quote_id = ?",
+                params![id, quote_id],
+            )
+            .map_err(|e| RepoError::Database(format!("Failed to delete attachment: {}", e)))?;
+
+        if rows > 0 {
+            self.invalidate_cache(quote_id);
+        }
+        Ok(rows > 0)
+    }
+
     // --- Helpers ---
 
     fn build_where_clause(&self, query: &QuoteQuery) -> (String, Vec<rusqlite::types::Value>) {
@@ -513,6 +684,9 @@ mod tests {
             subtotal: 0,
             tax_total: 0,
             total: 0,
+            discount_type: None,
+            discount_value: None,
+            discount_amount: None,
             vehicle_plate: None,
             vehicle_make: None,
             vehicle_model: None,

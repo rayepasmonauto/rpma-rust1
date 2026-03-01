@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, Send, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { FileText, Send, CheckCircle, XCircle, Clock, CheckCheck, AlertCircle } from 'lucide-react';
 import type { QuoteStatus } from '@/types/quote.types';
 
 const STATUS_COLORS: Record<QuoteStatus, string> = {
@@ -9,6 +9,8 @@ const STATUS_COLORS: Record<QuoteStatus, string> = {
   accepted: 'bg-green-100 text-green-800',
   rejected: 'bg-red-100 text-red-800',
   expired: 'bg-yellow-100 text-yellow-800',
+  converted: 'bg-purple-100 text-purple-800',
+  changes_requested: 'bg-orange-100 text-orange-800',
 };
 
 const STATUS_ICONS: Record<QuoteStatus, React.ComponentType<{ className?: string }>> = {
@@ -17,6 +19,8 @@ const STATUS_ICONS: Record<QuoteStatus, React.ComponentType<{ className?: string
   accepted: CheckCircle,
   rejected: XCircle,
   expired: Clock,
+  converted: CheckCheck,
+  changes_requested: AlertCircle,
 };
 
 export const STATUS_LABELS: Record<QuoteStatus, string> = {
@@ -25,6 +29,8 @@ export const STATUS_LABELS: Record<QuoteStatus, string> = {
   accepted: 'Accepté',
   rejected: 'Refusé',
   expired: 'Expiré',
+  converted: 'Converti',
+  changes_requested: 'Modifications demandées',
 };
 
 export interface QuoteStatusBadgeProps {

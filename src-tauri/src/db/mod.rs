@@ -143,6 +143,12 @@ pub enum InterventionError {
 /// Result type alias for intervention operations
 pub type InterventionResult<T> = Result<T, InterventionError>;
 
+impl From<String> for InterventionError {
+    fn from(s: String) -> Self {
+        InterventionError::Database(s)
+    }
+}
+
 impl From<rusqlite::Error> for InterventionError {
     fn from(err: rusqlite::Error) -> Self {
         InterventionError::Database(err.to_string())
@@ -188,13 +194,6 @@ impl From<InterventionError> for crate::commands::AppError {
                 }
             }
         }
-    }
-}
-
-/// Convert String to InterventionError
-impl From<String> for InterventionError {
-    fn from(error: String) -> Self {
-        InterventionError::Database(error)
     }
 }
 

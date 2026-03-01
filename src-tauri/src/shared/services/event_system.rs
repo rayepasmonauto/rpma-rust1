@@ -254,6 +254,39 @@ pub enum DomainEvent {
         timestamp: DateTime<Utc>,
         metadata: Option<serde_json::Value>,
     },
+
+    // Quote Events
+    QuoteAccepted {
+        id: String,
+        quote_id: String,
+        quote_number: String,
+        client_id: String,
+        accepted_by: String,
+        task_id: Option<String>,
+        timestamp: DateTime<Utc>,
+        metadata: Option<serde_json::Value>,
+    },
+    QuoteRejected {
+        id: String,
+        quote_id: String,
+        quote_number: String,
+        client_id: String,
+        rejected_by: String,
+        reason: Option<String>,
+        timestamp: DateTime<Utc>,
+        metadata: Option<serde_json::Value>,
+    },
+    QuoteConverted {
+        id: String,
+        quote_id: String,
+        quote_number: String,
+        client_id: String,
+        task_id: String,
+        task_number: String,
+        converted_by: String,
+        timestamp: DateTime<Utc>,
+        metadata: Option<serde_json::Value>,
+    },
 }
 
 /// Error severity levels
@@ -421,6 +454,9 @@ impl InMemoryEventBus {
             DomainEvent::SystemError { .. } => "SystemError",
             DomainEvent::SystemMaintenance { .. } => "SystemMaintenance",
             DomainEvent::PerformanceAlert { .. } => "PerformanceAlert",
+            DomainEvent::QuoteAccepted { .. } => "QuoteAccepted",
+            DomainEvent::QuoteRejected { .. } => "QuoteRejected",
+            DomainEvent::QuoteConverted { .. } => "QuoteConverted",
         }
         .to_string()
     }
@@ -558,6 +594,9 @@ impl EventProcessor {
             DomainEvent::SystemError { .. } => "SystemError",
             DomainEvent::SystemMaintenance { .. } => "SystemMaintenance",
             DomainEvent::PerformanceAlert { .. } => "PerformanceAlert",
+            DomainEvent::QuoteAccepted { .. } => "QuoteAccepted",
+            DomainEvent::QuoteRejected { .. } => "QuoteRejected",
+            DomainEvent::QuoteConverted { .. } => "QuoteConverted",
         }
     }
 }
@@ -657,6 +696,9 @@ impl EventProjection {
             DomainEvent::SystemError { .. } => "SystemError",
             DomainEvent::SystemMaintenance { .. } => "SystemMaintenance",
             DomainEvent::PerformanceAlert { .. } => "PerformanceAlert",
+            DomainEvent::QuoteAccepted { .. } => "QuoteAccepted",
+            DomainEvent::QuoteRejected { .. } => "QuoteRejected",
+            DomainEvent::QuoteConverted { .. } => "QuoteConverted",
         };
 
         if let Some(handler) = self.handlers.get(event_type) {

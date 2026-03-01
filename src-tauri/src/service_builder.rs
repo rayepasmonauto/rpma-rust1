@@ -93,6 +93,11 @@ impl ServiceBuilder {
                 self.db.clone(),
             ),
         );
+        let intervention_workflow_service = Arc::new(
+            crate::domains::interventions::infrastructure::intervention_workflow::InterventionWorkflowService::new(
+                self.db.clone(),
+            ),
+        );
         let settings_service = Arc::new(
             crate::domains::settings::infrastructure::settings::SettingsService::new(
                 self.db.clone(),
@@ -163,6 +168,7 @@ impl ServiceBuilder {
             crate::domains::quotes::infrastructure::quote::QuoteService::new(
                 self.repositories.quote.clone(),
                 self.db.clone(),
+                event_bus.clone(),
             ),
         );
 
@@ -218,6 +224,17 @@ impl ServiceBuilder {
         event_bus.register_handler(audit_log_handler);
 
         register_handler(inventory_service.intervention_finalized_handler());
+
+        // Register Quote Event Handlers
+        let quote_accepted_handler = crate::domains::interventions::application::QuoteAcceptedHandler::new(
+            intervention_workflow_service.clone(),
+        );
+        event_bus.register_handler(quote_accepted_handler);
+
+        let quote_converted_handler = crate::domains::interventions::application::QuoteConvertedHandler::new(
+            intervention_workflow_service.clone(),
+        );
+        event_bus.register_handler(quote_converted_handler);
 
         // Note: Additional handlers can be registered here:
         // - SecurityMonitorHandler for security events

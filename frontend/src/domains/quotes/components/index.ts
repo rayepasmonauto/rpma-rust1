@@ -6,3 +6,6 @@ export type { QuoteItemsTableProps } from './QuoteItemsTable';
 
 export { QuoteTotals } from './QuoteTotals';
 export type { QuoteTotalsProps } from './QuoteTotals';
+
+export { QuoteAttachmentsManager } from './QuoteAttachmentsManager';
+export type { QuoteAttachmentsManagerProps } from './QuoteAttachmentsManager';
