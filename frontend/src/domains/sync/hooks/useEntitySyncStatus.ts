@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSyncStatus } from './useSyncStatus';
 import { SyncOperation, EntityType } from '@/lib/backend';
-import { ipcClient } from '@/lib/ipc';
+import { syncService } from '../services';
 
 export interface EntitySyncStatus {
   entityId: string;
@@ -19,11 +19,10 @@ export function useEntitySyncStatus(entityId: string, entityType: EntityType) {
     queryKey: ['entity-sync-status', entityId, entityType],
     queryFn: async (): Promise<EntitySyncStatus | null> => {
       try {
-        // Query queue for operations on this entity
-        const operations = await ipcClient.sync.getOperationsForEntity(entityId, entityType) as SyncOperation[];
+        const operations = await syncService.getOperationsForEntity(entityId, entityType) as SyncOperation[];
 
         if (operations.length === 0) {
-          return null; // No pending operations
+          return null;
         }
 
         const hasErrors = operations.some((op: SyncOperation) => op.status === 'failed');

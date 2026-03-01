@@ -314,7 +314,7 @@ export function createTestAdapter(overrides?: TestAdapterOverrides): IpcAdapter 
       const domainOverrides = overrides[domain];
       if (domainOverrides && typeof domainOverrides === 'object') {
         Object.assign(
-          base[domain] as Record<string, unknown>,
+          base[domain] as unknown as Record<string, unknown>,
           domainOverrides,
         );
       }

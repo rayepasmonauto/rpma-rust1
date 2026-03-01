@@ -1,5 +1,6 @@
 import { ipcClient as realIpcClient, useIpcClient as realUseIpcClient } from './client';
 import { ipcClient as mockIpcClient, useIpcClient as mockUseIpcClient, initMockIpc } from './mock/mock-client';
+import { tauriAdapter } from './real-adapter';
 
 const useMock =
   process.env.NEXT_PUBLIC_IPC_MOCK === 'true' ||
@@ -14,7 +15,12 @@ type IpcClient = typeof realIpcClient;
 
 export const ipcClient = (useMock ? mockIpcClient : realIpcClient) as IpcClient;
 export const useIpcClient = (useMock ? mockUseIpcClient : realUseIpcClient) as typeof realUseIpcClient;
-export type { IpcAdapter } from './adapter';
+
+// Adapter exports
+export { tauriAdapter };
+export type { IpcAdapter, IpcInvokeOptions, IpcError, createIpcError, isIpcError } from './adapter';
+
+// Existing exports
 export { createTestAdapter, TEST_SESSION, TEST_TASK, TEST_TASK_LIST, TEST_TASK_STATISTICS } from './test-adapter';
 export { safeInvoke } from './utils';
 export { cachedInvoke, getCacheStats, invalidateKey, clearCache, invalidatePattern } from './cache';

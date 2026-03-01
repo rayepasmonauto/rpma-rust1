@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/domains/auth';
-import { ipcClient } from '@/lib/ipc';
-import type { ClientWithTasks, ClientStatistics, CustomerType } from '@/lib/backend';
+import { clientService, type ClientStats } from '../services';
+import type { ClientWithTasks, CustomerType } from '@/lib/backend';
 import { useLogger } from '@/shared/hooks/useLogger';
 import { LogDomain } from '@/lib/logging/types';
 import { normalizeError } from '@/types/utility.types';
@@ -24,7 +24,7 @@ export interface UseClientsOptions {
 export interface UseClientsReturn {
   // Data
   clients: ClientWithTasks[];
-  stats: ClientStatistics | null;
+  stats: ClientStats | null;
 
   // Loading states
   loading: boolean;
@@ -74,7 +74,7 @@ export const useClients = (options: UseClientsOptions = {}): UseClientsReturn =>
   });
 
   const [clients, setClients] = useState<ClientWithTasks[]>([]);
-  const [stats, setStats] = useState<ClientStatistics | null>(null);
+  const [stats, setStats] = useState<ClientStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingStats, setLoadingStats] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -94,17 +94,29 @@ export const useClients = (options: UseClientsOptions = {}): UseClientsReturn =>
 
       logInfo('Fetching clients with tasks', { filters });
 
-      const result = await ipcClient.clients.listWithTasks(
-        filters,
-        limitTasks,
-        user.token
-      );
+      const response = await clientService.getClientsWithTasks(user.token, {
+        page: filters.page,
+        limit: filters.limit,
+        search: filters.search,
+        sort_by: filters.sort_by,
+        sort_order: filters.sort_order,
+        customer_type: filters.customer_type ?? undefined
+      }, limitTasks);
 
-      setClients(result);
-      setPagination(null);
+      if (response.success && response.data) {
+        setClients(response.data.data);
+        setPagination({
+          page: response.data.pagination.page,
+          limit: response.data.pagination.limit,
+          total: Number(response.data.pagination.total),
+          total_pages: response.data.pagination.total_pages
+        });
+      } else {
+        throw new Error(typeof response.error === 'string' ? response.error : 'Failed to fetch clients');
+      }
 
       logInfo('Clients fetched successfully', {
-        count: result.length
+        count: response.data?.data.length || 0
       });
 
     } catch (error: unknown) {
@@ -122,8 +134,13 @@ export const useClients = (options: UseClientsOptions = {}): UseClientsReturn =>
     try {
       setLoadingStats(true);
 
-      const statsResult = await ipcClient.clients.stats(user.token);
-      setStats(statsResult);
+      const response = await clientService.getClientStats(user.token);
+
+      if (response.success && response.data) {
+        setStats(response.data);
+      } else {
+        throw new Error(typeof response.error === 'string' ? response.error : 'Failed to fetch client stats');
+      }
 
       logInfo('Client stats fetched successfully');
 

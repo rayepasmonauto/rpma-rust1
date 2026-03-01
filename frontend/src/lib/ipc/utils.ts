@@ -22,10 +22,10 @@ export const NOT_IMPLEMENTED_COMMANDS = new Set([
 
 /**
  * IPC commands that do not require a session token.
- * All other commands are considered protected and will have the session_token
+ * All other commands are considered protected and will have session_token
  * auto-injected into the args before being sent to the backend.
  */
-const PUBLIC_COMMANDS = new Set([
+export const PUBLIC_COMMANDS = new Set([
   // Auth - no session required (or handled via separate token param)
   'auth_login',
   'auth_create_account',

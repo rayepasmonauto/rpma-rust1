@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/domains/auth';
-import { ipcClient } from '@/lib/ipc';
+import { userService } from '../services';
 import { convertTimestamps } from '@/lib/types';
 import { logger, LogContext } from '@/shared/utils';
 import type { UserAccount } from '@/types';
@@ -36,11 +36,26 @@ export function useUserList(limit = 50, offset = 0): UseUserListReturn {
 
     try {
       logger.debug(LogContext.API, 'useUserList: fetching users');
-      const response = await ipcClient.users.list(limit, offset, user.token);
-      const converted = (response?.data ?? []).map((u) =>
-        convertTimestamps(u),
-      ) as unknown as UserAccount[];
-      setUsers(converted);
+      const response = await userService.getUsers({ page: Math.floor(offset / limit) + 1, pageSize: limit });
+      
+      if (response.success && response.data) {
+        const converted = response.data.map((u) =>
+          convertTimestamps({
+            id: u.id,
+            email: u.email,
+            first_name: u.firstName,
+            last_name: u.lastName,
+            role: u.role,
+            is_active: u.isActive,
+            created_at: '',
+            updated_at: '',
+          }),
+        ) as unknown as UserAccount[];
+        setUsers(converted);
+      } else {
+        setUsers([]);
+        setError(response.error || 'Failed to load users');
+      }
     } catch (err) {
       logger.error(LogContext.API, 'useUserList: error', { error: err });
       setUsers([]);

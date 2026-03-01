@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { AuthSecureStorage } from '@/lib/secureStorage';
-import { ipcClient } from '@/lib/ipc';
-import { interventionsIpc } from '../ipc/interventions.ipc';
+import { taskService } from '@/domains/tasks/services';
+import { interventionWorkflowService } from '../services';
 import { interventionKeys } from '@/lib/query-keys';
 import type {
   PPFInterventionData,
@@ -43,23 +43,18 @@ export function useInterventionSync({
 
         console.log('Fetching active intervention for task:', currentTaskId);
 
-        // First get the full task details to ensure we have the correct UUID
-        const taskResult = await ipcClient.tasks.get(currentTaskId, sessionToken);
-        if (!taskResult) {
+        const taskResult = await taskService.getTaskById(currentTaskId);
+        if (!taskResult.success || !taskResult.data) {
           throw new Error('Task not found');
         }
 
-        // Use the task's UUID for intervention lookup
-        const result = await interventionsIpc.getActiveByTask(taskResult.id, sessionToken);
+        const result = await interventionWorkflowService.getActiveByTask(taskResult.data.id, sessionToken);
         console.log('IPC result for active intervention:', result);
 
-        // getActiveByTask now returns the tagged union directly
-        const responseData = result as unknown as { type: string; intervention: Record<string, unknown> };
-
-        if (responseData?.type === 'ActiveRetrieved' && responseData.intervention) {
-          console.log('Successfully retrieved active intervention:', responseData.intervention.id);
-          // Map backend Intervention to frontend PPFInterventionData
-          const backendIntervention = responseData.intervention;
+        const interventionData = result.data;
+        if (interventionData) {
+          console.log('Successfully retrieved active intervention:', interventionData.id);
+          const backendIntervention = interventionData as Record<string, unknown>;
           const mappedIntervention: PPFInterventionData = {
             id: backendIntervention.id as string,
             taskId: backendIntervention.task_number as string,
@@ -136,46 +131,12 @@ export function useInterventionSync({
         console.log('Fetching intervention steps for intervention:', interventionId);
         const session = await AuthSecureStorage.getSession();
         const sessionToken = session.token || '';
-        const result = await interventionsIpc.getProgress(interventionId, sessionToken);
+        const result = await interventionWorkflowService.getInterventionSteps(interventionId, sessionToken);
         console.log('IPC result for intervention steps:', result);
 
-        if (result?.steps) {
-          console.log('Raw steps data from backend:', result.steps);
-          const mappedSteps = result.steps.map((step: Record<string, unknown>) => {
-            console.log('Processing step:', step.id, 'collected_data:', step.collected_data, 'observations:', step.observations);
-            return {
-              id: step.id as string,
-              interventionId: step.intervention_id as string,
-              intervention_id: step.intervention_id as string,
-              stepNumber: step.step_number as number,
-              step_number: step.step_number as number,
-              step_name: step.step_name as string,
-              step_type: step.step_type as string,
-              status: step.step_status as PPFInterventionStep['status'],
-              step_status: step.step_status as string,
-              description: step.description as string | undefined,
-              photos: [],
-              startedAt: step.started_at as string | undefined,
-              started_at: step.started_at as string | undefined,
-              completedAt: step.completed_at as string | undefined,
-              completed_at: step.completed_at as string | undefined,
-              duration_seconds: step.duration_seconds as number | undefined,
-              requires_photos: step.requires_photos as boolean | undefined,
-              min_photos_required: step.min_photos_required as number | undefined,
-              photo_count: step.photo_count as number | undefined,
-              quality_checkpoints: step.quality_checkpoints as QualityCheckpointData[] | undefined,
-              qualityChecks: step.quality_checkpoints as QualityCheckpointData[] | undefined,
-              approved_by: step.approved_by as string | undefined,
-              observations: step.observations as string[] | undefined,
-              collected_data: (step.collected_data || (step.observations ? { observations: step.observations } : {})) as Record<string, unknown>,
-              paused_at: step.paused_at as number | null | undefined,
-              created_at: step.created_at as string | undefined,
-              updated_at: step.updated_at as string | undefined,
-              required: !step.is_mandatory ? false : true,
-            } satisfies PPFInterventionStep;
-          });
-          console.log('Successfully mapped intervention steps:', mappedSteps.length, 'steps');
-          return mappedSteps;
+        if (result.success && result.data) {
+          console.log('Raw steps data from backend:', result.data.data);
+          return result.data.data;
         }
         console.log('No steps found in result for intervention:', interventionId);
         return [];

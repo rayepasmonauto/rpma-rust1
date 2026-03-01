@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/domains/auth';
-import { ipcClient } from '@/lib/ipc';
+import { clientService } from '../services';
 import type { Client } from '@/lib/backend';
 import { useLogger } from '@/shared/hooks/useLogger';
 import { LogDomain } from '@/lib/logging/types';
@@ -52,9 +52,13 @@ export const useClient = (options: UseClientOptions = {}): UseClientReturn => {
 
       logInfo('Fetching client with tasks', { clientId });
 
-      const result = await ipcClient.clients.getWithTasks(clientId, user.token);
+      const response = await clientService.getClientWithTasks(clientId, user.token);
 
-      setClient(result);
+      if (response.success && response.data) {
+        setClient(response.data);
+      } else {
+        throw new Error(typeof response.error === 'string' ? response.error : 'Failed to fetch client');
+      }
 
       logInfo('Client fetched successfully', { clientId });
 

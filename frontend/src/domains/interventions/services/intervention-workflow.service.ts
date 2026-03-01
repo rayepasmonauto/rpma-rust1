@@ -5,32 +5,7 @@ import { interventionsIpc } from '../ipc/interventions.ipc';
 import type { AdvanceStepRequest, FinalizeInterventionRequest, JsonValue, StartInterventionRequest } from '@/lib/backend';
 import type { PPFIntervention } from './ppf';
 import type { ListResponse } from '@/types/api';
-export interface PPFInterventionData {
-  id: string;
-  client_id: string;
-  technician_id: string;
-  vehicle_make: string;
-  vehicle_model: string;
-  vehicle_year: number;
-  vehicle_vin: string;
-  created_at: Date;
-  updated_at: Date;
-  progress_percentage: number;
-}
-
-export interface PPFInterventionStep {
-  id: string;
-  intervention_id: string;
-  step_number: number;
-  step_name: string;
-  step_type: string;
-  required: boolean;
-  duration_seconds: number;
-  photo_count: number;
-  started_at?: Date;
-  completed_at?: Date;
-  collected_data?: Record<string, unknown>;
-}
+import type { PPFInterventionData, PPFInterventionStep } from '@/types/ppf-intervention';
 
 export interface AdvanceStepDTO {
   interventionId: string;
@@ -162,19 +137,35 @@ export class InterventionWorkflowService {
     try {
       const result = await interventionsIpc.getProgress(interventionId, sessionToken);
 
-      // Map backend InterventionStep to frontend PPFInterventionStep format
       const data: PPFInterventionStep[] = result.steps.map((step: Record<string, unknown>) => ({
         id: String(step.id ?? ''),
+        interventionId: String(step.intervention_id ?? ''),
         intervention_id: String(step.intervention_id ?? ''),
+        stepNumber: Number(step.step_number ?? 0),
         step_number: Number(step.step_number ?? 0),
         step_name: String(step.step_name ?? ''),
         step_type: String(step.step_type ?? ''),
-        required: Boolean(step.is_mandatory ?? false),
+        status: step.step_status as PPFInterventionStep['status'],
+        step_status: String(step.step_status ?? 'pending'),
+        description: step.description as string | undefined,
+        photos: [],
+        startedAt: step.started_at ? String(step.started_at) : undefined,
+        started_at: step.started_at ? String(step.started_at) : undefined,
+        completedAt: step.completed_at ? String(step.completed_at) : undefined,
+        completed_at: step.completed_at ? String(step.completed_at) : undefined,
         duration_seconds: Number(step.duration_seconds ?? 0),
+        requires_photos: Boolean(step.requires_photos ?? false),
+        min_photos_required: Number(step.min_photos_required ?? 0),
         photo_count: Number(step.photo_count ?? 0),
-        started_at: step.started_at ? new Date(String(step.started_at)) : undefined,
-        completed_at: step.completed_at ? new Date(String(step.completed_at)) : undefined,
+        quality_checkpoints: step.quality_checkpoints as PPFInterventionStep['quality_checkpoints'],
+        qualityChecks: step.quality_checkpoints as PPFInterventionStep['qualityChecks'],
+        approved_by: step.approved_by as string | undefined,
+        observations: step.observations as string[] | undefined,
         collected_data: (step.collected_data as Record<string, unknown>) || {},
+        paused_at: step.paused_at as number | null | undefined,
+        created_at: step.created_at ? String(step.created_at) : undefined,
+        updated_at: step.updated_at ? String(step.updated_at) : undefined,
+        required: Boolean(step.is_mandatory ?? false),
       }));
 
       this.log('getInterventionSteps.success', { interventionId, stepCount: data.length });
@@ -199,6 +190,17 @@ export class InterventionWorkflowService {
 
   static async getInterventions(_filters: unknown): Promise<ApiResponse<ListResponse<PPFIntervention>>> {
     return this.notImplemented('Intervention list is not implemented in this service. Use interventionsIpc.list directly.');
+  }
+
+  static async getActiveByTask(taskId: string, sessionToken: string): Promise<ApiResponse<Record<string, unknown> | null>> {
+    this.log('getActiveByTask', { taskId });
+    try {
+      const result = await interventionsIpc.getActiveByTask(taskId, sessionToken);
+      return { success: true, data: result.intervention, error: undefined };
+    } catch (error) {
+      this.log('getActiveByTask.error', { taskId, error: error instanceof Error ? error.message : 'Unknown error' }, 'error');
+      return { success: false, error: error instanceof Error ? new ApiError(error.message, 'INTERNAL_ERROR') : new ApiError('Failed to get active intervention by task', 'INTERNAL_ERROR'), data: null };
+    }
   }
 
   static async advanceStep(interventionId: string, stepData: unknown, sessionToken: string): Promise<ApiResponse<unknown>> {
