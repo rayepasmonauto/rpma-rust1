@@ -41,8 +41,8 @@ export default function UsersPage() {
     setShowForm(true);
   };
 
-  const handleEditUser = (u: UserAccount) => {
-    setEditingUser(u);
+  const handleEditUser = (userToEdit: UserAccount) => {
+    setEditingUser(userToEdit);
     setShowForm(true);
   };
 
