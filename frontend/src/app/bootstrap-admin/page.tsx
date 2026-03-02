@@ -3,9 +3,9 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { authBootstrap, useAuth } from '@/domains/auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/ui/card';
-import { Button } from '@/shared/ui/ui/button';
-import { Alert, AlertDescription } from '@/shared/ui/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { structuredLogger as logger, LogDomain } from '@/shared/utils';
 import { useEffect } from 'react';

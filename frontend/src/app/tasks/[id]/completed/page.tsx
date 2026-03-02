@@ -34,9 +34,9 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/shared/ui/ui/card';
-import { Separator } from '@/shared/ui/ui/separator';
-import { Badge } from '@/shared/ui/ui/badge';
+} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import {
   CheckCircle,
   FileText,

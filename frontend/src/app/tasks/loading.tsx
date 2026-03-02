@@ -1,4 +1,4 @@
-import { Skeleton, SkeletonTable } from '@/shared/ui/ui/skeleton';
+import { Skeleton, SkeletonTable } from '@/components/ui/skeleton';
 
 export default function TasksLoading() {
   return (

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/shared/ui/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   PpfChecklist,
   PpfPhotoGrid,

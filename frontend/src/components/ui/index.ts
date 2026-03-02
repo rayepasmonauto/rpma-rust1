@@ -50,7 +50,6 @@ export { default as ErrorFallback } from './ErrorFallback';
 export { Motion } from './Motion';
 export { SafeLink } from './SafeLink';
 
-export { SyncIndicator } from './SyncIndicator';
 export { DesktopTable, type Column } from './DesktopTable';
 export { DesktopForm } from '../forms/DesktopForm';
 export { EntitySyncIndicator } from '../../domains/sync/components';

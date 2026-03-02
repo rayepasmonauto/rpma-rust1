@@ -2,8 +2,8 @@
 
 import React from 'react';
 import { PageShell } from '@/shared/ui/layout/PageShell';
-import { PageHeader } from '@/shared/ui/ui/page-header';
-import { EmptyState } from '@/shared/ui/layout/EmptyState';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 import { ClipboardList } from 'lucide-react';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 

@@ -1,78 +1,139 @@
-"use client"
+"use client";
 
 import React from 'react';
+import { Filter, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from './button';
+
+type EmptyStateAction =
+  | React.ReactNode
+  | {
+      label: string;
+      onClick: () => void;
+      icon?: React.ReactNode;
+    };
+
+type StructuredAction = {
+  label: string;
+  onClick: () => void;
+  icon?: React.ReactNode;
+};
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
   title: string;
   description?: string;
-  action?: React.ReactNode;
+  action?: EmptyStateAction;
+  secondaryAction?: StructuredAction;
+  tips?: Array<{
+    title: string;
+    description: string;
+  }>;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'search' | 'filter' | 'error';
 }
 
+const isStructuredAction = (action?: EmptyStateAction): action is StructuredAction => {
+  if (!action || typeof action !== 'object' || React.isValidElement(action)) {
+    return false;
+  }
+  return 'label' in action && 'onClick' in action;
+};
+
 export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
-  ({ icon, title, description, action, className, size = 'md', ...props }, ref) => {
+  (
+    {
+      icon,
+      title,
+      description,
+      action,
+      secondaryAction,
+      tips,
+      className,
+      size = 'md',
+      variant = 'default',
+      ...props
+    },
+    ref
+  ) => {
     const sizeClasses = {
       sm: 'py-6',
       md: 'py-12',
-      lg: 'py-16'
-    };
-
-    const iconSizeClasses = {
-      sm: 'h-8 w-8',
-      md: 'h-12 w-12',
-      lg: 'h-16 w-16'
+      lg: 'py-16',
     };
 
     const titleSizeClasses = {
       sm: 'text-lg',
       md: 'text-xl',
-      lg: 'text-2xl'
+      lg: 'text-2xl',
     };
 
     const descriptionSizeClasses = {
       sm: 'text-sm',
       md: 'text-base',
-      lg: 'text-lg'
+      lg: 'text-lg',
+    };
+
+    const renderAction = () => {
+      if (!action) return null;
+      if (!isStructuredAction(action)) {
+        return action;
+      }
+      return (
+        <Button onClick={action.onClick}>
+          {action.icon}
+          {action.label}
+        </Button>
+      );
     };
 
     return (
       <div
         ref={ref}
-        className={cn(
-          'flex flex-col items-center justify-center text-center rpma-empty',
-          sizeClasses[size],
-          className
-        )}
+        className={cn('flex flex-col items-center justify-center text-center', sizeClasses[size], className)}
         {...props}
       >
-        {icon && (
-          <div className={cn(
-            'mb-4 text-muted-foreground',
-            iconSizeClasses[size]
-          )}>
-            {icon}
+        {icon ? (
+          <div className="mb-4 text-muted-foreground">{icon}</div>
+        ) : (
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-[hsl(var(--rpma-border))] bg-[hsl(var(--rpma-surface))]" />
+        )}
+        <h3 className={cn('mb-2 font-semibold text-foreground', titleSizeClasses[size])}>{title}</h3>
+        {description && (
+          <p className={cn('mb-6 max-w-lg text-muted-foreground', descriptionSizeClasses[size])}>{description}</p>
+        )}
+        {(action || secondaryAction || variant === 'search' || variant === 'filter') && (
+          <div className="mb-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            {renderAction()}
+            {secondaryAction && (
+              <Button variant="outline" onClick={secondaryAction.onClick}>
+                {secondaryAction.icon}
+                {secondaryAction.label}
+              </Button>
+            )}
+            {variant === 'search' && (
+              <Button variant="ghost" onClick={() => window.location.reload()}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Actualiser
+              </Button>
+            )}
+            {variant === 'filter' && (
+              <Button variant="ghost" onClick={() => window.location.reload()}>
+                <Filter className="mr-2 h-4 w-4" />
+                Effacer les filtres
+              </Button>
+            )}
           </div>
         )}
-        <h3 className={cn(
-          'font-semibold text-foreground mb-2',
-          titleSizeClasses[size]
-        )}>
-          {title}
-        </h3>
-        {description && (
-          <p className={cn(
-            'text-muted-foreground mb-6 max-w-sm',
-            descriptionSizeClasses[size]
-          )}>
-            {description}
-          </p>
-        )}
-        {action && (
-          <div className="flex flex-col sm:flex-row gap-2">
-            {action}
+        {tips && tips.length > 0 && (
+          <div className="mt-4 grid w-full max-w-4xl grid-cols-1 gap-4 border-t border-[hsl(var(--rpma-border))] pt-6 md:grid-cols-3">
+            {tips.map((tip, index) => (
+              <div key={`${tip.title}-${index}`} className="rounded-lg border border-[hsl(var(--rpma-border))] bg-white p-4">
+                <div className="mb-2 font-semibold text-foreground">{tip.title}</div>
+                <p className="text-xs text-muted-foreground">{tip.description}</p>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -82,7 +143,6 @@ export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
 
 EmptyState.displayName = 'EmptyState';
 
-// Specialized empty states for common scenarios
 interface NoDataEmptyStateProps extends Omit<EmptyStateProps, 'icon' | 'title' | 'description'> {
   type?: 'tasks' | 'clients' | 'interventions' | 'search' | 'error';
 }
@@ -91,30 +151,30 @@ export const NoDataEmptyState = React.forwardRef<HTMLDivElement, NoDataEmptyStat
   ({ type = 'tasks', action, className, ...props }, ref) => {
     const configs = {
       tasks: {
-        icon: 'üìã',
-        title: 'Aucune t√¢che trouv√©e',
-        description: 'Il n\'y a pas encore de t√¢ches √† afficher. Cr√©ez votre premi√®re t√¢che pour commencer.'
+        icon: '??',
+        title: 'Aucune t‚che trouvÈe',
+        description: "Il n'y a pas encore de t‚ches ‡ afficher. CrÈez votre premiËre t‚che pour commencer.",
       },
       clients: {
-        icon: 'üë•',
-        title: 'Aucun client trouv√©',
-        description: 'Vous n\'avez pas encore ajout√© de clients. Ajoutez votre premier client pour commencer.'
+        icon: '??',
+        title: 'Aucun client trouvÈ',
+        description: "Vous n'avez pas encore ajoutÈ de clients. Ajoutez votre premier client pour commencer.",
       },
       interventions: {
-        icon: 'üîß',
-        title: 'Aucune intervention trouv√©e',
-        description: 'Il n\'y a pas d\'interventions planifi√©es ou termin√©es √† afficher.'
+        icon: '??',
+        title: 'Aucune intervention trouvÈe',
+        description: "Il n'y a pas d'interventions planifiÈes ou terminÈes ‡ afficher.",
       },
       search: {
-        icon: 'üîç',
-        title: 'Aucun r√©sultat trouv√©',
-        description: 'Essayez de modifier vos crit√®res de recherche ou v√©rifiez l\'orthographe.'
+        icon: '??',
+        title: 'Aucun rÈsultat trouvÈ',
+        description: "Essayez de modifier vos critËres de recherche ou vÈrifiez l'orthographe.",
       },
       error: {
-        icon: '‚ö†Ô∏è',
+        icon: '??',
         title: 'Une erreur est survenue',
-        description: 'Impossible de charger les donn√©es. Veuillez r√©essayer plus tard.'
-      }
+        description: 'Impossible de charger les donnÈes. Veuillez rÈessayer plus tard.',
+      },
     };
 
     const config = configs[type];
@@ -127,6 +187,7 @@ export const NoDataEmptyState = React.forwardRef<HTMLDivElement, NoDataEmptyStat
         description={config.description}
         action={action}
         className={className}
+        variant={type === 'search' ? 'search' : type === 'error' ? 'error' : 'default'}
         {...props}
       />
     );

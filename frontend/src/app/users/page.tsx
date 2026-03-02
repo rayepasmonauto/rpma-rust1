@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { UserList, UserForm, useUserList } from '@/domains/users';
 import type { UserAccount } from '@/shared/types';
 import { useAuth } from '@/domains/auth';
-import { PageHeader, HeaderActionButton } from '@/shared/ui/ui/page-header';
+import { PageHeader, HeaderActionButton } from '@/components/ui/page-header';
 import { PageShell } from '@/shared/ui/layout/PageShell';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 import { ErrorState } from '@/shared/ui/layout/ErrorState';

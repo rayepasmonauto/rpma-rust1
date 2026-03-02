@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Download, Save } from 'lucide-react';
-import { Button } from '@/shared/ui/ui/button';
+import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 import { ErrorState } from '@/shared/ui/layout/ErrorState';
 import type { StepType } from '@/lib/backend';

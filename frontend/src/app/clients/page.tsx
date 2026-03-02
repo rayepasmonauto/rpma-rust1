@@ -8,10 +8,10 @@ import { Plus, Search, SearchX, User, Building, ChevronDown, ArrowUpDown, AlertC
 import Link from 'next/link';
 import type { Client, ClientWithTasks } from '@/shared/types';
 import { ClientCard } from '@/domains/clients';
-import { ClientCardSkeleton } from '@/shared/ui/ui/skeleton';
-import { PullToRefresh, FloatingActionButton } from '@/shared/ui/ui/mobile-components';
-import { EnhancedEmptyState } from '@/shared/ui/ui';
-import { PageHeader, StatCard } from '@/shared/ui/ui/page-header';
+import { ClientCardSkeleton } from '@/components/ui/skeleton';
+import { PullToRefresh, FloatingActionButton } from '@/components/ui/mobile-components';
+import { EnhancedEmptyState } from '@/components/ui';
+import { PageHeader, StatCard } from '@/components/ui/page-header';
 import { PageShell } from '@/shared/ui/layout/PageShell';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 

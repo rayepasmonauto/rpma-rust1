@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { Button } from '@/shared/ui/ui/button';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import type { TaskFormProps } from '@/domains/tasks';
 

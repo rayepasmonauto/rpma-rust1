@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/shared/ui/ui/button';
+import { Button } from '@/components/ui/button';
 import { Home, Search, AlertTriangle } from 'lucide-react';
 
 import { motion } from 'framer-motion';

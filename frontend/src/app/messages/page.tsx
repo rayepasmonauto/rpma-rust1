@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import { MessageSquare, Inbox, Settings, Plus } from 'lucide-react';
-import { Button } from '@/shared/ui/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessageComposer } from '@/domains/notifications';
 import { MessageInbox } from '@/domains/notifications';
 import { NotificationPreferences } from '@/domains/notifications';
 import { useAuth } from '@/domains/auth';
 import { PageShell } from '@/shared/ui/layout/PageShell';
-import { PageHeader } from '@/shared/ui/ui/page-header';
+import { PageHeader } from '@/components/ui/page-header';
 import { ErrorState } from '@/shared/ui/layout/ErrorState';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 
