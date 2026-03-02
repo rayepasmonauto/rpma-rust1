@@ -152,28 +152,28 @@ export const NoDataEmptyState = React.forwardRef<HTMLDivElement, NoDataEmptyStat
     const configs = {
       tasks: {
         icon: '??',
-        title: 'Aucune tâche trouvée',
-        description: "Il n'y a pas encore de tâches à afficher. Créez votre première tâche pour commencer.",
+        title: 'Aucune tÃ¢che trouvÃ©e',
+        description: "Il n'y a pas encore de tÃ¢ches Ã  afficher. CrÃ©ez votre premiÃ¨re tÃ¢che pour commencer.",
       },
       clients: {
         icon: '??',
-        title: 'Aucun client trouvé',
-        description: "Vous n'avez pas encore ajouté de clients. Ajoutez votre premier client pour commencer.",
+        title: 'Aucun client trouvÃ©',
+        description: "Vous n'avez pas encore ajoutÃ© de clients. Ajoutez votre premier client pour commencer.",
       },
       interventions: {
         icon: '??',
-        title: 'Aucune intervention trouvée',
-        description: "Il n'y a pas d'interventions planifiées ou terminées à afficher.",
+        title: 'Aucune intervention trouvÃ©e',
+        description: "Il n'y a pas d'interventions planifiÃ©es ou terminÃ©es Ã  afficher.",
       },
       search: {
         icon: '??',
-        title: 'Aucun résultat trouvé',
-        description: "Essayez de modifier vos critères de recherche ou vérifiez l'orthographe.",
+        title: 'Aucun rÃ©sultat trouvÃ©',
+        description: "Essayez de modifier vos critÃ¨res de recherche ou vÃ©rifiez l'orthographe.",
       },
       error: {
         icon: '??',
         title: 'Une erreur est survenue',
-        description: 'Impossible de charger les données. Veuillez réessayer plus tard.',
+        description: 'Impossible de charger les donnÃ©es. Veuillez rÃ©essayer plus tard.',
       },
     };
 
