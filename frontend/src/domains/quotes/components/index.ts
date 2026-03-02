@@ -9,3 +9,7 @@ export type { QuoteTotalsProps } from './QuoteTotals';
 
 export { QuoteAttachmentsManager } from './QuoteAttachmentsManager';
 export type { QuoteAttachmentsManagerProps } from './QuoteAttachmentsManager';
+
+export { QuoteImagesManager } from './QuoteImagesManager';
+
+export { QuoteDocumentsManager } from './QuoteDocumentsManager';
