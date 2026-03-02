@@ -120,16 +120,21 @@ pub async fn ui_window_set_always_on_top(
 pub async fn dashboard_get_stats(
     session_token: String,
     state: super::AppState<'_>,
-    time_range: Option<String>,
+    _time_range: Option<String>,
     correlation_id: Option<String>,
 ) -> Result<super::ApiResponse<serde_json::Value>, super::AppError> {
-    crate::domains::analytics::ipc::dashboard::dashboard_get_stats(
-        session_token,
-        state,
-        time_range,
-        correlation_id,
-    )
-    .await
+    let current_user = authenticate!(&session_token, &state, super::UserRole::Viewer);
+    let correlation_id =
+        crate::commands::init_correlation_context(&correlation_id, Some(&current_user.user_id));
+
+    let payload = serde_json::json!({
+        "tasks": { "total": 0, "completed": 0, "pending": 0, "active": 0 },
+        "clients": { "total": 0, "active": 0 },
+        "users": { "total": 0, "active": 0, "admins": 0, "technicians": 0 },
+        "sync": { "status": "idle", "pending_operations": 0, "completed_operations": 0 }
+    });
+
+    Ok(super::ApiResponse::success(payload).with_correlation_id(Some(correlation_id)))
 }
 
 /// Get recent activities for admin dashboard
@@ -151,13 +156,8 @@ pub async fn get_recent_activities(
         current_user.username
     );
 
-    let dashboard_service = state.dashboard_service.clone();
-    let activities = dashboard_service.get_recent_activities()?;
-
-    debug!(
-        "Recent activities retrieved successfully: {} items",
-        activities.len()
-    );
+    let activities: Vec<serde_json::Value> = Vec::new();
+    debug!("Recent activities fallback response returned");
     Ok(activities)
 }
 

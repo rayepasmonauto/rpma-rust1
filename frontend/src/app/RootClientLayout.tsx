@@ -13,7 +13,7 @@ import { useMenuEvents } from '@/shared/hooks/useMenuEvents';
 import { useAuthRedirect } from '@/shared/hooks/useAuthRedirect';
 import { useAdminBootstrapCheck } from '@/shared/hooks/useAdminBootstrapCheck';
 import { ThemeProvider } from '@/shared/ui/theme-provider';
-import { Skeleton, SkeletonList } from '@/shared/ui/ui/skeleton';
+import { Skeleton, SkeletonList } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 const geistSans = localFont({

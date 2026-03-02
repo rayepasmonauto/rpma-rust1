@@ -7,10 +7,10 @@ import { useAuth } from '@/domains/auth';
 import { clientService } from '@/domains/clients';
 import { ArrowLeft, Save, X, UserPlus, Building, User } from 'lucide-react';
 import Link from 'next/link';
-import { Button } from '@/shared/ui/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/ui/card';
-import { Input } from '@/shared/ui/ui/input';
-import { Textarea } from '@/shared/ui/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import type { CreateClientDTO } from '@/shared/types';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 

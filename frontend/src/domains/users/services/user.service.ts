@@ -14,13 +14,24 @@ export interface User {
 }
 
 export class UserService {
-  static async getUsers(_params?: { search?: string; role?: string; page?: number; pageSize?: number; sortBy?: string; sortOrder?: string }): Promise<ServiceResponse<User[]>> {
+  static async getUsers(params?: { search?: string; role?: string; page?: number; pageSize?: number; sortBy?: string; sortOrder?: string }): Promise<ServiceResponse<User[]>> {
     try {
-      // Note: This method needs to be implemented in ipcClient.users
-      // For now, return empty array as this appears to be a mock service
+      const limit = params?.pageSize ?? 50;
+      const offset = params?.page ? (params.page - 1) * limit : 0;
+      const result = await ipcClient.users.list(limit, offset, 'session-token-placeholder');
+      
+      const users = result?.data?.map(u => ({
+        id: u.id,
+        email: u.email,
+        firstName: u.first_name || '',
+        lastName: u.last_name || '',
+        role: u.role || '',
+        isActive: u.is_active ?? true
+      })) || [];
+      
       return {
         success: true,
-        data: [],
+        data: users,
         status: 200
       };
     } catch (error) {

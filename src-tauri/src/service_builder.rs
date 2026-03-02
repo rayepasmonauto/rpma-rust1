@@ -38,7 +38,7 @@ use crate::shared::event_bus::{register_handler, set_global_event_bus};
 use crate::shared::repositories::Repositories;
 use crate::shared::services::event_bus::InMemoryEventBus;
 use crate::shared::services::websocket_event_handler::WebSocketEventHandler;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 
 /// Service Builder
 ///
@@ -88,16 +88,13 @@ impl ServiceBuilder {
                 self.repositories.client.clone(),
             ),
         );
-        let dashboard_repo = Arc::new(crate::domains::analytics::infrastructure::dashboard_repository::DashboardRepository::new(Arc::new(
-            db_instance.clone(),
-        )));
-        let dashboard_service = Arc::new(
-            crate::domains::analytics::infrastructure::dashboard::DashboardService::new(
-                dashboard_repo,
-            ),
-        );
         let intervention_service = Arc::new(
             crate::domains::interventions::infrastructure::intervention::InterventionService::new(
+                self.db.clone(),
+            ),
+        );
+        let intervention_workflow_service = Arc::new(
+            crate::domains::interventions::infrastructure::intervention_workflow::InterventionWorkflowService::new(
                 self.db.clone(),
             ),
         );
@@ -166,11 +163,20 @@ impl ServiceBuilder {
             material_service.clone(),
         ));
 
+        // Quote service currently depends on the event_system bus implementation.
+        let quote_event_bus =
+            Arc::new(crate::shared::services::event_system::InMemoryEventBus::new());
+
+        // Initialize Event Bus (self-contained, thread-safe)
+        let event_bus = Arc::new(InMemoryEventBus::new());
+        set_global_event_bus(event_bus.clone());
+
         // Initialize Quote Service (depends on QuoteRepository and DB)
         let quote_service = Arc::new(
             crate::domains::quotes::infrastructure::quote::QuoteService::new(
                 self.repositories.quote.clone(),
                 self.db.clone(),
+                quote_event_bus,
             ),
         );
 
@@ -195,13 +201,6 @@ impl ServiceBuilder {
         // Create async database wrapper
         let async_db = Arc::new(self.db.as_async());
 
-        // Initialize Analytics Service (depends on DB)
-        let analytics_service = Arc::new(
-            crate::domains::analytics::infrastructure::analytics::AnalyticsService::new(
-                db_instance.clone(),
-            ),
-        );
-
         // Initialize Performance Monitor Service (depends on DB)
         let performance_monitor_service = Arc::new(
             crate::shared::services::performance_monitor::PerformanceMonitorService::new(
@@ -215,17 +214,6 @@ impl ServiceBuilder {
                 performance_monitor_service.clone(),
             ),
         );
-
-        // Initialize Prediction Service (depends on DB)
-        let prediction_service = Arc::new(
-            crate::domains::analytics::infrastructure::prediction::PredictionService::new(
-                db_instance.clone(),
-            ),
-        );
-
-        // Initialize Event Bus (self-contained, thread-safe)
-        let event_bus = Arc::new(InMemoryEventBus::new());
-        set_global_event_bus(event_bus.clone());
 
         // Register WebSocket Event Handler for real-time updates
         let websocket_handler = WebSocketEventHandler::new();
@@ -241,6 +229,17 @@ impl ServiceBuilder {
 
         register_handler(inventory_service.intervention_finalized_handler());
 
+        // Register Quote Event Handlers
+        let quote_accepted_handler = crate::domains::interventions::application::quote_event_handlers::QuoteAcceptedHandler::new(
+            intervention_workflow_service.clone(),
+        );
+        register_handler(Arc::new(quote_accepted_handler));
+
+        let quote_converted_handler = crate::domains::interventions::application::quote_event_handlers::QuoteConvertedHandler::new(
+            intervention_workflow_service.clone(),
+        );
+        register_handler(Arc::new(quote_converted_handler));
+
         // Note: Additional handlers can be registered here:
         // - SecurityMonitorHandler for security events
         // - NotificationServiceHandler for push notifications
@@ -254,23 +253,19 @@ impl ServiceBuilder {
             task_service,
             client_service,
             task_import_service,
-            dashboard_service,
             intervention_service,
             material_service,
             inventory_service,
             message_service,
             photo_service,
             quote_service,
-            analytics_service,
             auth_service,
             session_service,
             settings_service,
             user_service,
             cache_service,
-            report_job_service: OnceLock::new(),
             performance_monitor_service,
             command_performance_tracker,
-            prediction_service,
             sync_queue,
             background_sync,
             event_bus,

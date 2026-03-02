@@ -3,8 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Package, TrendingUp, DollarSign } from 'lucide-react';
 import { useInventoryStats } from '../hooks/useInventoryStats';
-import { LoadingState } from '@/components/layout/LoadingState';
-import { ErrorState } from '@/components/layout/ErrorState';
+import { LoadingState } from '@/shared/ui/layout/LoadingState';
+import { ErrorState } from '@/shared/ui/layout/ErrorState';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 
 export function InventoryDashboard() {

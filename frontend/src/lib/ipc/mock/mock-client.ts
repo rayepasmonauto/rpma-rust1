@@ -204,30 +204,6 @@ export const ipcClient = {
       invoke<Material[]>('material_get_expired_materials'),
     getInventoryMovementSummary: () => invoke('material_get_inventory_movement_summary')
   },
-  reports: {
-    getTaskCompletionReport: (dateRange: JsonObject, filters?: JsonObject) =>
-      invoke('get_task_completion_report', { date_range: dateRange, filters: filters || {} }),
-    getTechnicianPerformanceReport: (dateRange: JsonObject, filters?: JsonObject) =>
-      invoke('get_technician_performance_report', { date_range: dateRange, filters: filters || {} }),
-    getClientAnalyticsReport: (dateRange: JsonObject, filters?: JsonObject) =>
-      invoke('get_client_analytics_report', { date_range: dateRange, filters: filters || {} }),
-    getQualityComplianceReport: (dateRange: JsonObject, filters?: JsonObject) =>
-      invoke('get_quality_compliance_report', { date_range: dateRange, filters: filters || {} }),
-    getMaterialUsageReport: (dateRange: JsonObject, filters?: JsonObject) =>
-      invoke('get_material_usage_report', { date_range: dateRange, filters: filters || {} }),
-    getOverviewReport: (dateRange: JsonObject, filters?: JsonObject) =>
-      invoke('get_overview_report', { date_range: dateRange, filters: filters || {} }),
-    exportReport: (reportType: string, dateRange: JsonObject, filters: JsonObject, format: string) =>
-      invoke('export_report_data', { report_type: reportType, date_range: dateRange, filters, format }),
-    exportInterventionReport: (interventionId: string) =>
-      invoke('export_intervention_report', { intervention_id: interventionId }),
-    saveInterventionReport: (interventionId: string, filePath: string) =>
-      invoke('save_intervention_report', { intervention_id: interventionId, file_path: filePath }),
-    getReportStatus: (reportId: string) =>
-      invoke('get_report_status', { report_id: reportId }),
-    cancelReport: (reportId: string) =>
-      invoke('cancel_report', { report_id: reportId })
-  },
   calendar: {
     getEvents: (startDate: string, endDate: string, technicianId: string | undefined, sessionToken: string) =>
       invoke('get_events', { start_date: startDate, end_date: endDate, technician_id: technicianId, session_token: sessionToken }),

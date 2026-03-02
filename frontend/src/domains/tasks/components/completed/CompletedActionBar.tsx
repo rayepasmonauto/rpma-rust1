@@ -1,6 +1,6 @@
 import React from 'react';
 import { Download, Share2, Printer, ArrowLeft, Home, FileText } from 'lucide-react';
-import { Button } from '@/shared/ui/ui/button';
+import { Button } from '@/components/ui/button';
 
 type CompletedActionBarProps = {
   onSaveReport: () => Promise<void>;

@@ -2,18 +2,21 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, FileText } from 'lucide-react';
+import { Plus, Search, FileText, Filter } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { useQuotesList, QuoteStatusBadge } from '@/domains/quotes';
+import { useQuotesList, QuoteStatusBadge, computeQuoteStats } from '@/domains/quotes';
 import { formatCents } from '@/domains/quotes/utils/formatting';
 import { PageShell } from '@/shared/ui/layout/PageShell';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { QuoteStatus } from '@/shared/types';
+
+type ActiveTab = 'all' | 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'converted';
 
 export default function QuotesPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<QuoteStatus | ''>('');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('all');
 
   const { quotes, total, loading, error, updateFilters } = useQuotesList({
     autoFetch: true,
@@ -24,21 +27,30 @@ export default function QuotesPage() {
     updateFilters({ search: value || undefined });
   };
 
-  const handleStatusFilter = (status: string) => {
-    setStatusFilter(status as QuoteStatus | '');
+  const handleTabChange = (tab: ActiveTab) => {
+    setActiveTab(tab);
     updateFilters({
-      status: status ? (status as QuoteStatus) : undefined,
+      status: tab !== 'all' ? tab as QuoteStatus : undefined,
     });
   };
 
   const stats = useMemo(() => {
+    const baseStats = computeQuoteStats(quotes, total);
     return {
-      total,
+      ...baseStats,
       draft: quotes.filter(q => q.status === 'draft').length,
       sent: quotes.filter(q => q.status === 'sent').length,
       accepted: quotes.filter(q => q.status === 'accepted').length,
+      rejected: quotes.filter(q => q.status === 'rejected').length,
+      expired: quotes.filter(q => q.status === 'expired').length,
+      converted: quotes.filter(q => q.status === 'converted').length,
     };
   }, [quotes, total]);
+
+  const filteredQuotes = useMemo(() => {
+    if (activeTab === 'all') return quotes;
+    return quotes.filter(q => q.status === activeTab);
+  }, [quotes, activeTab]);
 
   useEffect(() => {
     if (error?.message) {
@@ -67,24 +79,33 @@ export default function QuotesPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="rounded-lg border bg-white p-4">
-            <p className="text-sm text-gray-500">Total</p>
-            <p className="text-2xl font-bold">{stats.total}</p>
-          </div>
-          <div className="rounded-lg border bg-white p-4">
-            <p className="text-sm text-gray-500">Brouillons</p>
-            <p className="text-2xl font-bold text-gray-600">{stats.draft}</p>
-          </div>
-          <div className="rounded-lg border bg-white p-4">
-            <p className="text-sm text-gray-500">Envoyés</p>
-            <p className="text-2xl font-bold text-blue-600">{stats.sent}</p>
-          </div>
-          <div className="rounded-lg border bg-white p-4">
-            <p className="text-sm text-gray-500">Acceptés</p>
-            <p className="text-2xl font-bold text-green-600">{stats.accepted}</p>
-          </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {[
+            { label: 'Total', value: stats.total, color: 'text-gray-900' },
+            { label: 'Brouillons', value: stats.draft, color: 'text-gray-600' },
+            { label: 'Envoyés', value: stats.sent, color: 'text-blue-600' },
+            { label: 'Acceptés', value: stats.accepted, color: 'text-green-600' },
+            { label: 'Convertis', value: stats.converted, color: 'text-purple-600' },
+          ].map(stat => (
+            <div key={stat.label} className="rounded-lg border bg-white p-4">
+              <p className="text-sm text-gray-500">{stat.label}</p>
+              <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+            </div>
+          ))}
         </div>
+
+        {/* Status Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => handleTabChange(v as ActiveTab)}>
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="all">Tous ({total})</TabsTrigger>
+            <TabsTrigger value="draft">Brouillons ({stats.draft})</TabsTrigger>
+            <TabsTrigger value="sent">Envoyés ({stats.sent})</TabsTrigger>
+            <TabsTrigger value="accepted">Acceptés ({stats.accepted})</TabsTrigger>
+            <TabsTrigger value="rejected">Refusés ({stats.rejected})</TabsTrigger>
+            <TabsTrigger value="expired">Expirés ({stats.expired})</TabsTrigger>
+            <TabsTrigger value="converted">Convertis ({stats.converted})</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
@@ -95,21 +116,17 @@ export default function QuotesPage() {
               placeholder="Rechercher un devis..."
               value={searchQuery}
               onChange={e => handleSearch(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && updateFilters({ search: searchQuery })}
               className="w-full rounded-md border border-gray-300 pl-10 pr-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
-          <select
-            value={statusFilter}
-            onChange={e => handleStatusFilter(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          <button
+            onClick={() => updateFilters({ search: searchQuery })}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 flex items-center gap-2"
           >
-            <option value="">Tous les statuts</option>
-            <option value="draft">Brouillon</option>
-            <option value="sent">Envoyé</option>
-            <option value="accepted">Accepté</option>
-            <option value="rejected">Refusé</option>
-            <option value="expired">Expiré</option>
-          </select>
+            <Filter className="h-4 w-4" />
+            Filtrer
+          </button>
         </div>
 
         {/* Error */}
@@ -127,12 +144,14 @@ export default function QuotesPage() {
         )}
 
         {/* Quote list */}
-        {!loading && !error && quotes.length === 0 && (
+        {!loading && !error && filteredQuotes.length === 0 && (
           <div className="text-center py-12">
             <FileText className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-4 text-lg font-medium text-gray-900">Aucun devis</h3>
             <p className="mt-2 text-sm text-gray-500">
-              Commencez par créer un nouveau devis.
+              {activeTab === 'all' 
+                ? 'Commencez par créer un nouveau devis.'
+                : `Aucun devis ${activeTab}`}
             </p>
             <Link
               href="/quotes/new"
@@ -144,7 +163,7 @@ export default function QuotesPage() {
           </div>
         )}
 
-        {!loading && !error && quotes.length > 0 && (
+        {!loading && !error && filteredQuotes.length > 0 && (
           <div className="overflow-hidden rounded-lg border bg-white">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -167,7 +186,7 @@ export default function QuotesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {quotes.map(quote => {
+                {filteredQuotes.map(quote => {
                   return (
                     <tr
                       key={quote.id}

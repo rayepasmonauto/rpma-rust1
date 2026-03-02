@@ -19,6 +19,7 @@ use rpma_ppf_intervention::domains::clients::domain::models::client::{
 use rpma_ppf_intervention::domains::documents::domain::models::photo::{
     Photo, PhotoCategory, PhotoType,
 };
+use rpma_ppf_intervention::domains::documents::domain::models::report_export::InterventionReportResult;
 use rpma_ppf_intervention::domains::interventions::domain::models::intervention::{
     BulkUpdateInterventionRequest, Intervention, InterventionFilter, InterventionProgress,
     InterventionStatus, InterventionType,
@@ -49,23 +50,7 @@ use rpma_ppf_intervention::domains::quotes::domain::models::quote::{
     QuoteItem, QuoteItemKind, QuoteListResponse, QuoteQuery, QuoteStatus, TaskCreatedInfo,
     UpdateQuoteItemRequest, UpdateQuoteRequest,
 };
-use rpma_ppf_intervention::domains::reports::domain::models::reports::{
-    AnalyticsDashboard, AnalyticsDashboardData, AnalyticsKpi, AnalyticsMetric, AnalyticsSummary,
-    AnalyticsTimeSeries, CalculationPeriod, ChartConfig, ChartDataPoint, ClientAnalyticsReport,
-    ClientPerformance, ClientSummary, ComplianceMetrics, CostTrend, DailyTaskData, DashboardType,
-    DashboardWidget, DateRange, EntityCounts, ExportFormat, ExportResult, GeographicReport,
-    GeographicStats, HeatMapPoint, InterventionBottleneck, InterventionReportResult, KpiCategory,
-    MaterialCostAnalysis, MaterialEfficiency, MaterialSummary, MaterialUsageReport,
-    MetricValueType, OperationalIntelligenceReport, OverviewReport, PeakPeriod,
-    PerformanceBenchmarks, PerformanceTrend, ProcessEfficiencyMetrics, QualityComplianceReport,
-    QualityIssue, QualitySummary, QualityTrend, ReportFilters, ReportMaterialConsumption,
-    ReportMetadata, ReportRequest, ReportResponse, ReportStatus, ReportType, ResourceUtilization,
-    RetentionAnalysis, RevenueAnalysis, SearchFilters, SearchResponse, SearchResult, SearchResults,
-    SeasonalPattern, SeasonalReport, ServiceArea, StatusCount, StepBottleneck, SupplierPerformance,
-    TaskCompletionReport, TaskCompletionSummary, TechnicianMetrics, TechnicianPerformance,
-    TechnicianPerformanceReport, TechnicianTaskData, TrendDirection, WeatherCorrelation,
-    WidgetPosition, WidgetSize, WidgetType, WorkflowRecommendation, WorkloadPeriod,
-};
+use rpma_ppf_intervention::domains::reports::domain::models::report_capabilities::ReportCapabilities;
 use rpma_ppf_intervention::domains::settings::domain::models::settings::{
     AppSettings, AppearanceSettings, BackupSettings, DataManagementSettings, DatabaseSettings,
     DiagnosticSettings, GeneralSettings, IntegrationSettings, NotificationSettings,
@@ -89,20 +74,20 @@ use rpma_ppf_intervention::shared::contracts::auth::{UserAccount, UserRole, User
 use rpma_ppf_intervention::shared::contracts::common::{
     FilmType, GpsLocation, LightingCondition, TimestampString, WeatherCondition, WorkLocation,
 };
+use rpma_ppf_intervention::shared::contracts::prediction::CompletionTimePrediction;
 
 use rpma_ppf_intervention::shared::repositories::{base::PaginatedResult, cache::CacheStats};
 
 // Import service request types from canonical domain paths
-use rpma_ppf_intervention::domains::interventions::infrastructure::intervention_types::{
+use rpma_ppf_intervention::domains::interventions::{
     AdvanceStepRequest, FinalizeInterventionRequest, GpsCoordinates, SaveStepProgressRequest,
     StartInterventionRequest,
 };
-use rpma_ppf_intervention::domains::interventions::infrastructure::intervention_types::{
+use rpma_ppf_intervention::domains::interventions::{
     AdvanceStepResponse, FinalizeInterventionResponse, InterventionMetrics,
     InterventionStepWithPhotos, InterventionWithDetails, SaveStepProgressResponse,
     StartInterventionResponse, StepRequirement,
 };
-use rpma_ppf_intervention::shared::contracts::prediction::CompletionTimePrediction;
 
 // Import command request types
 use rpma_ppf_intervention::commands::{
@@ -768,305 +753,20 @@ fn main() {
     type_definitions.push_str("// @domain:reports\n");
     // Reports types
     type_definitions.push_str("// Reports types\n");
-    type_definitions
-        .push_str(&DateRange::export_to_string().expect("Failed to export DateRange type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&ReportFilters::export_to_string().expect("Failed to export ReportFilters type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&ReportType::export_to_string().expect("Failed to export ReportType type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&ExportFormat::export_to_string().expect("Failed to export ExportFormat type"));
-    type_definitions.push_str("\n");
     type_definitions.push_str(
-        &ReportMetadata::export_to_string().expect("Failed to export ReportMetadata type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&SearchResult::export_to_string().expect("Failed to export SearchResult type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&SearchResults::export_to_string().expect("Failed to export SearchResults type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&SearchFilters::export_to_string().expect("Failed to export SearchFilters type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &SearchResponse::export_to_string().expect("Failed to export SearchResponse type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&EntityCounts::export_to_string().expect("Failed to export EntityCounts type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&KpiCategory::export_to_string().expect("Failed to export KpiCategory type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &TrendDirection::export_to_string().expect("Failed to export TrendDirection type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &CalculationPeriod::export_to_string().expect("Failed to export CalculationPeriod type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&AnalyticsKpi::export_to_string().expect("Failed to export AnalyticsKpi type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &MetricValueType::export_to_string().expect("Failed to export MetricValueType type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &AnalyticsMetric::export_to_string().expect("Failed to export AnalyticsMetric type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&DashboardType::export_to_string().expect("Failed to export DashboardType type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &AnalyticsDashboard::export_to_string().expect("Failed to export AnalyticsDashboard type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &ChartDataPoint::export_to_string().expect("Failed to export ChartDataPoint type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&ChartConfig::export_to_string().expect("Failed to export ChartConfig type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&WidgetType::export_to_string().expect("Failed to export WidgetType type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &DashboardWidget::export_to_string().expect("Failed to export DashboardWidget type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &WidgetPosition::export_to_string().expect("Failed to export WidgetPosition type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&WidgetSize::export_to_string().expect("Failed to export WidgetSize type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &AnalyticsDashboardData::export_to_string()
-            .expect("Failed to export AnalyticsDashboardData type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &AnalyticsTimeSeries::export_to_string()
-            .expect("Failed to export AnalyticsTimeSeries type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &AnalyticsSummary::export_to_string().expect("Failed to export AnalyticsSummary type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &OverviewReport::export_to_string().expect("Failed to export OverviewReport type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &GeographicReport::export_to_string().expect("Failed to export GeographicReport type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &SeasonalReport::export_to_string().expect("Failed to export SeasonalReport type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&HeatMapPoint::export_to_string().expect("Failed to export HeatMapPoint type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &GeographicStats::export_to_string().expect("Failed to export GeographicStats type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&ServiceArea::export_to_string().expect("Failed to export ServiceArea type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&PeakPeriod::export_to_string().expect("Failed to export PeakPeriod type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &SeasonalPattern::export_to_string().expect("Failed to export SeasonalPattern type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &WeatherCorrelation::export_to_string().expect("Failed to export WeatherCorrelation type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &TaskCompletionReport::export_to_string()
-            .expect("Failed to export TaskCompletionReport type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &TaskCompletionSummary::export_to_string()
-            .expect("Failed to export TaskCompletionSummary type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&DailyTaskData::export_to_string().expect("Failed to export DailyTaskData type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&StatusCount::export_to_string().expect("Failed to export StatusCount type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &TechnicianTaskData::export_to_string().expect("Failed to export TechnicianTaskData type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &TechnicianPerformanceReport::export_to_string()
-            .expect("Failed to export TechnicianPerformanceReport type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &TechnicianPerformance::export_to_string()
-            .expect("Failed to export TechnicianPerformance type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &TechnicianMetrics::export_to_string().expect("Failed to export TechnicianMetrics type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &PerformanceBenchmarks::export_to_string()
-            .expect("Failed to export PerformanceBenchmarks type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &PerformanceTrend::export_to_string().expect("Failed to export PerformanceTrend type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &ClientAnalyticsReport::export_to_string()
-            .expect("Failed to export ClientAnalyticsReport type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&ClientSummary::export_to_string().expect("Failed to export ClientSummary type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &RetentionAnalysis::export_to_string().expect("Failed to export RetentionAnalysis type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &RevenueAnalysis::export_to_string().expect("Failed to export RevenueAnalysis type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &ClientPerformance::export_to_string().expect("Failed to export ClientPerformance type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &QualityComplianceReport::export_to_string()
-            .expect("Failed to export QualityComplianceReport type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &QualitySummary::export_to_string().expect("Failed to export QualitySummary type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&QualityTrend::export_to_string().expect("Failed to export QualityTrend type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&QualityIssue::export_to_string().expect("Failed to export QualityIssue type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &ComplianceMetrics::export_to_string().expect("Failed to export ComplianceMetrics type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &MaterialUsageReport::export_to_string()
-            .expect("Failed to export MaterialUsageReport type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &MaterialSummary::export_to_string().expect("Failed to export MaterialSummary type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &ReportMaterialConsumption::export_to_string()
-            .expect("Failed to export ReportMaterialConsumption type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &MaterialCostAnalysis::export_to_string()
-            .expect("Failed to export MaterialCostAnalysis type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&CostTrend::export_to_string().expect("Failed to export CostTrend type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &SupplierPerformance::export_to_string()
-            .expect("Failed to export SupplierPerformance type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &MaterialEfficiency::export_to_string().expect("Failed to export MaterialEfficiency type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&ExportResult::export_to_string().expect("Failed to export ExportResult type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&ReportRequest::export_to_string().expect("Failed to export ReportRequest type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &ReportResponse::export_to_string().expect("Failed to export ReportResponse type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&ReportStatus::export_to_string().expect("Failed to export ReportStatus type"));
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &OperationalIntelligenceReport::export_to_string()
-            .expect("Failed to export OperationalIntelligenceReport type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &StepBottleneck::export_to_string().expect("Failed to export StepBottleneck type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &InterventionBottleneck::export_to_string()
-            .expect("Failed to export InterventionBottleneck type"),
+        &ReportCapabilities::export_to_string().expect("Failed to export ReportCapabilities type"),
     );
     type_definitions.push_str("\n");
     type_definitions.push_str(
         &InterventionReportResult::export_to_string()
             .expect("Failed to export InterventionReportResult type"),
     );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &ResourceUtilization::export_to_string()
-            .expect("Failed to export ResourceUtilization type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &ProcessEfficiencyMetrics::export_to_string()
-            .expect("Failed to export ProcessEfficiencyMetrics type"),
-    );
-    type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &WorkflowRecommendation::export_to_string()
-            .expect("Failed to export WorkflowRecommendation type"),
-    );
-    type_definitions.push_str("\n");
+    type_definitions.push_str("\n\n");
     type_definitions.push_str(
         &CompletionTimePrediction::export_to_string()
             .expect("Failed to export CompletionTimePrediction type"),
     );
     type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &WorkloadPeriod::export_to_string().expect("Failed to export WorkloadPeriod type"),
-    );
-    type_definitions.push_str("\n\n");
-
     // Domain: settings
     type_definitions.push_str("// @domain:settings\n");
     // Settings types
@@ -1293,84 +993,9 @@ fn main() {
         "TimestampString",
         "GpsCoordinates",
         // Reports types
-        "DateRange",
-        "ReportFilters",
-        "ReportType",
-        "ExportFormat",
-        "ReportMetadata",
-        "SearchResult",
-        "SearchResults",
-        "SearchFilters",
-        "SearchResponse",
-        "EntityCounts",
-        "KpiCategory",
-        "TrendDirection",
-        "CalculationPeriod",
-        "AnalyticsKpi",
-        "MetricValueType",
-        "AnalyticsMetric",
-        "DashboardType",
-        "AnalyticsDashboard",
-        "ChartDataPoint",
-        "ChartConfig",
-        "WidgetType",
-        "DashboardWidget",
-        "WidgetPosition",
-        "WidgetSize",
-        "AnalyticsDashboardData",
-        "AnalyticsTimeSeries",
-        "AnalyticsSummary",
-        "OverviewReport",
-        "GeographicReport",
-        "SeasonalReport",
-        "HeatMapPoint",
-        "GeographicStats",
-        "ServiceArea",
-        "PeakPeriod",
-        "SeasonalPattern",
-        "WeatherCorrelation",
-        "TaskCompletionReport",
-        "TaskCompletionSummary",
-        "DailyTaskData",
-        "StatusCount",
-        "TechnicianTaskData",
-        "TechnicianPerformanceReport",
-        "TechnicianPerformance",
-        "TechnicianMetrics",
-        "PerformanceBenchmarks",
-        "PerformanceTrend",
-        "ClientAnalyticsReport",
-        "ClientSummary",
-        "RetentionAnalysis",
-        "RevenueAnalysis",
-        "ClientPerformance",
-        "QualityComplianceReport",
-        "QualitySummary",
-        "QualityTrend",
-        "QualityIssue",
-        "ComplianceMetrics",
-        "MaterialUsageReport",
-        "MaterialSummary",
-        "MaterialConsumption",
-        "MaterialConsumptionTS",
-        "MaterialCostAnalysis",
-        "CostTrend",
-        "SupplierPerformance",
-        "MaterialEfficiency",
-        "MaterialTS",
-        "ExportResult",
-        "ReportRequest",
-        "ReportResponse",
-        "ReportStatus",
-        "OperationalIntelligenceReport",
-        "StepBottleneck",
-        "InterventionBottleneck",
+        "ReportCapabilities",
         "InterventionReportResult",
-        "ResourceUtilization",
-        "ProcessEfficiencyMetrics",
-        "WorkflowRecommendation",
         "CompletionTimePrediction",
-        "WorkloadPeriod",
         "InventoryTransactionTS",
     ];
 

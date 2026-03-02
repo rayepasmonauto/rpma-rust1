@@ -1,4 +1,12 @@
-//! Application layer for the Reports bounded context.
-//!
-//! Report-specific request types are defined inline in the IPC handlers;
-//! re-exports are provided through the infrastructure layer.
+pub struct ReportsApplicationService;
+
+impl ReportsApplicationService {
+    pub fn capabilities(
+    ) -> crate::domains::reports::domain::models::report_capabilities::ReportCapabilities {
+        crate::domains::reports::domain::models::report_capabilities::ReportCapabilities {
+            version: "v3-scaffold".to_string(),
+            status: "scaffold".to_string(),
+            available_exports: vec!["intervention_pdf".to_string()],
+        }
+    }
+}

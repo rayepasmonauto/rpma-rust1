@@ -17,6 +17,7 @@ const fs = require('fs');
 const path = require('path');
 
 const BACKEND_TS_PATH = path.join(__dirname, '..', 'frontend', 'src', 'lib', 'backend.ts');
+const BACKEND_TS_DIR = path.join(__dirname, '..', 'frontend', 'src', 'lib', 'backend');
 
 // Expected types that should be present
 const EXPECTED_TYPES = {
@@ -89,7 +90,7 @@ function validateTypes() {
   }
 
   // Read file content
-  const content = fs.readFileSync(BACKEND_TS_PATH, 'utf8');
+  const content = loadGeneratedTypeContent();
 
   let errors = [];
   let warnings = [];
@@ -170,7 +171,7 @@ function validateTypes() {
 function checkTypeDrift() {
   console.log('\n🔄 Checking for potential type drift indicators...\n');
 
-  const content = fs.readFileSync(BACKEND_TS_PATH, 'utf8');
+  const content = loadGeneratedTypeContent();
   let driftIndicators = [];
 
   // Check for inconsistent enum values
@@ -202,6 +203,29 @@ function checkTypeDrift() {
   }
 }
 
+
+function loadGeneratedTypeContent() {
+  const monolith = fs.readFileSync(BACKEND_TS_PATH, 'utf8');
+
+  // Legacy monolithic output
+  if (!monolith.includes("export * from './backend/index'")) {
+    return monolith;
+  }
+
+  // Domain-split output: aggregate generated domain files
+  if (!fs.existsSync(BACKEND_TS_DIR)) {
+    return monolith;
+  }
+
+  const files = fs
+    .readdirSync(BACKEND_TS_DIR)
+    .filter((file) => file.endsWith('.ts') && file !== 'index.ts')
+    .sort();
+
+  return files
+    .map((file) => fs.readFileSync(path.join(BACKEND_TS_DIR, file), 'utf8'))
+    .join('\n');
+}
 // Main execution
 try {
   validateTypes();

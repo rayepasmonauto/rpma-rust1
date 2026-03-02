@@ -12,17 +12,48 @@ use std::sync::Arc;
 use tracing::{debug, info, warn};
 use uuid::Uuid;
 
+/// Maximum allowed file size for attachments (50 MB)
+const MAX_ATTACHMENT_SIZE: i64 = 50 * 1024 * 1024;
+
+/// Allowed MIME types for image attachments
+const ALLOWED_IMAGE_MIME_TYPES: &[&str] = &[
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+];
+
+/// Allowed MIME types for document attachments
+const ALLOWED_DOCUMENT_MIME_TYPES: &[&str] = &[
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/plain",
+    "text/csv",
+];
+
 /// Service for quote-related business operations
-#[derive(Debug)]
 pub struct QuoteService {
     repo: Arc<QuoteRepository>,
     db: Arc<crate::db::Database>,
+    event_bus: Arc<crate::shared::services::event_system::InMemoryEventBus>,
 }
 
 impl QuoteService {
     /// Create a new QuoteService
-    pub fn new(repo: Arc<QuoteRepository>, db: Arc<crate::db::Database>) -> Self {
-        Self { repo, db }
+    pub fn new(
+        repo: Arc<QuoteRepository>,
+        db: Arc<crate::db::Database>,
+        event_bus: Arc<crate::shared::services::event_system::InMemoryEventBus>,
+    ) -> Self {
+        Self {
+            repo,
+            db,
+            event_bus,
+        }
     }
 
     /// Create a new quote
@@ -50,6 +81,9 @@ impl QuoteService {
             subtotal: 0,
             tax_total: 0,
             total: 0,
+            discount_type: None,
+            discount_value: None,
+            discount_amount: None,
             vehicle_plate: req.vehicle_plate.clone(),
             vehicle_make: req.vehicle_make.clone(),
             vehicle_model: req.vehicle_model.clone(),
@@ -150,7 +184,28 @@ impl QuoteService {
             return Err("Only draft quotes can be edited".to_string());
         }
 
+        // Validate discount values
+        if let Some(ref discount_type) = req.discount_type {
+            if !matches!(discount_type.as_str(), "percentage" | "fixed") {
+                return Err("Invalid discount type. Must be 'percentage' or 'fixed'.".to_string());
+            }
+        }
+
+        if let Some(discount_value) = req.discount_value {
+            if discount_value < 0 {
+                return Err("Discount value cannot be negative".to_string());
+            }
+            if let Some(ref discount_type) = req.discount_type {
+                if discount_type == "percentage" && discount_value > 100 {
+                    return Err("Percentage discount cannot exceed 100%".to_string());
+                }
+            }
+        }
+
         self.repo.update(id, &req).map_err(|e| e.to_string())?;
+
+        // Recalculate totals after updating discount
+        self.recalculate_totals(id)?;
 
         self.repo
             .find_by_id(id)
@@ -323,13 +378,24 @@ impl QuoteService {
                     self.repo
                         .link_task(id, &task_id)
                         .map_err(|e| e.to_string())?;
-                    task_created = Some(TaskCreatedInfo { task_id });
+                    task_created = Some(TaskCreatedInfo {
+                        task_id: task_id.clone(),
+                    });
                     info!(quote_id = %id, "Task created from accepted quote");
+
+                    // Emit QuoteAccepted and QuoteConverted events
+                    self.emit_quote_accepted(&quote, None)?;
+                    let task_number =
+                        format!("TASK-Q-{:05}", Utc::now().timestamp_millis() % 100000);
+                    self.emit_quote_converted(&quote, &task_id, &task_number)?;
                 }
                 Err(e) => {
                     warn!(quote_id = %id, error = %e, "Failed to create task from quote, continuing");
+                    self.emit_quote_accepted(&quote, Some(e.to_string()))?;
                 }
             }
+        } else {
+            self.emit_quote_accepted(&quote, None)?;
         }
 
         let updated_quote = self
@@ -367,10 +433,16 @@ impl QuoteService {
 
         info!(quote_id = %id, "Quote rejected");
 
-        self.repo
+        let updated_quote = self
+            .repo
             .find_by_id(id)
             .map_err(|e| e.to_string())?
-            .ok_or_else(|| "Quote not found after rejection".to_string())
+            .ok_or_else(|| "Quote not found after rejection".to_string())?;
+
+        // Emit QuoteRejected event
+        self.emit_quote_rejected(&updated_quote, None)?;
+
+        Ok(updated_quote)
     }
 
     /// Recalculate subtotal, tax_total, and total from items
@@ -391,14 +463,69 @@ impl QuoteService {
             }
         }
 
-        let total = subtotal + tax_total;
+        // Apply discount
+        let (subtotal_after_discount, discount_amount) =
+            self.calculate_discount(quote_id, subtotal)?;
+
+        // Recalculate tax on discounted subtotal
+        let mut discounted_tax_total: i64 = 0;
+        let quote = self
+            .repo
+            .find_by_id(quote_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "Quote not found".to_string())?;
+
+        for item in &items {
+            let line_total = (item.qty * item.unit_price as f64) as i64;
+            if let Some(tax_rate) = item.tax_rate {
+                discounted_tax_total += (line_total as f64 * tax_rate / 100.0) as i64;
+            }
+        }
+
+        // If discount is applied proportionally, adjust tax
+        if discount_amount > 0 {
+            discounted_tax_total =
+                (discounted_tax_total * subtotal_after_discount) / (subtotal.max(1));
+        }
+
+        let total = subtotal_after_discount + discounted_tax_total;
 
         self.repo
-            .update_totals(quote_id, subtotal, tax_total, total)
+            .update_totals_with_discount(
+                quote_id,
+                subtotal_after_discount,
+                discount_amount,
+                discounted_tax_total,
+                total,
+            )
             .map_err(|e| e.to_string())?;
 
-        debug!(quote_id = %quote_id, subtotal, tax_total, total, "Recalculated totals");
+        debug!(quote_id = %quote_id, subtotal = subtotal_after_discount, tax_total = discounted_tax_total, total, discount_amount, "Recalculated totals");
         Ok(())
+    }
+
+    /// Calculate discount amount based on quote settings
+    fn calculate_discount(&self, quote_id: &str, subtotal: i64) -> Result<(i64, i64), String> {
+        let quote = self
+            .repo
+            .find_by_id(quote_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "Quote not found".to_string())?;
+
+        let discount_amount = match (quote.discount_type.as_deref(), quote.discount_value) {
+            (Some("percentage"), Some(value)) => {
+                // Calculate percentage discount
+                (subtotal as f64 * (value as f64 / 100.0)) as i64
+            }
+            (Some("fixed"), Some(value)) => {
+                // Fixed amount discount (capped at subtotal)
+                value.min(subtotal)
+            }
+            _ => 0,
+        };
+
+        let subtotal_after_discount = subtotal - discount_amount;
+        Ok((subtotal_after_discount.max(0), discount_amount))
     }
 
     /// Create a task from a quote using direct SQL
@@ -438,6 +565,239 @@ impl QuoteService {
             .map_err(|e| format!("Failed to create task from quote: {}", e))?;
 
         Ok(task_id)
+    }
+
+    /// Emit QuoteAccepted event
+    fn emit_quote_accepted(
+        &self,
+        quote: &Quote,
+        error_message: Option<String>,
+    ) -> Result<(), String> {
+        use crate::shared::services::event_system::{DomainEvent, EventPublisher};
+        use chrono::Utc;
+
+        let event = DomainEvent::QuoteAccepted {
+            id: uuid::Uuid::new_v4().to_string(),
+            quote_id: quote.id.clone(),
+            quote_number: quote.quote_number.clone(),
+            client_id: quote.client_id.clone(),
+            accepted_by: quote
+                .created_by
+                .clone()
+                .unwrap_or_else(|| "system".to_string()),
+            task_id: quote.task_id.clone(),
+            timestamp: Utc::now(),
+            metadata: error_message.map(|e| serde_json::json!({ "error": e })),
+        };
+
+        self.event_bus
+            .publish(event)
+            .map_err(|e| format!("Failed to emit QuoteAccepted event: {}", e))
+    }
+
+    /// Emit QuoteRejected event
+    fn emit_quote_rejected(&self, quote: &Quote, reason: Option<String>) -> Result<(), String> {
+        use crate::shared::services::event_system::{DomainEvent, EventPublisher};
+        use chrono::Utc;
+
+        let event = DomainEvent::QuoteRejected {
+            id: uuid::Uuid::new_v4().to_string(),
+            quote_id: quote.id.clone(),
+            quote_number: quote.quote_number.clone(),
+            client_id: quote.client_id.clone(),
+            rejected_by: quote
+                .created_by
+                .clone()
+                .unwrap_or_else(|| "system".to_string()),
+            reason,
+            timestamp: Utc::now(),
+            metadata: None,
+        };
+
+        self.event_bus
+            .publish(event)
+            .map_err(|e| format!("Failed to emit QuoteRejected event: {}", e))
+    }
+
+    /// Emit QuoteConverted event
+    fn emit_quote_converted(
+        &self,
+        quote: &Quote,
+        task_id: &str,
+        task_number: &str,
+    ) -> Result<(), String> {
+        use crate::shared::services::event_system::{DomainEvent, EventPublisher};
+        use chrono::Utc;
+
+        let event = DomainEvent::QuoteConverted {
+            id: uuid::Uuid::new_v4().to_string(),
+            quote_id: quote.id.clone(),
+            quote_number: quote.quote_number.clone(),
+            client_id: quote.client_id.clone(),
+            task_id: task_id.to_string(),
+            task_number: task_number.to_string(),
+            converted_by: quote
+                .created_by
+                .clone()
+                .unwrap_or_else(|| "system".to_string()),
+            timestamp: Utc::now(),
+            metadata: None,
+        };
+
+        self.event_bus
+            .publish(event)
+            .map_err(|e| format!("Failed to emit QuoteConverted event: {}", e))
+    }
+
+    // --- Quote Attachments ---
+
+    /// Get all attachments for a quote
+    pub fn get_attachments(&self, quote_id: &str) -> Result<Vec<QuoteAttachment>, String> {
+        self.repo
+            .find_attachments_by_quote_id(quote_id)
+            .map_err(|e| e.to_string())
+    }
+
+    /// Create a new attachment for a quote
+    pub fn create_attachment(
+        &self,
+        quote_id: &str,
+        req: CreateQuoteAttachmentRequest,
+        user_id: &str,
+    ) -> Result<QuoteAttachment, String> {
+        req.validate()?;
+
+        let quote = self
+            .repo
+            .find_by_id(quote_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "Quote not found".to_string())?;
+
+        self.validate_attachment_file(&req)?;
+
+        let attachment_id = self
+            .repo
+            .create_attachment(quote_id, &req, Some(user_id))
+            .map_err(|e| e.to_string())?;
+
+        let attachment = self
+            .repo
+            .find_attachment_by_id(&attachment_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "Attachment not found after creation".to_string())?;
+
+        info!(
+            quote_id = %quote_id,
+            attachment_id = %attachment_id,
+            file_name = %req.file_name,
+            "Attachment created"
+        );
+
+        Ok(attachment)
+    }
+
+    /// Update an attachment
+    pub fn update_attachment(
+        &self,
+        quote_id: &str,
+        attachment_id: &str,
+        req: UpdateQuoteAttachmentRequest,
+    ) -> Result<QuoteAttachment, String> {
+        let quote = self
+            .repo
+            .find_by_id(quote_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "Quote not found".to_string())?;
+
+        self.repo
+            .update_attachment(attachment_id, quote_id, &req)
+            .map_err(|e| e.to_string())?;
+
+        let attachment = self
+            .repo
+            .find_attachment_by_id(attachment_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "Attachment not found after update".to_string())?;
+
+        info!(
+            quote_id = %quote_id,
+            attachment_id = %attachment_id,
+            "Attachment updated"
+        );
+
+        Ok(attachment)
+    }
+
+    /// Delete an attachment
+    pub fn delete_attachment(&self, quote_id: &str, attachment_id: &str) -> Result<bool, String> {
+        let quote = self
+            .repo
+            .find_by_id(quote_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "Quote not found".to_string())?;
+
+        let deleted = self
+            .repo
+            .delete_attachment(attachment_id, quote_id)
+            .map_err(|e| e.to_string())?;
+
+        if deleted {
+            info!(
+                quote_id = %quote_id,
+                attachment_id = %attachment_id,
+                "Attachment deleted"
+            );
+        }
+
+        Ok(deleted)
+    }
+
+    /// Validate attachment file constraints
+    fn validate_attachment_file(&self, req: &CreateQuoteAttachmentRequest) -> Result<(), String> {
+        // Check file size
+        if req.file_size <= 0 {
+            return Err("File size must be greater than 0".to_string());
+        }
+
+        if req.file_size > MAX_ATTACHMENT_SIZE {
+            return Err(format!(
+                "File size exceeds maximum allowed size of {} MB",
+                MAX_ATTACHMENT_SIZE / (1024 * 1024)
+            ));
+        }
+
+        // Determine attachment type from MIME type if not provided
+        let attachment_type = req
+            .attachment_type
+            .as_ref()
+            .unwrap_or(&AttachmentType::Other);
+
+        match attachment_type {
+            AttachmentType::Image => {
+                if !ALLOWED_IMAGE_MIME_TYPES.contains(&req.mime_type.as_str()) {
+                    return Err(format!(
+                        "Invalid image file type. Allowed types: {}",
+                        ALLOWED_IMAGE_MIME_TYPES.join(", ")
+                    ));
+                }
+            }
+            AttachmentType::Document => {
+                if !ALLOWED_DOCUMENT_MIME_TYPES.contains(&req.mime_type.as_str()) {
+                    return Err(format!(
+                        "Invalid document file type. Allowed types: {}",
+                        ALLOWED_DOCUMENT_MIME_TYPES.join(", ")
+                    ));
+                }
+            }
+            AttachmentType::Other => {
+                // For 'other' type, allow any MIME type but warn about size
+                if req.file_size > 10 * 1024 * 1024 {
+                    return Err("Files of type 'other' are limited to 10 MB".to_string());
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -688,5 +1048,243 @@ mod tests {
 
         assert_eq!(list.total, 3);
         assert_eq!(list.data.len(), 3);
+    }
+
+    #[test]
+    fn test_discount_calculation_percentage() {
+        let (service, _db) = setup_service();
+
+        let req = CreateQuoteRequest {
+            client_id: "test-client".to_string(),
+            task_id: None,
+            valid_until: None,
+            notes: None,
+            terms: None,
+            vehicle_plate: None,
+            vehicle_make: None,
+            vehicle_model: None,
+            vehicle_year: None,
+            vehicle_vin: None,
+            items: vec![CreateQuoteItemRequest {
+                kind: QuoteItemKind::Service,
+                label: "PPF Service".to_string(),
+                description: None,
+                qty: 1.0,
+                unit_price: 10000, // $100.00
+                tax_rate: Some(20.0),
+                material_id: None,
+                position: Some(0),
+            }],
+        };
+
+        let quote = service.create_quote(req, "test-user").unwrap();
+        // subtotal = 10000
+        assert_eq!(quote.subtotal, 10000);
+
+        // Apply 10% discount
+        let updated = service
+            .update_quote(
+                &quote.id,
+                UpdateQuoteRequest {
+                    valid_until: None,
+                    notes: None,
+                    terms: None,
+                    discount_type: Some("percentage".to_string()),
+                    discount_value: Some(10), // 10%
+                    vehicle_plate: None,
+                    vehicle_make: None,
+                    vehicle_model: None,
+                    vehicle_year: None,
+                    vehicle_vin: None,
+                },
+            )
+            .unwrap();
+
+        // subtotal after 10% discount = 9000
+        assert_eq!(updated.subtotal, 9000);
+        // discount_amount = 1000
+        assert_eq!(updated.discount_amount, Some(1000));
+        // tax = 20% on 9000 = 1800
+        assert_eq!(updated.tax_total, 1800);
+        // total = 9000 + 1800 = 10800
+        assert_eq!(updated.total, 10800);
+    }
+
+    #[test]
+    fn test_discount_calculation_fixed() {
+        let (service, _db) = setup_service();
+
+        let req = CreateQuoteRequest {
+            client_id: "test-client".to_string(),
+            task_id: None,
+            valid_until: None,
+            notes: None,
+            terms: None,
+            vehicle_plate: None,
+            vehicle_make: None,
+            vehicle_model: None,
+            vehicle_year: None,
+            vehicle_vin: None,
+            items: vec![CreateQuoteItemRequest {
+                kind: QuoteItemKind::Service,
+                label: "PPF Service".to_string(),
+                description: None,
+                qty: 1.0,
+                unit_price: 10000, // $100.00
+                tax_rate: Some(20.0),
+                material_id: None,
+                position: Some(0),
+            }],
+        };
+
+        let quote = service.create_quote(req, "test-user").unwrap();
+        // subtotal = 10000
+        assert_eq!(quote.subtotal, 10000);
+
+        // Apply $5 fixed discount
+        let updated = service
+            .update_quote(
+                &quote.id,
+                UpdateQuoteRequest {
+                    valid_until: None,
+                    notes: None,
+                    terms: None,
+                    discount_type: Some("fixed".to_string()),
+                    discount_value: Some(500), // $5.00
+                    vehicle_plate: None,
+                    vehicle_make: None,
+                    vehicle_model: None,
+                    vehicle_year: None,
+                    vehicle_vin: None,
+                },
+            )
+            .unwrap();
+
+        // subtotal after $5 discount = 9500
+        assert_eq!(updated.subtotal, 9500);
+        // discount_amount = 500
+        assert_eq!(updated.discount_amount, Some(500));
+        // tax = 20% on 9500 = 1900
+        assert_eq!(updated.tax_total, 1900);
+        // total = 9500 + 1900 = 11400
+        assert_eq!(updated.total, 11400);
+    }
+
+    #[test]
+    fn test_discount_validation_percentage_over_100() {
+        let (service, _db) = setup_service();
+
+        let req = CreateQuoteRequest {
+            client_id: "test-client".to_string(),
+            task_id: None,
+            valid_until: None,
+            notes: None,
+            terms: None,
+            vehicle_plate: None,
+            vehicle_make: None,
+            vehicle_model: None,
+            vehicle_year: None,
+            vehicle_vin: None,
+            items: vec![],
+        };
+
+        let quote = service.create_quote(req, "test-user").unwrap();
+
+        // Try to apply 150% discount - should fail
+        let result = service.update_quote(
+            &quote.id,
+            UpdateQuoteRequest {
+                valid_until: None,
+                notes: None,
+                terms: None,
+                discount_type: Some("percentage".to_string()),
+                discount_value: Some(150), // 150% - should fail
+                vehicle_plate: None,
+                vehicle_make: None,
+                vehicle_model: None,
+                vehicle_year: None,
+                vehicle_vin: None,
+            },
+        );
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("exceed 100%"));
+    }
+
+    #[test]
+    fn test_remove_discount() {
+        let (service, _db) = setup_service();
+
+        let req = CreateQuoteRequest {
+            client_id: "test-client".to_string(),
+            task_id: None,
+            valid_until: None,
+            notes: None,
+            terms: None,
+            vehicle_plate: None,
+            vehicle_make: None,
+            vehicle_model: None,
+            vehicle_year: None,
+            vehicle_vin: None,
+            items: vec![CreateQuoteItemRequest {
+                kind: QuoteItemKind::Service,
+                label: "PPF Service".to_string(),
+                description: None,
+                qty: 1.0,
+                unit_price: 10000,
+                tax_rate: Some(20.0),
+                material_id: None,
+                position: Some(0),
+            }],
+        };
+
+        let quote = service.create_quote(req, "test-user").unwrap();
+
+        // Apply 10% discount
+        let discounted = service
+            .update_quote(
+                &quote.id,
+                UpdateQuoteRequest {
+                    valid_until: None,
+                    notes: None,
+                    terms: None,
+                    discount_type: Some("percentage".to_string()),
+                    discount_value: Some(10),
+                    vehicle_plate: None,
+                    vehicle_make: None,
+                    vehicle_model: None,
+                    vehicle_year: None,
+                    vehicle_vin: None,
+                },
+            )
+            .unwrap();
+
+        assert_eq!(discounted.subtotal, 9000);
+        assert_eq!(discounted.discount_amount, Some(1000));
+
+        // Remove discount
+        let no_discount = service
+            .update_quote(
+                &quote.id,
+                UpdateQuoteRequest {
+                    valid_until: None,
+                    notes: None,
+                    terms: None,
+                    discount_type: None,
+                    discount_value: Some(0),
+                    vehicle_plate: None,
+                    vehicle_make: None,
+                    vehicle_model: None,
+                    vehicle_year: None,
+                    vehicle_vin: None,
+                },
+            )
+            .unwrap();
+
+        // Should return to original values
+        assert_eq!(no_discount.subtotal, 10000);
+        assert_eq!(no_discount.discount_amount, Some(0));
+        assert_eq!(no_discount.tax_total, 2000);
+        assert_eq!(no_discount.total, 12000);
     }
 }

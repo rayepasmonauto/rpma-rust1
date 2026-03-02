@@ -749,7 +749,7 @@ class DuplicationDetector {
             candidates.push({
                 id: 'extract-report-pipeline',
                 layer: 'backend',
-                targetModule: 'src-tauri/src/services/reports/pipeline.rs',
+                targetModule: 'src-tauri/src/domains/reports/application/mod.rs',
                 exports: ['ReportPipeline', 'ReportGenerator<T>', 'ReportFormatter'],
                 description: 'Shared report generation pipeline with validate → filter → query → aggregate stages',
                 reducesFiles: reportClusters.flatMap(c => c.files),
@@ -845,7 +845,7 @@ class DuplicationDetector {
             { layer: 'Backend Validation', module: 'src-tauri/src/services/validation/core.rs', naming: 'Validator<T>, ValidationEngine, CommonValidators', notes: 'Centralizes validation helpers' },
             { layer: 'Backend Repos', module: 'src-tauri/src/repositories/crud.rs', naming: 'CrudRepository<T>, FilterBuilder, CacheableRepository', notes: 'Shared CRUD signatures + error handling' },
             { layer: 'Backend Commands', module: 'src-tauri/src/commands/middleware.rs', naming: 'CommandMiddleware, with_auth, with_rbac', notes: 'Auth + RBAC + rate limiting stack' },
-            { layer: 'Backend Reports', module: 'src-tauri/src/services/reports/pipeline.rs', naming: 'ReportPipeline, ReportGenerator<T>, ReportFormatter', notes: 'Shared report pipeline stages' },
+            { layer: 'Backend Reports', module: 'src-tauri/src/domains/reports/application/mod.rs', naming: 'ReportPipeline, ReportGenerator<T>, ReportFormatter', notes: 'Shared report pipeline stages' },
         ];
 
         console.log('\n   Layer              │ Module                                    │ Key Exports');
@@ -905,7 +905,7 @@ class DuplicationDetector {
                 { layer: 'Backend Validation', module: 'src-tauri/src/services/validation/core.rs', naming: 'Validator<T>, ValidationEngine, CommonValidators', notes: 'Centralizes validation helpers' },
                 { layer: 'Backend Repos', module: 'src-tauri/src/repositories/crud.rs', naming: 'CrudRepository<T>, FilterBuilder, CacheableRepository', notes: 'Shared CRUD signatures + error handling' },
                 { layer: 'Backend Commands', module: 'src-tauri/src/commands/middleware.rs', naming: 'CommandMiddleware, with_auth, with_rbac', notes: 'Auth + RBAC + rate limiting stack' },
-                { layer: 'Backend Reports', module: 'src-tauri/src/services/reports/pipeline.rs', naming: 'ReportPipeline, ReportGenerator<T>, ReportFormatter', notes: 'Shared report pipeline stages' },
+                { layer: 'Backend Reports', module: 'src-tauri/src/domains/reports/application/mod.rs', naming: 'ReportPipeline, ReportGenerator<T>, ReportFormatter', notes: 'Shared report pipeline stages' },
             ],
         };
 
@@ -931,3 +931,4 @@ if (require.main === module) {
 }
 
 module.exports = DuplicationDetector;
+

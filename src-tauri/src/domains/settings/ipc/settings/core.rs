@@ -95,10 +95,7 @@ pub fn update_system_config(new_config: SystemConfiguration) -> Result<(), Strin
 }
 
 /// Common authentication helper for settings operations
-pub fn authenticate_user(
-    session_token: &str,
-    state: &AppState,
-) -> Result<UserSession, AppError> {
+pub fn authenticate_user(session_token: &str, state: &AppState) -> Result<UserSession, AppError> {
     state
         .auth_service
         .validate_session(session_token)

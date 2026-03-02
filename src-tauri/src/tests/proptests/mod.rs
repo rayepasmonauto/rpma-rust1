@@ -6,7 +6,6 @@
 use proptest::test_runner::Config;
 
 // Import all proptest modules
-mod analytics_service_proptests;
 mod audit_service_proptests;
 mod auth_service_proptests;
 mod client_validation_proptests;

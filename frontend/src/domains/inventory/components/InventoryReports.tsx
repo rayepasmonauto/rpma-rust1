@@ -5,13 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart3, AlertTriangle, Package } from 'lucide-react';
-import { LoadingState } from '@/components/layout/LoadingState';
-import { ErrorState } from '@/components/layout/ErrorState';
+import { LoadingState } from '@/shared/ui/layout/LoadingState';
+import { ErrorState } from '@/shared/ui/layout/ErrorState';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { useAuth } from '@/domains/auth';
-import { safeInvoke } from '@/lib/ipc/core';
-import { IPC_COMMANDS } from '@/lib/ipc/commands';
+import { inventoryIpc } from '../ipc/inventory.ipc';
 import type { Material, InventoryMovementSummary } from '@/shared/types';
 
 export function InventoryReports() {
@@ -35,8 +34,8 @@ export function InventoryReports() {
       setLoading(true);
       setError(null);
       const [lowStock, movements] = await Promise.all([
-        safeInvoke<Material[]>(IPC_COMMANDS.MATERIAL_GET_LOW_STOCK_MATERIALS, { sessionToken: user.token }),
-        safeInvoke<InventoryMovementSummary[]>(IPC_COMMANDS.MATERIAL_GET_INVENTORY_MOVEMENT_SUMMARY, { sessionToken: user.token }),
+        inventoryIpc.getLowStockMaterials(user.token),
+        inventoryIpc.getMovementSummaries(user.token),
       ]);
       setLowStockMaterials(lowStock);
       setMovementSummary(movements);

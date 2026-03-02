@@ -1,5 +1,5 @@
-mod facade;
-#[cfg(test)]
+﻿mod facade;
+
 pub(crate) use facade::ReportsFacade;
 pub(crate) mod application;
 #[cfg(feature = "export-types")]

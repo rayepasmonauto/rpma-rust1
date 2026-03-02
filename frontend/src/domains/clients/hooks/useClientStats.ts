@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/domains/auth';
-import { ipcClient } from '@/lib/ipc';
-import type { ClientStatistics } from '@/lib/backend';
+import { clientService, type ClientStats } from '../services';
+import type { ClientStatistics } from '@/lib/backend/clients';
 import { useLogger } from '@/shared/hooks/useLogger';
 import { LogDomain } from '@/lib/logging/types';
 import { normalizeError } from '@/types/utility.types';
@@ -13,7 +13,7 @@ export interface UseClientStatsOptions {
 
 export interface UseClientStatsReturn {
   // Data
-  stats: ClientStatistics | null;
+  stats: ClientStats | null;
 
   // Loading states
   loading: boolean;
@@ -34,7 +34,7 @@ export const useClientStats = (options: UseClientStatsOptions = {}): UseClientSt
 
   const { autoFetch = true, refreshInterval } = options;
 
-  const [stats, setStats] = useState<ClientStatistics | null>(null);
+  const [stats, setStats] = useState<ClientStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -47,8 +47,13 @@ export const useClientStats = (options: UseClientStatsOptions = {}): UseClientSt
 
       logInfo('Fetching client statistics');
 
-      const statsResult = await ipcClient.clients.stats(user.token);
-      setStats(statsResult);
+      const response = await clientService.getClientStats(user.token);
+
+      if (response.success && response.data) {
+        setStats(response.data);
+      } else {
+        throw new Error(typeof response.error === 'string' ? response.error : 'Failed to fetch client statistics');
+      }
 
       logInfo('Client statistics fetched successfully');
 

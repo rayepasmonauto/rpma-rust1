@@ -268,7 +268,11 @@ pub async fn upload_user_avatar(
 
     state
         .settings_service
-        .upload_avatar(&settings_user_id(&user), &request.avatar_data, &request.mime_type)
+        .upload_avatar(
+            &settings_user_id(&user),
+            &request.avatar_data,
+            &request.mime_type,
+        )
         .map(|data_url| {
             ApiResponse::success(data_url).with_correlation_id(Some(correlation_id.clone()))
         })
@@ -298,5 +302,3 @@ mod tests {
         assert_eq!(payload["consent"]["data"]["analytics_consent"], true);
     }
 }
-
-

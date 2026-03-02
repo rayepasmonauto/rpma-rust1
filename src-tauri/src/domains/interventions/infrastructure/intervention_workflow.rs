@@ -22,6 +22,8 @@ use crate::shared::contracts::common::TimestampString;
 use crate::shared::event_bus::{publish_event, InterventionFinalized};
 use crate::shared::logging::{LogDomain, RPMARequestLogger};
 use serde_json::json;
+use chrono::Utc;
+use tracing::info;
 
 use std::sync::Arc;
 
@@ -661,10 +663,17 @@ impl InterventionWorkflowService {
             step.id, step.intervention_id, step.step_number, step.step_status
         );
 
-        // Set step to in-progress if not already set
-        if step.step_status == StepStatus::Pending {
-            step.step_status = StepStatus::InProgress;
-            step.started_at = TimestampString::now();
+        // Preserve completed steps when users edit data after finalization.
+        // Pending steps still transition to in-progress on first draft save.
+        match step.step_status {
+            StepStatus::Pending => {
+                step.step_status = StepStatus::InProgress;
+                step.started_at = TimestampString::now();
+            }
+            StepStatus::Completed => {
+                step.step_status = StepStatus::Completed;
+            }
+            _ => {}
         }
 
         // Update step with collected data (similar to advance_step but without marking as completed)
@@ -888,6 +897,87 @@ impl InterventionWorkflowService {
         Ok(intervention)
     }
 
+    /// Start an intervention from a quote
+    pub fn start_intervention_from_quote(
+        &self,
+        task_id: &str,
+        quote_id: &str,
+    ) -> InterventionResult<Intervention> {
+        info!(
+            task_id = %task_id,
+            quote_id = %quote_id,
+            "Starting intervention from quote"
+        );
+
+        // Check if an active intervention already exists for this task
+        let existing_intervention = self.data.get_active_intervention_by_task(task_id)?;
+        if existing_intervention.is_some() {
+            info!(
+                task_id = %task_id,
+                "Active intervention already exists for task, skipping creation"
+            );
+            return Err(InterventionError::BusinessRule(
+                "An active intervention already exists for this task".to_string(),
+            ));
+        }
+
+        // Create a simple intervention from the quote
+        let intervention_id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().timestamp_millis();
+
+        // Use intervention data service to create the intervention
+        let result = self.db.with_transaction(|tx| {
+            let intervention = self
+                .data
+                .create_intervention_with_tx(
+                    tx,
+                    &crate::domains::interventions::infrastructure::intervention_types::StartInterventionRequest {
+                        task_id: task_id.to_string(),
+                        technician_id: "system".to_string(), // Auto-created from quote
+                        intervention_number: None,
+                        ppf_zones: vec![],
+                        custom_zones: None,
+                        film_type: "standard".to_string(),
+                        film_brand: None,
+                        film_model: None,
+                        weather_condition: "unknown".to_string(),
+                        lighting_condition: "unknown".to_string(),
+                        work_location: "workshop".to_string(),
+                        temperature: None,
+                        humidity: None,
+                        assistant_ids: None,
+                        scheduled_start: Utc::now().format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string(),
+                        estimated_duration: 60, // Default 60 minutes
+                        gps_coordinates: None,
+                        address: None,
+                        notes: Some(format!("Intervention created from quote {}", quote_id)),
+                        customer_requirements: None,
+                        special_instructions: None,
+                    },
+                    "system",
+                )
+                .map_err(|e| e.to_string())?;
+
+            info!(
+                intervention_id = %intervention.id,
+                "Intervention created from quote successfully"
+            );
+
+            Ok(intervention)
+        })
+        .map_err(|e| InterventionError::Database(e))?;
+
+        Ok(result)
+    }
+
+    /// Get an active intervention by task ID
+    pub fn get_active_intervention_by_task(
+        &self,
+        task_id: &str,
+    ) -> InterventionResult<Option<Intervention>> {
+        self.data.get_active_intervention_by_task(task_id)
+    }
+
     /// Get an intervention by ID
     pub fn get_intervention_by_id(
         &self,
@@ -1051,6 +1141,50 @@ mod tests {
             .get_step(&step_id)
             .expect("Failed to fetch saved step")
             .expect("Step should exist");
+        assert_eq!(persisted.collected_data, persisted.step_data);
+    }
+
+    #[test]
+    fn test_save_step_progress_keeps_completed_status() {
+        let test_db = TestDatabase::new().expect("Failed to create test database");
+        let service = InterventionWorkflowService::new(test_db.db());
+        let mut step = InterventionStep::new(
+            "intervention-1".to_string(),
+            1,
+            "Inspection".to_string(),
+            StepType::Inspection,
+        );
+        step.step_status = StepStatus::Completed;
+        step.completed_at = TimestampString::now();
+        let step_id = step.id.clone();
+
+        service
+            .data
+            .save_step(&step)
+            .expect("Failed to seed completed step");
+
+        let request = SaveStepProgressRequest {
+            step_id: step_id.clone(),
+            collected_data: serde_json::json!({
+                "checklist": { "clean_dry": true }
+            }),
+            notes: Some("edited after completion".to_string()),
+            photos: Some(vec!["/tmp/completed-edit.jpg".to_string()]),
+        };
+
+        let runtime = tokio::runtime::Runtime::new().expect("Failed to create runtime");
+        let updated = runtime
+            .block_on(service.save_step_progress(request, "test-correlation", Some("tech-1")))
+            .expect("Failed to save completed step progress");
+
+        assert_eq!(updated.step_status, StepStatus::Completed);
+
+        let persisted = service
+            .data
+            .get_step(&step_id)
+            .expect("Failed to fetch saved step")
+            .expect("Step should exist");
+        assert_eq!(persisted.step_status, StepStatus::Completed);
         assert_eq!(persisted.collected_data, persisted.step_data);
     }
 }

@@ -10,15 +10,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Truck, Plus } from 'lucide-react';
-import { LoadingState } from '@/components/layout/LoadingState';
-import { ErrorState } from '@/components/layout/ErrorState';
+import { LoadingState } from '@/shared/ui/layout/LoadingState';
+import { ErrorState } from '@/shared/ui/layout/ErrorState';
 import { EmptyState } from '@/components/ui/empty-state';
 import { toast } from 'sonner';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { useAuth } from '@/domains/auth';
 import type { Supplier } from '@/shared/types';
-import { safeInvoke } from '@/lib/ipc/core';
-import { IPC_COMMANDS } from '@/lib/ipc/commands';
+import { inventoryIpc } from '../ipc/inventory.ipc';
 
 export function SupplierManagement() {
   const { t } = useTranslation();
@@ -48,10 +47,7 @@ export function SupplierManagement() {
     try {
       setLoading(true);
       setError(null);
-      const result = await safeInvoke<Supplier[]>(IPC_COMMANDS.MATERIAL_LIST_SUPPLIERS, {
-        sessionToken: user.token,
-        activeOnly: true,
-      });
+      const result = await inventoryIpc.supplier.listSuppliers(user.token);
       setSuppliers(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -73,10 +69,7 @@ export function SupplierManagement() {
 
     try {
       setSaving(true);
-      await safeInvoke(IPC_COMMANDS.MATERIAL_CREATE_SUPPLIER, {
-        sessionToken: user.token,
-        request: formData,
-      });
+      await inventoryIpc.supplier.createSupplier(formData, user.token);
       toast.success(t('inventory.supplierCreated'));
       setShowForm(false);
       setFormData({ name: '', email: '', phone: '', website: '', lead_time_days: 0, is_preferred: false });

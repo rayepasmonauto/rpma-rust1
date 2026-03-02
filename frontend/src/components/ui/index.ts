@@ -13,7 +13,6 @@ export * from './command';
 export * from './dialog';
 export * from './dropdown-menu';
 export * from './empty-state';
-export * from './enhanced-empty-state';
 export * from './form';
 export * from './input';
 export * from './label';
@@ -50,7 +49,6 @@ export { default as ErrorFallback } from './ErrorFallback';
 export { Motion } from './Motion';
 export { SafeLink } from './SafeLink';
 
-export { SyncIndicator } from './SyncIndicator';
 export { DesktopTable, type Column } from './DesktopTable';
 export { DesktopForm } from '../forms/DesktopForm';
 export { EntitySyncIndicator } from '../../domains/sync/components';

@@ -5,9 +5,11 @@
 use crate::authenticate;
 use crate::commands::{ApiResponse, AppState};
 use crate::domains::documents::domain::models::photo::Photo;
+use crate::domains::documents::domain::models::report_export::InterventionReportResult;
 use crate::domains::documents::infrastructure::photo::{
     GetPhotosRequest, GetPhotosResponse, PhotoMetadataUpdate, StorePhotoRequest, StorePhotoResponse,
 };
+use crate::domains::documents::infrastructure::report_export as report_export_service;
 use crate::shared::contracts::auth::UserRole;
 use tracing::{error, info, instrument};
 
@@ -161,4 +163,70 @@ pub async fn document_update_photo_metadata(
             Err(crate::commands::AppError::Internal(e.to_string()))
         }
     }
+}
+
+/// Export an intervention report to a generated PDF in app-managed storage.
+#[tauri::command]
+#[instrument(skip(state, session_token))]
+pub async fn export_intervention_report(
+    state: AppState<'_>,
+    session_token: String,
+    intervention_id: String,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<InterventionReportResult>, crate::commands::AppError> {
+    let correlation_id = crate::commands::init_correlation_context(&correlation_id, None);
+    let current_user = authenticate!(&session_token, &state);
+    crate::commands::update_correlation_context_user(&current_user.user_id);
+
+    let intervention_data = report_export_service::get_intervention_with_details(
+        &intervention_id,
+        &state.db,
+        Some(&state.intervention_service),
+        Some(&state.client_service),
+    )
+    .await?;
+
+    report_export_service::check_intervention_export_permissions(
+        intervention_data.intervention.technician_id.clone(),
+        &current_user,
+    )?;
+
+    let result =
+        report_export_service::export_intervention_report(&intervention_data, &state.app_data_dir)
+            .await?;
+
+    Ok(ApiResponse::success(result).with_correlation_id(Some(correlation_id)))
+}
+
+/// Save an intervention report directly to a user-selected path.
+#[tauri::command]
+#[instrument(skip(state, session_token))]
+pub async fn save_intervention_report(
+    state: AppState<'_>,
+    session_token: String,
+    intervention_id: String,
+    file_path: String,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<String>, crate::commands::AppError> {
+    let correlation_id = crate::commands::init_correlation_context(&correlation_id, None);
+    let current_user = authenticate!(&session_token, &state);
+    crate::commands::update_correlation_context_user(&current_user.user_id);
+
+    let intervention_data = report_export_service::get_intervention_with_details(
+        &intervention_id,
+        &state.db,
+        Some(&state.intervention_service),
+        Some(&state.client_service),
+    )
+    .await?;
+
+    report_export_service::check_intervention_export_permissions(
+        intervention_data.intervention.technician_id.clone(),
+        &current_user,
+    )?;
+
+    let saved_path =
+        report_export_service::save_intervention_report(&intervention_data, &file_path).await?;
+
+    Ok(ApiResponse::success(saved_path).with_correlation_id(Some(correlation_id)))
 }

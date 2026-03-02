@@ -22,6 +22,10 @@ pub enum QuoteStatus {
     Rejected,
     #[serde(rename = "expired")]
     Expired,
+    #[serde(rename = "converted")]
+    Converted,
+    #[serde(rename = "changes_requested")]
+    ChangesRequested,
 }
 
 impl std::fmt::Display for QuoteStatus {
@@ -32,6 +36,8 @@ impl std::fmt::Display for QuoteStatus {
             Self::Accepted => "accepted",
             Self::Rejected => "rejected",
             Self::Expired => "expired",
+            Self::Converted => "converted",
+            Self::ChangesRequested => "changes_requested",
         };
         write!(f, "{}", s)
     }
@@ -46,6 +52,8 @@ impl std::str::FromStr for QuoteStatus {
             "accepted" => Ok(Self::Accepted),
             "rejected" => Ok(Self::Rejected),
             "expired" => Ok(Self::Expired),
+            "converted" => Ok(Self::Converted),
+            "changes_requested" => Ok(Self::ChangesRequested),
             _ => Err(format!("Invalid quote status: {}", s)),
         }
     }
@@ -106,6 +114,9 @@ pub struct Quote {
     pub subtotal: i64,
     pub tax_total: i64,
     pub total: i64,
+    pub discount_type: Option<String>,
+    pub discount_value: Option<i64>,
+    pub discount_amount: Option<i64>,
     pub vehicle_plate: Option<String>,
     pub vehicle_make: Option<String>,
     pub vehicle_model: Option<String>,
@@ -202,6 +213,8 @@ pub struct UpdateQuoteRequest {
     pub valid_until: Option<i64>,
     pub notes: Option<String>,
     pub terms: Option<String>,
+    pub discount_type: Option<String>,
+    pub discount_value: Option<i64>,
     pub vehicle_plate: Option<String>,
     pub vehicle_make: Option<String>,
     pub vehicle_model: Option<String>,
@@ -266,6 +279,94 @@ pub struct QuoteExportResponse {
     pub file_path: String,
 }
 
+/// Attachment type enumeration for quote attachments
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, TS)]
+pub enum AttachmentType {
+    #[serde(rename = "image")]
+    #[default]
+    Image,
+    #[serde(rename = "document")]
+    Document,
+    #[serde(rename = "other")]
+    Other,
+}
+
+impl std::fmt::Display for AttachmentType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            Self::Image => "image",
+            Self::Document => "document",
+            Self::Other => "other",
+        };
+        write!(f, "{}", s)
+    }
+}
+
+impl std::str::FromStr for AttachmentType {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "image" => Ok(Self::Image),
+            "document" => Ok(Self::Document),
+            "other" => Ok(Self::Other),
+            _ => Err(format!("Invalid attachment type: {}", s)),
+        }
+    }
+}
+
+/// Quote attachment entity
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+pub struct QuoteAttachment {
+    pub id: String,
+    pub quote_id: String,
+    pub file_name: String,
+    pub file_path: String,
+    pub file_size: i64,
+    pub mime_type: String,
+    pub attachment_type: AttachmentType,
+    pub description: Option<String>,
+    #[serde(serialize_with = "serialize_timestamp")]
+    #[ts(type = "string")]
+    pub created_at: i64,
+    pub created_by: Option<String>,
+}
+
+/// Create quote attachment request
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+pub struct CreateQuoteAttachmentRequest {
+    pub file_name: String,
+    pub file_path: String,
+    pub file_size: i64,
+    pub mime_type: String,
+    pub attachment_type: Option<AttachmentType>,
+    pub description: Option<String>,
+}
+
+impl CreateQuoteAttachmentRequest {
+    pub fn validate(&self) -> Result<(), String> {
+        if self.file_name.trim().is_empty() {
+            return Err("File name is required".to_string());
+        }
+        if self.file_path.trim().is_empty() {
+            return Err("File path is required".to_string());
+        }
+        if self.file_size <= 0 {
+            return Err("File size must be positive".to_string());
+        }
+        if self.mime_type.trim().is_empty() {
+            return Err("MIME type is required".to_string());
+        }
+        Ok(())
+    }
+}
+
+/// Update quote attachment request
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+pub struct UpdateQuoteAttachmentRequest {
+    pub description: Option<String>,
+    pub attachment_type: Option<AttachmentType>,
+}
+
 // --- FromSqlRow implementations ---
 
 fn get_i64_from_row(row: &Row, column: &str) -> rusqlite::Result<i64> {
@@ -315,6 +416,8 @@ impl FromSqlRow for Quote {
                 "accepted" => QuoteStatus::Accepted,
                 "rejected" => QuoteStatus::Rejected,
                 "expired" => QuoteStatus::Expired,
+                "converted" => QuoteStatus::Converted,
+                "changes_requested" => QuoteStatus::ChangesRequested,
                 _ => QuoteStatus::Draft,
             },
             valid_until: get_optional_i64_from_row(row, "valid_until")?,
@@ -323,6 +426,9 @@ impl FromSqlRow for Quote {
             subtotal: get_i64_from_row(row, "subtotal")?,
             tax_total: get_i64_from_row(row, "tax_total")?,
             total: get_i64_from_row(row, "total")?,
+            discount_type: row.get("discount_type")?,
+            discount_value: get_optional_i64_from_row(row, "discount_value")?,
+            discount_amount: get_optional_i64_from_row(row, "discount_amount")?,
             vehicle_plate: row.get("vehicle_plate")?,
             vehicle_make: row.get("vehicle_make")?,
             vehicle_model: row.get("vehicle_model")?,
@@ -356,6 +462,27 @@ impl FromSqlRow for QuoteItem {
             position: row.get("position")?,
             created_at: get_i64_from_row(row, "created_at")?,
             updated_at: get_i64_from_row(row, "updated_at")?,
+        })
+    }
+}
+
+impl FromSqlRow for QuoteAttachment {
+    fn from_row(row: &Row) -> rusqlite::Result<Self> {
+        Ok(QuoteAttachment {
+            id: row.get("id")?,
+            quote_id: row.get("quote_id")?,
+            file_name: row.get("file_name")?,
+            file_path: row.get("file_path")?,
+            file_size: get_i64_from_row(row, "file_size")?,
+            mime_type: row.get("mime_type")?,
+            attachment_type: match row.get::<_, String>("attachment_type")?.as_str() {
+                "image" => AttachmentType::Image,
+                "document" => AttachmentType::Document,
+                _ => AttachmentType::Other,
+            },
+            description: row.get("description")?,
+            created_at: get_i64_from_row(row, "created_at")?,
+            created_by: row.get("created_by")?,
         })
     }
 }

@@ -21,7 +21,7 @@ import {
 import { cn } from '@/lib/utils';
 import { TaskWithDetails } from '@/types/task.types';
 import { useAuth } from '@/domains/auth';
-import { reportOperations } from '@/domains/reports';
+import { documentReportOperations } from '@/domains/documents';
 import enhancedToast from '@/lib/enhanced-toast';
 
 interface ActionButtonsProps {
@@ -59,7 +59,7 @@ export function ActionButtons({
         enhancedToast.error('Authentification requise');
         return;
       }
-      await reportOperations.exportInterventionReport(task.id, user.token);
+      await documentReportOperations.exportInterventionReport(task.id);
       enhancedToast.success('Rapport téléchargé avec succès');
     } catch {
       enhancedToast.error('Erreur lors du téléchargement du rapport');

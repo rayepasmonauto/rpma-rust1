@@ -13,7 +13,7 @@ import {
   FileText,
   CheckCircle,
 } from 'lucide-react';
-import { Badge as UIBadge } from '@/shared/ui/ui/badge';
+import { Badge as UIBadge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 type CompletedSidebarProps = {

@@ -28,34 +28,8 @@ import type {
   CreateUserRequest,
   UpdateUserRequest,
   UserListResponse,
-  // Reports types
-  ReportType,
-  DateRange,
-  ReportFilters,
-  TaskCompletionReport,
-  TechnicianPerformanceReport,
-  ClientAnalyticsReport,
-  QualityComplianceReport,
-  MaterialUsageReport,
-  GeographicReport,
-  SeasonalReport,
-  OperationalIntelligenceReport,
-  ExportFormat,
-   ReportResponse,
-    ExportResult,
 } from '@/lib/backend';
 import type { SignupRequest, CreateClientRequest, UpdateClientRequest } from '@/lib/validation/ipc-schemas';
-
-// Temporary local definition until backend.ts includes this type
-interface InterventionReportResult {
-  success: boolean;
-  download_url?: string;
-  file_path?: string;
-  file_name?: string;
-  format: string;
-  file_size?: number;
-  generated_at: string;
-}
 
 // Typed response interfaces for IPC workflow responses (replacing inline `any` casts)
 interface InterventionWorkflowStartedResponse {
@@ -296,7 +270,7 @@ export const ipcClient = {
      * @returns Promise resolving to user session data if valid
      */
     validateSession: (token: string) =>
-      cachedInvoke(`auth:session:${token}`, 'auth_validate_session', { session_token: token }, validateUserSession, 30000),
+      cachedInvoke(`auth:session:${token}`, 'auth_validate_session', { sessionToken: token }, validateUserSession, 30000),
 
     /**
      * Enables 2FA for the current user
@@ -628,148 +602,6 @@ export const ipcClient = {
           update_existing: options.update_existing ?? false,
           session_token: sessionToken
         }
-      }),
-  },
-
-  // Reports operations
-  reports: {
-    /**
-     * Generates a task completion report
-     * @param dateRange - Date range for the report
-     * @param filters - Optional filters to apply
-     * @returns Promise resolving to task completion report data
-     */
-    getTaskCompletionReport: (dateRange: DateRange, filters?: ReportFilters) =>
-      safeInvoke<TaskCompletionReport>('get_task_completion_report', {
-        dateRange: dateRange,
-        filters: filters || {}
-      }),
-
-    /**
-     * Generates a technician performance report
-     * @param dateRange - Date range for the report
-     * @param filters - Optional filters to apply
-     * @returns Promise resolving to technician performance report data
-     */
-    getTechnicianPerformanceReport: (dateRange: DateRange, filters?: ReportFilters) =>
-      safeInvoke<TechnicianPerformanceReport>('get_technician_performance_report', {
-        dateRange: dateRange,
-        filters: filters || {}
-      }),
-
-    /**
-     * Generates a client analytics report
-     * @param dateRange - Date range for the report
-     * @param filters - Optional filters to apply
-     * @returns Promise resolving to client analytics report data
-     */
-    getClientAnalyticsReport: (dateRange: DateRange, filters?: ReportFilters) =>
-      safeInvoke<ClientAnalyticsReport>('get_client_analytics_report', {
-        dateRange: dateRange,
-        filters: filters || {}
-      }),
-
-    /**
-     * Generates a quality compliance report
-     * @param dateRange - Date range for the report
-     * @param filters - Optional filters to apply
-     * @returns Promise resolving to quality compliance report data
-     */
-    getQualityComplianceReport: (dateRange: DateRange, filters?: ReportFilters) =>
-      safeInvoke<QualityComplianceReport>('get_quality_compliance_report', {
-        dateRange: dateRange,
-        filters: filters || {}
-      }),
-
-    /**
-     * Generates a material usage report
-     * @param dateRange - Date range for the report
-     * @param filters - Optional filters to apply
-     * @returns Promise resolving to material usage report data
-     */
-    getMaterialUsageReport: (dateRange: DateRange, filters?: ReportFilters) =>
-      safeInvoke<MaterialUsageReport>('get_material_usage_report', {
-        dateRange: dateRange,
-        filters: filters || {}
-      }),
-
-    /**
-     * Generates an overview report (summary of all reports)
-     * @param dateRange - Date range for the report
-     * @param filters - Optional filters to apply
-     * @returns Promise resolving to overview report data
-     */
-    getOverviewReport: (dateRange: DateRange, filters?: ReportFilters) =>
-      safeInvoke<{
-        task_completion: TaskCompletionReport;
-        technician_performance: TechnicianPerformanceReport;
-        client_analytics: ClientAnalyticsReport;
-        quality_compliance: QualityComplianceReport;
-        material_usage: MaterialUsageReport;
-        geographic: GeographicReport;
-        seasonal: SeasonalReport;
-        operational_intelligence: OperationalIntelligenceReport;
-      }>('get_overview_report', {
-        dateRange: dateRange,
-        filters: filters || {}
-      }),
-
-    /**
-     * Exports a report to the specified format
-     * @param reportType - Type of report to export
-     * @param dateRange - Date range for the report
-     * @param filters - Optional filters to apply
-     * @param format - Export format (pdf, csv, excel)
-     * @returns Promise resolving to export result with download URL
-     */
-    exportReport: (reportType: ReportType, dateRange: DateRange, filters: ReportFilters, format: ExportFormat) =>
-      safeInvoke<ExportResult>('export_report_data', {
-        report_type: reportType,
-        format,
-        dateRange: dateRange,
-        filters: filters || {}
-      }),
-
-    /**
-     * Export individual intervention report
-     * @param interventionId - ID of the intervention to export
-     * @returns Promise resolving to intervention report result
-     */
-    exportInterventionReport: (interventionId: string) =>
-      safeInvoke<InterventionReportResult>('export_intervention_report', {
-        intervention_id: interventionId
-      }),
-
-    /**
-     * Save intervention report to specified path
-     * @param interventionId - ID of the intervention
-     * @param filePath - Path where to save the file
-     * @returns Promise resolving to saved file path
-     */
-    saveInterventionReport: (interventionId: string, filePath: string) =>
-      safeInvoke<string>('save_intervention_report', {
-        intervention_id: interventionId,
-        file_path: filePath
-      }),
-
-    /**
-     * Gets the status of a report generation request
-     * @param reportId - ID of the report generation request
-     * @returns Promise resolving to report response with status
-     */
-    getReportStatus: (reportId: string) =>
-      safeInvoke<ReportResponse>('get_report_status', {
-        report_id: reportId
-      }),
-
-    /**
-     * Cancels a report generation request
-     * @param reportId - ID of the report generation request to cancel
-     * @returns Promise resolving to success status
-     */
-    cancelReport: (reportId: string) =>
-      safeInvoke<boolean>('cancel_report', {
-        report_id: reportId
       }),
   },
 

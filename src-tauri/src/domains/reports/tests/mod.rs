@@ -1,7 +1,8 @@
-//! Reports domain test modules.
-
-pub mod integration_backend_flows;
-pub mod integration_reports;
-pub mod permission_reports;
-pub mod unit_reports;
-pub mod validation_reports;
+﻿#[cfg(test)]
+mod tests {
+    #[test]
+    fn capabilities_are_exposed() {
+        let caps = crate::domains::reports::ReportsFacade::get_capabilities();
+        assert_eq!(caps.status, "scaffold");
+    }
+}

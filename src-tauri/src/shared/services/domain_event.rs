@@ -6,8 +6,6 @@
 
 pub use crate::shared::services::event_system::DomainEvent;
 
-/// Re-export the event factory for convenient access
-pub use crate::shared::services::event_bus::event_factory;
 use chrono::{DateTime, Utc};
 
 impl DomainEvent {
@@ -39,10 +37,13 @@ impl DomainEvent {
             DomainEvent::SystemError { .. } => "SystemError",
             DomainEvent::SystemMaintenance { .. } => "SystemMaintenance",
             DomainEvent::PerformanceAlert { .. } => "PerformanceAlert",
+            DomainEvent::QuoteAccepted { .. } => "QuoteAccepted",
+            DomainEvent::QuoteRejected { .. } => "QuoteRejected",
+            DomainEvent::QuoteConverted { .. } => "QuoteConverted",
         }
     }
 
-    /// Get the timestamp of the event
+    /// Get the timestamp of an event
     pub fn timestamp(&self) -> DateTime<Utc> {
         match self {
             DomainEvent::TaskCreated { timestamp, .. } => *timestamp,
@@ -70,6 +71,9 @@ impl DomainEvent {
             DomainEvent::SystemError { timestamp, .. } => *timestamp,
             DomainEvent::SystemMaintenance { timestamp, .. } => *timestamp,
             DomainEvent::PerformanceAlert { timestamp, .. } => *timestamp,
+            DomainEvent::QuoteAccepted { timestamp, .. } => *timestamp,
+            DomainEvent::QuoteRejected { timestamp, .. } => *timestamp,
+            DomainEvent::QuoteConverted { timestamp, .. } => *timestamp,
         }
     }
 }

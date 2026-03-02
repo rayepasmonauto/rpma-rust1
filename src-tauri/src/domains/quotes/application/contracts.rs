@@ -80,3 +80,39 @@ pub struct QuoteStatusRequest {
     #[serde(default)]
     pub correlation_id: Option<String>,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct QuoteAttachmentsGetRequest {
+    pub session_token: String,
+    pub quote_id: String,
+    #[serde(default)]
+    pub correlation_id: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct QuoteAttachmentCreateRequest {
+    pub session_token: String,
+    pub quote_id: String,
+    pub data: CreateQuoteAttachmentRequest,
+    #[serde(default)]
+    pub correlation_id: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct QuoteAttachmentUpdateRequest {
+    pub session_token: String,
+    pub quote_id: String,
+    pub attachment_id: String,
+    pub data: UpdateQuoteAttachmentRequest,
+    #[serde(default)]
+    pub correlation_id: Option<String>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct QuoteAttachmentDeleteRequest {
+    pub session_token: String,
+    pub quote_id: String,
+    pub attachment_id: String,
+    #[serde(default)]
+    pub correlation_id: Option<String>,
+}

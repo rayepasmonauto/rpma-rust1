@@ -29,6 +29,8 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:codegen": "playwright codegen",
     "test:e2e:client-lifecycle": "playwright test client-lifecycle.spec.ts",
+    "arch:check": "node scripts/architecture-check.cjs",
+    "prod:gate": "npm run lint && npm run type-check && npm run arch:check && npm run test:ci",
     "analyze": "npm run build && npx @next/bundle-analyzer",
     "tauri": "tauri"
   },

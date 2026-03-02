@@ -1,6 +1,5 @@
 //! Unit tests module
 
-pub mod analytics_service_tests;
 pub mod audit_service_tests;
 pub mod auth_service_tests;
 pub mod client_service_tests;

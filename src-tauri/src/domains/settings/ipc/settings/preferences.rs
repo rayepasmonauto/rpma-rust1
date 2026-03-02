@@ -203,5 +203,3 @@ pub async fn update_user_performance(
         })
         .map_err(|e| handle_settings_error(e, "Update user performance"))
 }
-
-

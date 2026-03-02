@@ -118,26 +118,4 @@ export type {
   InventoryMovementSummary,
 } from './inventory.types';
 
-export type {
-  ReportType,
-  ReportFilters,
-  DateRange,
-  ExportFormat,
-  SearchFilters,
-  SearchResult,
-  EntityType,
-  TaskCompletionReport,
-  TechnicianPerformanceReport,
-  ClientAnalyticsReport,
-  QualityComplianceReport,
-  MaterialUsageReport,
-  GeographicReport,
-  SeasonalReport,
-  OperationalIntelligenceReport,
-  CreateUserRequest,
-  StepBottleneck,
-  InterventionBottleneck,
-  ResourceUtilization,
-  WorkflowRecommendation,
-  HeatMapPoint,
-} from '@/lib/backend';
+export type { CreateUserRequest } from '@/lib/backend';

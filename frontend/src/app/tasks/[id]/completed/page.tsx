@@ -21,11 +21,11 @@ import {
   SummaryStats,
 } from '@/domains/tasks';
 import { toast } from 'sonner';
-import { reportsService } from '@/domains/reports';
+import { documentReportOperations } from '@/domains/documents';
 import { getUserFullName } from '@/shared/utils';
 import { useInterventionData, useWorkflowStepData, PPF_STEP_CONFIG, getPPFStepPath } from '@/domains/interventions';
 import type { Intervention } from '@/shared/types';
-import type { StepType } from '@/lib/backend';
+import type { InterventionStep, StepType } from '@/lib/backend';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '@/shared/hooks';
 import {
@@ -34,9 +34,9 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/shared/ui/ui/card';
-import { Separator } from '@/shared/ui/ui/separator';
-import { Badge } from '@/shared/ui/ui/badge';
+} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import {
   CheckCircle,
   FileText,
@@ -46,6 +46,7 @@ import {
   MessageSquare,
   Signature,
 } from 'lucide-react';
+import { buildStepExportPayload, downloadJsonFile, getEffectiveStepData } from '@/domains/interventions/utils/step-export';
 
 export default function TaskCompletedPage() {
   const router = useRouter();
@@ -75,7 +76,14 @@ export default function TaskCompletedPage() {
     title: PPF_STEP_CONFIG[stepId as keyof typeof PPF_STEP_CONFIG]?.label || stepId,
     status: stepData?.step_status || 'pending',
     completed_at: stepData?.completed_at,
-    collected_data: stepData?.collected_data,
+    collected_data: stepData?.collected_data ?? null,
+    step_data: stepData?.step_data ?? null,
+    effective_data: stepData ? getEffectiveStepData(stepData) : {},
+    notes: stepData?.notes ?? null,
+    photo_urls: stepData?.photo_urls ?? null,
+    measurements: stepData?.measurements ?? null,
+    observations: stepData?.observations ?? null,
+    validation_data: stepData?.validation_data ?? null,
   }));
 
   useEffect(() => {
@@ -113,8 +121,8 @@ export default function TaskCompletedPage() {
     try {
       toast.info(t('reports.openingSaveDialog'));
 
-      console.log('Page: Calling reportsService.saveInterventionReport for intervention:', fullInterventionData.id);
-      const response = await reportsService.saveInterventionReport(fullInterventionData.id);
+      console.log('Page: Calling documentReportOperations.saveInterventionReport for intervention:', fullInterventionData.id);
+      const response = await documentReportOperations.saveInterventionReport(fullInterventionData.id);
 
       console.log('Page: saveInterventionReport response:', {
         success: response.success,
@@ -188,7 +196,7 @@ export default function TaskCompletedPage() {
       setExportProgress(t('reports.generatingPdf'));
 
       console.log('Starting export for intervention:', freshInterventionData.id);
-      const response = await reportsService.exportInterventionReport(
+      const response = await documentReportOperations.exportInterventionReport(
         freshInterventionData.id,
         { maxRetries: 2, retryDelay: 1500 }
       );
@@ -330,18 +338,6 @@ export default function TaskCompletedPage() {
     });
   };
 
-  const downloadJsonFile = (data: unknown, fileName: string) => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   const handleDownloadDataJson = () => {
     if (!fullInterventionData) {
       toast.error(t('errors.interventionDataUnavailable'));
@@ -371,7 +367,7 @@ export default function TaskCompletedPage() {
       return;
     }
 
-    const stepData = workflowStepsArray.find((step) => step.id === stepId);
+    const stepData = workflowSteps[stepId as keyof typeof workflowSteps];
     if (!stepData) {
       toast.error("Etape introuvable");
       return;
@@ -379,15 +375,8 @@ export default function TaskCompletedPage() {
 
     const nowDate = new Date().toISOString().split('T')[0];
     const fileName = `intervention-${fullInterventionData.id}-step-${stepId}-${nowDate}.json`;
-    downloadJsonFile(
-      {
-        exported_at: new Date().toISOString(),
-        task_id: taskId,
-        intervention_id: fullInterventionData.id,
-        step: stepData,
-      },
-      fileName
-    );
+    const payload = buildStepExportPayload(taskId, fullInterventionData.id, stepData as unknown as InterventionStep);
+    downloadJsonFile(payload, fileName);
   };
 
   if (loading) {

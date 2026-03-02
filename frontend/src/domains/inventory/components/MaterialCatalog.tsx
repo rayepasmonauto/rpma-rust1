@@ -22,8 +22,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
-import { LoadingState } from '@/components/layout/LoadingState';
-import { ErrorState } from '@/components/layout/ErrorState';
+import { LoadingState } from '@/shared/ui/layout/LoadingState';
+import { ErrorState } from '@/shared/ui/layout/ErrorState';
 import { Plus, Search, Edit, AlertTriangle, Package, Trash2, ArrowUpDown, X } from 'lucide-react';
 import { useMaterials } from '../hooks/useMaterials';
 import type { Material, MaterialType } from '../api/types';
@@ -33,8 +33,7 @@ import { MaterialForm } from './MaterialForm';
 import { toast } from 'sonner';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { useAuth } from '@/domains/auth';
-import { safeInvoke } from '@/lib/ipc/core';
-import { IPC_COMMANDS } from '@/lib/ipc/commands';
+import { inventoryIpc } from '../ipc/inventory.ipc';
 
 function getMaterialTypeLabel(materialType: string, t: (key: string) => string): string {
   switch (materialType) {
@@ -104,10 +103,7 @@ export function MaterialCatalog() {
 
     try {
       setArchiving(materialId);
-      await safeInvoke<void>(IPC_COMMANDS.MATERIAL_DELETE, {
-        sessionToken: user.token,
-        id: materialId,
-      });
+      await inventoryIpc.material.delete(materialId, user.token);
       toast.success(t('inventory.materialArchived'));
       await refetch();
     } catch (err) {

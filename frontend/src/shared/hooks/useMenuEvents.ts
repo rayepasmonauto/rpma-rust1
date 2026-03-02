@@ -29,7 +29,6 @@ export function useMenuEvents() {
             tasks: '/tasks',
             clients: '/clients',
             calendar: '/calendar',
-            reports: '/reports',
             settings: '/configuration',
           };
           const path = pathMap[view];

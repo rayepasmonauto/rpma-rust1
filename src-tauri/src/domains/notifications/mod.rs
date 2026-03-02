@@ -10,3 +10,6 @@ pub(crate) mod infrastructure;
 pub(crate) mod ipc;
 #[cfg(test)]
 pub(crate) mod tests;
+
+#[cfg(feature = "export-types")]
+pub use application::{SendNotificationRequest, UpdateNotificationConfigRequest};

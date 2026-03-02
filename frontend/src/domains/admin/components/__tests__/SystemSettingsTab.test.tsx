@@ -46,7 +46,7 @@ jest.mock('@/shared/hooks', () => ({
   }),
 }));
 
-jest.mock('@/shared/ui/ui/confirm-dialog', () => ({
+jest.mock('@/components/ui/confirm-dialog', () => ({
   ConfirmDialog: ({
     open,
     title,

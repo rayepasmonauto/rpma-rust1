@@ -3,7 +3,6 @@ export { useLogger, useFormLogger, useApiLogger } from './useLogger';
 export { useMenuEvents } from './useMenuEvents';
 export { useDebounce } from './useDebounce';
 export { useEntityCounts } from './useEntityCounts';
-export { useSearchRecords } from './useSearchRecords';
 export { useAdvancedFiltering, useTaskFiltering, useSOPFiltering } from './useAdvancedFiltering';
 export { useAccessibility, useKeyboardNavigation as useAccessibilityKeyboardNavigation, useFocusTrap, useScreenReaderAnnouncement, useHapticFeedback, useTouchFriendly } from './useAccessibility';
 export { useKeyboardNavigation, useFocusableList, useRovingTabIndex } from './useKeyboardNavigation';

@@ -1,8 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Button } from '@/shared/ui/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/ui/card';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, ArrowLeft, Home } from 'lucide-react';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 

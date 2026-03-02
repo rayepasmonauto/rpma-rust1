@@ -27,7 +27,7 @@ async function getSessionToken(): Promise<string> {
   return session.token;
 }
 
-class WorkflowServiceAdapter {
+export class WorkflowServiceAdapter {
   private static instance: WorkflowServiceAdapter;
 
   static getInstance(): WorkflowServiceAdapter {
@@ -190,3 +190,5 @@ class WorkflowServiceAdapter {
 export function getWorkflowServiceInstance(): WorkflowServiceAdapter {
   return WorkflowServiceAdapter.getInstance();
 }
+
+export const workflowServiceAdapter = WorkflowServiceAdapter.getInstance();

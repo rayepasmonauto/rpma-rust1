@@ -7,9 +7,10 @@ use tracing::{debug, error, info, instrument, Span};
 
 use crate::authenticate;
 use crate::domains::quotes::application::{
-    QuoteCreateRequest, QuoteDeleteRequest, QuoteGetRequest, QuoteItemAddRequest,
-    QuoteItemDeleteRequest, QuoteItemUpdateRequest, QuoteListRequest, QuoteStatusRequest,
-    QuoteUpdateRequest,
+    QuoteAttachmentCreateRequest, QuoteAttachmentDeleteRequest, QuoteAttachmentsGetRequest,
+    QuoteAttachmentUpdateRequest, QuoteCreateRequest, QuoteDeleteRequest, QuoteGetRequest,
+    QuoteItemAddRequest, QuoteItemDeleteRequest, QuoteItemUpdateRequest, QuoteListRequest,
+    QuoteStatusRequest, QuoteUpdateRequest,
 };
 
 // --- Helper: check RBAC for quotes ---
@@ -487,4 +488,139 @@ fn generate_quote_pdf(quote: &Quote, path: &std::path::Path) -> std::io::Result<
     file.write_all(pdf.as_bytes())?;
 
     Ok(())
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn quote_attachments_get(
+    request: QuoteAttachmentsGetRequest,
+    state: AppState<'_>,
+) -> Result<ApiResponse<Vec<QuoteAttachment>>, AppError> {
+    debug!(quote_id = %request.quote_id, "quote_attachments_get command received");
+    let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
+    let current_user = authenticate!(&request.session_token, &state);
+    crate::commands::update_correlation_context_user(&current_user.user_id);
+    check_quote_permission(&current_user.role, "read")?;
+
+    match state.quote_service.get_attachments(&request.quote_id) {
+        Ok(attachments) => {
+            Ok(ApiResponse::success(attachments)
+                .with_correlation_id(Some(correlation_id.clone())))
+        }
+        Err(e) => {
+            error!("Failed to get quote attachments: {}", e);
+            Ok(ApiResponse::error(AppError::Database("Failed to retrieve attachments".to_string()))
+                .with_correlation_id(Some(correlation_id.clone())))
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn quote_attachment_create(
+    request: QuoteAttachmentCreateRequest,
+    state: AppState<'_>,
+) -> Result<ApiResponse<QuoteAttachment>, AppError> {
+    debug!(quote_id = %request.quote_id, "quote_attachment_create command received");
+    let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
+    let current_user = authenticate!(&request.session_token, &state);
+    crate::commands::update_correlation_context_user(&current_user.user_id);
+    check_quote_permission(&current_user.role, "create")?;
+
+    match state
+        .quote_service
+        .create_attachment(&request.quote_id, request.data, &current_user.user_id)
+    {
+        Ok(attachment) => {
+            info!(
+                quote_id = %request.quote_id,
+                attachment_id = %attachment.id,
+                "Attachment created successfully"
+            );
+            Ok(ApiResponse::success(attachment)
+                .with_correlation_id(Some(correlation_id.clone())))
+        }
+        Err(e) => {
+            error!("Failed to create attachment: {}", e);
+            Ok(ApiResponse::error(AppError::Validation(e))
+                .with_correlation_id(Some(correlation_id.clone())))
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn quote_attachment_update(
+    request: QuoteAttachmentUpdateRequest,
+    state: AppState<'_>,
+) -> Result<ApiResponse<QuoteAttachment>, AppError> {
+    debug!(
+        quote_id = %request.quote_id,
+        attachment_id = %request.attachment_id,
+        "quote_attachment_update command received"
+    );
+    let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
+    let current_user = authenticate!(&request.session_token, &state);
+    crate::commands::update_correlation_context_user(&current_user.user_id);
+    check_quote_permission(&current_user.role, "update")?;
+
+    match state.quote_service.update_attachment(
+        &request.quote_id,
+        &request.attachment_id,
+        request.data,
+    ) {
+        Ok(attachment) => {
+            info!(
+                quote_id = %request.quote_id,
+                attachment_id = %request.attachment_id,
+                "Attachment updated successfully"
+            );
+            Ok(ApiResponse::success(attachment)
+                .with_correlation_id(Some(correlation_id.clone())))
+        }
+        Err(e) => {
+            error!("Failed to update attachment: {}", e);
+            Ok(ApiResponse::error(AppError::Validation(e))
+                .with_correlation_id(Some(correlation_id.clone())))
+        }
+    }
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn quote_attachment_delete(
+    request: QuoteAttachmentDeleteRequest,
+    state: AppState<'_>,
+) -> Result<ApiResponse<bool>, AppError> {
+    debug!(
+        quote_id = %request.quote_id,
+        attachment_id = %request.attachment_id,
+        "quote_attachment_delete command received"
+    );
+    let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
+    let current_user = authenticate!(&request.session_token, &state);
+    crate::commands::update_correlation_context_user(&current_user.user_id);
+    check_quote_permission(&current_user.role, "delete")?;
+
+    match state
+        .quote_service
+        .delete_attachment(&request.quote_id, &request.attachment_id)
+    {
+        Ok(deleted) => {
+            if deleted {
+                info!(
+                    quote_id = %request.quote_id,
+                    attachment_id = %request.attachment_id,
+                    "Attachment deleted successfully"
+                );
+            }
+            Ok(ApiResponse::success(deleted)
+                .with_correlation_id(Some(correlation_id.clone())))
+        }
+        Err(e) => {
+            error!("Failed to delete attachment: {}", e);
+            Ok(ApiResponse::error(AppError::Validation(e))
+                .with_correlation_id(Some(correlation_id.clone())))
+        }
+    }
 }
