@@ -22,8 +22,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
-import { LoadingState } from '@/components/layout/LoadingState';
-import { ErrorState } from '@/components/layout/ErrorState';
+import { LoadingState } from '@/shared/ui/layout/LoadingState';
+import { ErrorState } from '@/shared/ui/layout/ErrorState';
 import { Plus, Search, Edit, AlertTriangle, Package, Trash2, ArrowUpDown, X } from 'lucide-react';
 import { useMaterials } from '../hooks/useMaterials';
 import type { Material, MaterialType } from '../api/types';
