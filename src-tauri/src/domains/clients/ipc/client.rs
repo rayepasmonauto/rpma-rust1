@@ -1,11 +1,12 @@
 //! Client CRUD commands for Tauri IPC
 
 use crate::commands::{ApiResponse, AppError, AppState, ClientAction};
-use crate::domains::clients::application::ClientCrudRequest;
+use crate::domains::clients::application::{
+    required_permission, sanitize_client_action, ClientCrudRequest,
+};
 use crate::domains::clients::domain::models::client::ClientWithTasks;
 use crate::domains::clients::ClientsFacade;
 use crate::shared::services::cross_domain::Task;
-use crate::shared::services::validation::ValidationService;
 use tracing::{debug, error, info, instrument, warn};
 
 // Import authentication macros
@@ -35,65 +36,8 @@ pub async fn client_crud(
         session_token.len()
     );
 
-    // Determine required permission based on action
-    let required_permission = match &action {
-        ClientAction::Create { .. } => Some("create"),
-        ClientAction::Update { .. } => Some("update"),
-        ClientAction::Delete { .. } => Some("delete"),
-        ClientAction::Get { .. }
-        | ClientAction::GetWithTasks { .. }
-        | ClientAction::List { .. }
-        | ClientAction::ListWithTasks { .. }
-        | ClientAction::Search { .. }
-        | ClientAction::Stats => Some("read"),
-    };
-
-    // Validate action data before authentication
-    let validator = ValidationService::new();
-    let validated_action = match &action {
-        ClientAction::Create { data } => {
-            let validated_name = validator
-                .sanitize_text_input(&data.name, "name", 100)
-                .map_err(|e| AppError::Validation(format!("Name validation failed: {}", e)))?;
-            let validated_email = validator
-                .validate_client_email(data.email.as_deref())
-                .map_err(|e| AppError::Validation(format!("Email validation failed: {}", e)))?;
-            let validated_phone = validator
-                .validate_phone(data.phone.as_deref())
-                .map_err(|e| AppError::Validation(format!("Phone validation failed: {}", e)))?;
-            let validated_company_name = validator
-                .sanitize_optional_text(data.company_name.as_deref(), "company_name", 100)
-                .map_err(|e| {
-                    AppError::Validation(format!("Company name validation failed: {}", e))
-                })?;
-            let validated_contact_person = validator
-                .sanitize_optional_text(data.contact_person.as_deref(), "contact_person", 100)
-                .map_err(|e| {
-                    AppError::Validation(format!("Contact person validation failed: {}", e))
-                })?;
-            let validated_notes = validator
-                .sanitize_optional_text(data.notes.as_deref(), "notes", 1000)
-                .map_err(|e| AppError::Validation(format!("Notes validation failed: {}", e)))?;
-            // For tags, validate the JSON string
-            let validated_tags = if let Some(tags_str) = &data.tags {
-                // Parse JSON string to Vec<String>
-                let tags: Vec<String> = serde_json::from_str(tags_str)
-                    .map_err(|e| AppError::Validation(format!("Invalid tags JSON: {}", e)))?;
-                let mut validated = Vec::new();
-                for tag in tags {
-                    let sanitized =
-                        validator
-                            .sanitize_text_input(&tag, "tag", 50)
-                            .map_err(|e| {
-                                AppError::Validation(format!("Tag validation failed: {}", e))
-                            })?;
-                    validated.push(sanitized);
-                }
-                // Serialize back to JSON string
-                Some(serde_json::to_string(&validated).unwrap_or_default())
-            } else {
-                None
-            };
+    // Determine required permission via application layer
+    let permission = required_permission(&action);
 
             ClientAction::Create {
                 data: crate::domains::clients::domain::models::client::CreateClientRequest {
@@ -200,14 +144,14 @@ pub async fn client_crud(
     }
 
     // Check specific permission if provided
-    if let Some(permission) = required_permission {
+    if let Some(perm) = permission {
         if !crate::shared::auth_middleware::AuthMiddleware::can_perform_client_operation(
             &current_user.role,
-            permission,
+            perm,
         ) {
             return Err(crate::commands::AppError::Authorization(format!(
                 "Insufficient permissions to {} clients",
-                permission
+                perm
             )));
         }
     }
