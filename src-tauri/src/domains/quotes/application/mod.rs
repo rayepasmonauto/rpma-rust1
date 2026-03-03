@@ -8,6 +8,6 @@ pub use contracts::{
     QuoteAcknowledgeRequest, QuoteAttachmentCreateRequest, QuoteAttachmentDeleteRequest,
     QuoteAttachmentUpdateRequest, QuoteAttachmentsGetRequest, QuoteCreateRequest,
     QuoteDeleteRequest, QuoteGetRequest, QuoteItemAddRequest, QuoteItemDeleteRequest,
-    QuoteItemUpdateRequest, QuoteListRequest, QuotePublicViewRequest, QuoteRevokeRequest,
-    QuoteShareRequest, QuoteStatusRequest, QuoteUpdateRequest,
+    QuoteItemUpdateRequest, QuoteListRequest, QuoteRevokeRequest, QuoteShareRequest,
+    QuoteStatusRequest, QuoteUpdateRequest,
 };

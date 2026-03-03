@@ -37,12 +37,16 @@ import { IconActionButton } from './IconActionButton';
 import { MoreActionsSection } from './MoreActionsSection';
 import { StatusWarnings } from './StatusWarnings';
 import { PrioritySelector } from './PrioritySelector';
+import { TaskActionPanel } from './TaskActionPanel';
 
 interface ActionsCardProps {
   task: TaskWithDetails;
   isAssignedToCurrentUser: boolean;
   isAvailable: boolean;
   canStartTask: boolean;
+  onPrimaryAction?: () => void;
+  onSecondaryAction?: (actionId: string) => void;
+  isPending?: boolean;
   compact?: boolean;
   stickyOffsetClass?: string;
   mobileDocked?: boolean;
@@ -414,4 +418,12 @@ const ActionsCard: React.FC<ActionsCardProps> = ({
   );
 };
 
-export default memo(ActionsCard);
+const ActionsCardWrapper: React.FC<ActionsCardProps> = (props) => {
+  const isDelegated = Boolean(props.onPrimaryAction || props.onSecondaryAction || props.isPending !== undefined);
+  if (isDelegated) {
+    return <TaskActionPanel mode="delegated" {...props} />;
+  }
+  return <TaskActionPanel mode="managed" {...props} />;
+};
+
+export default memo(ActionsCardWrapper);

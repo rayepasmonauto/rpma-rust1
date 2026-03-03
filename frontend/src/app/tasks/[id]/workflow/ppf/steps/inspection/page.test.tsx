@@ -23,6 +23,9 @@ jest.mock('@/domains/interventions', () => ({
   VehicleDiagram: () => <div data-testid="diagram" />,
   getNextPPFStepId: () => null,
   getPPFStepPath: () => 'steps/inspection',
+}));
+
+jest.mock('@/domains/interventions/api/client', () => ({
   usePpfWorkflow: () => ({
     taskId: 'task-1',
     task: null,

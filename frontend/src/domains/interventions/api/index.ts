@@ -3,9 +3,7 @@ export { WorkflowProvider, useWorkflow } from './WorkflowProvider';
 export { useInterventionWorkflow } from './useInterventionWorkflow';
 export { useInterventionData, useWorkflowStepData } from './useInterventionData';
 export { useInterventionActions } from './useInterventionActions';
-export { useInterventionSync } from '../hooks/useInterventionSync';
-export { useInterventionState } from '../hooks/useInterventionState';
-export { usePpfWorkflow } from '../hooks/usePpfWorkflow';
+
 export { interventionDashboard } from './interventionDashboard';
 export {
   InterventionWorkflowService,
@@ -26,8 +24,6 @@ export {
 } from '../services/geolocation.service';
 export { QualityControlService } from '../services/quality-control.service';
 export { ppfService, type PPFStep } from '../services/ppf';
-
-export { DesktopGPS } from '../components/GPS/DesktopGPS';
 
 export { PPFWorkflowHeader } from '../components/workflow/ppf/PPFWorkflowHeader';
 export { PPFStepProgress } from '../components/workflow/ppf/PPFStepProgress';

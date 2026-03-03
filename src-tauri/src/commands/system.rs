@@ -1,7 +1,7 @@
 //! System information commands
 
-use crate::authenticate;
 use crate::commands::{AppState, UserRole};
+use crate::shared::auth_middleware::AuthMiddleware;
 use crate::shared::ipc::AppError;
 use serde::Serialize;
 use std::process::Command;
@@ -23,9 +23,14 @@ pub async fn get_device_info(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<DeviceInfo, String> {
-    let current_user = authenticate!(&session_token, &state, UserRole::Viewer);
-    let _correlation_id =
-        crate::commands::init_correlation_context(&correlation_id, Some(&current_user.user_id));
+    let _ctx = AuthMiddleware::authenticate_command(
+        &session_token,
+        &state,
+        Some(UserRole::Viewer),
+        &correlation_id,
+    )
+    .await
+    .map_err(String::from)?;
     use tokio::time::{timeout, Duration};
 
     // Add 3 second timeout
@@ -191,9 +196,14 @@ pub async fn diagnose_database(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<serde_json::Value, String> {
-    let current_user = authenticate!(&session_token, &state, UserRole::Admin);
-    let _correlation_id =
-        crate::commands::init_correlation_context(&correlation_id, Some(&current_user.user_id));
+    let _ctx = AuthMiddleware::authenticate_command(
+        &session_token,
+        &state,
+        Some(UserRole::Admin),
+        &correlation_id,
+    )
+    .await
+    .map_err(String::from)?;
     let pool = state.db.pool().clone();
 
     tokio::task::spawn_blocking(move || {
@@ -211,9 +221,14 @@ pub async fn force_wal_checkpoint(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<String, String> {
-    let current_user = authenticate!(&session_token, &state, UserRole::Admin);
-    let _correlation_id =
-        crate::commands::init_correlation_context(&correlation_id, Some(&current_user.user_id));
+    let _ctx = AuthMiddleware::authenticate_command(
+        &session_token,
+        &state,
+        Some(UserRole::Admin),
+        &correlation_id,
+    )
+    .await
+    .map_err(String::from)?;
     let pool = state.db.pool().clone();
 
     tokio::task::spawn_blocking(move || {
@@ -232,9 +247,14 @@ pub async fn health_check(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<String, String> {
-    let current_user = authenticate!(&session_token, &state, UserRole::Viewer);
-    let _correlation_id =
-        crate::commands::init_correlation_context(&correlation_id, Some(&current_user.user_id));
+    let _ctx = AuthMiddleware::authenticate_command(
+        &session_token,
+        &state,
+        Some(UserRole::Viewer),
+        &correlation_id,
+    )
+    .await
+    .map_err(String::from)?;
     let pool = state.db.pool().clone();
 
     tokio::task::spawn_blocking(move || {
@@ -252,9 +272,14 @@ pub async fn get_database_stats(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<serde_json::Value, String> {
-    let current_user = authenticate!(&session_token, &state, UserRole::Supervisor);
-    let _correlation_id =
-        crate::commands::init_correlation_context(&correlation_id, Some(&current_user.user_id));
+    let _ctx = AuthMiddleware::authenticate_command(
+        &session_token,
+        &state,
+        Some(UserRole::Supervisor),
+        &correlation_id,
+    )
+    .await
+    .map_err(String::from)?;
     let pool = state.db.pool().clone();
 
     tokio::task::spawn_blocking(move || {

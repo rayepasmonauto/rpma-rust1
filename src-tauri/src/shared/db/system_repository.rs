@@ -10,6 +10,29 @@ use serde_json::json;
 pub struct SystemRepository;
 
 impl SystemRepository {
+    /// Get lightweight counters for dashboard entities.
+    pub fn get_entity_counts(
+        pool: &r2d2::Pool<r2d2_sqlite::SqliteConnectionManager>,
+    ) -> Result<(i64, i64, i64), String> {
+        let conn = pool
+            .get()
+            .map_err(|e| format!("Failed to get connection: {}", e))?;
+
+        let tasks: i64 = conn
+            .query_row("SELECT COUNT(*) FROM tasks", [], |row| row.get(0))
+            .map_err(|e| format!("Failed to count tasks: {}", e))?;
+
+        let clients: i64 = conn
+            .query_row("SELECT COUNT(*) FROM clients", [], |row| row.get(0))
+            .map_err(|e| format!("Failed to count clients: {}", e))?;
+
+        let interventions: i64 = conn
+            .query_row("SELECT COUNT(*) FROM interventions", [], |row| row.get(0))
+            .map_err(|e| format!("Failed to count interventions: {}", e))?;
+
+        Ok((tasks, clients, interventions))
+    }
+
     /// Diagnose database health and return diagnostic information.
     pub fn diagnose_database(
         pool: &r2d2::Pool<r2d2_sqlite::SqliteConnectionManager>,

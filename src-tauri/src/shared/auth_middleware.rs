@@ -6,6 +6,8 @@
 
 use crate::shared::app_state::AppState;
 use crate::shared::contracts::auth::{UserRole, UserSession};
+use crate::shared::ipc::correlation::{init_correlation_context, update_correlation_context_user};
+use crate::shared::ipc::CommandContext;
 use crate::shared::ipc::{AppError, AppResult};
 use sha2::{Digest, Sha256};
 use tracing::{debug, instrument, warn};
@@ -14,6 +16,19 @@ use tracing::{debug, instrument, warn};
 pub struct AuthMiddleware;
 
 impl AuthMiddleware {
+    /// Authenticate a command request and initialize correlation/user context.
+    pub async fn authenticate_command(
+        session_token: &str,
+        state: &AppState<'_>,
+        required_role: Option<UserRole>,
+        correlation_id: &Option<String>,
+    ) -> AppResult<CommandContext> {
+        let session = Self::authenticate(session_token, state, required_role).await?;
+        let corr_id = init_correlation_context(correlation_id, Some(&session.user_id));
+        update_correlation_context_user(&session.user_id);
+        Ok(CommandContext::new(session, corr_id))
+    }
+
     /// Authenticate a session token and optionally verify role permissions
     ///
     /// # Arguments

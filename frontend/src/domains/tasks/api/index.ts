@@ -6,6 +6,7 @@ export { TaskProvider } from './TaskProvider';
 export { useTasks } from './useTasks';
 export { useTaskActions } from './useTaskActions';
 export { taskService, taskApiService, taskPhotoService } from '../server';
+export { taskIpc } from '../ipc';
 export { default as TasksPageContent } from '../components/TasksPageContent';
 
 export { KanbanBoard } from '../components/KanbanBoard';
@@ -20,7 +21,6 @@ export { ActionsCard, ActionButtons } from '../components/TaskActions';
 export { QuickAddDialog } from '../components/QuickAddDialog';
 export { FilterDrawer } from '../components/FilterDrawer';
 export { TaskHeaderBand, TaskStepperBand, StatusBadge } from '../components/TaskDetail';
-export { EnhancedActionsCard } from '../components/TaskActions';
 export {
   CompletedHero,
   WorkflowCompletionTimeline,

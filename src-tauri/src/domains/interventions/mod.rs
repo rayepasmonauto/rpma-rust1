@@ -1,5 +1,5 @@
 mod facade;
-pub(crate) use facade::InterventionsFacade;
+pub(crate) use facade::{InterventionsCommand, InterventionsFacade, InterventionsResponse};
 pub(crate) mod application;
 #[cfg(feature = "export-types")]
 pub mod domain;
@@ -13,7 +13,7 @@ pub(crate) mod tests;
 #[cfg(feature = "export-types")]
 pub use infrastructure::intervention_types::{
     AdvanceStepRequest, AdvanceStepResponse, FinalizeInterventionRequest,
-    FinalizeInterventionResponse, GpsCoordinates, InterventionMetrics,
-    InterventionStepWithPhotos, InterventionWithDetails, SaveStepProgressRequest,
-    SaveStepProgressResponse, StartInterventionRequest, StartInterventionResponse, StepRequirement,
+    FinalizeInterventionResponse, GpsCoordinates, InterventionMetrics, InterventionStepWithPhotos,
+    InterventionWithDetails, SaveStepProgressRequest, SaveStepProgressResponse,
+    StartInterventionRequest, StartInterventionResponse, StepRequirement,
 };

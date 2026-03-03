@@ -1,4 +1,4 @@
-﻿// Prevents additional console window on Windows in release builds
+// Prevents additional console window on Windows in release builds
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod commands;
@@ -183,6 +183,7 @@ fn main() {
             domains::auth::ipc::auth::auth_logout,
             domains::auth::ipc::auth::auth_validate_session,
             commands::ui::dashboard_get_stats,
+            commands::ui::get_entity_counts,
             domains::settings::ipc::settings::core::get_app_settings,
             domains::settings::ipc::settings::update_general_settings,
             domains::settings::ipc::settings::update_security_settings,
@@ -297,7 +298,12 @@ fn main() {
             domains::quotes::ipc::quote::quote_attachments_get,
             domains::quotes::ipc::quote::quote_attachment_create,
             domains::quotes::ipc::quote::quote_attachment_update,
-            domains::quotes::ipc::quote::quote_attachment_delete
+            domains::quotes::ipc::quote::quote_attachment_delete,
+            domains::quotes::ipc::quote::quote_generate_share_link,
+            domains::quotes::ipc::quote::quote_revoke_share_link,
+            domains::quotes::ipc::quote::quote_get_by_public_token,
+            domains::quotes::ipc::quote::quote_customer_response,
+            domains::quotes::ipc::quote::quote_acknowledge_response
         ])
         .setup(|app| {
             info!("Initializing application setup");
@@ -428,4 +434,3 @@ fn main() {
         .map_err(|e| error!("Failed to run Tauri application: {}", e))
         .unwrap_or_else(|_| std::process::exit(1));
 }
-

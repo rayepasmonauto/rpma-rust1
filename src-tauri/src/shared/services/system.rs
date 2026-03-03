@@ -8,6 +8,13 @@ use crate::shared::db::system_repository::SystemRepository;
 pub struct SystemService;
 
 impl SystemService {
+    /// Get lightweight counters for dashboard cards.
+    pub fn get_entity_counts(
+        pool: &r2d2::Pool<r2d2_sqlite::SqliteConnectionManager>,
+    ) -> Result<(i64, i64, i64), String> {
+        SystemRepository::get_entity_counts(pool)
+    }
+
     /// Diagnose database health and return diagnostic information
     pub fn diagnose_database(
         pool: &r2d2::Pool<r2d2_sqlite::SqliteConnectionManager>,

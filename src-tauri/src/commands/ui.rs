@@ -2,7 +2,9 @@
 //!
 //! This module contains commands for window management and system integration.
 
-use crate::authenticate;
+use crate::shared::ipc::AuthGuard;
+use crate::shared::policies::phone_policy::normalize_dialable_phone_number;
+use crate::shared::policies::url_policy::validate_https_url;
 use tauri::{command, Window};
 
 /// Minimize the application window
@@ -23,58 +25,18 @@ pub async fn ui_window_close(window: Window) -> Result<(), String> {
     window.close().map_err(|e| e.to_string())
 }
 
-/// Validate a URL for safe external opening.
-/// Returns `Ok(())` if the URL is safe, or `Err` with a descriptive message otherwise.
-fn validate_open_url(url: &str) -> Result<(), String> {
-    if url.is_empty() {
-        return Err("URL cannot be empty".to_string());
-    }
-    // Only allow HTTPS URLs to prevent protocol smuggling and open redirects
-    if !url.starts_with("https://") {
-        return Err("Invalid URL format - only HTTPS URLs are allowed".to_string());
-    }
-    // Reject URLs with embedded credentials (e.g. https://user:pass@host).
-    // Only check the authority component (between "https://" and the first "/" or end).
-    let authority = url
-        .strip_prefix("https://")
-        .and_then(|s| s.split('/').next())
-        .unwrap_or("");
-    if authority.contains('@') {
-        return Err("URLs with embedded credentials are not allowed".to_string());
-    }
-    Ok(())
-}
-
 /// Open URL in system default browser
 #[command]
 pub async fn ui_shell_open_url(url: String) -> Result<(), String> {
-    validate_open_url(&url)?;
+    validate_https_url(&url)?;
     open::that(&url).map_err(|e| format!("Failed to open URL: {}", e))
 }
 
 /// Initiate a phone call to a customer
 #[command]
 pub async fn ui_initiate_customer_call(phone_number: String) -> Result<(), String> {
-    // Validate phone number
-    if phone_number.is_empty() {
-        return Err("Phone number cannot be empty".to_string());
-    }
-
-    // Basic phone number validation - should contain at least some digits
-    if !phone_number.chars().any(|c| c.is_numeric()) {
-        return Err("Phone number must contain at least one digit".to_string());
-    }
-
-    // Clean the phone number - remove spaces, dashes, etc. for tel: URL
-    let clean_number: String = phone_number
-        .chars()
-        .filter(|c| c.is_numeric() || *c == '+' || *c == '(' || *c == ')' || *c == '-')
-        .collect();
-
-    // Create tel: URL
+    let clean_number = normalize_dialable_phone_number(&phone_number)?;
     let tel_url = format!("tel:{}", clean_number);
-
-    // Open with system's default phone application
     open::that(&tel_url).map_err(|e| format!("Failed to initiate call: {}", e))
 }
 
@@ -123,9 +85,13 @@ pub async fn dashboard_get_stats(
     _time_range: Option<String>,
     correlation_id: Option<String>,
 ) -> Result<super::ApiResponse<serde_json::Value>, super::AppError> {
-    let current_user = authenticate!(&session_token, &state, super::UserRole::Viewer);
-    let correlation_id =
-        crate::commands::init_correlation_context(&correlation_id, Some(&current_user.user_id));
+    let ctx = AuthGuard::require_role(
+        &session_token,
+        &state,
+        super::UserRole::Viewer,
+        &correlation_id,
+    )
+    .await?;
 
     let payload = serde_json::json!({
         "tasks": { "total": 0, "completed": 0, "pending": 0, "active": 0 },
@@ -134,7 +100,39 @@ pub async fn dashboard_get_stats(
         "sync": { "status": "idle", "pending_operations": 0, "completed_operations": 0 }
     });
 
-    Ok(super::ApiResponse::success(payload).with_correlation_id(Some(correlation_id)))
+    Ok(super::ApiResponse::success(payload).with_correlation_id(Some(ctx.correlation_id)))
+}
+
+/// Get lightweight entity counters for dashboard cards.
+#[command]
+pub async fn get_entity_counts(
+    session_token: String,
+    state: super::AppState<'_>,
+    correlation_id: Option<String>,
+) -> Result<super::ApiResponse<serde_json::Value>, super::AppError> {
+    let ctx = AuthGuard::require_role(
+        &session_token,
+        &state,
+        super::UserRole::Viewer,
+        &correlation_id,
+    )
+    .await?;
+
+    let pool = state.db.pool().clone();
+    let counts = tokio::task::spawn_blocking(move || {
+        crate::shared::services::system::SystemService::get_entity_counts(&pool)
+    })
+    .await
+    .map_err(|e| super::AppError::Internal(format!("Task join error: {}", e)))?
+    .map_err(super::AppError::Database)?;
+
+    let payload = serde_json::json!({
+        "tasks": counts.0,
+        "clients": counts.1,
+        "interventions": counts.2
+    });
+
+    Ok(super::ApiResponse::success(payload).with_correlation_id(Some(ctx.correlation_id)))
 }
 
 /// Get recent activities for admin dashboard
@@ -146,14 +144,18 @@ pub async fn get_recent_activities(
 ) -> Result<Vec<serde_json::Value>, String> {
     use tracing::debug;
 
-    let _correlation_id = crate::commands::init_correlation_context(&correlation_id, None);
-
-    let current_user = authenticate!(&session_token, &state, super::UserRole::Admin);
-    crate::commands::update_correlation_context_user(&current_user.user_id);
+    let ctx = AuthGuard::require_role(
+        &session_token,
+        &state,
+        super::UserRole::Admin,
+        &correlation_id,
+    )
+    .await
+    .map_err(|e| e.to_string())?;
 
     debug!(
         "Retrieving recent activities for admin: {}",
-        current_user.username
+        ctx.session.username
     );
 
     let activities: Vec<serde_json::Value> = Vec::new();
@@ -202,18 +204,18 @@ fn get_sync_status_simple(
 
 #[cfg(test)]
 mod tests {
-    use super::validate_open_url;
+    use crate::shared::policies::url_policy::validate_https_url;
 
     #[test]
     fn test_shell_open_url_rejects_empty() {
-        let result = validate_open_url("");
+        let result = validate_https_url("");
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "URL cannot be empty");
     }
 
     #[test]
     fn test_shell_open_url_rejects_http() {
-        let result = validate_open_url("http://example.com");
+        let result = validate_https_url("http://example.com");
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
@@ -223,7 +225,7 @@ mod tests {
 
     #[test]
     fn test_shell_open_url_rejects_credentials_in_authority() {
-        let result = validate_open_url("https://user:pass@example.com");
+        let result = validate_https_url("https://user:pass@example.com");
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
@@ -233,20 +235,20 @@ mod tests {
 
     #[test]
     fn test_shell_open_url_accepts_https() {
-        let result = validate_open_url("https://example.com/path?query=1");
+        let result = validate_https_url("https://example.com/path?query=1");
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_shell_open_url_accepts_email_in_query_param() {
         // Email addresses in query parameters must not be rejected
-        let result = validate_open_url("https://example.com/contact?email=user@domain.com");
+        let result = validate_https_url("https://example.com/contact?email=user@domain.com");
         assert!(result.is_ok());
     }
 
     #[test]
     fn test_shell_open_url_rejects_javascript_protocol() {
-        let result = validate_open_url("javascript:alert(1)");
+        let result = validate_https_url("javascript:alert(1)");
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
@@ -256,7 +258,7 @@ mod tests {
 
     #[test]
     fn test_shell_open_url_rejects_file_protocol() {
-        let result = validate_open_url("file:///etc/passwd");
+        let result = validate_https_url("file:///etc/passwd");
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),

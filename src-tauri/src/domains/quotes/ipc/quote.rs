@@ -2,41 +2,17 @@
 
 use crate::commands::{ApiResponse, AppError, AppState};
 use crate::domains::quotes::domain::models::quote::*;
-use crate::shared::contracts::auth::UserRole;
+use crate::domains::quotes::QuotesFacade;
 use tracing::{debug, error, info, instrument, Span};
 
 use crate::authenticate;
 use crate::domains::quotes::application::{
-    QuoteAttachmentCreateRequest, QuoteAttachmentDeleteRequest, QuoteAttachmentsGetRequest,
-    QuoteAttachmentUpdateRequest, QuoteCreateRequest, QuoteDeleteRequest, QuoteGetRequest,
-    QuoteItemAddRequest, QuoteItemDeleteRequest, QuoteItemUpdateRequest, QuoteListRequest,
-    QuoteStatusRequest, QuoteUpdateRequest, QuoteShareRequest, QuoteRevokeRequest,
-    QuotePublicViewRequest, QuoteAcknowledgeRequest,
+    QuoteAcknowledgeRequest, QuoteAttachmentCreateRequest, QuoteAttachmentDeleteRequest,
+    QuoteAttachmentUpdateRequest, QuoteAttachmentsGetRequest, QuoteCreateRequest,
+    QuoteDeleteRequest, QuoteGetRequest, QuoteItemAddRequest, QuoteItemDeleteRequest,
+    QuoteItemUpdateRequest, QuoteListRequest, QuoteRevokeRequest, QuoteShareRequest,
+    QuoteStatusRequest, QuoteUpdateRequest,
 };
-
-// --- Helper: check RBAC for quotes ---
-
-fn check_quote_permission(role: &UserRole, operation: &str) -> Result<(), AppError> {
-    match operation {
-        "read" | "export" => {
-            // All roles can read
-            Ok(())
-        }
-        "create" | "update" | "delete" | "status" => {
-            if matches!(role, UserRole::Viewer) {
-                Err(AppError::Authorization(
-                    "Viewers cannot modify quotes".to_string(),
-                ))
-            } else {
-                Ok(())
-            }
-        }
-        _ => Err(AppError::Authorization(format!(
-            "Unknown quote operation: {}",
-            operation
-        ))),
-    }
-}
 
 // --- Commands ---
 
@@ -58,20 +34,16 @@ pub async fn quote_create(
         tracing::field::display(current_user.user_id.as_str()),
     );
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "create")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state
-        .quote_service
-        .create_quote(request.data, &current_user.user_id)
-    {
+    match facade.create(&current_user.role, request.data, &current_user.user_id) {
         Ok(quote) => {
             info!(quote_id = %quote.id, "Quote created successfully");
             Ok(ApiResponse::success(quote).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!(error = %e, "Failed to create quote");
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -86,9 +58,9 @@ pub async fn quote_get(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "read")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.get_quote(&request.id) {
+    match facade.get(&current_user.role, &request.id) {
         Ok(Some(quote)) => {
             Ok(ApiResponse::success(quote).with_correlation_id(Some(correlation_id.clone())))
         }
@@ -96,8 +68,8 @@ pub async fn quote_get(
             ApiResponse::error(AppError::NotFound("Quote not found".to_string()))
                 .with_correlation_id(Some(correlation_id.clone())),
         ),
-        Err(e) => {
-            error!("Failed to get quote: {}", e);
+        Err(_e) => {
+            error!("Failed to get quote");
             Ok(
                 ApiResponse::error(AppError::Database("Failed to retrieve quote".to_string()))
                     .with_correlation_id(Some(correlation_id.clone())),
@@ -116,14 +88,14 @@ pub async fn quote_list(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "read")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.list_quotes(&request.filters) {
+    match facade.list(&current_user.role, &request.filters) {
         Ok(response) => {
             Ok(ApiResponse::success(response).with_correlation_id(Some(correlation_id.clone())))
         }
-        Err(e) => {
-            error!("Failed to list quotes: {}", e);
+        Err(_e) => {
+            error!("Failed to list quotes");
             Ok(
                 ApiResponse::error(AppError::Database("Failed to list quotes".to_string()))
                     .with_correlation_id(Some(correlation_id.clone())),
@@ -142,17 +114,16 @@ pub async fn quote_update(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "update")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.update_quote(&request.id, request.data) {
+    match facade.update(&current_user.role, &request.id, request.data) {
         Ok(quote) => {
             info!(quote_id = %quote.id, "Quote updated successfully");
             Ok(ApiResponse::success(quote).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!("Failed to update quote: {}", e);
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -167,9 +138,9 @@ pub async fn quote_delete(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "delete")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.delete_quote(&request.id) {
+    match facade.delete(&current_user.role, &request.id) {
         Ok(deleted) => {
             if deleted {
                 info!(quote_id = %request.id, "Quote deleted successfully");
@@ -178,8 +149,7 @@ pub async fn quote_delete(
         }
         Err(e) => {
             error!("Failed to delete quote: {}", e);
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -194,19 +164,15 @@ pub async fn quote_item_add(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "update")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state
-        .quote_service
-        .add_item(&request.quote_id, request.item)
-    {
+    match facade.add_item(&current_user.role, &request.quote_id, request.item) {
         Ok(quote) => {
             Ok(ApiResponse::success(quote).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!("Failed to add quote item: {}", e);
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -221,19 +187,20 @@ pub async fn quote_item_update(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "update")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state
-        .quote_service
-        .update_item(&request.quote_id, &request.item_id, request.data)
-    {
+    match facade.update_item(
+        &current_user.role,
+        &request.quote_id,
+        &request.item_id,
+        request.data,
+    ) {
         Ok(quote) => {
             Ok(ApiResponse::success(quote).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!("Failed to update quote item: {}", e);
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -248,19 +215,15 @@ pub async fn quote_item_delete(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "delete")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state
-        .quote_service
-        .delete_item(&request.quote_id, &request.item_id)
-    {
+    match facade.delete_item(&current_user.role, &request.quote_id, &request.item_id) {
         Ok(quote) => {
             Ok(ApiResponse::success(quote).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!("Failed to delete quote item: {}", e);
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -275,17 +238,16 @@ pub async fn quote_mark_sent(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "status")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.mark_sent(&request.id) {
+    match facade.mark_sent(&current_user.role, &request.id) {
         Ok(quote) => {
             info!(quote_id = %request.id, "Quote marked as sent");
             Ok(ApiResponse::success(quote).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!("Failed to mark quote as sent: {}", e);
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -300,17 +262,16 @@ pub async fn quote_mark_accepted(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "status")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.mark_accepted(&request.id) {
+    match facade.mark_accepted(&current_user.role, &request.id) {
         Ok(response) => {
             info!(quote_id = %request.id, "Quote accepted");
             Ok(ApiResponse::success(response).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!("Failed to accept quote: {}", e);
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -325,17 +286,16 @@ pub async fn quote_mark_rejected(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "status")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.mark_rejected(&request.id) {
+    match facade.mark_rejected(&current_user.role, &request.id) {
         Ok(quote) => {
             info!(quote_id = %request.id, "Quote rejected");
             Ok(ApiResponse::success(quote).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!("Failed to reject quote: {}", e);
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -350,9 +310,10 @@ pub async fn quote_export_pdf(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "export")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
+    facade.check_permission(&current_user.role, "export")?;
 
-    let quote = match state.quote_service.get_quote(&request.id) {
+    let quote = match facade.get(&current_user.role, &request.id) {
         Ok(Some(q)) => q,
         Ok(None) => {
             return Ok(
@@ -501,17 +462,18 @@ pub async fn quote_attachments_get(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "read")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.get_attachments(&request.quote_id) {
+    match facade.get_attachments(&current_user.role, &request.quote_id) {
         Ok(attachments) => {
-            Ok(ApiResponse::success(attachments)
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::success(attachments).with_correlation_id(Some(correlation_id.clone())))
         }
-        Err(e) => {
-            error!("Failed to get quote attachments: {}", e);
-            Ok(ApiResponse::error(AppError::Database("Failed to retrieve attachments".to_string()))
-                .with_correlation_id(Some(correlation_id.clone())))
+        Err(_e) => {
+            error!("Failed to get quote attachments");
+            Ok(ApiResponse::error(AppError::Database(
+                "Failed to retrieve attachments".to_string(),
+            ))
+            .with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -526,25 +488,25 @@ pub async fn quote_attachment_create(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "create")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state
-        .quote_service
-        .create_attachment(&request.quote_id, request.data, &current_user.user_id)
-    {
+    match facade.create_attachment(
+        &current_user.role,
+        &request.quote_id,
+        request.data,
+        &current_user.user_id,
+    ) {
         Ok(attachment) => {
             info!(
                 quote_id = %request.quote_id,
                 attachment_id = %attachment.id,
                 "Attachment created successfully"
             );
-            Ok(ApiResponse::success(attachment)
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::success(attachment).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!("Failed to create attachment: {}", e);
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -563,9 +525,10 @@ pub async fn quote_attachment_update(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "update")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.update_attachment(
+    match facade.update_attachment(
+        &current_user.role,
         &request.quote_id,
         &request.attachment_id,
         request.data,
@@ -576,13 +539,11 @@ pub async fn quote_attachment_update(
                 attachment_id = %request.attachment_id,
                 "Attachment updated successfully"
             );
-            Ok(ApiResponse::success(attachment)
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::success(attachment).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!("Failed to update attachment: {}", e);
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -601,12 +562,13 @@ pub async fn quote_attachment_delete(
     let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let current_user = authenticate!(&request.session_token, &state);
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "delete")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state
-        .quote_service
-        .delete_attachment(&request.quote_id, &request.attachment_id)
-    {
+    match facade.delete_attachment(
+        &current_user.role,
+        &request.quote_id,
+        &request.attachment_id,
+    ) {
         Ok(deleted) => {
             if deleted {
                 info!(
@@ -615,13 +577,11 @@ pub async fn quote_attachment_delete(
                     "Attachment deleted successfully"
                 );
             }
-            Ok(ApiResponse::success(deleted)
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::success(deleted).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!("Failed to delete attachment: {}", e);
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -644,18 +604,16 @@ pub async fn quote_generate_share_link(
         tracing::field::display(current_user.user_id.as_str()),
     );
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "update")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.generate_share_link(&request.quote_id) {
+    match facade.generate_share_link(&current_user.role, &request.quote_id) {
         Ok(response) => {
             info!(quote_id = %request.quote_id, "Quote share link generated");
-            Ok(ApiResponse::success(response)
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::success(response).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!(error = %e, "Failed to generate share link");
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -678,18 +636,19 @@ pub async fn quote_revoke_share_link(
         tracing::field::display(current_user.user_id.as_str()),
     );
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "update")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.revoke_share_link(&request.quote_id) {
-        Ok(_) => {
+    match facade.revoke_share_link(&current_user.role, &request.quote_id) {
+        Ok(true) => {
             info!(quote_id = %request.quote_id, "Quote share link revoked");
-            Ok(ApiResponse::success(true)
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::success(true).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!(error = %e, "Failed to revoke share link");
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
+        }
+        Ok(false) => {
+            Ok(ApiResponse::success(false).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -698,12 +657,16 @@ pub async fn quote_revoke_share_link(
 #[instrument(skip(state))]
 pub async fn quote_get_by_public_token(
     public_token: String,
+    session_token: String,
     state: AppState<'_>,
 ) -> Result<ApiResponse<Quote>, AppError> {
     debug!("quote_get_by_public_token command received (public endpoint)");
     let correlation_id = crate::commands::init_correlation_context(&None, None);
+    let current_user = authenticate!(&session_token, &state);
+    crate::commands::update_correlation_context_user(&current_user.user_id);
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.track_public_view(&public_token) {
+    match facade.track_public_view(&public_token) {
         Ok(response) => {
             info!(
                 public_token = %public_token,
@@ -715,8 +678,7 @@ pub async fn quote_get_by_public_token(
         }
         Err(e) => {
             error!(error = %e, "Failed to get quote by public token");
-            Ok(ApiResponse::error(AppError::NotFound(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -725,28 +687,33 @@ pub async fn quote_get_by_public_token(
 #[instrument(skip(state))]
 pub async fn quote_customer_response(
     request: CustomerQuoteResponse,
+    session_token: String,
     state: AppState<'_>,
 ) -> Result<ApiResponse<bool>, AppError> {
     debug!("quote_customer_response command received (public endpoint)");
     let correlation_id = crate::commands::init_correlation_context(&None, None);
+    let current_user = authenticate!(&session_token, &state);
+    crate::commands::update_correlation_context_user(&current_user.user_id);
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
     let action = request.action.clone();
     let quote_id = request.quote_id.clone();
 
-    match state.quote_service.handle_customer_response(request) {
-        Ok(_) => {
+    match facade.handle_customer_response(request) {
+        Ok(true) => {
             info!(
                 quote_id = %quote_id,
                 action = %action,
                 "Customer response handled successfully"
             );
-            Ok(ApiResponse::success(true)
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::success(true).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!(error = %e, "Failed to handle customer response");
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
+        }
+        Ok(false) => {
+            Ok(ApiResponse::success(false).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }
@@ -769,18 +736,19 @@ pub async fn quote_acknowledge_response(
         tracing::field::display(current_user.user_id.as_str()),
     );
     crate::commands::update_correlation_context_user(&current_user.user_id);
-    check_quote_permission(&current_user.role, "update")?;
+    let facade = QuotesFacade::new(state.quote_service.clone());
 
-    match state.quote_service.acknowledge_response(&request.quote_id) {
-        Ok(_) => {
+    match facade.acknowledge_response(&current_user.role, &request.quote_id) {
+        Ok(true) => {
             info!(quote_id = %request.quote_id, "Quote customer response acknowledged");
-            Ok(ApiResponse::success(true)
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::success(true).with_correlation_id(Some(correlation_id.clone())))
         }
         Err(e) => {
             error!(error = %e, "Failed to acknowledge response");
-            Ok(ApiResponse::error(AppError::Validation(e))
-                .with_correlation_id(Some(correlation_id.clone())))
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
+        }
+        Ok(false) => {
+            Ok(ApiResponse::success(false).with_correlation_id(Some(correlation_id.clone())))
         }
     }
 }

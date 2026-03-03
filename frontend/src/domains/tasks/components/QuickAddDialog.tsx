@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { designTokens } from '@/lib/design-tokens';
-import { useCalendarStore } from '@/domains/calendar/stores/calendarStore';
+import { useCalendarStore } from '@/domains/calendar';
 import { useAuth } from '@/domains/auth';
 import { taskService } from '../server';
 import type { CreateTaskRequest } from '@/lib/backend';
@@ -211,4 +211,3 @@ export function QuickAddDialog({ isOpen, onClose }: QuickAddDialogProps) {
     </Dialog>
   );
 }
-

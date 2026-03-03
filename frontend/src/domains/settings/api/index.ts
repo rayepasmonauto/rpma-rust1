@@ -15,6 +15,18 @@ export { NotificationsTab } from '../components/NotificationsTab';
 export { default as SettingsPageContent } from '../components/SettingsPageContent';
 
 export { settingsService, configurationService } from '../server';
+export { settingsIpc } from '../ipc/settings.ipc';
+
+export {
+  DEFAULT_PROFILE,
+  DEFAULT_PREFERENCES,
+  DEFAULT_SECURITY,
+  DEFAULT_PERFORMANCE,
+  DEFAULT_ACCESSIBILITY,
+  DEFAULT_NOTIFICATIONS,
+  DEFAULT_USER_SETTINGS,
+  isAdminOnlyCategory,
+} from '../services';
 
 export type {
   UserSettings,
@@ -28,4 +40,4 @@ export type {
   UseSettingsActionsResult,
 } from './types';
 
-export type { Configuration, BusinessRule } from '../services';
+export type { Configuration, BusinessRule, SettingsCategory } from '../services';
