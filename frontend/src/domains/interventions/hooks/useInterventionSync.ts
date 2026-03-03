@@ -1,4 +1,5 @@
-﻿import { useQuery } from '@tanstack/react-query';
+"use client";
+import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { AuthSecureStorage } from '@/lib/secureStorage';
 import { safeInvoke } from '@/lib/ipc';

@@ -1,4 +1,5 @@
-// src/domains/interventions/components/GPS/DesktopGPS.tsx
+// src/domains/interventions/components/GPS/DesktopGPS.tsx — CLIENT COMPONENT
+"use client";
 import { useState, useEffect } from 'react';
 import { MapPin, Navigation, Crosshair, RefreshCw } from 'lucide-react';
 import { gps } from '@/lib/utils/gps';
