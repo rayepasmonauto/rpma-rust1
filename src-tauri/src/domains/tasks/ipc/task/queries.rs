@@ -4,7 +4,7 @@
 
 use crate::authenticate;
 use crate::commands::{ApiResponse, AppError, AppState};
-use crate::domains::tasks::domain::models::task::{Task, TaskListResponse};
+use crate::domains::tasks::domain::models::task::{Task, TaskListResponse, TaskPriority, TaskStatus};
 use crate::domains::tasks::infrastructure::task_statistics::TaskStatistics;
 use crate::domains::tasks::ipc::task_types::TaskFilter;
 use serde::Deserialize;
@@ -101,24 +101,10 @@ pub async fn get_tasks_with_clients(
     let query = crate::domains::tasks::domain::models::task::TaskQuery {
         page: Some(page as i32),
         limit: Some(limit as i32),
-        status: filter.status.as_ref().and_then(|s| match s.as_str() {
-            "pending" => Some(crate::domains::tasks::domain::models::task::TaskStatus::Pending),
-            "in_progress" => {
-                Some(crate::domains::tasks::domain::models::task::TaskStatus::InProgress)
-            }
-            "completed" => Some(crate::domains::tasks::domain::models::task::TaskStatus::Completed),
-            "cancelled" => Some(crate::domains::tasks::domain::models::task::TaskStatus::Cancelled),
-            _ => None,
-        }),
+        status: filter.status.as_deref().and_then(TaskStatus::from_str_opt),
         technician_id: filter.assigned_to.clone(),
         client_id: filter.client_id.clone(),
-        priority: filter.priority.as_ref().and_then(|p| match p.as_str() {
-            "low" => Some(crate::domains::tasks::domain::models::task::TaskPriority::Low),
-            "medium" => Some(crate::domains::tasks::domain::models::task::TaskPriority::Medium),
-            "high" => Some(crate::domains::tasks::domain::models::task::TaskPriority::High),
-            "urgent" => Some(crate::domains::tasks::domain::models::task::TaskPriority::Urgent),
-            _ => None,
-        }),
+        priority: filter.priority.as_deref().and_then(TaskPriority::from_str_opt),
         search: None,
         from_date: filter.date_from.map(|d| d.to_rfc3339()),
         to_date: filter.date_to.map(|d| d.to_rfc3339()),
@@ -183,13 +169,7 @@ pub async fn get_user_assigned_tasks(
     filter.include_completed = Some(request.include_completed.unwrap_or(false));
 
     // Get tasks
-    let status_filter = filter.status.as_ref().and_then(|s| match s.as_str() {
-        "pending" => Some(crate::domains::tasks::domain::models::task::TaskStatus::Pending),
-        "in_progress" => Some(crate::domains::tasks::domain::models::task::TaskStatus::InProgress),
-        "completed" => Some(crate::domains::tasks::domain::models::task::TaskStatus::Completed),
-        "cancelled" => Some(crate::domains::tasks::domain::models::task::TaskStatus::Cancelled),
-        _ => None,
-    });
+    let status_filter = filter.status.as_deref().and_then(TaskStatus::from_str_opt);
 
     let tasks = state
         .task_service

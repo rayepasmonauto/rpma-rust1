@@ -243,15 +243,9 @@ pub async fn clear_application_cache(
     if let Some(cache_types) = request.cache_types {
         // Clear specific cache types
         for cache_type_str in cache_types {
-            let cache_type = match cache_type_str.as_str() {
-                "query" => CacheType::QueryResult,
-                "thumbnail" => CacheType::ImageThumbnail,
-                "analytics" => CacheType::ComputedAnalytics,
-                "api" => CacheType::ApiResponse,
-                _ => continue,
-            };
-
-            cache_manager.clear_type(cache_type)?;
+            if let Some(cache_type) = CacheType::from_str_opt(&cache_type_str) {
+                cache_manager.clear_type(cache_type)?;
+            }
         }
         Ok(
             ApiResponse::success("Specified cache types cleared successfully".to_string())

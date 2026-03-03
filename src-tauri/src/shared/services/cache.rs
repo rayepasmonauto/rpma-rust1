@@ -27,6 +27,19 @@ pub enum CacheType {
     ApiResponse,
 }
 
+impl CacheType {
+    /// Parse a cache type string, returning `None` for unknown values.
+    pub fn from_str_opt(s: &str) -> Option<Self> {
+        match s {
+            "query" => Some(Self::QueryResult),
+            "thumbnail" => Some(Self::ImageThumbnail),
+            "analytics" => Some(Self::ComputedAnalytics),
+            "api" => Some(Self::ApiResponse),
+            _ => None,
+        }
+    }
+}
+
 /// Cache backend types
 #[derive(Debug, Clone)]
 pub enum CacheBackend {
