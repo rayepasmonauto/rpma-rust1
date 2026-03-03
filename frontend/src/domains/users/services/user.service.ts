@@ -3,7 +3,7 @@
 import { ServiceResponse } from '@/types/unified.types';
 import { ipcClient } from '@/lib/ipc';
 import type { CreateUserRequest, UpdateUserRequest } from '@/lib/backend';
-import { requireSessionToken } from '@/domains/auth/services/sessionToken';
+import { requireSessionToken } from '@/domains/auth';
 
 export interface User {
   id: string;
