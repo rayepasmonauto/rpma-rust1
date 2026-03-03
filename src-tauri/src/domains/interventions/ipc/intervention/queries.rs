@@ -1,14 +1,12 @@
 //! Intervention query operations
 //!
-//! This module handles intervention listing, filtering, and progress operations:
-//! - Administrative queries and filtering
-//! - Progress tracking and retrieval
-//! - Management operations
+//! Thin IPC adapters delegating progress/query operations to the interventions facade.
 
-use crate::authenticate;
 use crate::commands::{ApiResponse, AppError, AppState};
+use crate::domains::interventions::{InterventionsCommand, InterventionsFacade, InterventionsResponse};
+use crate::shared::auth_middleware::AuthMiddleware;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error, info, instrument};
+use tracing::instrument;
 
 fn default_collected_data() -> serde_json::Value {
     serde_json::Value::Null
@@ -16,32 +14,6 @@ fn default_collected_data() -> serde_json::Value {
 
 fn default_quality_check_passed() -> bool {
     true
-}
-
-/// Validates intervention existence and enforces access control for the current session.
-///
-/// Returns `Ok(())` when the intervention exists and the current session is authorized,
-/// otherwise returns the corresponding `AppError` preserving the command contract.
-fn ensure_intervention_access(
-    state: &AppState<'_>,
-    intervention_id: &str,
-    session: &crate::shared::contracts::auth::UserSession,
-    unauthorized_message: &str,
-) -> Result<(), AppError> {
-    let intervention = state
-        .intervention_service
-        .get_intervention(intervention_id)
-        .map_err(|e| {
-            error!(error = %e, intervention_id = %intervention_id, "Failed to get intervention");
-            AppError::Database("Failed to get intervention".to_string())
-        })?
-        .ok_or_else(|| AppError::NotFound(format!("Intervention {} not found", intervention_id)))?;
-
-    if !super::can_access_own_or_privileged(intervention.technician_id.as_deref(), session) {
-        return Err(AppError::Authorization(unauthorized_message.to_string()));
-    }
-
-    Ok(())
 }
 
 #[derive(Deserialize, Debug)]
@@ -94,7 +66,17 @@ pub enum InterventionProgressResponse {
     },
 }
 
-/// Get intervention progress information
+async fn intervention_ctx(
+    state: &AppState<'_>,
+    session_token: &str,
+    correlation_id: &Option<String>,
+) -> Result<crate::shared::ipc::CommandContext, AppError> {
+    let ctx = AuthMiddleware::authenticate_command(session_token, state, None, correlation_id).await?;
+    super::ensure_intervention_permission(&ctx.session)?;
+    tracing::Span::current().record("user_id", &ctx.session.user_id.as_str());
+    Ok(ctx)
+}
+
 #[tauri::command]
 #[instrument(skip(state, session_token), fields(user_id, correlation_id))]
 pub async fn intervention_get_progress(
@@ -106,40 +88,26 @@ pub async fn intervention_get_progress(
     ApiResponse<crate::domains::interventions::domain::models::intervention::InterventionProgress>,
     AppError,
 > {
-    let correlation_id = crate::commands::init_correlation_context(&correlation_id, None);
-    let session = authenticate!(&session_token, &state);
-    crate::commands::update_correlation_context_user(&session.user_id);
-    tracing::Span::current().record("user_id", &session.user_id.as_str());
-    let svc_correlation_id = crate::logging::correlation::generate_correlation_id();
-    tracing::Span::current().record("correlation_id", &svc_correlation_id.as_str());
-    super::ensure_intervention_permission(&session)?;
+    let ctx = intervention_ctx(&state, &session_token, &correlation_id).await?;
+    let facade = InterventionsFacade::new(state.intervention_service.clone());
 
-    info!(
-        intervention_id = %intervention_id,
-        correlation_id = %svc_correlation_id,
-        "Getting intervention progress"
-    );
-
-    ensure_intervention_access(
-        &state,
-        &intervention_id,
-        &session,
-        "Not authorized to view this intervention progress",
-    )?;
-
-    // Delegate progress calculation to the service layer
-    let progress = state
-        .intervention_service
-        .get_progress(&intervention_id)
-        .map_err(|e| {
-            error!(error = %e, intervention_id = %intervention_id, "Failed to get intervention progress");
-            AppError::Database("Failed to get intervention progress".to_string())
-        })?;
-
-    Ok(ApiResponse::success(progress).with_correlation_id(Some(correlation_id.clone())))
+    match facade
+        .execute(
+            InterventionsCommand::GetProgress { intervention_id },
+            &ctx,
+            &state.task_service,
+        )
+        .await?
+    {
+        InterventionsResponse::Progress(progress) => {
+            Ok(ApiResponse::success(progress).with_correlation_id(Some(ctx.correlation_id)))
+        }
+        _ => Err(AppError::Internal(
+            "Unexpected interventions facade response".to_string(),
+        )),
+    }
 }
 
-/// Advance an intervention step
 #[tauri::command]
 #[instrument(skip(state, session_token), fields(user_id, correlation_id))]
 pub async fn intervention_advance_step(
@@ -153,56 +121,36 @@ pub async fn intervention_advance_step(
     ApiResponse<crate::domains::interventions::domain::models::step::InterventionStep>,
     AppError,
 > {
-    let correlation_id = crate::commands::init_correlation_context(&correlation_id, None);
-    let session = authenticate!(&session_token, &state);
-    crate::commands::update_correlation_context_user(&session.user_id);
-    tracing::Span::current().record("user_id", &session.user_id.as_str());
-    let svc_correlation_id = crate::logging::correlation::generate_correlation_id();
-    tracing::Span::current().record("correlation_id", &svc_correlation_id.as_str());
-    super::ensure_intervention_permission(&session)?;
+    let ctx = intervention_ctx(&state, &session_token, &correlation_id).await?;
+    let facade = InterventionsFacade::new(state.intervention_service.clone());
 
-    info!(
-        intervention_id = %intervention_id,
-        step_id = %step_id,
-        correlation_id = %svc_correlation_id,
-        "Advancing intervention step"
-    );
-
-    ensure_intervention_access(
-        &state,
-        &intervention_id,
-        &session,
-        "Not authorized to advance this intervention",
-    )?;
-
-    let advance_request =
-        crate::domains::interventions::infrastructure::intervention_types::AdvanceStepRequest {
-            intervention_id: intervention_id.clone(),
-            step_id: step_id.clone(),
-            collected_data: serde_json::Value::Null,
-            photos: None,
-            notes,
-            quality_check_passed: true,
-            issues: None,
-        };
-
-    state
-        .intervention_service
-        .advance_step(advance_request, &svc_correlation_id, Some(&session.user_id))
-        .await
-        .map(|response| ApiResponse::success(response.step).with_correlation_id(Some(correlation_id.clone())))
-        .map_err(|e| {
-            error!(error = %e, intervention_id = %intervention_id, step_id = %step_id, "Failed to advance intervention step");
-            AppError::from(e)
-        })
+    match facade
+        .execute(
+            InterventionsCommand::AdvanceStep {
+                intervention_id,
+                step_id,
+                collected_data: serde_json::Value::Null,
+                photos: None,
+                notes,
+                quality_check_passed: true,
+                issues: None,
+            },
+            &ctx,
+            &state.task_service,
+        )
+        .await?
+    {
+        InterventionsResponse::AdvancedStep(response) => Ok(
+            ApiResponse::success(response.step).with_correlation_id(Some(ctx.correlation_id)),
+        ),
+        _ => Err(AppError::Internal(
+            "Unexpected interventions facade response".to_string(),
+        )),
+    }
 }
 
-/// Save step progress for an intervention
 #[tauri::command]
-#[instrument(
-    skip(state, session_token, progress_data),
-    fields(user_id, correlation_id)
-)]
+#[instrument(skip(state, session_token, progress_data), fields(user_id, correlation_id))]
 pub async fn intervention_save_step_progress(
     intervention_id: String,
     step_id: String,
@@ -211,51 +159,34 @@ pub async fn intervention_save_step_progress(
     correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<String>, AppError> {
-    let correlation_id = crate::commands::init_correlation_context(&correlation_id, None);
-    let session = authenticate!(&session_token, &state);
-    crate::commands::update_correlation_context_user(&session.user_id);
-    tracing::Span::current().record("user_id", &session.user_id.as_str());
-    let svc_correlation_id = crate::logging::correlation::generate_correlation_id();
-    tracing::Span::current().record("correlation_id", &svc_correlation_id.as_str());
-    super::ensure_intervention_permission(&session)?;
+    let ctx = intervention_ctx(&state, &session_token, &correlation_id).await?;
+    let facade = InterventionsFacade::new(state.intervention_service.clone());
 
-    info!(
-        intervention_id = %intervention_id,
-        step_id = %step_id,
-        correlation_id = %svc_correlation_id,
-        "Saving step progress"
-    );
-
-    ensure_intervention_access(
-        &state,
-        &intervention_id,
-        &session,
-        "Not authorized to save progress for this intervention",
-    )?;
-
-    let progress_request = crate::domains::interventions::infrastructure::intervention_types::SaveStepProgressRequest {
-        step_id: step_id.clone(),
-        collected_data: progress_data,
-        notes: None,
-        photos: None,
-    };
-
-    state
-        .intervention_service
-        .save_step_progress(
-            progress_request,
-            &svc_correlation_id,
-            Some(&session.user_id),
+    match facade
+        .execute(
+            InterventionsCommand::SaveStepProgress {
+                step_id,
+                intervention_id: Some(intervention_id),
+                collected_data: progress_data,
+                notes: None,
+                photos: None,
+            },
+            &ctx,
+            &state.task_service,
         )
         .await
-        .map(|_| ApiResponse::success("Step progress saved successfully".to_string()).with_correlation_id(Some(correlation_id.clone())))
-        .map_err(|e| {
-            error!(error = %e, intervention_id = %intervention_id, step_id = %step_id, "Failed to save step progress");
-            AppError::Database("Failed to save step progress".to_string())
-        })
+    {
+        Ok(InterventionsResponse::SavedStep(_)) => Ok(ApiResponse::success(
+            "Step progress saved successfully".to_string(),
+        )
+        .with_correlation_id(Some(ctx.correlation_id))),
+        Ok(_) => Err(AppError::Internal(
+            "Unexpected interventions facade response".to_string(),
+        )),
+        Err(_) => Err(AppError::Database("Failed to save step progress".to_string())),
+    }
 }
 
-/// Main intervention progress command (unified interface)
 #[tauri::command]
 #[instrument(skip(state, session_token, action), fields(user_id, correlation_id))]
 pub async fn intervention_progress(
@@ -264,49 +195,13 @@ pub async fn intervention_progress(
     correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<InterventionProgressResponse>, AppError> {
-    let correlation_id = crate::commands::init_correlation_context(&correlation_id, None);
-    let session = authenticate!(&session_token, &state);
-    crate::commands::update_correlation_context_user(&session.user_id);
-    tracing::Span::current().record("user_id", &session.user_id.as_str());
-    let svc_correlation_id = crate::logging::correlation::generate_correlation_id();
-    tracing::Span::current().record("correlation_id", &svc_correlation_id.as_str());
-    super::ensure_intervention_permission(&session)?;
+    let ctx = intervention_ctx(&state, &session_token, &correlation_id).await?;
+    let facade = InterventionsFacade::new(state.intervention_service.clone());
 
-    info!(correlation_id = %svc_correlation_id, "Processing intervention progress action");
-
-    match action {
+    let command = match action {
         InterventionProgressAction::Get { intervention_id } => {
-            ensure_intervention_access(
-                &state,
-                &intervention_id,
-                &session,
-                "Not authorized to view this intervention progress",
-            )?;
-
-            // Delegate progress calculation to the service layer
-            let progress = state
-                .intervention_service
-                .get_progress(&intervention_id)
-                .map_err(|e| {
-                    error!(error = %e, "Failed to get intervention progress");
-                    AppError::from(e)
-                })?;
-
-            // Get steps for the response
-            let steps = state
-                .intervention_service
-                .get_intervention_steps(&intervention_id)
-                .map_err(|e| {
-                    error!(error = %e, "Failed to get intervention steps");
-                    AppError::from(e)
-                })?;
-
-            Ok(
-                ApiResponse::success(InterventionProgressResponse::Retrieved { progress, steps })
-                    .with_correlation_id(Some(correlation_id.clone())),
-            )
+            InterventionsCommand::GetProgressWithSteps { intervention_id }
         }
-
         InterventionProgressAction::AdvanceStep {
             intervention_id,
             step_id,
@@ -315,121 +210,53 @@ pub async fn intervention_progress(
             notes,
             quality_check_passed,
             issues,
-        } => {
-            ensure_intervention_access(
-                &state,
-                &intervention_id,
-                &session,
-                "Not authorized to advance this intervention",
-            )?;
-
-            let has_collected_data = match &collected_data {
-                serde_json::Value::Null => false,
-                serde_json::Value::Object(map) if map.is_empty() => false,
-                _ => true,
-            };
-
-            debug!(
-                correlation_id = %svc_correlation_id,
-                intervention_id = %intervention_id,
-                step_id = %step_id,
-                has_collected_data = %has_collected_data,
-                photos_count = %photos.as_ref().map(|p| p.len()).unwrap_or(0),
-                issues_count = %issues.as_ref().map(|i| i.len()).unwrap_or(0),
-                quality_check_passed = %quality_check_passed,
-                "Advance step request received"
-            );
-
-            let advance_request = crate::domains::interventions::infrastructure::intervention_types::AdvanceStepRequest {
-                intervention_id: intervention_id.clone(),
-                step_id: step_id.clone(),
-                collected_data,
-                photos,
-                notes,
-                quality_check_passed,
-                issues,
-            };
-
-            let response = state
-                .intervention_service
-                .advance_step(advance_request, &svc_correlation_id, Some(&session.user_id))
-                .await
-                .map_err(|e| {
-                    error!(error = %e, "Failed to advance step");
-                    AppError::from(e)
-                })?;
-
-            Ok(
-                ApiResponse::success(InterventionProgressResponse::StepAdvanced {
-                    step: Box::new(response.step),
-                    next_step: response.next_step,
-                    progress_percentage: response.progress_percentage,
-                    requirements_completed: response.requirements_completed,
-                })
-                .with_correlation_id(Some(correlation_id.clone())),
-            )
-        }
-
+        } => InterventionsCommand::AdvanceStep {
+            intervention_id,
+            step_id,
+            collected_data,
+            photos,
+            notes,
+            quality_check_passed,
+            issues,
+        },
         InterventionProgressAction::SaveStepProgress {
             step_id,
             intervention_id,
             collected_data,
             notes,
             photos,
-        } => {
-            let step = state
-                .intervention_service
-                .get_step(&step_id)
-                .map_err(|e| {
-                    error!(error = %e, step_id = %step_id, "Failed to get step for progress save");
-                    AppError::Database("Failed to get intervention step".to_string())
-                })?
-                .ok_or_else(|| AppError::NotFound(format!("Step {} not found", step_id)))?;
+        } => InterventionsCommand::SaveStepProgress {
+            step_id,
+            intervention_id,
+            collected_data,
+            notes,
+            photos,
+        },
+    };
 
-            let resolved_intervention_id =
-                intervention_id.unwrap_or_else(|| step.intervention_id.clone());
-
-            if step.intervention_id != resolved_intervention_id {
-                return Err(AppError::Validation(format!(
-                    "Step {} does not belong to intervention {}",
-                    step_id, resolved_intervention_id
-                )));
-            }
-
-            ensure_intervention_access(
-                &state,
-                &resolved_intervention_id,
-                &session,
-                "Not authorized to save progress for this intervention",
-            )?;
-
-            let progress_request = crate::domains::interventions::infrastructure::intervention_types::SaveStepProgressRequest {
-                step_id,
-                collected_data,
-                notes,
-                photos,
-            };
-
-            let step = state
-                .intervention_service
-                .save_step_progress(
-                    progress_request,
-                    &svc_correlation_id,
-                    Some(&session.user_id),
-                )
-                .await
-                .map_err(|e| {
-                    error!(error = %e, "Failed to save progress");
-                    AppError::from(e)
-                })?;
-
-            Ok(
-                ApiResponse::success(InterventionProgressResponse::StepProgressSaved {
-                    step: Box::new(step),
-                })
-                .with_correlation_id(Some(correlation_id.clone())),
-            )
-        }
+    match facade.execute(command, &ctx, &state.task_service).await? {
+        InterventionsResponse::ProgressWithSteps { progress, steps } => Ok(
+            ApiResponse::success(InterventionProgressResponse::Retrieved { progress, steps })
+                .with_correlation_id(Some(ctx.correlation_id)),
+        ),
+        InterventionsResponse::AdvancedStep(response) => Ok(ApiResponse::success(
+            InterventionProgressResponse::StepAdvanced {
+                step: Box::new(response.step),
+                next_step: response.next_step,
+                progress_percentage: response.progress_percentage,
+                requirements_completed: response.requirements_completed,
+            },
+        )
+        .with_correlation_id(Some(ctx.correlation_id))),
+        InterventionsResponse::SavedStep(step) => Ok(ApiResponse::success(
+            InterventionProgressResponse::StepProgressSaved {
+                step: Box::new(step),
+            },
+        )
+        .with_correlation_id(Some(ctx.correlation_id))),
+        _ => Err(AppError::Internal(
+            "Unexpected interventions facade response".to_string(),
+        )),
     }
 }
 

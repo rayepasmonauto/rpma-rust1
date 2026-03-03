@@ -30,13 +30,15 @@ pub async fn intervention_get(
     info!(intervention_id = %id, "Getting intervention");
 
     let facade = InterventionsFacade::new(state.intervention_service.clone());
-    let response = facade.execute(
-        InterventionsCommand::Get {
-            intervention_id: id.clone(),
-        },
-        &ctx,
-        &state.task_service,
-    );
+    let response = facade
+        .execute(
+            InterventionsCommand::Get {
+                intervention_id: id.clone(),
+            },
+            &ctx,
+            &state.task_service,
+        )
+        .await;
     match response {
         Ok(InterventionsResponse::Intervention(intervention)) => {
             Ok(ApiResponse::success(intervention).with_correlation_id(Some(ctx.correlation_id)))
@@ -70,13 +72,16 @@ pub async fn intervention_get_active_by_task(
     info!(task_id = %task_id, "Getting active interventions for task");
 
     let facade = InterventionsFacade::new(state.intervention_service.clone());
-    match facade.execute(
-        InterventionsCommand::GetActiveByTask {
-            task_id: task_id.clone(),
-        },
-        &ctx,
-        &state.task_service,
-    ) {
+    match facade
+        .execute(
+            InterventionsCommand::GetActiveByTask {
+                task_id: task_id.clone(),
+            },
+            &ctx,
+            &state.task_service,
+        )
+        .await
+    {
         Ok(InterventionsResponse::InterventionList(items)) => {
             Ok(ApiResponse::success(items).with_correlation_id(Some(ctx.correlation_id)))
         }
@@ -109,13 +114,16 @@ pub async fn intervention_get_latest_by_task(
     info!(task_id = %task_id, "Getting latest intervention for task");
 
     let facade = InterventionsFacade::new(state.intervention_service.clone());
-    match facade.execute(
-        InterventionsCommand::GetLatestByTask {
-            task_id: task_id.clone(),
-        },
-        &ctx,
-        &state.task_service,
-    ) {
+    match facade
+        .execute(
+            InterventionsCommand::GetLatestByTask {
+                task_id: task_id.clone(),
+            },
+            &ctx,
+            &state.task_service,
+        )
+        .await
+    {
         Ok(InterventionsResponse::OptionalIntervention(value)) => {
             Ok(ApiResponse::success(value).with_correlation_id(Some(ctx.correlation_id)))
         }
@@ -149,14 +157,17 @@ pub async fn intervention_get_step(
     info!(intervention_id = %intervention_id, step_id = %step_id, "Getting intervention step");
 
     let facade = InterventionsFacade::new(state.intervention_service.clone());
-    match facade.execute(
-        InterventionsCommand::GetStep {
-            intervention_id: intervention_id.clone(),
-            step_id: step_id.clone(),
-        },
-        &ctx,
-        &state.task_service,
-    ) {
+    match facade
+        .execute(
+            InterventionsCommand::GetStep {
+                intervention_id: intervention_id.clone(),
+                step_id: step_id.clone(),
+            },
+            &ctx,
+            &state.task_service,
+        )
+        .await
+    {
         Ok(InterventionsResponse::Step(step)) => {
             Ok(ApiResponse::success(step).with_correlation_id(Some(ctx.correlation_id)))
         }

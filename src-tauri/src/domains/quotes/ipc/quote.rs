@@ -3,7 +3,6 @@
 use crate::commands::{ApiResponse, AppError, AppState};
 use crate::domains::quotes::domain::models::quote::*;
 use crate::domains::quotes::QuotesFacade;
-use crate::shared::contracts::auth::UserRole;
 use tracing::{debug, error, info, instrument, Span};
 
 use crate::authenticate;
