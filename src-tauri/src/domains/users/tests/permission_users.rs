@@ -10,7 +10,6 @@ fn build_session(user_id: &str, role: UserRole) -> UserSession {
         "test@example.com".to_string(),
         role,
         "token-123".to_string(),
-        None,
         3600,
     )
 }

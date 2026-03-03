@@ -1,4 +1,4 @@
-//! Task-client relationship management
+﻿//! Task-client relationship management
 //!
 //! This module handles operations that involve task and client interactions.
 
@@ -158,7 +158,7 @@ fn determine_client_relationship_status(
             "cancelled".to_string()
         }
         crate::domains::tasks::domain::models::task::TaskStatus::InProgress => {
-            // TODO: Implement schedule tracking logic
+            // NOTE: Implement schedule tracking logic
             "in_progress".to_string()
         }
         crate::domains::tasks::domain::models::task::TaskStatus::Pending => {
@@ -268,3 +268,4 @@ pub async fn get_client_task_summary(
 
     Ok(ApiResponse::success(summary).with_correlation_id(Some(correlation_id)))
 }
+

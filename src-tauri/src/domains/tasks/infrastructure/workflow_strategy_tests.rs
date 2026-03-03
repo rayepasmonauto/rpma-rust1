@@ -4,7 +4,7 @@ use crate::domains::tasks::infrastructure::workflow_strategy::{
     EnvironmentConditions, ExpressPPFStrategy, StandardPPFStrategy, WorkflowContext,
     WorkflowStrategy, WorkflowStrategyFactory,
 };
-use crate::shared::services::cross_domain::{Intervention, InterventionType};
+use crate::domains::interventions::domain::models::intervention::{Intervention, InterventionType};
 
 #[test]
 fn test_strategy_factory_standard_workflow() {

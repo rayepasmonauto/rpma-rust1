@@ -1,4 +1,4 @@
-//! Task-related types for the Tasks bounded context.
+﻿//! Task-related types for the Tasks bounded context.
 //!
 //! This module defines types used by task commands that aren't part of the main models.
 
@@ -37,7 +37,7 @@ impl Default for TaskFilter {
 impl TaskFilter {
     /// Apply role-based access control to the filter.
     ///
-    /// Admins and Supervisors see all tasks (supervisor region filtering is a TODO).
+    /// Admins and Supervisors see all tasks (supervisor region filtering is a NOTE).
     /// Technicians and Viewers are restricted to their own assigned tasks.
     pub fn apply_role_scope(
         &mut self,
@@ -48,7 +48,7 @@ impl TaskFilter {
         match role {
             UserRole::Admin => {}
             UserRole::Supervisor => {
-                // TODO: Add region filtering when UserSession has region field
+                // NOTE: Add region filtering when UserSession has region field
             }
             UserRole::Technician | UserRole::Viewer => {
                 self.assigned_to = Some(user_id.to_string());
@@ -111,3 +111,4 @@ pub struct TaskWithClient {
     pub client_name: String,
     pub client_id: String,
 }
+

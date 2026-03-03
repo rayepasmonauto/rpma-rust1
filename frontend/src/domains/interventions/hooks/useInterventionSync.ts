@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+﻿import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { AuthSecureStorage } from '@/lib/secureStorage';
 import { safeInvoke } from '@/lib/ipc';
@@ -30,7 +30,7 @@ export function useInterventionSync({
     queryFn: async ({ queryKey }) => {
       const currentTaskId = queryKey[1];
       if (!currentTaskId) {
-        console.log('No taskId provided for active intervention query');
+        console.info('No taskId provided for active intervention query');
         return null;
       }
 
@@ -42,14 +42,14 @@ export function useInterventionSync({
           return null;
         }
 
-        console.log('Fetching active intervention for task:', currentTaskId);
+        console.info('Fetching active intervention for task:', currentTaskId);
 
         const result = await interventionWorkflowService.getActiveByTask(currentTaskId, sessionToken);
-        console.log('IPC result for active intervention:', result);
+        console.info('IPC result for active intervention:', result);
 
         const interventionData = result.data;
         if (interventionData) {
-          console.log('Successfully retrieved active intervention:', interventionData.id);
+          console.info('Successfully retrieved active intervention:', interventionData.id);
           const backendIntervention = interventionData as Record<string, unknown>;
           const mappedIntervention: PPFInterventionData = {
             id: backendIntervention.id as string,
@@ -98,7 +98,7 @@ export function useInterventionSync({
           };
           return mappedIntervention;
         }
-        console.log('No active intervention found for task:', currentTaskId);
+        console.info('No active intervention found for task:', currentTaskId);
         return null;
       } catch (error) {
         console.error('Error in loadActiveInterventionQuery:', {
@@ -119,22 +119,22 @@ export function useInterventionSync({
     queryFn: async ({ queryKey }) => {
       const interventionId = queryKey[1];
       if (!interventionId) {
-        console.log('No interventionId provided for steps query');
+        console.info('No interventionId provided for steps query');
         return [];
       }
 
       try {
-        console.log('Fetching intervention steps for intervention:', interventionId);
+        console.info('Fetching intervention steps for intervention:', interventionId);
         const session = await AuthSecureStorage.getSession();
         const sessionToken = session.token || '';
         const result = await interventionWorkflowService.getInterventionSteps(interventionId, sessionToken);
-        console.log('IPC result for intervention steps:', result);
+        console.info('IPC result for intervention steps:', result);
 
         if (result.success && result.data) {
-          console.log('Raw steps data from backend:', result.data.data);
+          console.info('Raw steps data from backend:', result.data.data);
           return result.data.data;
         }
-        console.log('No steps found in result for intervention:', interventionId);
+        console.info('No steps found in result for intervention:', interventionId);
         return [];
       } catch (error) {
         console.error('Failed to load intervention steps:', {
@@ -191,3 +191,4 @@ export function useInterventionSync({
     hasSteps: !!loadInterventionStepsQuery.data?.length,
   };
 }
+

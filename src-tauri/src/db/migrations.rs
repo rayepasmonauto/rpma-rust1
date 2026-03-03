@@ -250,12 +250,36 @@ impl Database {
         tracing::info!("Applying SQL migration file: {:?}", file.path());
 
         if let Some(sql_content) = file.contents_utf8() {
-            conn.execute_batch(sql_content).map_err(|e| {
-                format!(
-                    "Failed to execute migration SQL for version {}: {}",
-                    version, e
-                )
-            })?;
+            if let Err(e) = conn.execute_batch(sql_content) {
+                // Some legacy SQLite builds do not support IF NOT EXISTS on ALTER TABLE ADD COLUMN.
+                // Treat a duplicate avatar_url column in migration 14 as already-applied.
+                let duplicate_avatar_column =
+                    version == 14 && e.to_string().contains("duplicate column name: avatar_url");
+                let syntax_near_exists = e.to_string().contains("near \"EXISTS\": syntax error");
+                if syntax_near_exists {
+                    let normalized_sql = sql_content.replace("ADD COLUMN IF NOT EXISTS", "ADD COLUMN");
+                    for statement in normalized_sql.split(';') {
+                        let stmt = statement.trim();
+                        if stmt.is_empty() {
+                            continue;
+                        }
+                        if let Err(stmt_err) = conn.execute_batch(&format!("{stmt};")) {
+                            if stmt_err.to_string().contains("duplicate column name") {
+                                continue;
+                            }
+                            return Err(format!(
+                                "Failed to execute normalized migration SQL for version {}: {}",
+                                version, stmt_err
+                            ));
+                        }
+                    }
+                } else if !duplicate_avatar_column {
+                    return Err(format!(
+                        "Failed to execute migration SQL for version {}: {}",
+                        version, e
+                    ));
+                }
+            }
 
             // Record migration
             conn.execute(

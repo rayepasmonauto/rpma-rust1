@@ -1,4 +1,5 @@
 import { safeInvoke } from '@/lib/ipc/core';
+import { IPC_COMMANDS } from '@/lib/ipc/commands';
 
 export interface EntityCountsResponse {
   tasks?: number;
@@ -8,7 +9,7 @@ export interface EntityCountsResponse {
 
 export const entityCountsIpc = {
   getCounts: (sessionToken: string) =>
-    safeInvoke<EntityCountsResponse>('get_entity_counts', {
+    safeInvoke<EntityCountsResponse>(IPC_COMMANDS.GET_ENTITY_COUNTS, {
       sessionToken,
     }),
 };
