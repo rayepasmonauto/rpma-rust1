@@ -9,9 +9,9 @@ import type { StepType } from '@/lib/backend';
 import {
   PPF_STEP_CONFIG,
   PpfWorkflowLayout,
-  usePpfWorkflow,
   getPPFStepPath,
 } from '@/domains/interventions';
+import { usePpfWorkflow } from '@/domains/interventions/api/client';
 
 export default function PPFWorkflowPage() {
   const router = useRouter();
