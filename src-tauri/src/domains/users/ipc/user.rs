@@ -1,13 +1,14 @@
 //! User CRUD commands for Tauri IPC
 
 use crate::domains::users::application::{
-    CreateUserRequest, UpdateUserRequest, UserAction, UserListResponse, UserResponse,
+    CreateUserRequest, UpdateUserRequest, UserAction, UserResponse,
 };
-use crate::domains::users::UsersFacade;
+use crate::domains::users::{UsersCommand, UsersDomainResponse, UsersFacade, UsersServices};
 use crate::shared::app_state::AppState;
+use crate::shared::auth_middleware::AuthMiddleware;
 use crate::shared::ipc::{ApiResponse, AppError};
 use serde::Deserialize;
-use tracing::{debug, error, info, instrument, warn};
+use tracing::{debug, info, instrument};
 
 #[derive(Deserialize, Debug)]
 pub struct BootstrapFirstAdminRequest {
@@ -16,9 +17,6 @@ pub struct BootstrapFirstAdminRequest {
     #[serde(default)]
     pub correlation_id: Option<String>,
 }
-
-// Import authentication macros
-use crate::authenticate;
 
 /// User request structure
 #[derive(Deserialize, Debug)]
@@ -37,180 +35,35 @@ pub async fn user_crud(
     state: AppState<'_>,
 ) -> Result<ApiResponse<UserResponse>, AppError> {
     let action = request.action;
-    let session_token = request.session_token;
-    let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     debug!(
         "User CRUD operation requested with action: {:?}, session_token length: {}",
         action,
-        session_token.len()
+        request.session_token.len()
     );
 
-    // Centralized authentication
-    let current_user = authenticate!(&session_token, &state);
-    crate::commands::update_correlation_context_user(&current_user.user_id);
+    let ctx = AuthMiddleware::authenticate_command(
+        &request.session_token,
+        &state,
+        None,
+        &request.correlation_id,
+    )
+    .await?;
+
     let facade = UsersFacade::new();
-    facade.enforce_action_permissions(&current_user, &action)?;
+    let services = UsersServices {
+        auth_service: state.auth_service.clone(),
+        user_service: state.user_service.clone(),
+    };
 
-    let auth_service = state.auth_service.clone();
+    let domain_response = facade
+        .execute(UsersCommand::Crud(action), &ctx, &services)
+        .await?;
+    let response = match domain_response {
+        UsersDomainResponse::Crud(payload) => payload,
+        _ => return Err(AppError::Internal("Unexpected users facade response".to_string())),
+    };
 
-    match action {
-        UserAction::Create { data } => {
-            info!("Creating new user");
-            let role = facade.parse_role(&data.role)?;
-
-            let user = auth_service
-                .create_account(
-                    &data.email,
-                    &data.email,
-                    &data.first_name,
-                    &data.last_name,
-                    role,
-                    &data.password,
-                )
-                .map_err(|e| {
-                    error!("Failed to create user: {}", e);
-                    AppError::Database(format!("User creation failed: {}", e))
-                })?;
-            info!("User created successfully with ID: {}", user.id);
-
-            Ok(ApiResponse::success(UserResponse::Created(user))
-                .with_correlation_id(Some(correlation_id.clone())))
-        }
-        UserAction::Get { id } => {
-            debug!("Retrieving user with ID: {}", id);
-
-            let user = auth_service.get_user(&id).map_err(|e| {
-                error!("Failed to retrieve user {}: {}", id, e);
-                AppError::Database(format!("User retrieval failed: {}", e))
-            })?;
-            let response = match user {
-                Some(user) => {
-                    debug!("User {} found", id);
-                    ApiResponse::success(UserResponse::Found(user))
-                        .with_correlation_id(Some(correlation_id.clone()))
-                }
-                None => {
-                    warn!("User {} not found", id);
-                    ApiResponse::success(UserResponse::NotFound)
-                        .with_correlation_id(Some(correlation_id.clone()))
-                }
-            };
-            Ok(response)
-        }
-        UserAction::Update { id, data } => {
-            info!("Updating user with ID: {}", id);
-
-            let role = match data.role.as_ref() {
-                Some(r) => Some(facade.parse_role(r)?),
-                None => None,
-            };
-
-            let user = auth_service
-                .update_user(
-                    &id,
-                    data.email.as_deref(),
-                    data.first_name.as_deref(),
-                    data.last_name.as_deref(),
-                    role,
-                    data.is_active,
-                )
-                .map_err(|e| {
-                    error!("Failed to update user {}: {}", id, e);
-                    AppError::Database(format!("User update failed: {}", e))
-                })?;
-            info!("User {} updated successfully", id);
-
-            Ok(ApiResponse::success(UserResponse::Updated(user))
-                .with_correlation_id(Some(correlation_id.clone())))
-        }
-        UserAction::Delete { id } => {
-            info!("Deleting user with ID: {}", id);
-
-            // Prevent self-deletion
-            facade.ensure_not_self_action(&current_user.user_id, &id, "delete your own account")?;
-
-            auth_service.delete_user(&id).map_err(|e| {
-                error!("Failed to delete user {}: {}", id, e);
-                AppError::Database(format!("User deletion failed: {}", e))
-            })?;
-            info!("User {} deleted successfully", id);
-            Ok(ApiResponse::success(UserResponse::Deleted)
-                .with_correlation_id(Some(correlation_id.clone())))
-        }
-        UserAction::List { limit, offset } => {
-            debug!(
-                "Listing users with limit: {:?}, offset: {:?}",
-                limit, offset
-            );
-
-            let users = auth_service
-                .list_users(Some(limit.unwrap_or(50)), Some(offset.unwrap_or(0)))
-                .map_err(|e| {
-                    error!("Failed to list users: {}", e);
-                    AppError::Database(format!("User listing failed: {}", e))
-                })?;
-            debug!("Retrieved {} users", users.len());
-            Ok(
-                ApiResponse::success(UserResponse::List(UserListResponse { data: users }))
-                    .with_correlation_id(Some(correlation_id.clone())),
-            )
-        }
-        UserAction::ChangePassword { id, new_password } => {
-            info!("Changing password for user ID: {}", id);
-
-            auth_service
-                .change_password(&id, &new_password)
-                .map_err(|e| {
-                    error!("Failed to change password for user {}: {}", id, e);
-                    AppError::Database(format!("Password change failed: {}", e))
-                })?;
-            info!("Password changed successfully for user {}", id);
-            Ok(ApiResponse::success(UserResponse::PasswordChanged)
-                .with_correlation_id(Some(correlation_id.clone())))
-        }
-        UserAction::ChangeRole { id, new_role } => {
-            info!("Changing role for user ID: {} to {:?}", id, new_role);
-
-            // Prevent changing own role
-            facade.ensure_not_self_action(&current_user.user_id, &id, "change your own role")?;
-
-            state
-                .user_service
-                .change_role(&id, new_role, &current_user.user_id)
-                .await?;
-
-            info!("Role changed successfully for user {}", id);
-            Ok(ApiResponse::success(UserResponse::RoleChanged)
-                .with_correlation_id(Some(correlation_id.clone())))
-        }
-        UserAction::Ban { id } => {
-            info!("Banning user ID: {}", id);
-
-            // Prevent banning self
-            facade.ensure_not_self_action(&current_user.user_id, &id, "ban yourself")?;
-
-            state
-                .user_service
-                .ban_user(&id, &current_user.user_id)
-                .await?;
-
-            info!("User {} banned successfully", id);
-            Ok(ApiResponse::success(UserResponse::UserBanned)
-                .with_correlation_id(Some(correlation_id.clone())))
-        }
-        UserAction::Unban { id } => {
-            info!("Unbanning user ID: {}", id);
-
-            state
-                .user_service
-                .unban_user(&id, &current_user.user_id)
-                .await?;
-
-            info!("User {} unbanned successfully", id);
-            Ok(ApiResponse::success(UserResponse::UserUnbanned)
-                .with_correlation_id(Some(correlation_id.clone())))
-        }
-    }
+    Ok(ApiResponse::success(response).with_correlation_id(Some(ctx.correlation_id)))
 }
 
 /// Bootstrap first admin user - only works if no admin exists
@@ -221,28 +74,36 @@ pub async fn bootstrap_first_admin(
     state: AppState<'_>,
 ) -> Result<ApiResponse<String>, AppError> {
     let user_id = request.user_id.trim().to_string();
-    let session_token = request.session_token;
-    let correlation_id = crate::commands::init_correlation_context(&request.correlation_id, None);
     let facade = UsersFacade::new();
-
+    let ctx = AuthMiddleware::authenticate_command(
+        &request.session_token,
+        &state,
+        None,
+        &request.correlation_id,
+    )
+    .await?;
+    let services = UsersServices {
+        auth_service: state.auth_service.clone(),
+        user_service: state.user_service.clone(),
+    };
     info!("Attempting to bootstrap first admin for user: {}", user_id);
-
-    let current_user = authenticate!(&session_token, &state);
-    crate::commands::update_correlation_context_user(&current_user.user_id);
-    if let Err(error) =
-        facade.validate_bootstrap_request(&user_id, &session_token, &current_user.user_id)
-    {
-        warn!(
-            "Bootstrap attempt blocked: user {} tried to promote {}",
-            current_user.user_id, user_id
-        );
-        return Err(error);
+    let response = facade
+        .execute(
+            UsersCommand::BootstrapFirstAdmin {
+                user_id: user_id.clone(),
+                session_token: request.session_token,
+            },
+            &ctx,
+            &services,
+        )
+        .await?;
+    match response {
+        UsersDomainResponse::BootstrapMessage(message) => {
+            info!("Bootstrap completed for user: {}", user_id);
+            Ok(ApiResponse::success(message).with_correlation_id(Some(ctx.correlation_id)))
+        }
+        _ => Err(AppError::Internal("Unexpected users facade response".to_string())),
     }
-
-    let message = state.user_service.bootstrap_first_admin(&user_id).await?;
-    info!("Bootstrap completed for user: {}", user_id);
-
-    Ok(ApiResponse::success(message).with_correlation_id(Some(correlation_id.clone())))
 }
 
 /// Check if any admin users exist in the system
@@ -252,13 +113,35 @@ pub async fn has_admins(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<bool>, AppError> {
-    let correlation_id = crate::commands::init_correlation_context(&correlation_id, None);
+    let corr = crate::commands::init_correlation_context(&correlation_id, None);
+    let facade = UsersFacade::new();
+    let services = UsersServices {
+        auth_service: state.auth_service.clone(),
+        user_service: state.user_service.clone(),
+    };
+    let system_session = crate::shared::contracts::auth::UserSession {
+        id: "system-session".to_string(),
+        user_id: "system".to_string(),
+        username: "system".to_string(),
+        email: "system@localhost".to_string(),
+        role: crate::shared::contracts::auth::UserRole::Admin,
+        token: "system-session".to_string(),
+        expires_at: chrono::Utc::now().to_rfc3339(),
+        last_activity: chrono::Utc::now().to_rfc3339(),
+        created_at: chrono::Utc::now().to_rfc3339(),
+    };
+    let ctx = crate::shared::ipc::CommandContext::new(system_session, corr.clone());
     debug!("Checking if admin users exist");
-
-    let has_admin = state.user_service.has_admins().await?;
-
-    debug!("Admin check completed: has_admins={}", has_admin);
-    Ok(ApiResponse::success(has_admin).with_correlation_id(Some(correlation_id.clone())))
+    let response = facade
+        .execute(UsersCommand::HasAdmins, &ctx, &services)
+        .await?;
+    match response {
+        UsersDomainResponse::HasAdmins(has_admin) => {
+            debug!("Admin check completed: has_admins={}", has_admin);
+            Ok(ApiResponse::success(has_admin).with_correlation_id(Some(corr)))
+        }
+        _ => Err(AppError::Internal("Unexpected users facade response".to_string())),
+    }
 }
 
 #[tauri::command]

@@ -2,8 +2,28 @@ use std::sync::Arc;
 
 use crate::domains::interventions::domain::models::intervention::Intervention;
 use crate::domains::interventions::infrastructure::intervention::InterventionService;
+use crate::domains::tasks::infrastructure::task::TaskService;
 use crate::shared::contracts::auth::UserRole;
 use crate::shared::ipc::errors::AppError;
+use crate::shared::ipc::CommandContext;
+
+#[derive(Debug)]
+pub enum InterventionsCommand {
+    Get { intervention_id: String },
+    GetActiveByTask { task_id: String },
+    GetLatestByTask { task_id: String },
+    GetStep {
+        intervention_id: String,
+        step_id: String,
+    },
+}
+
+pub enum InterventionsResponse {
+    Intervention(Intervention),
+    InterventionList(Vec<Intervention>),
+    OptionalIntervention(Option<Intervention>),
+    Step(crate::domains::interventions::domain::models::step::InterventionStep),
+}
 
 /// Facade for the Interventions bounded context.
 ///
@@ -84,5 +104,78 @@ impl InterventionsFacade {
             ));
         }
         Ok(())
+    }
+
+    pub fn execute(
+        &self,
+        command: InterventionsCommand,
+        ctx: &CommandContext,
+        task_service: &Arc<TaskService>,
+    ) -> Result<InterventionsResponse, AppError> {
+        match command {
+            InterventionsCommand::Get { intervention_id } => {
+                self.validate_intervention_id(&intervention_id)?;
+                let intervention = self
+                    .intervention_service
+                    .get_intervention(&intervention_id)
+                    .map_err(|_| AppError::Database("Failed to get intervention".to_string()))?
+                    .ok_or_else(|| {
+                        AppError::NotFound(format!("Intervention {} not found", intervention_id))
+                    })?;
+
+                self.check_intervention_access(&ctx.session.user_id, &ctx.session.role, &intervention)?;
+                Ok(InterventionsResponse::Intervention(intervention))
+            }
+            InterventionsCommand::GetActiveByTask { task_id } => {
+                self.validate_task_id(&task_id)?;
+                let task_access = task_service
+                    .check_task_assignment(&task_id, &ctx.session.user_id)
+                    .unwrap_or(false);
+                self.check_task_intervention_access(&ctx.session.role, task_access)?;
+
+                let payload = match self.intervention_service.get_active_intervention_by_task(&task_id) {
+                    Ok(Some(intervention)) => vec![intervention],
+                    Ok(None) => vec![],
+                    Err(_) => {
+                        return Err(AppError::Database(
+                            "Failed to get active interventions".to_string(),
+                        ))
+                    }
+                };
+                Ok(InterventionsResponse::InterventionList(payload))
+            }
+            InterventionsCommand::GetLatestByTask { task_id } => {
+                self.validate_task_id(&task_id)?;
+                let task_access = task_service
+                    .check_task_assignment(&task_id, &ctx.session.user_id)
+                    .unwrap_or(false);
+                self.check_task_intervention_access(&ctx.session.role, task_access)?;
+                let intervention = self
+                    .intervention_service
+                    .get_latest_intervention_by_task(&task_id)
+                    .map_err(|_| AppError::Database("Failed to get latest intervention".to_string()))?;
+                Ok(InterventionsResponse::OptionalIntervention(intervention))
+            }
+            InterventionsCommand::GetStep {
+                intervention_id,
+                step_id,
+            } => {
+                self.validate_intervention_id(&intervention_id)?;
+                let intervention = self
+                    .intervention_service
+                    .get_intervention(&intervention_id)
+                    .map_err(|_| AppError::Database("Failed to get intervention".to_string()))?
+                    .ok_or_else(|| {
+                        AppError::NotFound(format!("Intervention {} not found", intervention_id))
+                    })?;
+                self.check_intervention_access(&ctx.session.user_id, &ctx.session.role, &intervention)?;
+                let step = self
+                    .intervention_service
+                    .get_step(&step_id)
+                    .map_err(|_| AppError::Database("Failed to get intervention step".to_string()))?
+                    .ok_or_else(|| AppError::NotFound(format!("Step {} not found", step_id)))?;
+                Ok(InterventionsResponse::Step(step))
+            }
+        }
     }
 }
