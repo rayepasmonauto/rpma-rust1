@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/domains/auth';
 import { settingsService } from '../server';
 import type { UserSettings } from '@/lib/backend';
@@ -52,7 +52,6 @@ export function useSettings(): UseSettingsResult {
   const [settings, setSettings] = useState<UserSettings | null>(() => readCache());
   const [loading, setLoading] = useState<boolean>(!readCache());
   const [error, setError] = useState<string | null>(null);
-  const fetchedRef = useRef(false);
 
   const refetch = useCallback(async () => {
     if (!user?.token) {
@@ -85,11 +84,9 @@ export function useSettings(): UseSettingsResult {
   }, [user?.token]);
 
   useEffect(() => {
-    // Always refetch from backend; cache only avoids blank flash on mount.
-    if (!fetchedRef.current) {
-      fetchedRef.current = true;
-      void refetch();
-    }
+    // Refetch from backend on mount and when the token changes.
+    fetchedRef.current = true;
+    void refetch();
   }, [refetch]);
 
   return {

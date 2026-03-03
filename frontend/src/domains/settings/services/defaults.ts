@@ -121,6 +121,10 @@ export type SettingsCategory =
   | 'system_config'
   | 'consent';
 
+/**
+ * Must stay in sync with the backend `SettingsAccessPolicy::is_admin_only()`
+ * in `src-tauri/src/domains/settings/domain/policy.rs`.
+ */
 const ADMIN_ONLY_CATEGORIES: ReadonlySet<SettingsCategory> = new Set([
   'app_settings',
   'system_config',
