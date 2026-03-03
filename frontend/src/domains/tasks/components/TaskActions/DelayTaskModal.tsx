@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { ipcClient } from '@/lib/ipc';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { InlineLoading } from '@/components/ui/loading';
 import enhancedToast from '@/lib/enhanced-toast';
+import { taskKeys } from '@/lib/query-keys';
 
 interface DelayTaskModalProps {
   task: TaskWithDetails;
@@ -32,15 +33,15 @@ const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChang
       return await ipcClient.tasks.delayTask(task.id, newDate, reason, user.token);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', task.id] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      enhancedToast.success('Tâche reportée avec succès');
+      queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      enhancedToast.success('TÃ¢che reportÃ©e avec succÃ¨s');
       setNewDate('');
       setReason('');
       onOpenChange(false);
     },
     onError: (error) => {
-      enhancedToast.error('Erreur lors du report de la tâche');
+      enhancedToast.error('Erreur lors du report de la tÃ¢che');
       console.error('Delay task error:', error);
     }
   });
@@ -49,7 +50,7 @@ const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChang
     e.preventDefault();
 
     if (!newDate) {
-      enhancedToast.error('Veuillez sélectionner une nouvelle date');
+      enhancedToast.error('Veuillez sÃ©lectionner une nouvelle date');
       return;
     }
 
@@ -64,7 +65,7 @@ const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChang
     today.setHours(0, 0, 0, 0);
 
     if (selectedDate <= today) {
-      enhancedToast.error('La nouvelle date doit être dans le futur');
+      enhancedToast.error('La nouvelle date doit Ãªtre dans le futur');
       return;
     }
 
@@ -88,12 +89,12 @@ const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChang
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Reporter la t�che</DialogTitle>
+          <DialogTitle>Reporter la tï¿½che</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            <p>Tâche actuelle: #{task.task_number} - {task.title}</p>
+            <p>TÃ¢che actuelle: #{task.task_number} - {task.title}</p>
             {task.scheduled_date && (
               <p>Date actuelle: {new Date(task.scheduled_date).toLocaleDateString('fr-FR')}</p>
             )}
@@ -111,7 +112,7 @@ const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChang
               className="bg-muted border-border text-foreground"
             />
             <p className="text-xs text-border mt-1">
-              La date doit être dans le futur
+              La date doit Ãªtre dans le futur
             </p>
           </div>
 
@@ -121,7 +122,7 @@ const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChang
               id="reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Expliquez pourquoi cette t�che doit �tre report�e..."
+              placeholder="Expliquez pourquoi cette tï¿½che doit ï¿½tre reportï¿½e..."
               rows={3}
               required
               className="bg-muted border-border text-foreground"
@@ -158,3 +159,4 @@ const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChang
 };
 
 export default DelayTaskModal;
+

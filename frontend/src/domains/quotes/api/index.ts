@@ -37,6 +37,7 @@ export {
   QuoteCustomerResponse,
   QuotePublicLinkCard,
   QuoteShareDialog,
+  QuoteDetailPageContent,
   QuotesListTable,
   QuotesStatusTabs,
   STATUS_LABELS,
@@ -54,3 +55,5 @@ export { computeQuoteStats } from '../utils/quote-stats';
 export type { QuotePageStats } from '../utils/quote-stats';
 
 export { formatCents } from '../utils/formatting';
+export { useQuoteDetailPage } from '../hooks/useQuoteDetailPage';
+export type { ActiveTab } from '../hooks/useQuoteDetailPage';

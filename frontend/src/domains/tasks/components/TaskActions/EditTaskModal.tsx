@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import type { JsonObject } from '@/types/json';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { ipcClient } from '@/lib/ipc';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { InlineLoading } from '@/components/ui/loading';
 import enhancedToast from '@/lib/enhanced-toast';
+import { taskKeys } from '@/lib/query-keys';
 
 interface EditTaskModalProps {
   task: TaskWithDetails;
@@ -52,13 +53,13 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
       return await ipcClient.tasks.editTask(task.id, updates as JsonObject, user.token);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', task.id] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      enhancedToast.success('Tâche mise à jour avec succès');
+      queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });
+      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+      enhancedToast.success('TÃ¢che mise Ã  jour avec succÃ¨s');
       onOpenChange(false);
     },
     onError: (error) => {
-      enhancedToast.error('Erreur lors de la mise à jour de la tâche');
+      enhancedToast.error('Erreur lors de la mise Ã  jour de la tÃ¢che');
       console.error('Edit task error:', error);
     }
   });
@@ -82,7 +83,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
 
     // Only submit if there are changes
     if (Object.keys(updates).length === 0) {
-      enhancedToast.info('Aucune modification détectée');
+      enhancedToast.info('Aucune modification dÃ©tectÃ©e');
       return;
     }
 
@@ -106,13 +107,13 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Modifier la tâche</DialogTitle>
+          <DialogTitle>Modifier la tÃ¢che</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-foreground">Informations générales</h3>
+            <h3 className="text-lg font-medium text-foreground">Informations gÃ©nÃ©rales</h3>
 
             <div>
               <Label htmlFor="title">Titre *</Label>
@@ -120,7 +121,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Titre de la tâche"
+                placeholder="Titre de la tÃ¢che"
                 required
                 className="bg-muted border-border text-foreground"
               />
@@ -132,14 +133,14 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Description détaillée de la tâche"
+                placeholder="Description dÃ©taillÃ©e de la tÃ¢che"
                 rows={3}
                 className="bg-muted border-border text-foreground"
               />
             </div>
 
             <div>
-              <Label htmlFor="priority">Priorité</Label>
+              <Label htmlFor="priority">PrioritÃ©</Label>
               <Select value={priority} onValueChange={(value: TaskPriority) => setPriority(value)}>
                 <SelectTrigger className="bg-muted border-border text-foreground">
                   <SelectValue />
@@ -160,7 +161,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="scheduled-date">Date planifiée</Label>
+                <Label htmlFor="scheduled-date">Date planifiÃ©e</Label>
                 <Input
                   id="scheduled-date"
                   type="date"
@@ -171,7 +172,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
               </div>
 
               <div>
-                <Label htmlFor="estimated-duration">Durée estimée (minutes)</Label>
+                <Label htmlFor="estimated-duration">DurÃ©e estimÃ©e (minutes)</Label>
                 <Input
                   id="estimated-duration"
                   type="number"
@@ -219,7 +220,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notes internes pour cette tâche..."
+                placeholder="Notes internes pour cette tÃ¢che..."
                 rows={4}
                 className="bg-muted border-border text-foreground"
               />
@@ -245,9 +246,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
               {editTaskMutation.isPending ? (
                 <span className="inline-flex items-center gap-2">
                   <InlineLoading size="sm" />
-                  Mise à jour...
+                  Mise Ã  jour...
                 </span>
-              ) : 'Mettre à jour'}
+              ) : 'Mettre Ã  jour'}
             </Button>
           </div>
         </form>
@@ -257,3 +258,4 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
 };
 
 export default EditTaskModal;
+

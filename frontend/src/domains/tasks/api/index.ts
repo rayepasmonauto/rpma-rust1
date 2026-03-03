@@ -27,6 +27,7 @@ export {
   CompletedActionBar,
   CompletedSidebar,
   SummaryStats,
+  CompletedTaskPageContent,
 } from '../components/completed';
 
 export * from '../components/TaskForm';
@@ -48,6 +49,7 @@ export { useTaskState } from '../hooks/useTaskState';
 export { useTaskFilters } from '../hooks/useTaskFilters';
 export { useTaskFiltering } from '../hooks/useTaskFiltering';
 export { useWorkflowStepAutoSave } from '../hooks/useWorkflowStepAutoSave';
+export { useCompletedTaskPage } from '../hooks/useCompletedTaskPage';
 export { taskGateway } from './taskGateway';
 export { getTaskDisplayTitle, getTaskDisplayStatus } from '../utils/display';
 export {

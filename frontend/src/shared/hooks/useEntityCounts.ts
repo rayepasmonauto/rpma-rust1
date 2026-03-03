@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { safeInvoke } from '@/lib/ipc/utils';
 import { AuthSecureStorage } from '@/lib/secureStorage';
+import { entityCountsIpc } from '@/domains/dashboard';
 
 interface EntityCounts {
   tasks: number;
@@ -30,9 +30,7 @@ export function useEntityCounts(): UseEntityCountsReturn {
         throw new Error('Authentication required');
       }
 
-      const response: Record<string, number> = await safeInvoke('get_entity_counts', {
-        sessionToken: session.token
-      });
+      const response = await entityCountsIpc.getCounts(session.token);
       setCounts({
         tasks: response.tasks || 0,
         clients: response.clients || 0,
@@ -48,7 +46,7 @@ export function useEntityCounts(): UseEntityCountsReturn {
   };
 
   useEffect(() => {
-    fetchCounts();
+    void fetchCounts();
   }, []);
 
   return {
@@ -58,3 +56,4 @@ export function useEntityCounts(): UseEntityCountsReturn {
     refetch: fetchCounts,
   };
 }
+

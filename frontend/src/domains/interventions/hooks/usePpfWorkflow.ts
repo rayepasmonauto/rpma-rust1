@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react';
+﻿import { useCallback, useMemo, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/domains/auth';
@@ -59,12 +59,12 @@ export function usePpfWorkflow(taskIdOverride?: string) {
   const saveDraft = useCallback(
     async (stepType: StepType, collectedData: JsonValue, options?: DraftOptions) => {
       if (!session?.token) {
-        toast.error('Session expirée');
+        toast.error('Session expirÃ©e');
         return;
       }
       const step = stepRecords.get(stepType);
       if (!step) {
-        toast.error('Étape introuvable');
+        toast.error('Ã‰tape introuvable');
         return;
       }
 
@@ -92,11 +92,11 @@ export function usePpfWorkflow(taskIdOverride?: string) {
       if (options?.invalidate) {
         queryClient.invalidateQueries({ queryKey: interventionKeys.ppfInterventionSteps(step.intervention_id) });
         queryClient.invalidateQueries({ queryKey: interventionKeys.ppfIntervention(taskId) });
-        queryClient.invalidateQueries({ queryKey: ['intervention-data', taskId] });
+        queryClient.invalidateQueries({ queryKey: interventionKeys.byTaskData(taskId) });
       }
 
       if (options?.showToast) {
-        toast.success('Brouillon sauvegardé');
+        toast.success('Brouillon sauvegardÃ©');
       }
     },
     [queryClient, session?.token, stepRecords, taskId]
@@ -234,3 +234,4 @@ export function usePpfWorkflow(taskIdOverride?: string) {
     setQualityScore,
   };
 }
+

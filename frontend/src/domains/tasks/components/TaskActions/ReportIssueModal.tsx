@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,7 @@ import { ipcClient } from '@/lib/ipc';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { InlineLoading } from '@/components/ui/loading';
 import enhancedToast from '@/lib/enhanced-toast';
+import { taskKeys } from '@/lib/query-keys';
 
 interface ReportIssueModalProps {
   task: TaskWithDetails;
@@ -33,15 +34,15 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({ task, open, onOpenC
       return await ipcClient.tasks.reportTaskIssue(task.id, issueType, severity, description, user.token);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks', task.id] });
-      enhancedToast.success('Problème signalé avec succès');
+      queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });
+      enhancedToast.success('ProblÃ¨me signalÃ© avec succÃ¨s');
       setIssueType('technical');
       setSeverity('medium');
       setDescription('');
       onOpenChange(false);
     },
     onError: (error) => {
-      enhancedToast.error('Erreur lors du signalement du problème');
+      enhancedToast.error('Erreur lors du signalement du problÃ¨me');
       console.error('Report issue error:', error);
     }
   });
@@ -50,7 +51,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({ task, open, onOpenC
     e.preventDefault();
 
     if (!description.trim()) {
-      enhancedToast.error('Veuillez décrire le problème');
+      enhancedToast.error('Veuillez dÃ©crire le problÃ¨me');
       return;
     }
 
@@ -68,33 +69,33 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({ task, open, onOpenC
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Signaler un problème</DialogTitle>
+          <DialogTitle>Signaler un problÃ¨me</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            <p>Tâche concernée: #{task.task_number} - {task.title}</p>
+            <p>TÃ¢che concernÃ©e: #{task.task_number} - {task.title}</p>
           </div>
 
           <div>
-            <Label htmlFor="issue-type">Type de problème</Label>
+            <Label htmlFor="issue-type">Type de problÃ¨me</Label>
             <Select value={issueType} onValueChange={setIssueType}>
               <SelectTrigger className="bg-muted border-border text-foreground">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-muted border-border">
                 <SelectItem value="technical" className="text-foreground hover:bg-border">Technique</SelectItem>
-                <SelectItem value="material" className="text-foreground hover:bg-border">Matériel</SelectItem>
+                <SelectItem value="material" className="text-foreground hover:bg-border">MatÃ©riel</SelectItem>
                 <SelectItem value="client" className="text-foreground hover:bg-border">Client</SelectItem>
                 <SelectItem value="planning" className="text-foreground hover:bg-border">Planning</SelectItem>
-                <SelectItem value="quality" className="text-foreground hover:bg-border">Qualité</SelectItem>
+                <SelectItem value="quality" className="text-foreground hover:bg-border">QualitÃ©</SelectItem>
                 <SelectItem value="other" className="text-foreground hover:bg-border">Autre</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label htmlFor="severity">Sévérité</Label>
+            <Label htmlFor="severity">SÃ©vÃ©ritÃ©</Label>
             <Select value={severity} onValueChange={setSeverity}>
               <SelectTrigger className="bg-muted border-border text-foreground">
                 <SelectValue />
@@ -102,19 +103,19 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({ task, open, onOpenC
               <SelectContent className="bg-muted border-border">
                 <SelectItem value="low" className="text-foreground hover:bg-border">Faible</SelectItem>
                 <SelectItem value="medium" className="text-foreground hover:bg-border">Moyenne</SelectItem>
-                <SelectItem value="high" className="text-foreground hover:bg-border">Élevée</SelectItem>
+                <SelectItem value="high" className="text-foreground hover:bg-border">Ã‰levÃ©e</SelectItem>
                 <SelectItem value="critical" className="text-foreground hover:bg-border">Critique</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label htmlFor="description">Description du problème *</Label>
+            <Label htmlFor="description">Description du problÃ¨me *</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Décrivez le problème en détail..."
+              placeholder="DÃ©crivez le problÃ¨me en dÃ©tail..."
               rows={4}
               required
               className="bg-muted border-border text-foreground"
@@ -122,7 +123,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({ task, open, onOpenC
           </div>
 
           <div className="text-sm text-muted-foreground">
-            <p>Ce signalement sera transmis à l&apos;équipe de support pour résolution.</p>
+            <p>Ce signalement sera transmis Ã  l&apos;Ã©quipe de support pour rÃ©solution.</p>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4 border-t border-border">
@@ -155,3 +156,4 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({ task, open, onOpenC
 };
 
 export default ReportIssueModal;
+
