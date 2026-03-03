@@ -7,7 +7,7 @@ import { safeInvoke } from '@/lib/ipc/utils';
 import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import type { TaskStatus } from '@/lib/backend';
 import type { JsonObject } from '@/types/json';
-import { useAuth } from '@/domains/auth/api/useAuth';
+import { useAuth } from '@/domains/auth';
 
 interface UseRealTimeUpdatesOptions {
   enableTaskUpdates?: boolean;
