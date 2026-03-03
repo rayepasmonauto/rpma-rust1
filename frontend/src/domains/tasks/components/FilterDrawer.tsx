@@ -18,7 +18,7 @@ import {
   CollapsibleTrigger,
   CollapsibleContent,
 } from '@/components/ui/collapsible';
-import { useCalendarStore } from '@/domains/calendar/stores/calendarStore';
+import { useCalendarStore } from '@/domains/calendar';
 import { designTokens } from '@/lib/design-tokens';
 import type { TaskStatus, TaskPriority } from '@/lib/backend';
 
