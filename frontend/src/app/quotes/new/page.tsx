@@ -105,7 +105,7 @@ export default function NewQuotePage() {
     }
   };
 
-  // Subtotals in cents (unit_price stored in euros in form state, convert for display)
+  // Convert subtotals from euros (form state) to cents for display in QuoteTotalsCard
   const partsSubtotal = parts.reduce((sum, p) => sum + Math.round(p.total * 100), 0);
   const laborSubtotal = labor.reduce((sum, l) => sum + Math.round(l.total * 100), 0);
 

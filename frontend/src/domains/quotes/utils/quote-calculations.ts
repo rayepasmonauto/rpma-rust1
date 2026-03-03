@@ -59,22 +59,22 @@ export function computeQuoteTotals(
   discountType?: string | null,
   discountValue?: number | null
 ): QuoteTotals {
-  // 1. Raw subtotal (sum of line totals)
-  let rawSubtotal = 0;
-  for (const item of items) {
-    rawSubtotal += Math.trunc(item.qty * item.unit_price);
-  }
+  // 1. Compute per-item line totals (truncate like the backend: (qty * unit_price) as i64)
+  const lineTotals = items.map(item => Math.trunc(item.qty * item.unit_price));
 
-  // 2. Discount
+  // 2. Raw subtotal
+  const rawSubtotal = lineTotals.reduce((sum, lt) => sum + lt, 0);
+
+  // 3. Discount
   const discountAmount = computeDiscountAmount(rawSubtotal, discountType, discountValue);
   const subtotal = Math.max(0, rawSubtotal - discountAmount);
 
-  // 3. Tax on per-item basis, then scaled proportionally if discount applied
+  // 4. Tax per-item, then scale proportionally if a discount was applied
   let rawTax = 0;
-  for (const item of items) {
-    if (item.tax_rate) {
-      const lineTotal = Math.trunc(item.qty * item.unit_price);
-      rawTax += Math.trunc(lineTotal * (item.tax_rate / 100));
+  for (let i = 0; i < items.length; i++) {
+    const rate = items[i].tax_rate;
+    if (rate) {
+      rawTax += Math.trunc(lineTotals[i] * (rate / 100));
     }
   }
 

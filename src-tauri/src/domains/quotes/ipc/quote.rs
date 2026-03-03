@@ -42,10 +42,7 @@ fn check_quote_permission(role: &UserRole, operation: &str) -> Result<(), AppErr
 /// "not found" / "introuvable" patterns become NotFound; everything else is Validation.
 fn map_quote_service_error(e: String) -> AppError {
     let lower = e.to_lowercase();
-    if lower.contains("not found")
-        || lower.contains("introuvable")
-        || lower.contains("not in draft")
-    {
+    if lower.contains("not found") || lower.contains("introuvable") {
         AppError::NotFound(e)
     } else {
         AppError::Validation(e)
