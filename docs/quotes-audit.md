@@ -8,7 +8,8 @@
 - Frontend domain: `frontend/src/domains/quotes/*` (hooks, IPC, components).
 - Backend IPC: `src-tauri/src/domains/quotes/ipc/quote.rs`.
 - Backend service/repo/models: `src-tauri/src/domains/quotes/infrastructure/quote.rs`, `src-tauri/src/domains/quotes/infrastructure/quote_repository.rs`, `src-tauri/src/domains/quotes/domain/models/quote.rs`.
-- Migrations: `src-tauri/migrations/037_quotes.sql`, `047_add_quotes_missing_columns.sql`, `048_fix_quotes_status_constraint.sql`, root `migrations/032_quote_discounts.sql`, `033_quote_attachments.sql`, `034_quote_sharing.sql`.
+- Embedded migrations (Tauri): `src-tauri/migrations/037_quotes.sql`, `047_add_quotes_missing_columns.sql`, `048_fix_quotes_status_constraint.sql`.
+- Root migrations: `migrations/032_quote_discounts.sql`, `033_quote_attachments.sql`, `034_quote_sharing.sql`.
 - PRD schema expectation: `docs/PRDs/DATABASE.md` (quotes + quote_shares).
 
 **Gaps/risks**
@@ -25,6 +26,8 @@
 ---
 
 ## 2. Functionality map (user actions → screens → commands → tables)
+_Tables column lists the primary tables touched (not exhaustive of joins or cached reads)._
+
 | User action | Screen/route | Frontend hook/component | IPC command | Backend service/repo | Tables |
 |---|---|---|---|---|---|
 | List quotes | `/quotes` | `useQuotesList`, `QuotesListTable` | `quote_list` | `QuoteService::list_quotes`, `QuoteRepository::list` | `quotes` |
@@ -44,7 +47,7 @@
 
 ## 3. Data model & integrity audit
 **Expected behavior**
-- Tables: `quotes`, `quoteitems`, `quoteattachments`, `quoteshares` with FK integrity and cascades.
+- Tables: `quotes`, `quote_items`, `quote_attachments`, `quote_shares` with FK integrity and cascades.
 - Status set includes `draft/sent/accepted/rejected/expired`, and discount/total fields in minor units.
 - Soft delete via `quotes.deletedat`.
 
@@ -193,7 +196,9 @@
 - **Medium:** Totals could desync if partial update fails.
 
 **Recommendations**
-- Use a unique sequence/UUID-based quote number.
+- Use a dedicated counter table with explicit write locking (e.g., `BEGIN IMMEDIATE`, `UPDATE counter SET value = value + 1`, then `SELECT value` in the same transaction) to preserve sequential numbering without races.
+- If supported in the chosen SQLite version, `UPDATE ... RETURNING` can replace the separate `SELECT`.
+- If AUTOINCREMENT-based numbering is acceptable for the business, document it and use it consistently.
 - Wrap item + totals updates in a single transaction.
 
 **Tests needed**
@@ -240,7 +245,7 @@
 | F-16 | Discount not persisted on create | Medium | Discounts | create payload | Persist discount_type/value | Integration |
 | F-17 | Rounding mismatch (UI round vs backend trunc) | Medium | Monetary | UI `Math.round` vs backend trunc | Align rounding | Unit |
 | F-18 | Negative unit_price not validated | Low | Monetary | item validate only qty | Enforce unit_price >= 0 | Unit |
-| F-19 | Quote number race condition | Medium | Concurrency | `next_quote_number` | Use sequence/UUID | Integration |
+| F-19 | Quote number race condition | Medium | Concurrency | `next_quote_number` | See section 8 recommendation for counter table/locking | Integration |
 | F-20 | Expired status not enforced | Medium | Lifecycle | no expiry logic | Implement expiry | Integration |
 | F-21 | `converted` status never set | Low | Lifecycle | `mark_accepted` | Set converted | Integration |
 | F-22 | Hard delete only | Medium | Data integrity | `delete` SQL | Add soft delete | Integration |
@@ -256,7 +261,7 @@
 - [ ] Create persists client, vehicle, valid-until, items, discounts, taxes, notes/terms.
 - [ ] Detail supports edit in draft, read-only in sent/accepted, correct status gating.
 - [ ] Status transitions enforce lifecycle incl. expired + converted.
-- [ ] Share link is public, expiring, revocable, and audited.
+- [ ] Share link is public, expirable, revocable, and audited.
 - [ ] Attachments are safely stored and persisted.
 - [ ] Export PDF is complete and localized.
 - [ ] Audit logs exist for create/update/delete/status/export/share.
