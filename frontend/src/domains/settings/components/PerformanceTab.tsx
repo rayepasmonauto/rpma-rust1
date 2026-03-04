@@ -74,11 +74,6 @@ interface SyncStats {
   syncStatus: 'idle' | 'syncing' | 'error';
 }
 
-interface SyncOperation {
-  direction?: string;
-  status?: string;
-}
-
 interface SyncStatusResponse {
   status?: string;
 }
@@ -246,14 +241,12 @@ export function PerformanceTab({ user }: PerformanceSettingsTabProps) {
 
       // Get updated sync status
       const syncStatus = await ipcClient.sync.getStatus() as SyncStatusResponse;
-      const operations = await ipcClient.sync.getOperationsForEntity('all', 'all') as SyncOperation[] | unknown;
-      const operationList = Array.isArray(operations) ? operations : [];
 
       setSyncStats(prev => ({
         ...prev,
         lastSync: new Date().toISOString(),
-        pendingUploads: operationList.filter((op) => op.direction === 'upload' && op.status === 'pending').length,
-        pendingDownloads: operationList.filter((op) => op.direction === 'download' && op.status === 'pending').length,
+        pendingUploads: 0,
+        pendingDownloads: 0,
         syncStatus: syncStatus?.status === 'running' ? 'syncing' : 'idle',
       }));
 
@@ -398,7 +391,8 @@ export function PerformanceTab({ user }: PerformanceSettingsTabProps) {
                         min="50"
                         max="500"
                         {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        value={isNaN(field.value) ? '' : field.value}
+                        onChange={(e) => { const v = parseInt(e.target.value, 10); field.onChange(v); }}
                       />
                     </FormControl>
                     <FormDescription>

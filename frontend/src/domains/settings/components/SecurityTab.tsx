@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -16,7 +15,6 @@ import {
   Shield,
   Lock,
   Key,
-  Smartphone,
   Monitor,
   AlertTriangle,
   CheckCircle,
@@ -84,7 +82,6 @@ export function SecurityTab({ user }: SecuritySettingsTabProps) {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loginSessions, setLoginSessions] = useState<LoginSession[]>([]);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [sessionTimeout, setSessionTimeout] = useState(480); // 8 hours in minutes
 
   const { logInfo, logError, logUserAction } = useLogger({
@@ -123,10 +120,7 @@ export function SecurityTab({ user }: SecuritySettingsTabProps) {
           setLoginSessions(formattedSessions);
         }
 
-        // Check 2FA status
-        const twoFactorStatus = await ipcClient.auth.is2FAEnabled(user.token);
-        setTwoFactorEnabled(twoFactorStatus as boolean);
-
+        // Check 2FA status - not implemented, skip
         // Get session timeout config
         const timeoutConfig = await ipcClient.settings.getSessionTimeoutConfig(user.token);
         setSessionTimeout((timeoutConfig as { timeout_minutes?: number })?.timeout_minutes || 480);
@@ -207,46 +201,6 @@ export function SecurityTab({ user }: SecuritySettingsTabProps) {
         sessionId,
         error: error instanceof Error ? error.message : error
       });
-    }
-  };
-
-  const handleToggleTwoFactor = async (enabled: boolean) => {
-    if (!user?.token) return;
-
-    logUserAction('2FA toggle initiated', { enabled });
-
-    try {
-      if (enabled) {
-        const setupData = await ipcClient.auth.enable2FA(user.token) as { backup_codes?: string[] };
-        const verificationCode = window.prompt('Entrez le code de votre application d\'authentification pour activer la 2FA');
-        if (!verificationCode || !verificationCode.trim()) {
-          throw new Error('Activation 2FA annulée: code de vérification manquant');
-        }
-
-        await ipcClient.auth.verify2FASetup(
-          verificationCode.trim(),
-          Array.isArray(setupData?.backup_codes) ? setupData.backup_codes : [],
-          user.token
-        );
-
-        const refreshedStatus = await ipcClient.auth.is2FAEnabled(user.token);
-        setTwoFactorEnabled(Boolean(refreshedStatus));
-        logInfo('2FA enabled successfully', { enabled });
-      } else {
-        const password = window.prompt('Entrez votre mot de passe pour désactiver la 2FA');
-        if (!password || !password.trim()) {
-          throw new Error('Désactivation 2FA annulée: mot de passe requis');
-        }
-
-        await ipcClient.auth.disable2FA(password, user.token);
-
-        const refreshedStatus = await ipcClient.auth.is2FAEnabled(user.token);
-        setTwoFactorEnabled(Boolean(refreshedStatus));
-        logInfo('2FA disabled successfully', { enabled });
-      }
-
-    } catch (error) {
-      logError('2FA toggle failed', { enabled, error: error instanceof Error ? error.message : error });
     }
   };
 
@@ -421,48 +375,6 @@ export function SecurityTab({ user }: SecuritySettingsTabProps) {
         </CardContent>
       </Card>
 
-      {/* Two-Factor Authentication Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Smartphone className="h-5 w-5" />
-            Authentification à deux facteurs
-          </CardTitle>
-          <CardDescription>
-            Ajoutez une couche de sécurité supplémentaire à votre compte
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <Label className="text-base">Authentification à deux facteurs (2FA)</Label>
-              <p className="text-sm text-muted-foreground">
-                {twoFactorEnabled
-                  ? "L'authentification à deux facteurs est activée pour votre compte"
-                  : "Renforcez la sécurité de votre compte avec l'authentification à deux facteurs"
-                }
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {twoFactorEnabled && <Badge variant="secondary">Activé</Badge>}
-              <Switch
-                checked={twoFactorEnabled}
-                onCheckedChange={handleToggleTwoFactor}
-              />
-            </div>
-          </div>
-
-          {!twoFactorEnabled && (
-            <Alert>
-              <Shield className="h-4 w-4" />
-              <AlertDescription>
-                L&apos;activation de l&apos;authentification à deux facteurs nécessite un code QR et une application d&apos;authentification.
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Session Management Section */}
       <Card>
         <CardHeader>
@@ -555,16 +467,6 @@ export function SecurityTab({ user }: SecuritySettingsTabProps) {
                 <p className="font-medium">Mot de passe fort</p>
                 <p className="text-sm text-muted-foreground">
                   Utilisez un mot de passe complexe avec au moins 12 caractères
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
-              <div>
-                <p className="font-medium">Authentification à deux facteurs</p>
-                <p className="text-sm text-muted-foreground">
-                  Activez la 2FA pour une protection supplémentaire
                 </p>
               </div>
             </div>
