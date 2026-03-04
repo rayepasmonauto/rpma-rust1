@@ -82,14 +82,11 @@ export const interventionsIpc = {
       sessionToken: sessionToken
     });
 
-    if (result && typeof result === 'object' && 'data' in result) {
-      const apiResponse = result as unknown as { data: Intervention | null };
-      return {
-        intervention: apiResponse.data || null
-      };
+    // safeInvoke already unwraps ApiResponse.data — result IS the Intervention or null
+    if (result && typeof result === 'object' && 'id' in result) {
+      return { intervention: result as unknown as Intervention };
     }
 
-    console.warn('[IPC] getLatestByTask unexpected structure');
     return { intervention: null };
   },
 

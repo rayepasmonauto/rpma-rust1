@@ -34,7 +34,7 @@ export default function NewQuotePage() {
   const router = useRouter();
   const { createQuote, loading, error } = useCreateQuote();
   const { user } = useAuth();
-  const { clients } = useClients({ autoFetch: true });
+  const { clients, refetch: refetchClients } = useClients({ autoFetch: true });
 
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState<QuoteStatus>('draft');
@@ -158,6 +158,7 @@ export default function NewQuotePage() {
                 vehicles={[]}
                 onCustomerIdChange={setCustomerId}
                 onVehicleIdChange={setVehicleId}
+                refreshCustomers={refetchClients}
               />
               <QuoteDetailsCard
                 title={title}

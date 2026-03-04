@@ -598,8 +598,8 @@ impl InterventionsFacade {
                         &ctx.correlation_id,
                         Some(&ctx.session.user_id),
                     )
-                    .map_err(|_| {
-                        AppError::Database("Failed to finalize intervention".to_string())
+                    .map_err(|e| {
+                        AppError::Database(format!("Failed to finalize intervention: {e}"))
                     })?;
                 Ok(InterventionsResponse::Finalized(response))
             }
@@ -715,8 +715,8 @@ impl InterventionsFacade {
                         &ctx.correlation_id,
                         Some(&ctx.session.user_id),
                     )
-                    .map_err(|_| {
-                        AppError::Database("Failed to finalize intervention".to_string())
+                    .map_err(|e| {
+                        AppError::Database(format!("Failed to finalize intervention: {e}"))
                     })?;
                 Ok(InterventionsResponse::Workflow(
                     InterventionWorkflowResponse::Finalized {

@@ -536,37 +536,59 @@ impl QuoteService {
         let now = Utc::now().timestamp_millis();
         let task_number = format!("TASK-Q-{:05}", now % 100000);
 
+        // Use transaction to fetch client details and create task
         self.db
-            .execute(
-                r#"
-                INSERT INTO tasks (
-                    id, task_number, title, status, priority,
-                    vehicle_plate, vehicle_model, vehicle_make, vehicle_year, vin,
-                    client_id, notes,
-                    scheduled_date, ppf_zones,
-                    created_at, updated_at, created_by
-                ) VALUES (?, ?, ?, 'draft', 'medium', ?, ?, ?, ?, ?, ?, ?, ?, '[]', ?, ?, ?)
-                "#,
-                rusqlite::params![
-                    task_id,
-                    task_number,
-                    format!("Tâche issue du devis {}", quote.quote_number),
-                    quote.vehicle_plate,
-                    quote.vehicle_model,
-                    quote.vehicle_make,
-                    quote.vehicle_year,
-                    quote.vehicle_vin,
-                    quote.client_id,
-                    quote.notes,
-                    Utc::now().format("%Y-%m-%d").to_string(),
-                    now,
-                    now,
-                    quote.created_by,
-                ],
-            )
-            .map_err(|e| format!("Failed to create task from quote: {}", e))?;
+            .with_transaction(|tx| {
+                // Fetch client details for denormalization in task
+                let (customer_name, customer_email, customer_phone): (Option<String>, Option<String>, Option<String>) = tx
+                    .query_row(
+                        "SELECT name, email, phone FROM clients WHERE id = ?",
+                        rusqlite::params![quote.client_id],
+                        |row| {
+                            Ok((
+                                row.get(0)?,
+                                row.get(1)?,
+                                row.get(2)?,
+                            ))
+                        },
+                    )
+                    .unwrap_or((None, None, None));
 
-        Ok(task_id)
+                tx.execute(
+                    r#"
+                    INSERT INTO tasks (
+                        id, task_number, title, status, priority,
+                        vehicle_plate, vehicle_model, vehicle_make, vehicle_year, vin,
+                        client_id, customer_name, customer_email, customer_phone, notes,
+                        scheduled_date, ppf_zones,
+                        created_at, updated_at, created_by
+                    ) VALUES (?, ?, ?, 'draft', 'medium', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '[]', ?, ?, ?)
+                    "#,
+                    rusqlite::params![
+                        task_id,
+                        task_number,
+                        format!("Tâche issue du devis {}", quote.quote_number),
+                        quote.vehicle_plate,
+                        quote.vehicle_model,
+                        quote.vehicle_make,
+                        quote.vehicle_year,
+                        quote.vehicle_vin,
+                        quote.client_id,
+                        customer_name,
+                        customer_email,
+                        customer_phone,
+                        quote.notes,
+                        Utc::now().format("%Y-%m-%d").to_string(),
+                        now,
+                        now,
+                        quote.created_by,
+                    ],
+                )
+                .map_err(|e| format!("Failed to create task from quote: {}", e))?;
+
+                Ok(task_id)
+            })
+            .map_err(|e| format!("Failed to create task from quote: {}", e))
     }
 
     /// Emit QuoteAccepted event
