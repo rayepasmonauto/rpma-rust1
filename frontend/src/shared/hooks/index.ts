@@ -10,7 +10,7 @@ export { useAutoSave, useBeforeUnloadSave } from './useAutoSave';
 export { useIntersectionObserver, useLazyImage, useLazyComponent, useInfiniteScroll, useScrollAnimation } from './useIntersectionObserver';
 export { useKeyboardShortcuts, useAppKeyboardShortcuts } from './useKeyboardShortcuts';
 export { useDesktopNavigation } from './useDesktopNavigation';
-export { useVirtualScrolling, useTaskVirtualScrolling, useSOPVirtualScrolling, useUserVirtualScrolling } from './useVirtualScrolling';
+export { useVirtualScrolling } from './useVirtualScrolling';
 export { useIsMobile } from './use-mobile';
 export { useAuthRedirect } from './useAuthRedirect';
 export { useAdminBootstrapCheck } from './useAdminBootstrapCheck';

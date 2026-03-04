@@ -4,6 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Cloud, Database, Wifi, CheckCircle2 } from 'lucide-react';
+import { MetricStatCard } from '@/shared/components/MetricStatCard';
 
 interface SyncStats {
   status?: string;
@@ -80,26 +81,24 @@ export function PhotoDocumentationDashboard({ syncStats }: PhotoDocumentationDas
           {/* Statistics Grid */}
           <div className="grid grid-cols-2 gap-4">
             {stats.map((stat) => (
-              <div key={stat.label} className="flex items-center space-x-3 p-3 rounded-lg border">
-                <div className={`p-2 rounded-full ${stat.bgColor}`}>
-                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                  <p className="text-lg font-bold">{stat.value}</p>
-                  {stat.subtitle && (
-                    <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
-                  )}
-                  {stat.badge && (
-                    <Badge
-                      variant={stat.badge === 'success' ? 'default' : 'destructive'}
-                      className="text-xs mt-1"
-                    >
-                      {stat.badge === 'success' ? 'OK' : 'Erreur'}
-                    </Badge>
-                  )}
-                </div>
-              </div>
+              <MetricStatCard
+                key={stat.label}
+                label={stat.label}
+                value={stat.value}
+                subtitle={stat.subtitle}
+                icon={stat.icon}
+                color={stat.color}
+                bgColor={stat.bgColor}
+              >
+                {stat.badge && (
+                  <Badge
+                    variant={stat.badge === 'success' ? 'default' : 'destructive'}
+                    className="text-xs mt-1"
+                  >
+                    {stat.badge === 'success' ? 'OK' : 'Erreur'}
+                  </Badge>
+                )}
+              </MetricStatCard>
             ))}
           </div>
 
