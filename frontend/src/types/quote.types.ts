@@ -39,11 +39,6 @@ export interface Quote {
   vehicle_model: string | null;
   vehicle_year: string | null;
   vehicle_vin: string | null;
-  customer_message?: string | null;
-  public_token?: string | null;
-  shared_at?: string | null;
-  view_count?: number | null;
-  last_viewed_at?: string | null;
   created_at: string;
   updated_at: string;
   created_by: string | null;

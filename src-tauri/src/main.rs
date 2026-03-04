@@ -298,12 +298,7 @@ fn main() {
             domains::quotes::ipc::quote::quote_attachments_get,
             domains::quotes::ipc::quote::quote_attachment_create,
             domains::quotes::ipc::quote::quote_attachment_update,
-            domains::quotes::ipc::quote::quote_attachment_delete,
-            domains::quotes::ipc::quote::quote_generate_share_link,
-            domains::quotes::ipc::quote::quote_revoke_share_link,
-            domains::quotes::ipc::quote::quote_get_by_public_token,
-            domains::quotes::ipc::quote::quote_customer_response,
-            domains::quotes::ipc::quote::quote_acknowledge_response
+            domains::quotes::ipc::quote::quote_attachment_delete
         ])
         .setup(|app| {
             info!("Initializing application setup");

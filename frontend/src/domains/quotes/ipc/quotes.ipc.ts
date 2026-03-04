@@ -117,14 +117,4 @@ export const quotesIpc = {
     void sessionToken;
     throw new Error('Quote-to-task conversion is not implemented by backend IPC');
   },
-
-  generatePublicLink: (id: string, sessionToken: string) =>
-    safeInvoke('quote_generate_share_link', {
-      request: { session_token: sessionToken, quote_id: id }
-    }),
-
-  revokePublicLink: (id: string, sessionToken: string) =>
-    safeInvoke('quote_revoke_share_link', {
-      request: { session_token: sessionToken, quote_id: id }
-    }),
 };

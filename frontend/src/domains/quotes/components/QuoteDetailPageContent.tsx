@@ -12,7 +12,6 @@ import {
   Plus,
   Trash2,
   Copy,
-  Share2,
   Mail,
   MoreVertical,
   Clock,
@@ -23,11 +22,8 @@ import {
 import {
   QuoteConvertDialog,
 } from './QuoteConvertDialog';
-import { QuoteCustomerResponse } from './QuoteCustomerResponse';
 import { QuoteDocumentsManager } from './QuoteDocumentsManager';
 import { QuoteImagesManager } from './QuoteImagesManager';
-import { QuotePublicLinkCard } from './QuotePublicLinkCard';
-import { QuoteShareDialog } from './QuoteShareDialog';
 import { QuoteStatusBadge } from './QuoteStatusBadge';
 import { formatCents } from '../utils/formatting';
 import { useQuoteDetailPage } from '../hooks/useQuoteDetailPage';
@@ -78,8 +74,6 @@ export function QuoteDetailPageContent() {
     setShowConvertDialog,
     showDeleteDialog,
     setShowDeleteDialog,
-    showShareDialog,
-    setShowShareDialog,
     showAddItem,
     setShowAddItem,
     newLabel,
@@ -155,14 +149,6 @@ export function QuoteDetailPageContent() {
                 >
                   <Send className="h-4 w-4" />
                   Envoyer
-                </Button>
-                <Button
-                  onClick={() => setShowShareDialog(true)}
-                  variant="outline"
-                  className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium"
-                >
-                  <Share2 className="h-4 w-4" />
-                  Partager
                 </Button>
               </>
             )}
@@ -337,33 +323,12 @@ export function QuoteDetailPageContent() {
                 <div className="rounded-lg border bg-white p-6 space-y-3">
                   <h2 className="text-sm font-semibold text-gray-500 mb-4 flex items-center gap-2"><Eye className="h-4 w-4" />Actions rapides</h2>
                   <div className="space-y-2">
-                    <Button onClick={() => setShowShareDialog(true)} variant="outline" className="w-full justify-start"><Share2 className="mr-2 h-4 w-4" />Partager le devis</Button>
                     {isSent && <Button onClick={handleEmailQuote} variant="outline" className="w-full justify-start"><Mail className="mr-2 h-4 w-4" />Envoyer par email</Button>}
                     {canConvert && <Button onClick={() => setShowConvertDialog(true)} className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white"><ArrowRight className="mr-2 h-4 w-4" />Convertir en tâche</Button>}
                   </div>
                 </div>
-
-                {hasPublicLink && (
-                  <QuotePublicLinkCard
-                    publicToken={quote.public_token || null}
-                    sharedAt={quote.shared_at || null}
-                    viewCount={quote.view_count || 0}
-                    lastViewedAt={quote.last_viewed_at || null}
-                    onRevoke={() => toast.info('Fonctionnalité de révocation à venir')}
-                  />
-                )}
               </div>
             </div>
-
-            {hasCustomerResponse && (
-              <QuoteCustomerResponse
-                status={quote.status}
-                customerMessage={quote.customer_message || null}
-                updatedAt={quote.updated_at}
-                loading={false}
-                onResolve={() => toast.info('Fonctionnalité de résolution à venir')}
-              />
-            )}
 
             {(quote.notes || quote.terms) && (
               <div className="rounded-lg border bg-white p-6 space-y-4">
@@ -499,18 +464,6 @@ export function QuoteDetailPageContent() {
           toast.success('Tâche créée avec succès');
           router.push(`/tasks/${taskId}`);
         }}
-      />
-
-      <QuoteShareDialog
-        open={showShareDialog}
-        onOpenChange={setShowShareDialog}
-        quoteId={quote.id}
-        quoteNumber={quote.quote_number}
-        organizationId=""
-        initialToken={quote.public_token || null}
-        customer={null}
-        smsEnabled={false}
-        emailEnabled={false}
       />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
