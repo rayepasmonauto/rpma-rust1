@@ -46,12 +46,20 @@ impl InterventionDataService {
         request: &StartInterventionRequest,
         user_id: &str,
     ) -> InterventionResult<Intervention> {
-        // Get task_number and vehicle_plate from task
-        let (task_number, vehicle_plate): (String, Option<String>) = tx
+        // Get task_number, vehicle_plate, and client info from task
+        let (task_number, vehicle_plate, client_id, customer_name, customer_email, customer_phone): 
+            (String, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>) = tx
             .query_row(
-                "SELECT task_number, vehicle_plate FROM tasks WHERE id = ?",
+                "SELECT task_number, vehicle_plate, client_id, customer_name, customer_email, customer_phone FROM tasks WHERE id = ?",
                 params![request.task_id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
+                |row| Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                    row.get(5)?,
+                )),
             )
             .map_err(|e| {
                 InterventionError::NotFound(format!("Task {} not found: {}", request.task_id, e))
@@ -63,6 +71,26 @@ impl InterventionDataService {
         let mut intervention =
             Intervention::new(request.task_id.clone(), task_number.clone(), vehicle_plate);
         intervention.id = intervention_id;
+
+        // Set client info from task
+        intervention.client_id = client_id;
+        intervention.client_name = customer_name;
+        intervention.client_email = customer_email;
+        intervention.client_phone = customer_phone;
+
+        // Set vehicle info from task (fetch full vehicle details)
+        let (vehicle_model, vehicle_make, vehicle_year, vehicle_vin): 
+            (Option<String>, Option<String>, Option<i32>, Option<String>) = tx
+            .query_row(
+                "SELECT vehicle_model, vehicle_make, vehicle_year, vin FROM tasks WHERE id = ?",
+                params![request.task_id],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+            )
+            .unwrap_or((None, None, None, None));
+        intervention.vehicle_model = vehicle_model;
+        intervention.vehicle_make = vehicle_make;
+        intervention.vehicle_year = vehicle_year;
+        intervention.vehicle_vin = vehicle_vin;
 
         // Set audit fields
         intervention.created_by = Some(user_id.to_string());

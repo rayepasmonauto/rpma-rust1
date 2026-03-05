@@ -116,7 +116,10 @@ pub async fn intervention_get_progress(
 pub async fn intervention_advance_step(
     intervention_id: String,
     step_id: String,
+    collected_data: Option<serde_json::Value>,
+    photos: Option<Vec<String>>,
     notes: Option<String>,
+    issues: Option<Vec<String>>,
     session_token: String,
     correlation_id: Option<String>,
     state: AppState<'_>,
@@ -132,11 +135,11 @@ pub async fn intervention_advance_step(
             InterventionsCommand::AdvanceStep {
                 intervention_id,
                 step_id,
-                collected_data: serde_json::Value::Null,
-                photos: None,
+                collected_data: collected_data.unwrap_or(serde_json::Value::Null),
+                photos,
                 notes,
                 quality_check_passed: true,
-                issues: None,
+                issues,
             },
             &ctx,
             state.task_service.as_ref(),
@@ -161,6 +164,8 @@ pub async fn intervention_save_step_progress(
     intervention_id: String,
     step_id: String,
     progress_data: serde_json::Value,
+    notes: Option<String>,
+    photos: Option<Vec<String>>,
     session_token: String,
     correlation_id: Option<String>,
     state: AppState<'_>,
@@ -174,8 +179,8 @@ pub async fn intervention_save_step_progress(
                 step_id,
                 intervention_id: Some(intervention_id),
                 collected_data: progress_data,
-                notes: None,
-                photos: None,
+                notes,
+                photos,
             },
             &ctx,
             state.task_service.as_ref(),
@@ -189,9 +194,9 @@ pub async fn intervention_save_step_progress(
         Ok(_) => Err(AppError::Internal(
             "Unexpected interventions facade response".to_string(),
         )),
-        Err(_) => Err(AppError::Database(
-            "Failed to save step progress".to_string(),
-        )),
+        Err(e) => Err(AppError::Database(format!(
+            "Failed to save step progress: {e}"
+        ))),
     }
 }
 

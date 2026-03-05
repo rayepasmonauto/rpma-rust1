@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Car, Users, X } from 'lucide-react';
+import { Car, Users, X, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { clientIpc } from '@/domains/clients/ipc/client.ipc';
+import { useAuth } from '@/domains/auth';
+import { toast } from 'sonner';
 
 interface CustomerOption {
   id: string;
@@ -37,6 +41,8 @@ interface QuoteVehicleCustomerCardProps {
   vehicles: VehicleOption[];
   onCustomerIdChange: (id: string) => void;
   onVehicleIdChange: (id: string) => void;
+  onCustomerCreated?: (clientId: string) => void;
+  refreshCustomers?: () => void;
 }
 
 export function QuoteVehicleCustomerCard({
@@ -46,7 +52,19 @@ export function QuoteVehicleCustomerCard({
   vehicles,
   onCustomerIdChange,
   onVehicleIdChange,
+  onCustomerCreated,
+  refreshCustomers,
 }: QuoteVehicleCustomerCardProps) {
+  const { user } = useAuth();
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newClient, setNewClient] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    type: 'individual' as 'individual' | 'business',
+  });
+
   const selectedCustomer = customers.find((c) => c.id === customerId);
   const selectedVehicle = vehicles.find((v) => v.id === vehicleId);
 
@@ -58,6 +76,47 @@ export function QuoteVehicleCustomerCard({
       if (vehicle?.customerId) {
         onCustomerIdChange(vehicle.customerId);
       }
+    }
+  };
+
+  const handleCreateClient = async () => {
+    if (!newClient.name.trim()) {
+      toast.error('Le nom du client est requis');
+      return;
+    }
+    if (!user?.token) return;
+
+    setCreating(true);
+    try {
+      const client = await clientIpc.create(
+        {
+          name: newClient.name,
+          email: newClient.email || null,
+          phone: newClient.phone || null,
+          customer_type: newClient.type,
+          address_street: null,
+          address_city: null,
+          address_state: null,
+          address_zip: null,
+          address_country: null,
+          tax_id: null,
+          company_name: null,
+          contact_person: null,
+          notes: null,
+          tags: null,
+        },
+        user.token
+      );
+      toast.success(`Client "${client.name}" créé avec succès`);
+      setShowNewClientForm(false);
+      setNewClient({ name: '', email: '', phone: '', type: 'individual' });
+      onCustomerIdChange(client.id);
+      onCustomerCreated?.(client.id);
+      refreshCustomers?.();
+    } catch (error) {
+      toast.error('Erreur lors de la création du client');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -162,6 +221,88 @@ export function QuoteVehicleCustomerCard({
             <X className="h-3 w-3" />
           </Button>
         </div>
+      )}
+
+      {/* Inline New Client Form */}
+      {showNewClientForm ? (
+        <div className="rounded-md border border-dashed p-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-medium">Nouveau client</Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={() => {
+                setShowNewClientForm(false);
+                setNewClient({ name: '', email: '', phone: '', type: 'individual' });
+              }}
+            >
+              Annuler
+            </Button>
+          </div>
+          <div className="space-y-2">
+            <Input
+              placeholder="Nom du client *"
+              value={newClient.name}
+              onChange={(e) => setNewClient((prev) => ({ ...prev, name: e.target.value }))}
+            />
+            <Input
+              placeholder="Email"
+              type="email"
+              value={newClient.email}
+              onChange={(e) => setNewClient((prev) => ({ ...prev, email: e.target.value }))}
+            />
+            <Input
+              placeholder="Téléphone"
+              type="tel"
+              value={newClient.phone}
+              onChange={(e) => setNewClient((prev) => ({ ...prev, phone: e.target.value }))}
+            />
+            <Select
+              value={newClient.type}
+              onValueChange={(v) => setNewClient((prev) => ({ ...prev, type: v as 'individual' | 'business' }))}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="individual">Particulier</SelectItem>
+                <SelectItem value="business">Entreprise</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              className="w-full text-xs"
+              size="sm"
+              onClick={handleCreateClient}
+              disabled={creating || !newClient.name.trim()}
+            >
+              {creating ? (
+                <>
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  Création...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-3 w-3" />
+                  Créer le client
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full text-xs"
+          onClick={() => setShowNewClientForm(true)}
+        >
+          <Plus className="mr-2 h-3 w-3" />
+          Créer un nouveau client
+        </Button>
       )}
     </div>
   );

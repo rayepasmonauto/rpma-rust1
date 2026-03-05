@@ -255,11 +255,6 @@ export const IPC_COMMANDS = {
   QUOTE_ATTACHMENT_CREATE: 'quote_attachment_create',
   QUOTE_ATTACHMENT_UPDATE: 'quote_attachment_update',
   QUOTE_ATTACHMENT_DELETE: 'quote_attachment_delete',
-  QUOTE_GENERATE_SHARE_LINK: 'quote_generate_share_link',
-  QUOTE_REVOKE_SHARE_LINK: 'quote_revoke_share_link',
-  QUOTE_GET_BY_PUBLIC_TOKEN: 'quote_get_by_public_token',
-  QUOTE_CUSTOMER_RESPONSE: 'quote_customer_response',
-  QUOTE_ACKNOWLEDGE_RESPONSE: 'quote_acknowledge_response',
 
   // WebSocket commands
   INIT_WEBSOCKET_SERVER: 'init_websocket_server',

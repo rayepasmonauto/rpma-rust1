@@ -4,6 +4,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, UserCheck, Building, TrendingUp } from 'lucide-react';
+import { MetricStatCard } from '@/shared/components/MetricStatCard';
 
 interface ClientStats {
   total?: number;
@@ -93,21 +94,22 @@ export function QualityAssuranceDashboard({ clientStats, userStats }: QualityAss
           {/* Statistics Grid */}
           <div className="grid grid-cols-2 gap-4">
             {stats.map((stat) => (
-              <div key={stat.label} className="flex items-center space-x-3 p-3 rounded-lg border">
-                <div className={`p-2 rounded-full ${stat.bgColor}`}>
-                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.subtitle}</p>
-                  {stat.trend !== null && (
-                    <Badge variant="outline" className="text-xs mt-1">
-                      {stat.trend}% actif
-                    </Badge>
-                  )}
-                </div>
-              </div>
+              <MetricStatCard
+                key={stat.label}
+                label={stat.label}
+                value={stat.value}
+                subtitle={stat.subtitle}
+                icon={stat.icon}
+                color={stat.color}
+                bgColor={stat.bgColor}
+                valueClassName="text-2xl font-bold"
+              >
+                {stat.trend !== null && (
+                  <Badge variant="outline" className="text-xs mt-1">
+                    {stat.trend}% actif
+                  </Badge>
+                )}
+              </MetricStatCard>
             ))}
           </div>
 

@@ -5,9 +5,9 @@
 mod contracts;
 
 pub use contracts::{
-    QuoteAcknowledgeRequest, QuoteAttachmentCreateRequest, QuoteAttachmentDeleteRequest,
+    QuoteAttachmentCreateRequest, QuoteAttachmentDeleteRequest,
     QuoteAttachmentUpdateRequest, QuoteAttachmentsGetRequest, QuoteCreateRequest,
     QuoteDeleteRequest, QuoteGetRequest, QuoteItemAddRequest, QuoteItemDeleteRequest,
-    QuoteItemUpdateRequest, QuoteListRequest, QuoteRevokeRequest, QuoteShareRequest,
+    QuoteItemUpdateRequest, QuoteListRequest,
     QuoteStatusRequest, QuoteUpdateRequest,
 };

@@ -9,9 +9,6 @@ export {
 } from '@/domains/sync';
 export {
   useVirtualScrolling,
-  useTaskVirtualScrolling,
-  useSOPVirtualScrolling,
-  useUserVirtualScrolling,
 } from '@/shared/hooks/useVirtualScrolling';
 export {
   useIntersectionObserver,

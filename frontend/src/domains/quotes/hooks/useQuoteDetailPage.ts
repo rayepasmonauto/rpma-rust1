@@ -18,7 +18,6 @@ export function useQuoteDetailPage(quoteId: string) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('details');
   const [showConvertDialog, setShowConvertDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showShareDialog, setShowShareDialog] = useState(false);
   const [showAddItem, setShowAddItem] = useState(false);
   const [newLabel, setNewLabel] = useState('');
   const [newKind, setNewKind] = useState<QuoteItemKind>('service');
@@ -141,10 +140,6 @@ export function useQuoteDetailPage(quoteId: string) {
     toast.info('Fonctionnalité de duplication à venir');
   };
 
-  const hasCustomerResponse =
-    !!quote?.customer_message &&
-    (quote.status === 'changes_requested' || quote.status === 'accepted' || quote.status === 'rejected');
-  const hasPublicLink = !!quote?.public_token;
   const isDraft = quote?.status === 'draft';
   const isSent = quote?.status === 'sent';
   const isAccepted = quote?.status === 'accepted';
@@ -164,8 +159,6 @@ export function useQuoteDetailPage(quoteId: string) {
     setShowConvertDialog,
     showDeleteDialog,
     setShowDeleteDialog,
-    showShareDialog,
-    setShowShareDialog,
     showAddItem,
     setShowAddItem,
     newLabel,
@@ -178,8 +171,6 @@ export function useQuoteDetailPage(quoteId: string) {
     setNewUnitPrice,
     newDescription,
     setNewDescription,
-    hasCustomerResponse,
-    hasPublicLink,
     isDraft,
     isSent,
     isAccepted,
