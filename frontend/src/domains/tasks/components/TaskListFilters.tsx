@@ -4,7 +4,6 @@ import {
   Button,
   Input,
 } from '@/shared/ui/facade';
-import { useDebounce } from '@/shared/hooks';
 
 interface TaskListFiltersProps {
   searchTerm: string;
@@ -41,13 +40,6 @@ export const TaskListFilters = React.memo(({
   onExport,
   onImport
 }: TaskListFiltersProps) => {
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
-
-  React.useEffect(() => {
-    // This will trigger search when debounced term changes
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  }, [debouncedSearchTerm]);
-
   const activeFiltersCount = [statusFilter, dateFilter, technicianFilter, ppfZoneFilter].filter(f => f !== 'all').length;
 
   return (

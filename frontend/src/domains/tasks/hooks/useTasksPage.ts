@@ -20,7 +20,6 @@ export function useTasksPage() {
   const [technicianFilter, setTechnicianFilter] = useState<string>('all');
   const [ppfZoneFilter, setPpfZoneFilter] = useState<string>('all');
   const [technicians, setTechnicians] = useState<Array<{ id: string; name: string }>>([]);
-  const [_refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<'cards' | 'table' | 'calendar' | 'kanban'>('table');
   const [selectedDateRange] = useState<{ from?: Date; to?: Date } | undefined>();
   const [showFilters, setShowFilters] = useState(false);
@@ -144,13 +143,6 @@ export function useTasksPage() {
       component: 'TasksPage'
     });
 
-    logger.info('Starting task deletion process', {
-      taskId: task.id,
-      taskTitle: task.title,
-      status: task.status,
-      component: 'TasksPage'
-    });
-
     try {
       await deleteTask(task.id);
       logger.info('Task deletion successful', {
@@ -182,13 +174,10 @@ export function useTasksPage() {
   }, [deleteTask, refetch]);
 
   const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
     try {
       await refetch();
     } catch (error) {
       console.error('Failed to refresh tasks:', error);
-    } finally {
-      setRefreshing(false);
     }
   }, [refetch]);
 
