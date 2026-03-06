@@ -10,7 +10,6 @@ use tracing::{error, info, warn};
 
 use crate::commands::AppError;
 use crate::db::Database;
-use crate::domains::notifications::infrastructure::message::MessageService;
 use crate::domains::tasks::application::services::task_policy_service;
 use crate::domains::tasks::domain::models::task::{
     SortOrder, Task, TaskPriority, TaskQuery, TaskStatus, UpdateTaskRequest,
@@ -21,6 +20,7 @@ use crate::domains::tasks::ipc::task::types::BulkImportResponse;
 use crate::domains::tasks::ipc::task_types::TaskFilter;
 use crate::domains::tasks::TasksFacade;
 use crate::shared::contracts::auth::UserSession;
+use crate::shared::contracts::notification::NotificationSender;
 
 /// Lightweight orchestration service constructed per-request by IPC handlers.
 ///
@@ -30,7 +30,7 @@ use crate::shared::contracts::auth::UserSession;
 pub struct TaskCommandService {
     task_service: Arc<TaskService>,
     task_import_service: Arc<TaskImportService>,
-    message_service: Arc<MessageService>,
+    notification_sender: Arc<dyn NotificationSender>,
     db: Arc<Database>,
 }
 
@@ -38,13 +38,13 @@ impl TaskCommandService {
     pub fn new(
         task_service: Arc<TaskService>,
         task_import_service: Arc<TaskImportService>,
-        message_service: Arc<MessageService>,
+        notification_sender: Arc<dyn NotificationSender>,
         db: Arc<Database>,
     ) -> Self {
         Self {
             task_service,
             task_import_service,
-            message_service,
+            notification_sender,
             db,
         }
     }
@@ -133,7 +133,7 @@ impl TaskCommandService {
         }
 
         let sent_message = self
-            .message_service
+            .notification_sender
             .send_message_raw(
                 message_type,
                 task.client_id.clone().or(task.technician_id.clone()),
@@ -192,7 +192,7 @@ impl TaskCommandService {
 
         if matches!(severity.as_str(), "high" | "critical") {
             if let Err(err) = self
-                .message_service
+                .notification_sender
                 .send_message_raw(
                     "in_app".to_string(),
                     task.technician_id.clone(),
@@ -448,7 +448,7 @@ impl TaskCommandService {
         if let Some(technician_id) = &task.technician_id {
             if technician_id != current_user_id {
                 if let Err(e) = self
-                    .message_service
+                    .notification_sender
                     .send_message_raw(
                         "in_app".to_string(),
                         Some(technician_id.clone()),
@@ -479,7 +479,7 @@ impl TaskCommandService {
     ) {
         let status = task.status.to_string();
         if let Err(e) = self
-            .message_service
+            .notification_sender
             .send_message_raw(
                 "in_app".to_string(),
                 Some(current_user_id.to_string()),
