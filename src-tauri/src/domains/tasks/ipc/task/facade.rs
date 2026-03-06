@@ -2,121 +2,25 @@
 //!
 //! This module provides the main API interface for task operations,
 //! delegating to specialized modules while maintaining backward compatibility.
+//!
+//! Request/response DTO structs live in the sibling `types` module.
 
 use crate::authenticate;
 use crate::check_task_permission;
-use crate::commands::{ApiResponse, AppError, AppState, TaskAction};
+use crate::commands::{ApiResponse, AppError, AppState};
 use crate::domains::tasks::application::services::task_policy_service;
 use crate::domains::tasks::domain::models::task::Task;
 use crate::domains::tasks::ipc::task::queries::{get_task_statistics, get_tasks_with_clients};
 use crate::domains::tasks::TasksFacade;
 use crate::shared::services::validation::ValidationService;
-use serde::Deserialize;
-use std::fmt::Debug;
 use tracing::{debug, error, info, warn};
 
-/// Task request structure
-#[derive(Deserialize, Debug)]
-
-pub struct TaskCrudRequest {
-    pub action: TaskAction,
-    pub session_token: String,
-    #[serde(default)]
-    pub correlation_id: Option<String>,
-}
-
-/// Request for editing a task
-#[derive(Deserialize, Debug)]
-
-pub struct EditTaskRequest {
-    pub session_token: String,
-    pub task_id: String,
-    pub data: crate::domains::tasks::domain::models::task::UpdateTaskRequest,
-    #[serde(default)]
-    pub correlation_id: Option<String>,
-}
-
-/// Request for adding a note to a task
-#[derive(Deserialize, Debug)]
-
-pub struct AddTaskNoteRequest {
-    pub session_token: String,
-    pub task_id: String,
-    pub note: String,
-    #[serde(default)]
-    pub correlation_id: Option<String>,
-}
-
-/// Request for sending a message related to a task
-#[derive(Deserialize, Debug)]
-
-pub struct SendTaskMessageRequest {
-    pub session_token: String,
-    pub task_id: String,
-    pub message: String,
-    pub message_type: Option<String>, // "info", "warning", "urgent", etc.
-    #[serde(default)]
-    pub correlation_id: Option<String>,
-}
-
-/// Request for delaying/rescheduling a task
-#[derive(Deserialize, Debug)]
-
-pub struct DelayTaskRequest {
-    pub session_token: String,
-    pub task_id: String,
-    pub new_scheduled_date: String, // New scheduled date
-    pub reason: String,             // Reason for delay
-    #[serde(default)]
-    pub additional_notes: Option<String>, // Optional additional notes
-    #[serde(default)]
-    pub correlation_id: Option<String>,
-}
-
-/// Request for reporting an issue with a task
-#[derive(Deserialize, Debug)]
-
-pub struct ReportTaskIssueRequest {
-    pub session_token: String,
-    pub task_id: String,
-    pub issue_type: String,
-    pub description: String,
-    pub severity: Option<String>, // "low", "medium", "high", "critical"
-    #[serde(default)]
-    pub correlation_id: Option<String>,
-}
-
-/// Request for exporting tasks to CSV
-#[derive(Deserialize, Debug)]
-
-pub struct ExportTasksCsvRequest {
-    pub session_token: String,
-    pub filter: Option<TaskFilter>,
-    pub include_client_data: Option<bool>,
-    #[serde(default)]
-    pub correlation_id: Option<String>,
-}
-
-/// Request for bulk importing tasks
-#[derive(Deserialize, Debug)]
-
-pub struct ImportTasksBulkRequest {
-    pub session_token: String,
-    pub csv_data: String,
-    pub update_existing: Option<bool>,
-    #[serde(default)]
-    pub correlation_id: Option<String>,
-}
-
-/// Response for bulk import operation
-#[derive(serde::Serialize, Debug)]
-pub struct BulkImportResponse {
-    pub total_processed: u32,
-    pub successful: u32,
-    pub failed: u32,
-    pub errors: Vec<String>,
-    pub duplicates_skipped: u32,
-}
+// Re-export all request/response types so callers see no change.
+pub use super::types::{
+    AddTaskNoteRequest, BulkImportResponse, DelayTaskRequest, EditTaskRequest,
+    ExportTasksCsvRequest, ImportTasksBulkRequest, ReportTaskIssueRequest, SendTaskMessageRequest,
+    TaskCrudRequest,
+};
 
 /// Add a timestamped note to a task.
 #[tracing::instrument(skip(state))]
@@ -319,9 +223,6 @@ pub async fn report_task_issue(
 }
 
 // Delegate to validation module
-
-// Explicit import for TaskFilter
-use crate::domains::tasks::ipc::task_types::TaskFilter;
 
 /// Export tasks to CSV command
 #[tracing::instrument(skip(state))]

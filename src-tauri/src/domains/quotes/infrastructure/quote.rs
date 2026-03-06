@@ -5,34 +5,12 @@
 
 use crate::domains::quotes::domain::models::quote::*;
 use crate::domains::quotes::infrastructure::quote_repository::QuoteRepository;
+use crate::domains::quotes::infrastructure::quote_validation;
 use crate::shared::repositories::base::RepoError;
 use chrono::Utc;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
 use uuid::Uuid;
-
-/// Maximum allowed file size for attachments (50 MB)
-const MAX_ATTACHMENT_SIZE: i64 = 50 * 1024 * 1024;
-
-/// Allowed MIME types for image attachments
-const ALLOWED_IMAGE_MIME_TYPES: &[&str] = &[
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-];
-
-/// Allowed MIME types for document attachments
-const ALLOWED_DOCUMENT_MIME_TYPES: &[&str] = &[
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.ms-excel",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "text/plain",
-    "text/csv",
-];
 
 /// Service for quote-related business operations
 pub struct QuoteService {
@@ -187,22 +165,10 @@ impl QuoteService {
         }
 
         // Validate discount values
-        if let Some(ref discount_type) = req.discount_type {
-            if !matches!(discount_type.as_str(), "percentage" | "fixed") {
-                return Err("Invalid discount type. Must be 'percentage' or 'fixed'.".to_string());
-            }
-        }
-
-        if let Some(discount_value) = req.discount_value {
-            if discount_value < 0 {
-                return Err("Discount value cannot be negative".to_string());
-            }
-            if let Some(ref discount_type) = req.discount_type {
-                if discount_type == "percentage" && discount_value > 100 {
-                    return Err("Percentage discount cannot exceed 100%".to_string());
-                }
-            }
-        }
+        quote_validation::validate_discount_update(
+            req.discount_type.as_deref(),
+            req.discount_value,
+        )?;
 
         self.repo.update(id, &req).map_err(Self::map_repo_error)?;
 
@@ -697,7 +663,7 @@ impl QuoteService {
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "Quote not found".to_string())?;
 
-        self.validate_attachment_file(&req)?;
+        quote_validation::validate_attachment_file(&req)?;
 
         let attachment_id = self
             .repo
@@ -776,53 +742,6 @@ impl QuoteService {
         Ok(deleted)
     }
 
-    /// Validate attachment file constraints
-    fn validate_attachment_file(&self, req: &CreateQuoteAttachmentRequest) -> Result<(), String> {
-        // Check file size
-        if req.file_size <= 0 {
-            return Err("File size must be greater than 0".to_string());
-        }
-
-        if req.file_size > MAX_ATTACHMENT_SIZE {
-            return Err(format!(
-                "File size exceeds maximum allowed size of {} MB",
-                MAX_ATTACHMENT_SIZE / (1024 * 1024)
-            ));
-        }
-
-        // Determine attachment type from MIME type if not provided
-        let attachment_type = req
-            .attachment_type
-            .as_ref()
-            .unwrap_or(&AttachmentType::Other);
-
-        match attachment_type {
-            AttachmentType::Image => {
-                if !ALLOWED_IMAGE_MIME_TYPES.contains(&req.mime_type.as_str()) {
-                    return Err(format!(
-                        "Invalid image file type. Allowed types: {}",
-                        ALLOWED_IMAGE_MIME_TYPES.join(", ")
-                    ));
-                }
-            }
-            AttachmentType::Document => {
-                if !ALLOWED_DOCUMENT_MIME_TYPES.contains(&req.mime_type.as_str()) {
-                    return Err(format!(
-                        "Invalid document file type. Allowed types: {}",
-                        ALLOWED_DOCUMENT_MIME_TYPES.join(", ")
-                    ));
-                }
-            }
-            AttachmentType::Other => {
-                // For 'other' type, allow any MIME type but warn about size
-                if req.file_size > 10 * 1024 * 1024 {
-                    return Err("Files of type 'other' are limited to 10 MB".to_string());
-                }
-            }
-        }
-
-        Ok(())
-    }
 }
 
 #[cfg(test)]

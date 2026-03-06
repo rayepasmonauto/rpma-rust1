@@ -11,4 +11,4 @@ pub(crate) mod task_repository;
 pub(crate) mod task_repository_streaming;
 pub(crate) mod task_statistics;
 pub(crate) mod task_update;
-pub(crate) mod task_validation;
+pub(crate) mod task_rules_repository;

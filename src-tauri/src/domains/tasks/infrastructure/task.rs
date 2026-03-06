@@ -43,8 +43,8 @@ use crate::domains::tasks::infrastructure::task_creation::TaskCreationService;
 use crate::domains::tasks::infrastructure::task_crud::TaskCrudService;
 use crate::domains::tasks::infrastructure::task_queries::TaskQueriesService;
 use crate::domains::tasks::infrastructure::task_statistics::TaskStatisticsService;
-use crate::domains::tasks::infrastructure::task_validation::{
-    validate_status_transition, TaskValidationService,
+use crate::domains::tasks::infrastructure::task_rules_repository::{
+    validate_status_transition, TaskRulesRepository,
 };
 
 use std::sync::Arc;
@@ -73,7 +73,7 @@ pub struct TaskService {
     /// Handles client relationship management and integration
     client_integration: TaskClientIntegrationService,
     /// Handles task validation and assignment checks
-    validation: TaskValidationService,
+    validation: TaskRulesRepository,
 }
 
 impl TaskService {
@@ -102,7 +102,7 @@ impl TaskService {
             queries: TaskQueriesService::new(db.clone()),
             statistics: TaskStatisticsService::new(db.clone()),
             client_integration: TaskClientIntegrationService::new(db.clone()),
-            validation: TaskValidationService::new(db),
+            validation: TaskRulesRepository::new(db),
         }
     }
 
