@@ -2,7 +2,6 @@ export { useTranslation } from './useTranslation';
 export { useLogger, useFormLogger, useApiLogger } from './useLogger';
 export { useMenuEvents } from './useMenuEvents';
 export { useDebounce } from './useDebounce';
-export { useEntityCounts } from './useEntityCounts';
 export { useAdvancedFiltering, useTaskFiltering, useSOPFiltering } from './useAdvancedFiltering';
 export { useAccessibility, useKeyboardNavigation as useAccessibilityKeyboardNavigation, useFocusTrap, useScreenReaderAnnouncement, useHapticFeedback, useTouchFriendly } from './useAccessibility';
 export { useKeyboardNavigation, useFocusableList, useRovingTabIndex } from './useKeyboardNavigation';
@@ -12,7 +11,4 @@ export { useKeyboardShortcuts, useAppKeyboardShortcuts } from './useKeyboardShor
 export { useDesktopNavigation } from './useDesktopNavigation';
 export { useVirtualScrolling } from './useVirtualScrolling';
 export { useIsMobile } from './use-mobile';
-export { useAuthRedirect } from './useAuthRedirect';
-export { useAdminBootstrapCheck } from './useAdminBootstrapCheck';
 export { useFilterState } from './useFilterState';
-export { useDashboardTaskFiltering } from './useDashboardTaskFiltering';

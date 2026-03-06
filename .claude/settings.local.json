@@ -5,7 +5,9 @@
       "Bash(cargo clippy -- -D warnings)",
       "Bash(cargo clippy)",
       "Bash(cargo check)",
-      "Bash(cargo test --lib)"
+      "Bash(cargo test --lib)",
+      "Bash(npm run frontend:type-check)",
+      "Bash(npm run frontend:lint)"
     ]
   }
 }

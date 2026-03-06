@@ -48,6 +48,7 @@ export { useTaskStatus } from '../hooks/useTaskStatus';
 export { useTaskState } from '../hooks/useTaskState';
 export { useTaskFilters } from '../hooks/useTaskFilters';
 export { useTaskFiltering } from '../hooks/useTaskFiltering';
+export { useDashboardTaskFiltering } from '../hooks/useDashboardTaskFiltering';
 export { useWorkflowStepAutoSave } from '../hooks/useWorkflowStepAutoSave';
 export { useCompletedTaskPage } from '../hooks/useCompletedTaskPage';
 export { useTaskDetailPage } from '../hooks/useTaskDetailPage';

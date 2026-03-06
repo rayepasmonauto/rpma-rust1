@@ -1,19 +1,13 @@
-﻿'use client';
+'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/domains/auth';
-import { clientService } from '@/domains/clients';
 import { Plus, Edit, Trash2, ArrowLeft, Mail, Phone, MapPin, Building2, User, Building } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClientWithTasks, Task } from '@/shared/types';
-import { convertTimestamps } from '@/shared/utils';
-import { useTranslation } from '@/shared/hooks/useTranslation';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
+import { useClientDetailPage } from '@/domains/clients';
 import { formatClientDate } from './date-format';
 
 interface ClientDetailPageProps {
@@ -23,86 +17,15 @@ interface ClientDetailPageProps {
 }
 
 export default function ClientDetailPage({ params }: ClientDetailPageProps) {
-  const { t } = useTranslation();
-  const router = useRouter();
-  const { user } = useAuth();
-  const [client, setClient] = useState<ClientWithTasks | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Load client
-  const loadClient = useCallback(async () => {
-    if (!params?.id || !user?.token) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await clientService.getClientWithTasks(params.id, user.token);
-      if (!response.success || !response.data) {
-        const errorMessage = typeof response.error === 'string'
-          ? response.error
-          : response.error?.message || t('clients.notFound');
-        setError(errorMessage);
-        return;
-      }
-
-      const convertedClient = convertTimestamps(response.data) as ClientWithTasks;
-      if (convertedClient.tasks) {
-        convertedClient.tasks = convertedClient.tasks.map(task => convertTimestamps(task) as Task);
-      }
-      setClient(convertedClient);
-    } catch (err) {
-      setError(t('errors.unexpected'));
-      console.error('Error loading client:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [params?.id, user?.token, t]);
-
-  useEffect(() => {
-    if (params?.id && user) {
-      loadClient();
-    }
-  }, [params?.id, user, loadClient]);
-
-  const handleEdit = () => {
-    if (params?.id) {
-      router.push(`/clients/${params.id}/edit`);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!client || !params?.id) return;
-
-    if (!confirm(t('confirm.deleteClient', { name: client.name }))) {
-      return;
-    }
-
-    try {
-      if (!user?.id) {
-        setError(t('errors.authRequired'));
-        return;
-      }
-
-      const response = await clientService.deleteClient(params.id, user.token);
-      if (response.error) {
-        setError(response.error || t('errors.deleteFailed'));
-        return;
-      }
-
-      router.push('/clients');
-    } catch (err) {
-      setError(t('errors.unexpected'));
-      console.error('Error deleting client:', err);
-    }
-  };
-
-  const handleCreateTask = () => {
-    if (params?.id) {
-      router.push(`/tasks/new?clientId=${params.id}`);
-    }
-  };
+  const {
+    client,
+    loading,
+    error,
+    t,
+    handleEdit,
+    handleDelete,
+    handleCreateTask,
+  } = useClientDetailPage({ params });
 
   if (loading) {
     return <LoadingState />;
@@ -371,7 +294,7 @@ export default function ClientDetailPage({ params }: ClientDetailPageProps) {
                       href={`/tasks?clientId=${params.id}`}
                       className="text-sm text-muted-foreground hover:text-foreground transition-colors block text-center pt-2"
                     >
-                      {t('clients.viewAllActivity')} â†’
+                      {t('clients.viewAllActivity')} →
                     </Link>
                   )}
                 </div>
@@ -397,5 +320,3 @@ export default function ClientDetailPage({ params }: ClientDetailPageProps) {
     </div>
   );
 }
-
-
