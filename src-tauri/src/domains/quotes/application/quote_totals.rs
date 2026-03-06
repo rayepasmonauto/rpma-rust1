@@ -10,7 +10,7 @@ use super::quote_service::QuoteService;
 
 impl QuoteService {
     /// Recalculate subtotal, tax_total, and total from items.
-    pub(crate) fn recalculate_totals(&self, quote_id: &str) -> Result<(), String> {
+    pub(super) fn recalculate_totals(&self, quote_id: &str) -> Result<(), String> {
         let items = self
             .repo
             .find_items_by_quote_id(quote_id)
@@ -65,7 +65,7 @@ impl QuoteService {
     }
 
     /// Calculate discount amount based on quote settings.
-    pub(crate) fn calculate_discount(
+    pub(super) fn calculate_discount(
         &self,
         quote_id: &str,
         subtotal: i64,

@@ -11,7 +11,7 @@ use super::quote_service::QuoteService;
 
 impl QuoteService {
     /// Emit QuoteAccepted event.
-    pub(crate) fn emit_quote_accepted(
+    pub(super) fn emit_quote_accepted(
         &self,
         quote: &Quote,
         error_message: Option<String>,
@@ -38,7 +38,7 @@ impl QuoteService {
     }
 
     /// Emit QuoteRejected event.
-    pub(crate) fn emit_quote_rejected(
+    pub(super) fn emit_quote_rejected(
         &self,
         quote: &Quote,
         reason: Option<String>,
@@ -65,7 +65,7 @@ impl QuoteService {
     }
 
     /// Emit QuoteConverted event.
-    pub(crate) fn emit_quote_converted(
+    pub(super) fn emit_quote_converted(
         &self,
         quote: &Quote,
         task_id: &str,

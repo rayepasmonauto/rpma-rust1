@@ -11,7 +11,7 @@ use super::quote_service::QuoteService;
 
 impl QuoteService {
     /// Create a task from a quote, delegating to the repository for SQL.
-    pub(crate) fn create_task_from_quote(&self, quote: &Quote) -> Result<String, String> {
+    pub(super) fn create_task_from_quote(&self, quote: &Quote) -> Result<String, String> {
         use crate::domains::quotes::infrastructure::quote_repository::CreateTaskFromQuoteParams;
 
         let task_id = Uuid::new_v4().to_string();
