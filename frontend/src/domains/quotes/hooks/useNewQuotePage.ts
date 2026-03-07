@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useCreateQuote } from './useQuotes';
 import { useClients } from '@/domains/clients/api';
-import { useAuth } from '@/domains/auth/api/useAuth';
+import { useAuth } from '@/domains/auth';
 import type {
   CreateQuoteRequest,
   QuotePartInput,

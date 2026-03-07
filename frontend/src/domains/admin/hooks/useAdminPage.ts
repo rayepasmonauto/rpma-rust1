@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/domains/auth/api/useAuth';
+import { useAuth } from '@/domains/auth';
 import { useAdminDashboard } from './useAdminDashboard';
 import { useAdminUserManagement } from './useAdminUserManagement';
 import { useTranslation } from '@/shared/hooks/useTranslation';
