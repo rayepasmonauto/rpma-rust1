@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { clientIpc } from '@/domains/clients/ipc/client.ipc';
+import { clientIpc } from '@/domains/clients';
 import { useAuth } from '@/domains/auth';
 import { toast } from 'sonner';
 

@@ -10,7 +10,7 @@ import {
   PpfWorkflowLayout,
   PpfZoneTracker,
 } from '@/domains/interventions';
-import { useInstallationStep, ZONE_CHECKLIST } from '@/domains/interventions/hooks/useInstallationStep';
+import { useInstallationStep, ZONE_CHECKLIST } from '@/domains/interventions';
 
 export default function InstallationStepPage() {
   const {
