@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { structuredLogger as logger, LogDomain } from '@/shared/utils';

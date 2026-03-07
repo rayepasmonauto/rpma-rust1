@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePpfWorkflow } from '@/domains/interventions/api/client';

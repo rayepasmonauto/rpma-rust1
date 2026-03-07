@@ -9,6 +9,8 @@
  * and works correctly even when a component is restored from the Next.js Router Cache.
  */
 
+'use client';
+
 import { useSyncExternalStore } from 'react';
 
 // ---------------------------------------------------------------------------
