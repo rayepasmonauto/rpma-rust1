@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
 import {
   Shield,
@@ -22,14 +22,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/shared/ui/facade';
-import { useAuth } from '@/domains/auth';
-import { useRouter } from 'next/navigation';
-import { useAdminDashboard, useAdminUserManagement } from '@/domains/admin';
-import { useTranslation } from '@/shared/hooks/useTranslation';
-import { AdminOverviewTab } from '@/domains/admin/components/AdminOverviewTab';
-import { AdminUsersTab } from '@/domains/admin/components/AdminUsersTab';
-import { AdminSystemTab } from '@/domains/admin/components/AdminSystemTab';
-import { AddUserModal } from '@/domains/admin/components/AddUserModal';
+import { useAdminPage, AdminOverviewTab, AdminUsersTab, AdminSystemTab, AddUserModal } from '@/domains/admin';
 
 const WorkflowExecutionDashboard = dynamic(
   () => import('@/domains/interventions').then((mod) => ({ default: mod.WorkflowExecutionDashboard })),
@@ -52,13 +45,17 @@ const SecurityDashboard = dynamic(
 );
 
 export default function AdminPage() {
-  const { t } = useTranslation();
-  const { profile } = useAuth();
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState('overview');
+  const {
+    t,
+    activeTab,
+    setActiveTab,
+    isAuthorized,
+    adminDashboard,
+    adminUserManagement,
+    handleDeleteUser,
+  } = useAdminPage();
 
-  // Domain hooks — no direct IPC calls in page
-  const { stats, recentActivities, dashboardStats } = useAdminDashboard();
+  const { stats, recentActivities, dashboardStats } = adminDashboard;
   const {
     filteredUsers,
     isLoading: isLoadingUsers,
@@ -68,27 +65,11 @@ export default function AdminPage() {
     setSearchQuery: setUserSearchQuery,
     setRoleFilter: setUserRoleFilter,
     setShowAddModal: setShowAddUserModal,
-    loadUsers,
     addUser: handleAddUser,
-    deleteUser,
     updateUserStatus: handleUpdateUserStatus,
-  } = useAdminUserManagement();
+  } = adminUserManagement;
 
-  // Check if user is admin
-  useEffect(() => {
-    if (profile && profile.role !== 'admin' && profile.role !== 'supervisor') {
-      router.push('/unauthorized');
-    }
-  }, [profile, router]);
-
-  // Load users when users tab is active
-  useEffect(() => {
-    if (activeTab === 'users') {
-      loadUsers();
-    }
-  }, [activeTab, loadUsers]);
-
-  if (!profile || (profile.role !== 'admin' && profile.role !== 'supervisor')) {
+  if (!isAuthorized) {
     return (
       <PageShell>
         <ErrorState
@@ -98,10 +79,6 @@ export default function AdminPage() {
       </PageShell>
     );
   }
-
-  const handleDeleteUser = (userId: string) => {
-    deleteUser(userId, t('users.confirmDelete'));
-  };
 
   return (
     <PageShell>

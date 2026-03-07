@@ -12,7 +12,7 @@ import {
   ActionsCard,
   getTaskDisplayTitle,
 } from '@/domains/tasks';
-import { useTaskDetailPage } from '@/domains/tasks/hooks/useTaskDetailPage';
+import { useTaskDetailPage } from '@/domains/tasks';
 
 export default function TaskDetailPage() {
   const {
