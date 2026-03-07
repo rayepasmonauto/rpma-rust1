@@ -15,7 +15,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { TaskWithDetails, ChecklistItem } from '@/types/task.types';
-import { PhotoUploadZone } from '@/shared/ui/PhotoUploadZone';
+import { PhotoUploadZone } from '../PhotoUploadZone';
 import { Photo, PhotoType, TaskPhoto } from '@/lib/backend';
 import { ChecklistView } from '../TaskInfo/ChecklistView';
 
@@ -64,7 +64,7 @@ function _convertTaskPhotoToPhoto(taskPhoto: TaskPhoto): Photo {
   };
 }
 import { SOPViewer } from '../TaskInfo/SOPViewer';
-import { SignatureCapture } from '@/shared/ui/SignatureCapture';
+import { SignatureCapture } from '../SignatureCapture';
 
 interface WorkflowStep {
   id: string;

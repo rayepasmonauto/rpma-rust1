@@ -42,7 +42,7 @@ impl Database {
     {
         let start = Instant::now();
         let conn = self.get_connection()?;
-        let mut stmt = conn.prepare(sql).map_err(|e| e.to_string())?;
+        let mut stmt = conn.prepare_cached(sql).map_err(|e| e.to_string())?;
         let rows = stmt
             .query_map(params, |row| T::from_row(row))
             .map_err(|e| e.to_string())?;
@@ -114,7 +114,7 @@ impl Database {
     {
         let start = Instant::now();
         let conn = self.get_connection()?;
-        let mut stmt = conn.prepare(sql).map_err(|e| e.to_string())?;
+        let mut stmt = conn.prepare_cached(sql).map_err(|e| e.to_string())?;
         let rows = stmt.query_map(params, mapper).map_err(|e| e.to_string())?;
         let result = rows
             .collect::<Result<Vec<T>, _>>()

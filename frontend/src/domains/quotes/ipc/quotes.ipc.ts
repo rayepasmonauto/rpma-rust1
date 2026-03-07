@@ -1,4 +1,5 @@
-import { safeInvoke } from '@/lib/ipc/core';
+import { safeInvoke, invalidatePattern } from '@/lib/ipc/core';
+import { signalMutation } from '@/lib/data-freshness';
 import type { JsonObject } from '@/types/json';
 
 export const quotesIpc = {
@@ -6,6 +7,8 @@ export const quotesIpc = {
     const result = await safeInvoke('quote_create', {
       request: { session_token: sessionToken, data }
     });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
     return result;
   },
 
@@ -23,6 +26,8 @@ export const quotesIpc = {
     const result = await safeInvoke('quote_update', {
       request: { session_token: sessionToken, id, data }
     });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
     return result;
   },
 
@@ -30,6 +35,8 @@ export const quotesIpc = {
     const result = await safeInvoke('quote_delete', {
       request: { session_token: sessionToken, id }
     });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
     return result;
   },
 
@@ -37,6 +44,8 @@ export const quotesIpc = {
     const result = await safeInvoke('quote_item_add', {
       request: { session_token: sessionToken, quote_id: quoteId, item }
     });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
     return result;
   },
 
@@ -44,6 +53,8 @@ export const quotesIpc = {
     const result = await safeInvoke('quote_item_update', {
       request: { session_token: sessionToken, quote_id: quoteId, item_id: itemId, data }
     });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
     return result;
   },
 
@@ -51,23 +62,73 @@ export const quotesIpc = {
     const result = await safeInvoke('quote_item_delete', {
       request: { session_token: sessionToken, quote_id: quoteId, item_id: itemId }
     });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
     return result;
   },
 
-  markSent: (id: string, sessionToken: string) =>
-    safeInvoke('quote_mark_sent', {
+  markSent: async (id: string, sessionToken: string) => {
+    const result = await safeInvoke('quote_mark_sent', {
       request: { session_token: sessionToken, id }
-    }),
+    });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
+    return result;
+  },
 
-  markAccepted: (id: string, sessionToken: string) =>
-    safeInvoke('quote_mark_accepted', {
+  markAccepted: async (id: string, sessionToken: string) => {
+    const result = await safeInvoke('quote_mark_accepted', {
       request: { session_token: sessionToken, id }
-    }),
+    });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
+    return result;
+  },
 
-  markRejected: (id: string, sessionToken: string) =>
-    safeInvoke('quote_mark_rejected', {
+  markRejected: async (id: string, sessionToken: string) => {
+    const result = await safeInvoke('quote_mark_rejected', {
       request: { session_token: sessionToken, id }
-    }),
+    });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
+    return result;
+  },
+
+  markExpired: async (id: string, sessionToken: string) => {
+    const result = await safeInvoke('quote_mark_expired', {
+      request: { session_token: sessionToken, id }
+    });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
+    return result;
+  },
+
+  markChangesRequested: async (id: string, sessionToken: string) => {
+    const result = await safeInvoke('quote_mark_changes_requested', {
+      request: { session_token: sessionToken, id }
+    });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
+    return result;
+  },
+
+  reopen: async (id: string, sessionToken: string) => {
+    const result = await safeInvoke('quote_reopen', {
+      request: { session_token: sessionToken, id }
+    });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
+    return result;
+  },
+
+  duplicate: async (id: string, sessionToken: string) => {
+    const result = await safeInvoke('quote_duplicate', {
+      request: { session_token: sessionToken, id }
+    });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
+    return result;
+  },
 
   exportPdf: (id: string, sessionToken: string) =>
     safeInvoke('quote_export_pdf', {
@@ -75,14 +136,21 @@ export const quotesIpc = {
     }),
 
   getAttachments: (quoteId: string, sessionToken: string) =>
-    safeInvoke('quote_attachments_get', {
+    safeInvoke('quote_attachment_list', {
       request: { session_token: sessionToken, quote_id: quoteId }
+    }),
+
+  openAttachment: (attachmentId: string, sessionToken: string) =>
+    safeInvoke('quote_attachment_open', {
+      request: { session_token: sessionToken, attachment_id: attachmentId }
     }),
 
   createAttachment: async (quoteId: string, data: JsonObject, sessionToken: string) => {
     const result = await safeInvoke('quote_attachment_create', {
       request: { session_token: sessionToken, quote_id: quoteId, data }
     });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
     return result;
   },
 
@@ -90,6 +158,8 @@ export const quotesIpc = {
     const result = await safeInvoke('quote_attachment_update', {
       request: { session_token: sessionToken, quote_id: quoteId, attachment_id: attachmentId, data }
     });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
     return result;
   },
 
@@ -97,6 +167,8 @@ export const quotesIpc = {
     const result = await safeInvoke('quote_attachment_delete', {
       request: { session_token: sessionToken, quote_id: quoteId, attachment_id: attachmentId }
     });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
     return result;
   },
 

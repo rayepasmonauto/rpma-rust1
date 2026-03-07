@@ -143,7 +143,7 @@ impl PhotoRepository {
         let photos = self
             .db
             .query_as::<Photo>(
-                "SELECT * FROM photos WHERE intervention_id = ? ORDER BY captured_at DESC",
+                "SELECT * FROM photos WHERE intervention_id = ? ORDER BY captured_at DESC LIMIT 1000",
                 params![intervention_id],
             )
             .map_err(|e| {
@@ -166,7 +166,7 @@ impl PhotoRepository {
         let photos = self
             .db
             .query_as::<Photo>(
-                "SELECT * FROM photos WHERE step_id = ? ORDER BY captured_at DESC",
+                "SELECT * FROM photos WHERE step_id = ? ORDER BY captured_at DESC LIMIT 1000",
                 params![step_id],
             )
             .map_err(|e| RepoError::Database(format!("Failed to find photos by step: {}", e)))?;
@@ -189,7 +189,7 @@ impl PhotoRepository {
         let photos = self
             .db
             .query_as::<Photo>(
-                "SELECT * FROM photos WHERE photo_category = ? ORDER BY captured_at DESC",
+                "SELECT * FROM photos WHERE photo_category = ? ORDER BY captured_at DESC LIMIT 1000",
                 params![category.to_string()],
             )
             .map_err(|e| {
@@ -214,7 +214,7 @@ impl PhotoRepository {
         let photos = self
             .db
             .query_as::<Photo>(
-                "SELECT * FROM photos WHERE photo_type = ? ORDER BY captured_at DESC",
+                "SELECT * FROM photos WHERE photo_type = ? ORDER BY captured_at DESC LIMIT 1000",
                 params![photo_type.to_string()],
             )
             .map_err(|e| RepoError::Database(format!("Failed to find photos by type: {}", e)))?;

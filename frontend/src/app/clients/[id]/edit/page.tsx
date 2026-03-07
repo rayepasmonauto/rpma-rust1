@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
-import { useEditClientPage } from '@/domains/clients/hooks/useEditClientPage';
+import { useEditClientPage } from '@/domains/clients';
 
 interface EditClientPageProps {
   params: {

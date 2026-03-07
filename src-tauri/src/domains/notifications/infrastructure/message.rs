@@ -1,10 +1,13 @@
 //! Message service for messaging operations
 
+use async_trait::async_trait;
+
 use crate::commands::AppError;
 use crate::domains::notifications::domain::models::message::*;
 use crate::domains::notifications::infrastructure::message_repository::{
     self as repo, MessageRepository,
 };
+use crate::shared::contracts::notification::{NotificationSender, SentMessage};
 use crate::shared::repositories::Repository;
 use rusqlite::params;
 use std::sync::Arc;
@@ -364,5 +367,40 @@ impl MessageService {
         info!("Updated notification preferences for user {}", user_id);
 
         self.get_preferences(user_id).await
+    }
+}
+
+#[async_trait]
+impl NotificationSender for MessageService {
+    async fn send_message_raw(
+        &self,
+        message_type: String,
+        recipient_id: Option<String>,
+        recipient_email: Option<String>,
+        recipient_phone: Option<String>,
+        subject: Option<String>,
+        body: String,
+        task_id: Option<String>,
+        client_id: Option<String>,
+        priority: Option<String>,
+        scheduled_at: Option<i64>,
+        correlation_id: Option<String>,
+    ) -> Result<SentMessage, AppError> {
+        let msg = self
+            .send_message_raw(
+                message_type,
+                recipient_id,
+                recipient_email,
+                recipient_phone,
+                subject,
+                body,
+                task_id,
+                client_id,
+                priority,
+                scheduled_at,
+                correlation_id,
+            )
+            .await?;
+        Ok(SentMessage { id: msg.id })
     }
 }

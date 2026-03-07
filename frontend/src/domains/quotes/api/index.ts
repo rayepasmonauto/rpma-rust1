@@ -9,6 +9,7 @@ export {
   useCreateQuote,
   useUpdateQuote,
   useDeleteQuote,
+  useDuplicateQuote,
   useQuoteItems,
   useQuoteStatus,
   useQuoteExportPdf,
@@ -36,6 +37,7 @@ export {
   QuoteDetailPageContent,
   QuotesListTable,
   QuotesStatusTabs,
+  QuoteWorkflowPanel,
   STATUS_LABELS,
 } from '../components';
 export type {
@@ -45,6 +47,7 @@ export type {
   QuoteAttachmentsManagerProps,
   QuotePartInput,
   QuoteLaborInput,
+  QuoteWorkflowPanelProps,
 } from '../components';
 
 export { computeQuoteStats } from '../utils/quote-stats';
@@ -53,3 +56,6 @@ export type { QuotePageStats } from '../utils/quote-stats';
 export { formatCents } from '../utils/formatting';
 export { useQuoteDetailPage } from '../hooks/useQuoteDetailPage';
 export type { ActiveTab } from '../hooks/useQuoteDetailPage';
+export { useQuotesPage } from '../hooks/useQuotesPage';
+export type { ActiveTab as QuotesPageActiveTab, QuoteWithClient } from '../hooks/useQuotesPage';
+export { useNewQuotePage } from '../hooks/useNewQuotePage';

@@ -26,3 +26,5 @@ export { QuoteTotalsCard } from './QuoteTotalsCard';
 export { QuotesListTable } from './QuotesListTable';
 export { QuotesStatusTabs } from './QuotesStatusTabs';
 export { QuoteDetailPageContent } from './QuoteDetailPageContent';
+export { QuoteWorkflowPanel } from './QuoteWorkflowPanel';
+export type { QuoteWorkflowPanelProps } from './QuoteWorkflowPanel';

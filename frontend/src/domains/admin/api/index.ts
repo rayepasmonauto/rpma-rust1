@@ -10,6 +10,7 @@ export { useAdminDashboard } from '../hooks/useAdminDashboard';
 export type { SystemStats, RecentActivity, UseAdminDashboardReturn } from '../hooks/useAdminDashboard';
 export { useAdminUserManagement } from '../hooks/useAdminUserManagement';
 export type { UseAdminUserManagementReturn } from '../hooks/useAdminUserManagement';
+export { useAdminPage } from '../hooks/useAdminPage';
 
 export { SystemSettingsTab } from '../components/SystemSettingsTab';
 export { BusinessRulesTab } from '../components/BusinessRulesTab';
@@ -21,6 +22,10 @@ export { QualityAssuranceDashboard } from '../components/QualityAssuranceDashboa
 export { PhotoDocumentationDashboard } from '../components/PhotoDocumentationDashboard';
 export { SecurityDashboard } from '../components/SecurityDashboard';
 export { default as ConfigurationPageContent } from '../components/ConfigurationPageContent';
+export { AdminOverviewTab } from '../components/AdminOverviewTab';
+export { AdminUsersTab } from '../components/AdminUsersTab';
+export { AdminSystemTab } from '../components/AdminSystemTab';
+export { AddUserModal } from '../components/AddUserModal';
 
 export type {
   AdminConfiguration,

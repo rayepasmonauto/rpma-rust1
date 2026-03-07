@@ -59,4 +59,3 @@ export function useEntityCounts(): UseEntityCountsReturn {
     refetch: fetchCounts,
   };
 }
-

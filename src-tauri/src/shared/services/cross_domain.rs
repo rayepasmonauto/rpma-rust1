@@ -4,34 +4,46 @@
 //! legitimately used across bounded-context boundaries (e.g., by the reports
 //! aggregation domain or IPC coordination layer).
 //!
-//! Files in `src-tauri/src/shared/` are exempt from the domain-boundary
-//! enforcement script, so routing through here removes violations while
-//! keeping all cross-domain coupling visible in one place.
+//! **Prefer** importing domain-owned traits from `shared::contracts` when
+//! only the contract surface is needed.  Use this module only when a
+//! concrete infrastructure service or domain model is required at the
+//! wiring / composition layer.
 
-// --- Intervention domain services ---
+// --- Services ---
+// Intervention domain
 pub use crate::domains::interventions::infrastructure::intervention::InterventionService;
 
-// --- Client domain services ---
+// Client domain
 pub use crate::domains::clients::infrastructure::client::ClientService;
 pub use crate::domains::clients::infrastructure::client::ClientStat;
 
-// --- Settings ---
+// Settings domain
 pub use crate::domains::settings::infrastructure::settings::SettingsService;
 
-// --- Calendar ---
+// Calendar domain
 pub use crate::domains::calendar::infrastructure::calendar::CalendarService;
 
-// --- Tasks ---
+// Tasks domain
 pub use crate::domains::tasks::infrastructure::task::TaskService;
 
-// --- Auth (used in settings tests and service methods) ---
+// Auth domain
 pub use crate::domains::auth::infrastructure::auth::AuthService;
-// --- Cross-domain shared contracts/types ---
+
+// --- Cross-domain shared types ---
+// Client types
 pub use crate::domains::clients::domain::models::client::Client;
+
+// Document types
 pub use crate::domains::documents::domain::models::photo::Photo;
+
+// Intervention types
 pub use crate::domains::interventions::domain::models::intervention::{
     Intervention, InterventionStatus,
 };
 pub use crate::domains::interventions::domain::models::step::{InterventionStep, StepStatus};
+
+// Inventory types
 pub use crate::domains::inventory::domain::models::material::MaterialConsumption;
+
+// Task types
 pub use crate::domains::tasks::domain::models::task::{PaginationInfo, SortOrder, Task, TaskQuery};
