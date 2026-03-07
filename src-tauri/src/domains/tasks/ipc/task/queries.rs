@@ -249,11 +249,8 @@ pub async fn get_completion_rate(
         AppError::Database(format!("Failed to calculate completion rate: {}", e))
     })?;
 
-    let completion_rate = if stats.total_tasks > 0 {
-        (stats.completed_tasks as f64 / stats.total_tasks as f64) * 100.0
-    } else {
-        0.0
-    };
+    let completion_rate =
+        crate::domains::tasks::infrastructure::task_statistics::calculate_completion_rate(&stats);
 
     info!("Calculated completion rate: {:.2}%", completion_rate);
 

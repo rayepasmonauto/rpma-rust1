@@ -77,9 +77,4 @@ impl InventoryTransactionRepository {
         .map_err(|e| e.to_string())?;
         Ok(())
     }
-
-    #[allow(dead_code)]
-    pub fn db(&self) -> &Arc<Database> {
-        &self.db
-    }
 }
