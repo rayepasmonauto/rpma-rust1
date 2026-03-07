@@ -357,7 +357,84 @@ export function useQuoteStatus() {
     [user?.token],
   );
 
-  return { markSent, markAccepted, markRejected, loading };
+  const markExpired = useCallback(
+    async (id: string): Promise<Quote | null> => {
+      if (!user?.token) return null;
+      try {
+        setLoading(true);
+        const result = await quotesIpc.markExpired(id, user.token);
+        const response = result as unknown as ApiResponse<Quote>;
+        return response?.success ? (response.data ?? null) : null;
+      } catch {
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user?.token],
+  );
+
+  const markChangesRequested = useCallback(
+    async (id: string): Promise<Quote | null> => {
+      if (!user?.token) return null;
+      try {
+        setLoading(true);
+        const result = await quotesIpc.markChangesRequested(id, user.token);
+        const response = result as unknown as ApiResponse<Quote>;
+        return response?.success ? (response.data ?? null) : null;
+      } catch {
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user?.token],
+  );
+
+  const reopen = useCallback(
+    async (id: string): Promise<Quote | null> => {
+      if (!user?.token) return null;
+      try {
+        setLoading(true);
+        const result = await quotesIpc.reopen(id, user.token);
+        const response = result as unknown as ApiResponse<Quote>;
+        return response?.success ? (response.data ?? null) : null;
+      } catch {
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user?.token],
+  );
+
+  return { markSent, markAccepted, markRejected, markExpired, markChangesRequested, reopen, loading };
+}
+
+// --- useDuplicateQuote ---
+
+export function useDuplicateQuote() {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+
+  const duplicateQuote = useCallback(
+    async (id: string): Promise<Quote | null> => {
+      if (!user?.token) return null;
+      try {
+        setLoading(true);
+        const result = await quotesIpc.duplicate(id, user.token);
+        const response = result as unknown as ApiResponse<Quote>;
+        return response?.success ? (response.data ?? null) : null;
+      } catch {
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user?.token],
+  );
+
+  return { duplicateQuote, loading };
 }
 
 // --- useQuoteExportPdf ---

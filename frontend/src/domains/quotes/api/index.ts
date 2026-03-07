@@ -9,6 +9,7 @@ export {
   useCreateQuote,
   useUpdateQuote,
   useDeleteQuote,
+  useDuplicateQuote,
   useQuoteItems,
   useQuoteStatus,
   useQuoteExportPdf,
@@ -36,6 +37,7 @@ export {
   QuoteDetailPageContent,
   QuotesListTable,
   QuotesStatusTabs,
+  QuoteWorkflowPanel,
   STATUS_LABELS,
 } from '../components';
 export type {
@@ -45,6 +47,7 @@ export type {
   QuoteAttachmentsManagerProps,
   QuotePartInput,
   QuoteLaborInput,
+  QuoteWorkflowPanelProps,
 } from '../components';
 
 export { computeQuoteStats } from '../utils/quote-stats';
