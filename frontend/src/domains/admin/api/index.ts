@@ -21,6 +21,10 @@ export { QualityAssuranceDashboard } from '../components/QualityAssuranceDashboa
 export { PhotoDocumentationDashboard } from '../components/PhotoDocumentationDashboard';
 export { SecurityDashboard } from '../components/SecurityDashboard';
 export { default as ConfigurationPageContent } from '../components/ConfigurationPageContent';
+export { AdminOverviewTab } from '../components/AdminOverviewTab';
+export { AdminUsersTab } from '../components/AdminUsersTab';
+export { AdminSystemTab } from '../components/AdminSystemTab';
+export { AddUserModal } from '../components/AddUserModal';
 
 export type {
   AdminConfiguration,

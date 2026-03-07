@@ -24,12 +24,8 @@ import {
 } from '@/shared/ui/facade';
 import { useAuth } from '@/domains/auth';
 import { useRouter } from 'next/navigation';
-import { useAdminDashboard, useAdminUserManagement } from '@/domains/admin';
+import { useAdminDashboard, useAdminUserManagement, AdminOverviewTab, AdminUsersTab, AdminSystemTab, AddUserModal } from '@/domains/admin';
 import { useTranslation } from '@/shared/hooks/useTranslation';
-import { AdminOverviewTab } from '@/domains/admin/components/AdminOverviewTab';
-import { AdminUsersTab } from '@/domains/admin/components/AdminUsersTab';
-import { AdminSystemTab } from '@/domains/admin/components/AdminSystemTab';
-import { AddUserModal } from '@/domains/admin/components/AddUserModal';
 
 const WorkflowExecutionDashboard = dynamic(
   () => import('@/domains/interventions').then((mod) => ({ default: mod.WorkflowExecutionDashboard })),
