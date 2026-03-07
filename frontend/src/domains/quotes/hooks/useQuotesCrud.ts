@@ -48,6 +48,8 @@ export function useQuotesList(options: UseQuotesListOptions = {}) {
       if (response?.success && response.data) {
         setQuotes(response.data.data);
         setTotal(response.data.total);
+      } else if (response?.error) {
+        throw new Error(response.error.message);
       }
     } catch (err: unknown) {
       setError(normalizeError(err));
@@ -203,16 +205,22 @@ export function useUpdateQuote() {
 export function useDeleteQuote() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
   const deleteQuote = useCallback(
     async (id: string): Promise<boolean> => {
       if (!user?.token) return false;
       try {
         setLoading(true);
+        setError(null);
         const result = await quotesIpc.delete(id, user.token);
         const response = result as unknown as ApiResponse<boolean>;
+        if (!response?.success && response?.error) {
+          throw new Error(response.error.message);
+        }
         return response?.success ?? false;
-      } catch {
+      } catch (err: unknown) {
+        setError(normalizeError(err));
         return false;
       } finally {
         setLoading(false);
@@ -221,5 +229,5 @@ export function useDeleteQuote() {
     [user?.token],
   );
 
-  return { deleteQuote, loading };
+  return { deleteQuote, loading, error };
 }

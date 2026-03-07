@@ -6,11 +6,11 @@ import { toast } from 'sonner';
 import { useCreateQuote } from './useQuotes';
 import { useClients } from '@/domains/clients/api';
 import { useAuth } from '@/domains/auth';
+import { clientIpc } from '@/domains/clients';
 import type {
   CreateQuoteRequest,
   QuotePartInput,
   QuoteLaborInput,
-  QuoteStatus,
 } from '@/shared/types';
 
 export function useNewQuotePage() {
@@ -19,8 +19,6 @@ export function useNewQuotePage() {
   const { user } = useAuth();
   const { clients, refetch: refetchClients } = useClients({ autoFetch: true });
 
-  const [title, setTitle] = useState('');
-  const [status, setStatus] = useState<QuoteStatus>('draft');
   const [validUntil, setValidUntil] = useState('');
   const [parts, setParts] = useState<QuotePartInput[]>([]);
   const [labor, setLabor] = useState<QuoteLaborInput[]>([]);
@@ -29,8 +27,20 @@ export function useNewQuotePage() {
   const [discountValue, setDiscountValue] = useState(0);
   const [publicNote, setPublicNote] = useState('');
   const [internalNote, setInternalNote] = useState('');
+
+  // Client: either selected from list (customerId) or filled inline
   const [customerId, setCustomerId] = useState('');
-  const [vehicleId, setVehicleId] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [clientEmail, setClientEmail] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [clientType, setClientType] = useState<'individual' | 'business'>('individual');
+
+  // Vehicle fields (inline on the quote)
+  const [vehicleMake, setVehicleMake] = useState('');
+  const [vehicleModel, setVehicleModel] = useState('');
+  const [vehicleYear, setVehicleYear] = useState('');
+  const [vehiclePlate, setVehiclePlate] = useState('');
+  const [vehicleVin, setVehicleVin] = useState('');
 
   useEffect(() => {
     if (error?.message) {
@@ -41,14 +51,45 @@ export function useNewQuotePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!customerId.trim()) {
-      toast.error('Veuillez sélectionner un client');
-      return;
-    }
+    if (!user?.token) return;
 
     if (parts.length === 0 && labor.length === 0) {
       toast.error("Ajoutez au moins une pièce ou de la main d'œuvre");
       return;
+    }
+
+    // Resolve client ID: use existing selection or create inline
+    let resolvedClientId = customerId.trim();
+    if (!resolvedClientId) {
+      if (!clientName.trim()) {
+        toast.error('Veuillez renseigner le nom du client');
+        return;
+      }
+      try {
+        const newClient = await clientIpc.create(
+          {
+            name: clientName.trim(),
+            email: clientEmail.trim() || null,
+            phone: clientPhone.trim() || null,
+            customer_type: clientType,
+            address_street: null,
+            address_city: null,
+            address_state: null,
+            address_zip: null,
+            address_country: null,
+            tax_id: null,
+            company_name: null,
+            contact_person: null,
+            notes: null,
+            tags: null,
+          },
+          user.token,
+        );
+        resolvedClientId = newClient.id;
+      } catch {
+        toast.error('Erreur lors de la création du client');
+        return;
+      }
     }
 
     const items = [
@@ -73,12 +114,14 @@ export function useNewQuotePage() {
     ];
 
     const data: CreateQuoteRequest = {
-      client_id: customerId,
+      client_id: resolvedClientId,
       notes: publicNote || undefined,
       items,
-      vehicle_plate: undefined,
-      vehicle_make: undefined,
-      vehicle_model: undefined,
+      vehicle_make: vehicleMake.trim() || undefined,
+      vehicle_model: vehicleModel.trim() || undefined,
+      vehicle_year: vehicleYear.trim() || undefined,
+      vehicle_plate: vehiclePlate.trim() || undefined,
+      vehicle_vin: vehicleVin.trim() || undefined,
     };
 
     const result = await createQuote(data);
@@ -90,7 +133,8 @@ export function useNewQuotePage() {
 
   const partsSubtotal = parts.reduce((sum, p) => sum + Math.round(p.total * 100), 0);
   const laborSubtotal = labor.reduce((sum, l) => sum + Math.round(l.total * 100), 0);
-  const isFormValid = !!(customerId.trim() && (parts.length > 0 || labor.length > 0));
+  const hasClient = !!(customerId.trim() || clientName.trim());
+  const isFormValid = hasClient && (parts.length > 0 || labor.length > 0);
 
   const customerOptions = (clients || []).map(c => ({
     id: c.id,
@@ -102,10 +146,7 @@ export function useNewQuotePage() {
   const clientsLoading = !clients;
 
   return {
-    user,
     loading,
-    title,
-    status,
     validUntil,
     parts,
     labor,
@@ -115,14 +156,20 @@ export function useNewQuotePage() {
     publicNote,
     internalNote,
     customerId,
-    vehicleId,
+    clientName,
+    clientEmail,
+    clientPhone,
+    clientType,
+    vehicleMake,
+    vehicleModel,
+    vehicleYear,
+    vehiclePlate,
+    vehicleVin,
     partsSubtotal,
     laborSubtotal,
     isFormValid,
     customerOptions,
     clientsLoading,
-    setTitle,
-    setStatus,
     setValidUntil,
     setParts,
     setLabor,
@@ -132,7 +179,15 @@ export function useNewQuotePage() {
     setPublicNote,
     setInternalNote,
     setCustomerId,
-    setVehicleId,
+    setClientName,
+    setClientEmail,
+    setClientPhone,
+    setClientType,
+    setVehicleMake,
+    setVehicleModel,
+    setVehicleYear,
+    setVehiclePlate,
+    setVehicleVin,
     refetchClients,
     handleSubmit,
   };

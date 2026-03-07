@@ -25,8 +25,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function NewQuotePage() {
   const {
     loading,
-    title,
-    status,
     validUntil,
     parts,
     labor,
@@ -36,14 +34,20 @@ export default function NewQuotePage() {
     publicNote,
     internalNote,
     customerId,
-    vehicleId,
+    clientName,
+    clientEmail,
+    clientPhone,
+    clientType,
+    vehicleMake,
+    vehicleModel,
+    vehicleYear,
+    vehiclePlate,
+    vehicleVin,
     partsSubtotal,
     laborSubtotal,
     isFormValid,
     customerOptions,
     clientsLoading,
-    setTitle,
-    setStatus,
     setValidUntil,
     setParts,
     setLabor,
@@ -53,7 +57,15 @@ export default function NewQuotePage() {
     setPublicNote,
     setInternalNote,
     setCustomerId,
-    setVehicleId,
+    setClientName,
+    setClientEmail,
+    setClientPhone,
+    setClientType,
+    setVehicleMake,
+    setVehicleModel,
+    setVehicleYear,
+    setVehiclePlate,
+    setVehicleVin,
     refetchClients,
     handleSubmit,
   } = useNewQuotePage();
@@ -127,19 +139,29 @@ export default function NewQuotePage() {
                   <>
                     <QuoteVehicleCustomerCard
                       customerId={customerId}
-                      vehicleId={vehicleId}
                       customers={customerOptions}
-                      vehicles={[]}
                       onCustomerIdChange={setCustomerId}
-                      onVehicleIdChange={setVehicleId}
-                      refreshCustomers={refetchClients}
+                      clientName={clientName}
+                      clientEmail={clientEmail}
+                      clientPhone={clientPhone}
+                      clientType={clientType}
+                      onClientNameChange={setClientName}
+                      onClientEmailChange={setClientEmail}
+                      onClientPhoneChange={setClientPhone}
+                      onClientTypeChange={setClientType}
+                      vehicleMake={vehicleMake}
+                      vehicleModel={vehicleModel}
+                      vehicleYear={vehicleYear}
+                      vehiclePlate={vehiclePlate}
+                      vehicleVin={vehicleVin}
+                      onVehicleMakeChange={setVehicleMake}
+                      onVehicleModelChange={setVehicleModel}
+                      onVehicleYearChange={setVehicleYear}
+                      onVehiclePlateChange={setVehiclePlate}
+                      onVehicleVinChange={setVehicleVin}
                     />
                     <QuoteDetailsCard
-                      title={title}
-                      status={status}
                       validUntil={validUntil}
-                      onTitleChange={setTitle}
-                      onStatusChange={setStatus}
                       onValidUntilChange={setValidUntil}
                     />
                     <QuoteTotalsCard
