@@ -113,9 +113,20 @@ export function useNewQuotePage() {
       })),
     ];
 
+    // Convert validUntil string to timestamp if provided
+    let validUntilTimestamp: number | null = null;
+    if (validUntil) {
+      const date = new Date(validUntil);
+      if (!isNaN(date.getTime())) {
+        validUntilTimestamp = date.getTime();
+      }
+    }
+
     const data: CreateQuoteRequest = {
       client_id: resolvedClientId,
       notes: publicNote || undefined,
+      terms: internalNote || undefined,
+      valid_until: validUntilTimestamp,
       items,
       vehicle_make: vehicleMake.trim() || undefined,
       vehicle_model: vehicleModel.trim() || undefined,

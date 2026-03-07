@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Car, Users, X, Search } from 'lucide-react';
+import { Car, Users, X, Search, User, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -79,22 +79,22 @@ export function QuoteVehicleCustomerCard({
   };
 
   return (
-    <div className="space-y-4">
-      {/* ── Client ─────────────────────────────────────────── */}
-      <div className="rounded-lg border p-3 space-y-3">
+    <div className="space-y-6">
+      {/* Client Section */}
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold flex items-center gap-1.5">
-            <Users className="h-3.5 w-3.5" />
+          <Label className="text-sm font-medium flex items-center gap-1.5">
+            <Users className="h-4 w-4 text-muted-foreground" />
             Client <span className="text-destructive">*</span>
-          </h3>
+          </Label>
           {!selectedCustomer && (
-            <div className="flex gap-1">
+            <div className="flex gap-1 bg-muted rounded-md p-0.5">
               <button
                 type="button"
                 onClick={() => setClientMode('create')}
-                className={`text-xs px-2 py-0.5 rounded transition-colors ${
+                className={`text-xs px-2 py-1 rounded transition-colors ${
                   clientMode === 'create'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-background text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -103,9 +103,9 @@ export function QuoteVehicleCustomerCard({
               <button
                 type="button"
                 onClick={() => setClientMode('select')}
-                className={`text-xs px-2 py-0.5 rounded transition-colors ${
+                className={`text-xs px-2 py-1 rounded transition-colors ${
                   clientMode === 'select'
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-background text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -118,8 +118,8 @@ export function QuoteVehicleCustomerCard({
 
         {/* Selected client badge */}
         {selectedCustomer ? (
-          <div className="flex items-center gap-2 rounded-md bg-muted/50 px-3 py-2">
-            <Users className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <div className="flex items-center gap-2 rounded-md bg-muted/50 px-3 py-2 border">
+            <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
             <div className="min-w-0 flex-1 text-sm">
               <span className="font-medium">{selectedCustomer.name}</span>
               {selectedCustomer.company && (
@@ -146,39 +146,78 @@ export function QuoteVehicleCustomerCard({
           </div>
         ) : clientMode === 'create' ? (
           /* Inline client fields — created automatically on quote submit */
-          <div className="space-y-2">
-            <Input
-              placeholder="Nom du client *"
-              value={clientName}
-              onChange={(e) => onClientNameChange(e.target.value)}
-            />
-            <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="clientName" className="text-xs text-muted-foreground">
+                Nom du client
+              </Label>
               <Input
-                placeholder="Email"
-                type="email"
-                value={clientEmail}
-                onChange={(e) => onClientEmailChange(e.target.value)}
-              />
-              <Input
-                placeholder="Téléphone"
-                type="tel"
-                value={clientPhone}
-                onChange={(e) => onClientPhoneChange(e.target.value)}
+                id="clientName"
+                placeholder="ex: Jean Dupont"
+                value={clientName}
+                onChange={(e) => onClientNameChange(e.target.value)}
               />
             </div>
-            <Select
-              value={clientType}
-              onValueChange={(v) => onClientTypeChange(v as 'individual' | 'business')}
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="individual">Particulier</SelectItem>
-                <SelectItem value="business">Entreprise</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-2">
+                <Label htmlFor="clientEmail" className="text-xs text-muted-foreground">
+                  Email
+                </Label>
+                <Input
+                  id="clientEmail"
+                  placeholder="email@exemple.com"
+                  type="email"
+                  value={clientEmail}
+                  onChange={(e) => onClientEmailChange(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="clientPhone" className="text-xs text-muted-foreground">
+                  Téléphone
+                </Label>
+                <Input
+                  id="clientPhone"
+                  placeholder="06 12 34 56 78"
+                  type="tel"
+                  value={clientPhone}
+                  onChange={(e) => onClientPhoneChange(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Type</Label>
+              <div className="flex space-x-4">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="clientType"
+                    value="individual"
+                    checked={clientType === 'individual'}
+                    onChange={(e) => onClientTypeChange(e.target.value as 'individual' | 'business')}
+                    className="w-4 h-4 text-green-600 bg-background border-border focus:ring-green-500"
+                  />
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Particulier</span>
+                  </div>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="clientType"
+                    value="business"
+                    checked={clientType === 'business'}
+                    onChange={(e) => onClientTypeChange(e.target.value as 'individual' | 'business')}
+                    className="w-4 h-4 text-green-600 bg-background border-border focus:ring-green-500"
+                  />
+                  <div className="flex items-center space-x-2">
+                    <Building className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Entreprise</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
               Le client sera créé automatiquement à la soumission du devis.
             </p>
           </div>
@@ -204,26 +243,32 @@ export function QuoteVehicleCustomerCard({
         )}
       </div>
 
-      {/* ── Véhicule ───────────────────────────────────────── */}
-      <div className="rounded-lg border p-3 space-y-3">
-        <h3 className="text-sm font-semibold flex items-center gap-1.5">
-          <Car className="h-3.5 w-3.5" />
+      {/* Vehicle Section */}
+      <div className="space-y-3 pt-4 border-t border-border">
+        <Label className="text-sm font-medium flex items-center gap-1.5">
+          <Car className="h-4 w-4 text-muted-foreground" />
           Véhicule{' '}
           <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
-        </h3>
+        </Label>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs">Marque</Label>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="vehicleMake" className="text-xs text-muted-foreground">
+              Marque
+            </Label>
             <Input
+              id="vehicleMake"
               placeholder="ex: Toyota"
               value={vehicleMake}
               onChange={(e) => onVehicleMakeChange(e.target.value)}
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Modèle</Label>
+          <div className="space-y-2">
+            <Label htmlFor="vehicleModel" className="text-xs text-muted-foreground">
+              Modèle
+            </Label>
             <Input
+              id="vehicleModel"
               placeholder="ex: Yaris"
               value={vehicleModel}
               onChange={(e) => onVehicleModelChange(e.target.value)}
@@ -231,19 +276,25 @@ export function QuoteVehicleCustomerCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs">Année</Label>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="vehicleYear" className="text-xs text-muted-foreground">
+              Année
+            </Label>
             <Input
+              id="vehicleYear"
               placeholder="ex: 2022"
               value={vehicleYear}
               maxLength={4}
               onChange={(e) => onVehicleYearChange(e.target.value)}
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Immatriculation</Label>
+          <div className="space-y-2">
+            <Label htmlFor="vehiclePlate" className="text-xs text-muted-foreground">
+              Immatriculation
+            </Label>
             <Input
+              id="vehiclePlate"
               placeholder="ex: AB-123-CD"
               value={vehiclePlate}
               onChange={(e) => onVehiclePlateChange(e.target.value.toUpperCase())}
@@ -251,9 +302,12 @@ export function QuoteVehicleCustomerCard({
           </div>
         </div>
 
-        <div className="space-y-1">
-          <Label className="text-xs">VIN</Label>
+        <div className="space-y-2">
+          <Label htmlFor="vehicleVin" className="text-xs text-muted-foreground">
+            N° VIN (châssis)
+          </Label>
           <Input
+            id="vehicleVin"
             placeholder="Numéro de châssis"
             value={vehicleVin}
             onChange={(e) => onVehicleVinChange(e.target.value.toUpperCase())}
