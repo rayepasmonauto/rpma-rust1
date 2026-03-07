@@ -87,7 +87,7 @@ export function useQuoteDetailPage(quoteId: string) {
   const handleMarkAccepted = async () => {
     if (!quoteId) return;
     const result = await markAccepted(quoteId);
-    if (result?.task_created) {
+    if (result?.task_created?.task_id) {
       setAcceptedTaskId(result.task_created.task_id);
       toast.success('Devis accepté — Task créée avec succès');
     } else if (result) {

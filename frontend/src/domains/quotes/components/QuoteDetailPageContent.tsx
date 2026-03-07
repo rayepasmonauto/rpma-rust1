@@ -89,7 +89,6 @@ export function QuoteDetailPageContent() {
     setNewDescription,
     isDraft,
     isSent,
-    isChangesRequested,
     canEdit,
     handleAddItem,
     handleDeleteItem,
@@ -156,15 +155,6 @@ export function QuoteDetailPageContent() {
             Refuser
           </Button>
         </>
-      )}
-      {isChangesRequested && (
-        <Button
-          onClick={handleReopen}
-          disabled={statusLoading}
-          size="sm"
-        >
-          Réouvrir en brouillon
-        </Button>
       )}
       <Button
         onClick={handleExportPdf}
