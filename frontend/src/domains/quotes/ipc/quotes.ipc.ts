@@ -94,14 +94,55 @@ export const quotesIpc = {
     return result;
   },
 
+  markExpired: async (id: string, sessionToken: string) => {
+    const result = await safeInvoke('quote_mark_expired', {
+      request: { session_token: sessionToken, id }
+    });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
+    return result;
+  },
+
+  markChangesRequested: async (id: string, sessionToken: string) => {
+    const result = await safeInvoke('quote_mark_changes_requested', {
+      request: { session_token: sessionToken, id }
+    });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
+    return result;
+  },
+
+  reopen: async (id: string, sessionToken: string) => {
+    const result = await safeInvoke('quote_reopen', {
+      request: { session_token: sessionToken, id }
+    });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
+    return result;
+  },
+
+  duplicate: async (id: string, sessionToken: string) => {
+    const result = await safeInvoke('quote_duplicate', {
+      request: { session_token: sessionToken, id }
+    });
+    invalidatePattern('quote:');
+    signalMutation('quotes');
+    return result;
+  },
+
   exportPdf: (id: string, sessionToken: string) =>
     safeInvoke('quote_export_pdf', {
       request: { session_token: sessionToken, id }
     }),
 
   getAttachments: (quoteId: string, sessionToken: string) =>
-    safeInvoke('quote_attachments_get', {
+    safeInvoke('quote_attachment_list', {
       request: { session_token: sessionToken, quote_id: quoteId }
+    }),
+
+  openAttachment: (attachmentId: string, sessionToken: string) =>
+    safeInvoke('quote_attachment_open', {
+      request: { session_token: sessionToken, attachment_id: attachmentId }
     }),
 
   createAttachment: async (quoteId: string, data: JsonObject, sessionToken: string) => {

@@ -11,12 +11,9 @@ import {
   Plus,
   Trash2,
   Copy,
-  Mail,
   MoreVertical,
   Clock,
-  Eye,
   FileUp,
-  ArrowRight,
   Quote,
   Image,
   History,
@@ -24,9 +21,8 @@ import {
 import {
   QuoteConvertDialog,
 } from './QuoteConvertDialog';
-import { QuoteDocumentsManager } from './QuoteDocumentsManager';
-import { QuoteImagesManager } from './QuoteImagesManager';
 import { QuoteStatusBadge } from './QuoteStatusBadge';
+import { QuoteWorkflowPanel } from './QuoteWorkflowPanel';
 import { formatCents } from '../utils/formatting';
 import { useQuoteDetailPage } from '../hooks/useQuoteDetailPage';
 import type { ActiveTab } from '../hooks/useQuoteDetailPage';
@@ -69,10 +65,9 @@ export function QuoteDetailPageContent() {
     quote,
     loading,
     error,
-    attachments,
-    attachmentsLoading,
     statusLoading,
     exportLoading,
+    duplicateLoading,
     activeTab,
     setActiveTab,
     showConvertDialog,
@@ -81,6 +76,7 @@ export function QuoteDetailPageContent() {
     setShowDeleteDialog,
     showAddItem,
     setShowAddItem,
+    acceptedTaskId,
     newLabel,
     setNewLabel,
     newKind,
@@ -93,16 +89,19 @@ export function QuoteDetailPageContent() {
     setNewDescription,
     isDraft,
     isSent,
-    canConvert,
+    isChangesRequested,
+    canEdit,
     handleAddItem,
     handleDeleteItem,
     handleMarkSent,
     handleMarkAccepted,
     handleMarkRejected,
+    handleMarkExpired,
+    handleMarkChangesRequested,
+    handleReopen,
     handleDelete,
     handleExportPdf,
     handleCopyLink,
-    handleEmailQuote,
     handleDuplicate,
     refetch,
   } = useQuoteDetailPage(quoteId);
@@ -158,6 +157,15 @@ export function QuoteDetailPageContent() {
           </Button>
         </>
       )}
+      {isChangesRequested && (
+        <Button
+          onClick={handleReopen}
+          disabled={statusLoading}
+          size="sm"
+        >
+          Réouvrir en brouillon
+        </Button>
+      )}
       <Button
         onClick={handleExportPdf}
         disabled={exportLoading}
@@ -178,34 +186,23 @@ export function QuoteDetailPageContent() {
             <Copy className="mr-2 h-4 w-4" />
             Copier le lien
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleEmailQuote}>
-            <Mail className="mr-2 h-4 w-4" />
-            Envoyer par email
-          </DropdownMenuItem>
-          {canConvert && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setShowConvertDialog(true)}
-                className="text-purple-600"
-              >
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Convertir en tâche
-              </DropdownMenuItem>
-            </>
-          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleDuplicate}>
             <Copy className="mr-2 h-4 w-4" />
             Dupliquer
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => setShowDeleteDialog(true)}
-            className="text-red-600"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Supprimer
-          </DropdownMenuItem>
+          {isDraft && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setShowDeleteDialog(true)}
+                className="text-red-600"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Supprimer
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </>
@@ -237,6 +234,28 @@ export function QuoteDetailPageContent() {
           )}
         </div>
       </PageHeader>
+
+      {acceptedTaskId && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
+            <div>
+              <p className="font-medium text-green-900">
+                Devis accepté — Task créée
+              </p>
+              <p className="text-sm text-green-700 mt-1">
+                Une intervention a été initialisée.
+              </p>
+              <Link
+                href={`/tasks/${acceptedTaskId}`}
+                className="inline-flex items-center gap-1 text-sm font-medium text-green-700 hover:text-green-900 mt-2"
+              >
+                Voir la Task →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ActiveTab)}>
         <TabsList className="grid w-full grid-cols-5">
@@ -413,28 +432,21 @@ export function QuoteDetailPageContent() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Eye className="h-5 w-5" />
-                      Actions rapides
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {isSent && (
-                      <Button onClick={handleEmailQuote} variant="outline" className="w-full justify-start">
-                        <Mail className="mr-2 h-4 w-4" />
-                        Envoyer par email
-                      </Button>
-                    )}
-                    {canConvert && (
-                      <Button onClick={() => setShowConvertDialog(true)} className="w-full justify-start bg-purple-600 hover:bg-purple-700">
-                        <ArrowRight className="mr-2 h-4 w-4" />
-                        Convertir en tâche
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
+                <QuoteWorkflowPanel
+                  quote={quote}
+                  statusLoading={statusLoading}
+                  exportLoading={exportLoading}
+                  duplicateLoading={duplicateLoading}
+                  onMarkSent={handleMarkSent}
+                  onMarkAccepted={handleMarkAccepted}
+                  onMarkRejected={handleMarkRejected}
+                  onMarkExpired={handleMarkExpired}
+                  onMarkChangesRequested={handleMarkChangesRequested}
+                  onReopen={handleReopen}
+                  onDuplicate={handleDuplicate}
+                  onDelete={handleDelete}
+                  onExportPdf={handleExportPdf}
+                />
               </div>
             </div>
           </TabsContent>
@@ -449,7 +461,7 @@ export function QuoteDetailPageContent() {
                     <FileText className="h-5 w-5" />
                     Articles
                   </CardTitle>
-                  {isDraft && (
+                  {canEdit && (
                     <Button onClick={() => setShowAddItem(true)} size="sm">
                       <Plus className="mr-2 h-4 w-4" />
                       Ajouter un article
@@ -458,7 +470,7 @@ export function QuoteDetailPageContent() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {showAddItem && isDraft && (
+                {showAddItem && canEdit && (
                   <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-4">
                     <h3 className="text-sm font-medium text-blue-900">Nouvel article</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -503,7 +515,7 @@ export function QuoteDetailPageContent() {
                     <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
                     <p className="mt-4 text-sm text-muted-foreground">Aucun article</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {isDraft ? 'Ajoutez votre premier article' : 'Contactez le support pour ajouter des articles'}
+                      {canEdit ? 'Ajoutez votre premier article' : 'Ce devis ne contient aucun article'}
                     </p>
                   </div>
                 ) : (
@@ -517,7 +529,7 @@ export function QuoteDetailPageContent() {
                           <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Qté</th>
                           <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">P.U.</th>
                           <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Total</th>
-                          {isDraft && <th className="px-4 py-3" />}
+                          {canEdit && <th className="px-4 py-3" />}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -533,7 +545,7 @@ export function QuoteDetailPageContent() {
                               <td className="px-4 py-3 text-right text-sm text-muted-foreground">{item.qty}</td>
                               <td className="px-4 py-3 text-right text-sm">{formatCents(item.unit_price)}</td>
                               <td className="px-4 py-3 text-right text-sm font-semibold">{formatCents(lineTotal)}</td>
-                              {isDraft && (
+                              {canEdit && (
                                 <td className="px-4 py-3 text-right">
                                   <Button
                                     variant="ghost"
