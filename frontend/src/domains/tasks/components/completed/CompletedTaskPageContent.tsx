@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { resolveLocalImageUrl } from '@/shared/utils/media';
 import {
   Alert,
   AlertDescription,
@@ -27,12 +28,14 @@ import { Separator } from '@/components/ui/separator';
 import {
   Camera,
   CheckCircle,
+  CheckSquare,
   FileText,
   MessageSquare,
   Package,
   Signature,
   Star,
   TrendingUp,
+  X,
 } from 'lucide-react';
 import { useTranslation } from '@/shared/hooks';
 import { useCompletedTaskPage } from '../../hooks/useCompletedTaskPage';
@@ -54,6 +57,7 @@ export function CompletedTaskPageContent() {
     expandedWorkflowSteps,
     duration,
     photoCount,
+    allStepPhotoUrls,
     checklistCount,
     checklistTotal,
     progressPercentage,
@@ -68,6 +72,8 @@ export function CompletedTaskPageContent() {
     handleDownloadStepData,
     toggleWorkflowStep,
   } = useCompletedTaskPage();
+
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -172,6 +178,44 @@ export function CompletedTaskPageContent() {
                 />
               </CardContent>
             </Card>
+
+            {task.checklist_items && task.checklist_items.length > 0 && (
+              <Card className="rounded-xl border-gray-200 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <CheckSquare className="h-5 w-5 text-emerald-600" />
+                    Checklist
+                  </CardTitle>
+                  <CardDescription>
+                    {checklistCount}/{checklistTotal} éléments complétés
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="divide-y divide-gray-100">
+                    {task.checklist_items.map((item) => (
+                      <div key={item.id} className="flex items-start gap-3 py-2.5">
+                        <CheckCircle
+                          className={`mt-0.5 h-4 w-4 flex-shrink-0 ${item.is_completed ? 'text-emerald-500' : 'text-gray-300'}`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm ${item.is_completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                            {item.description}
+                          </p>
+                          {item.completed_at && (
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              {new Date(item.completed_at).toLocaleString('fr-FR')}
+                            </p>
+                          )}
+                          {item.notes && (
+                            <p className="text-xs text-gray-500 mt-0.5 italic">{item.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {fullInterventionData && (
               <Card className="rounded-xl border-gray-200 shadow-sm">
@@ -345,7 +389,7 @@ export function CompletedTaskPageContent() {
               </Card>
             )}
 
-            {photoCount > 0 && (
+            {(photoCount > 0 || allStepPhotoUrls.length > 0) && (
               <Card className="rounded-xl border-gray-200 shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -356,11 +400,11 @@ export function CompletedTaskPageContent() {
                     Photos documentées pendant l&apos;intervention
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 p-4 border border-blue-200 text-center">
                       <div className="text-3xl font-extrabold text-blue-600 mb-1">
-                        {photoCount}
+                        {allStepPhotoUrls.length || photoCount}
                       </div>
                       <div className="text-xs font-semibold uppercase tracking-wider text-blue-700">
                         Total
@@ -391,6 +435,31 @@ export function CompletedTaskPageContent() {
                       </div>
                     </div>
                   </div>
+
+                  {allStepPhotoUrls.length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                        {allStepPhotoUrls.map((url, index) => (
+                          <button
+                            key={`${url}-${index}`}
+                            type="button"
+                            onClick={() => setSelectedPhoto(resolveLocalImageUrl(url))}
+                            className="aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-100 hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                          >
+                            <img
+                              src={resolveLocalImageUrl(url)}
+                              alt={`Photo ${index + 1}`}
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -464,6 +533,28 @@ export function CompletedTaskPageContent() {
           </div>
         </div>
       </div>
+
+      {selectedPhoto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setSelectedPhoto(null)}
+            className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition-colors"
+            aria-label="Fermer"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={selectedPhoto}
+            alt="Aperçu photo"
+            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

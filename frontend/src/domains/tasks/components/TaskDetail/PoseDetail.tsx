@@ -184,6 +184,13 @@ const PoseDetail: React.FC<PoseDetailProps> = ({
   // Get intervention data for progress tracking
   const { data: interventionData } = useInterventionData(safeTask?.id ?? '');
 
+  const allStepPhotoUrls = useMemo(() =>
+    (interventionData?.steps ?? []).flatMap(
+      (s: { photo_urls?: string[] | null }) => s.photo_urls ?? []
+    ),
+    [interventionData?.steps],
+  );
+
   // Memoize status information with stable reference
   const statusInfo = useMemo(() => {
     const statusMap = {
@@ -226,7 +233,12 @@ const PoseDetail: React.FC<PoseDetailProps> = ({
       canStartTask,
       progress,
       hasChecklist: checklistItems.length > 0,
-      hasPhotos: Boolean(safeTask.photos?.before?.length || safeTask.photos?.after?.length || safeTask.photos?.during?.length),
+      hasPhotos: Boolean(
+        safeTask.photos?.before?.length ||
+        safeTask.photos?.after?.length ||
+        safeTask.photos?.during?.length ||
+        allStepPhotoUrls.length > 0
+      ),
     };
   }, [safeTask, currentUserId, checklistItems]);
 
@@ -532,6 +544,7 @@ const PoseDetail: React.FC<PoseDetailProps> = ({
                   <PhotoSummaryCard
                     taskId={safeTask.id}
                     photos={safeTask.photos}
+                    stepPhotoUrls={allStepPhotoUrls}
                     onViewPhotos={_onViewPhotos}
                   />
                 )}
