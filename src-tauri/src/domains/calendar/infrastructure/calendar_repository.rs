@@ -217,20 +217,13 @@ impl CalendarRepository {
                     .map_err(|e| format!("Failed to update calendar event: {}", e))?;
                 } else {
                     let event_id = uuid::Uuid::new_v4().to_string();
-                    let task_title: String = tx
+                    let (task_title, technician_id): (String, Option<String>) = tx
                         .query_row(
-                            "SELECT COALESCE(title, task_number) FROM tasks WHERE id = ?1",
+                            "SELECT COALESCE(title, task_number), technician_id FROM tasks WHERE id = ?1",
                             params![task_id],
-                            |row| row.get(0),
+                            |row| Ok((row.get(0)?, row.get(1)?)),
                         )
-                        .unwrap_or_else(|_| format!("Task {}", task_id));
-                    let technician_id: Option<String> = tx
-                        .query_row(
-                            "SELECT technician_id FROM tasks WHERE id = ?1",
-                            params![task_id],
-                            |row| row.get(0),
-                        )
-                        .ok();
+                        .unwrap_or_else(|_| (format!("Task {}", task_id), None));
 
                     tx.execute(
                         r#"INSERT INTO calendar_events
