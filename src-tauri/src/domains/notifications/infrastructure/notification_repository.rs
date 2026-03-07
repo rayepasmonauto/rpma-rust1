@@ -138,7 +138,7 @@ impl NotificationTemplateRepository {
         let templates = self
             .db
             .query_as::<NotificationTemplate>(
-                "SELECT * FROM message_templates WHERE message_type = ? ORDER BY created_at DESC",
+                "SELECT * FROM message_templates WHERE message_type = ? ORDER BY created_at DESC LIMIT 500",
                 params![notification_type.to_string()],
             )
             .map_err(|e| RepoError::Database(format!("Failed to find templates by type: {}", e)))?;
@@ -164,7 +164,7 @@ impl NotificationTemplateRepository {
         let templates = self
             .db
             .query_as::<NotificationTemplate>(
-                "SELECT * FROM message_templates WHERE channel = ? ORDER BY created_at DESC",
+                "SELECT * FROM message_templates WHERE channel = ? ORDER BY created_at DESC LIMIT 500",
                 params![channel.to_string()],
             )
             .map_err(|e| {
@@ -187,7 +187,7 @@ impl NotificationTemplateRepository {
         let templates = self
             .db
             .query_as::<NotificationTemplate>(
-                "SELECT * FROM message_templates WHERE is_active = 1 ORDER BY name ASC",
+                "SELECT * FROM message_templates WHERE is_active = 1 ORDER BY name ASC LIMIT 500",
                 [],
             )
             .map_err(|e| RepoError::Database(format!("Failed to find active templates: {}", e)))?;
@@ -211,7 +211,7 @@ impl NotificationTemplateRepository {
         let templates = self
             .db
             .query_as::<NotificationTemplate>(
-                "SELECT * FROM message_templates WHERE category = ? ORDER BY name ASC",
+                "SELECT * FROM message_templates WHERE category = ? ORDER BY name ASC LIMIT 500",
                 params![category],
             )
             .map_err(|e| {
@@ -237,7 +237,7 @@ impl NotificationTemplateRepository {
         let templates = self
             .db
             .query_as::<NotificationTemplate>(
-                "SELECT * FROM message_templates WHERE created_by = ? ORDER BY created_at DESC",
+                "SELECT * FROM message_templates WHERE created_by = ? ORDER BY created_at DESC LIMIT 500",
                 params![created_by],
             )
             .map_err(|e| {

@@ -103,7 +103,7 @@ impl TaskHistoryRepository {
         let history = self
             .db
             .query_as::<TaskHistory>(
-                "SELECT * FROM task_history WHERE task_id = ? ORDER BY changed_at DESC",
+                "SELECT * FROM task_history WHERE task_id = ? ORDER BY changed_at DESC LIMIT 1000",
                 params![task_id],
             )
             .map_err(|e| RepoError::Database(format!("Failed to find history by task: {}", e)))?;

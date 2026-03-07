@@ -449,7 +449,7 @@ impl AuditService {
     ) -> AppResult<Vec<AuditEvent>> {
         let conn = self.db.get_connection()?;
 
-        let limit_clause = limit.map(|l| format!(" LIMIT {}", l)).unwrap_or_default();
+        let limit_clause = format!(" LIMIT {}", limit.unwrap_or(10_000));
         let query = format!(
             "SELECT * FROM audit_events WHERE resource_type = ? AND resource_id = ? ORDER BY timestamp DESC{}",
             limit_clause
@@ -563,9 +563,7 @@ impl AuditService {
 
         query.push_str(" ORDER BY timestamp DESC");
 
-        if let Some(limit) = limit {
-            query.push_str(&format!(" LIMIT {}", limit));
-        }
+        query.push_str(&format!(" LIMIT {}", limit.unwrap_or(10_000)));
 
         let _stmt = conn.prepare(&query).map_err(|e| e.to_string())?;
 
