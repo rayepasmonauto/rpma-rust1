@@ -254,17 +254,34 @@ export function useCompletedTaskPage() {
   }, []);
 
   const duration = useMemo(() => {
-    if (!task?.start_time || !task?.end_time) {
-      return null;
+    const startStr = (task?.start_time as string | null | undefined)
+      || (fullInterventionData as { started_at?: string | null } | null)?.started_at;
+    const endStr = (task?.end_time as string | null | undefined)
+      || (fullInterventionData as { completed_at?: string | null } | null)?.completed_at;
+
+    if (startStr && endStr) {
+      const diffMs = new Date(endStr).getTime() - new Date(startStr).getTime();
+      if (diffMs > 0) {
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        return `${diffHours}h ${diffMins}min`;
+      }
     }
 
-    const start = new Date(task.start_time as string);
-    const end = new Date(task.end_time as string);
-    const diffMs = end.getTime() - start.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    return `${diffHours}h ${diffMins}min`;
-  }, [task?.end_time, task?.start_time]);
+    const actualMins = (fullInterventionData as { actual_duration?: number | null } | null)?.actual_duration;
+    if (actualMins && actualMins > 0) {
+      const h = Math.floor(actualMins / 60);
+      const m = actualMins % 60;
+      return `${h}h ${m}min`;
+    }
+
+    return null;
+  }, [task?.start_time, task?.end_time, fullInterventionData]);
+
+  const allStepPhotoUrls = useMemo(() =>
+    workflowStepsArray.flatMap(s => s.photo_urls ?? []),
+    [workflowStepsArray],
+  );
 
   const photoCount =
     (task?.photos_before?.length || 0) +
@@ -288,6 +305,7 @@ export function useCompletedTaskPage() {
     expandedWorkflowSteps,
     duration,
     photoCount,
+    allStepPhotoUrls,
     checklistCount,
     checklistTotal,
     progressPercentage,

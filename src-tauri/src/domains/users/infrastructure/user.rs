@@ -1,9 +1,8 @@
 //! User service for user management operations
 
 use crate::commands::AppError;
-use crate::domains::users::domain::models::user::User as RepoUser; // Import as RepoUser to distinguish
 use crate::domains::users::infrastructure::user_repository::UserRepository;
-use crate::shared::contracts::auth::{UserAccount, UserRole};
+use crate::shared::contracts::auth::UserRole;
 use crate::shared::repositories::base::RepoError;
 use crate::shared::repositories::Repository;
 use std::sync::Arc;
@@ -12,43 +11,6 @@ use tracing::{debug, error, info, warn};
 #[derive(Clone, Debug)]
 pub struct UserService {
     user_repo: Arc<UserRepository>,
-}
-
-/// Convert between repository User and auth UserAccount
-#[allow(dead_code)]
-fn repo_user_to_auth_user(repo_user: &RepoUser) -> UserAccount {
-    UserAccount {
-        id: repo_user.id.clone(),
-        email: repo_user.email.clone(),
-        username: repo_user.email.clone(), // Using email as username for compatibility
-        first_name: repo_user.full_name.clone(), // Splitting full_name might be needed
-        last_name: String::new(),          // Empty for now
-        role: match repo_user.role {
-            crate::domains::users::domain::models::user::UserRole::Admin => UserRole::Admin,
-            crate::domains::users::domain::models::user::UserRole::Technician => {
-                UserRole::Technician
-            }
-            crate::domains::users::domain::models::user::UserRole::Supervisor => {
-                UserRole::Supervisor
-            }
-            crate::domains::users::domain::models::user::UserRole::Viewer => UserRole::Viewer,
-        },
-        password_hash: repo_user.password_hash.clone(),
-        salt: None, // Not in repo user model
-        phone: repo_user.phone.clone(),
-        is_active: repo_user.is_active,
-        last_login: repo_user.last_login_at,
-        login_count: repo_user.login_count,
-        preferences: repo_user
-            .preferences
-            .as_ref()
-            .map(|p| serde_json::to_string(p).ok())
-            .flatten(),
-        synced: repo_user.synced,
-        last_synced_at: repo_user.last_synced_at,
-        created_at: repo_user.created_at,
-        updated_at: repo_user.updated_at,
-    }
 }
 
 /// Convert between auth UserRole and repo UserRole
