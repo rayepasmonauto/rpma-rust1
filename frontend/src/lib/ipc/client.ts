@@ -1,6 +1,7 @@
 import './mock/init';
 import { safeInvoke } from './utils';
 import { cachedInvoke, invalidatePattern } from './cache';
+import { signalMutation } from '@/lib/data-freshness';
 import type { ApiError } from '@/lib/backend';
 import type { JsonObject, JsonValue } from '@/types/json';
 import type {
@@ -335,6 +336,7 @@ export const ipcClient = {
         }
       });
       invalidatePattern('task:');
+      signalMutation('tasks');
       return extractAndValidate(result, validateTask) as Task;
     },
 
@@ -367,6 +369,7 @@ export const ipcClient = {
         }
       });
       invalidatePattern('task:');
+      signalMutation('tasks');
       return extractAndValidate(result, validateTask) as Task;
     },
 
@@ -421,6 +424,7 @@ export const ipcClient = {
         }
       });
       invalidatePattern('task:');
+      signalMutation('tasks');
     },
 
     /**
@@ -488,6 +492,7 @@ export const ipcClient = {
         }
       });
       invalidatePattern('task:');
+      signalMutation('tasks');
       return extractAndValidate(result, validateTask) as Task;
     },
 
@@ -507,6 +512,7 @@ export const ipcClient = {
         }
       });
       invalidatePattern('task:');
+      signalMutation('tasks');
     },
 
     /**
@@ -546,6 +552,7 @@ export const ipcClient = {
         }
       });
       invalidatePattern('task:');
+      signalMutation('tasks');
     },
 
     /**
@@ -616,6 +623,7 @@ export const ipcClient = {
         }
       });
       invalidatePattern('client:');
+      signalMutation('clients');
       return extractAndValidate(result, validateClient) as Client;
     },
 
@@ -707,6 +715,7 @@ export const ipcClient = {
         }
       });
       invalidatePattern('client:');
+      signalMutation('clients');
       return extractAndValidate(result, validateClient) as Client;
     },
 
@@ -719,6 +728,7 @@ export const ipcClient = {
         }
       });
       invalidatePattern('client:');
+      signalMutation('clients');
     },
 
       // Add more client operations
@@ -776,6 +786,8 @@ export const ipcClient = {
           if (result && typeof result === 'object' && 'type' in result) {
             const workflowResponse = result as unknown as InterventionWorkflowStartedResponse;
             if (workflowResponse.type === 'Started') {
+              invalidatePattern('intervention:');
+              signalMutation('interventions');
               return validateStartInterventionResponse(workflowResponse);
             }
           }
@@ -881,6 +893,8 @@ export const ipcClient = {
         if (result && typeof result === 'object' && 'type' in result) {
           const progressResponse = result as unknown as InterventionStepAdvancedResponse;
           if (progressResponse.type === 'StepAdvanced') {
+            invalidatePattern('intervention:');
+            signalMutation('interventions');
             return progressResponse;
           }
         }
@@ -928,6 +942,8 @@ export const ipcClient = {
       if (result && typeof result === 'object' && 'type' in result) {
         const progressResponse = result as { type: string; step?: JsonValue };
         if (progressResponse.type === 'StepProgressSaved' && progressResponse.step) {
+          invalidatePattern('intervention:');
+          signalMutation('interventions');
           return validateInterventionStep(progressResponse.step);
         }
       }
@@ -944,6 +960,8 @@ export const ipcClient = {
       if (result && typeof result === 'object' && 'type' in result) {
         const workflowResponse = result as { type: string; id: string; message: string };
         if (workflowResponse.type === 'Updated') {
+          invalidatePattern('intervention:');
+          signalMutation('interventions');
           return workflowResponse;
         }
       }
@@ -960,6 +978,8 @@ export const ipcClient = {
       if (result && typeof result === 'object' && 'type' in result) {
         const workflowResponse = result as unknown as InterventionWorkflowFinalizedResponse;
         if (workflowResponse.type === 'Finalized') {
+          invalidatePattern('intervention:');
+          signalMutation('interventions');
           return workflowResponse;
         }
       }

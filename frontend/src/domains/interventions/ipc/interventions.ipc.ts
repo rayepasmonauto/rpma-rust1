@@ -1,4 +1,5 @@
-import { safeInvoke } from '@/lib/ipc/core';
+import { safeInvoke, invalidatePattern } from '@/lib/ipc/core';
+import { signalMutation } from '@/lib/data-freshness';
 import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import {
   validateIntervention,
@@ -35,6 +36,8 @@ export const interventionsIpc = {
     if ('type' in result) {
       const workflowResponse = result as unknown as { type: string; intervention: Intervention; steps: InterventionStep[] };
       if (workflowResponse.type === 'Started') {
+        invalidatePattern('intervention:');
+        signalMutation('interventions');
         return validateStartInterventionResponse(workflowResponse);
       }
     }
@@ -114,6 +117,8 @@ export const interventionsIpc = {
         progress_percentage: number
       };
       if (progressResponse.type === 'StepAdvanced') {
+        invalidatePattern('intervention:');
+        signalMutation('interventions');
         return progressResponse;
       }
     }
@@ -176,6 +181,8 @@ export const interventionsIpc = {
     if ('type' in result) {
       const progressResponse = result as unknown as { type: string; step: InterventionStep };
       if (progressResponse.type === 'StepProgressSaved') {
+        invalidatePattern('intervention:');
+        signalMutation('interventions');
         return validateInterventionStep(progressResponse.step);
       }
     }
@@ -192,6 +199,8 @@ export const interventionsIpc = {
     if ('type' in result) {
       const workflowResponse = result as unknown as { type: string; intervention: Intervention };
       if (workflowResponse.type === 'Updated') {
+        invalidatePattern('intervention:');
+        signalMutation('interventions');
         return validateIntervention(workflowResponse.intervention);
       }
     }
@@ -212,6 +221,8 @@ export const interventionsIpc = {
         metrics: InterventionMetrics
       };
       if (workflowResponse.type === 'Finalized') {
+        invalidatePattern('intervention:');
+        signalMutation('interventions');
         return workflowResponse;
       }
     }
