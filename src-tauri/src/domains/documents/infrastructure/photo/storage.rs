@@ -586,12 +586,6 @@ impl PhotoStorageService {
     pub fn local_storage_path(&self) -> &PathBuf {
         &self.local_storage_path
     }
-
-    /// Get database reference
-    #[allow(dead_code)]
-    pub fn database(&self) -> &Database {
-        &self.db
-    }
 }
 
 #[cfg(test)]
