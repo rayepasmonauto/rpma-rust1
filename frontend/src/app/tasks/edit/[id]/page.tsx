@@ -8,7 +8,7 @@ import { useEditTaskPage } from '@/domains/tasks';
 import type { TaskFormProps } from '@/domains/tasks';
 
 // Dynamically import TaskForm for better performance
-const TaskForm = dynamic(() => import('@/domains/tasks').then(mod => ({ default: mod.TaskForm })), {
+const TaskForm = dynamic<TaskFormProps>(() => import('@/domains/tasks').then(mod => ({ default: mod.TaskForm })), {
   loading: () => (
     <div className="flex items-center justify-center py-12">
       <div className="flex items-center space-x-3">
@@ -18,7 +18,7 @@ const TaskForm = dynamic(() => import('@/domains/tasks').then(mod => ({ default:
     </div>
   ),
   ssr: false // Disable SSR for this component as it likely uses browser APIs
-}) as React.ComponentType<TaskFormProps>;
+});
 
 export default function EditTaskPage() {
   const { t, taskId, taskData, loading, error, handleSuccess, handleCancel } = useEditTaskPage();

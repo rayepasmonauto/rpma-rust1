@@ -96,7 +96,7 @@ export function useNewQuotePage() {
     id: c.id,
     name: c.name,
     email: c.email,
-    company: (c as Record<string, unknown>).company_name as string | null || null,
+    company: (c as Record<string, unknown>).company_name as string | null,
   }));
 
   const clientsLoading = !clients;

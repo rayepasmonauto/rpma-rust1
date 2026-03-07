@@ -15,6 +15,7 @@ export function useAdminPage() {
 
   const adminDashboard = useAdminDashboard();
   const adminUserManagement = useAdminUserManagement();
+  const { loadUsers } = adminUserManagement;
 
   const isAuthorized =
     !!profile && (profile.role === 'admin' || profile.role === 'supervisor');
@@ -27,9 +28,9 @@ export function useAdminPage() {
 
   useEffect(() => {
     if (activeTab === 'users') {
-      adminUserManagement.loadUsers();
+      loadUsers();
     }
-  }, [activeTab, adminUserManagement.loadUsers]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, loadUsers]);
 
   const handleDeleteUser = (userId: string) => {
     adminUserManagement.deleteUser(userId, t('users.confirmDelete'));
