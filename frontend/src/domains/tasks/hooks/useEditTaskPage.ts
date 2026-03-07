@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { useAuth } from '@/domains/auth/api/useAuth';
+import { useAuth } from '@/domains/auth';
 import { taskGateway } from '../api/taskGateway';
 import { useTranslation } from '@/shared/hooks';
 import type { TaskFormData } from '../components/TaskForm/types';

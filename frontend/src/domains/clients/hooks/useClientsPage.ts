@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/domains/auth/api/useAuth';
+import { useAuth } from '@/domains/auth';
 import { clientService } from '../server';
 import { useClients } from './useClients';
 import { computeClientStats } from '../utils/client-stats';

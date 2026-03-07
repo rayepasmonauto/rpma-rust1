@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useAuth } from '@/domains/auth/api/useAuth';
+import { useAuth } from '@/domains/auth';
 import { clientService } from '../server';
 import type { CreateClientDTO } from '@/shared/types';
 import { useTranslation } from '@/shared/hooks/useTranslation';
