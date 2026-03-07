@@ -1,3 +1,4 @@
+pub mod events;
 pub(crate) mod errors;
 pub(crate) mod material;
 pub mod models;
