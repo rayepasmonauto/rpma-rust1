@@ -110,7 +110,7 @@ export function usePerformanceSettings(user?: UserSession) {
       try {
         const [userSettings, cacheStatsResponse] = await Promise.all([
           settingsIpc.getUserSettings(user.token),
-          ipcClient.performance.getCacheStatistics(user.token).catch((error: unknown) => {
+          ipcClient.performance.getCacheStatistics(user.token).catch((error) => {
             logError('Failed to load cache statistics', { error: error instanceof Error ? error.message : error });
             return null;
           }),
