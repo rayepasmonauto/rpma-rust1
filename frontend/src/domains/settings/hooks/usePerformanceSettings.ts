@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { useLogger } from '@/shared/hooks/useLogger';
 import { LogDomain } from '@/lib/logging/types';
 import { settingsIpc } from '../ipc/settings.ipc';
-import { performanceIpc } from '@/domains/performance/ipc/performance.ipc';
 import { ipcClient } from '@/lib/ipc';
 import type { UserSession, UserPerformanceSettings } from '@/lib/backend';
 
@@ -111,7 +110,7 @@ export function usePerformanceSettings(user?: UserSession) {
       try {
         const [userSettings, cacheStatsResponse] = await Promise.all([
           settingsIpc.getUserSettings(user.token),
-          performanceIpc.getCacheStatistics(user.token).catch((error: unknown) => {
+          ipcClient.performance.getCacheStatistics(user.token).catch((error: unknown) => {
             logError('Failed to load cache statistics', { error: error instanceof Error ? error.message : error });
             return null;
           }),
@@ -195,9 +194,9 @@ export function usePerformanceSettings(user?: UserSession) {
     logUserAction('Cache clear initiated');
 
     try {
-      await performanceIpc.clearApplicationCache({}, user.token);
+      await ipcClient.performance.clearApplicationCache({}, user.token);
 
-      const cacheStatsResponse = await performanceIpc.getCacheStatistics(user.token) as unknown as CacheStats;
+      const cacheStatsResponse = await ipcClient.performance.getCacheStatistics(user.token) as unknown as CacheStats;
       setCacheStats(cacheStatsResponse);
 
       logInfo('Cache cleared successfully');
