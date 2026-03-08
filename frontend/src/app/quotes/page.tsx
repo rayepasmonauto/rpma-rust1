@@ -14,7 +14,7 @@ import { FadeIn } from '@/shared/ui/animations/FadeIn';
 import { useQuotesPage } from '@/domains/quotes';
 
 const QuoteCharts = dynamic(
-  () => import('@/domains/quotes/components/QuoteCharts').then(mod => ({ default: mod.QuoteCharts })),
+  () => import('@/domains/quotes').then(mod => ({ default: mod.QuoteCharts })),
   { 
     loading: () => (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

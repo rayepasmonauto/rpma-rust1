@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,6 @@ import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import {
   Zap,
   RefreshCw,
@@ -26,249 +23,29 @@ import {
   Save,
 } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useLogger } from '@/shared/hooks/useLogger';
-import { LogDomain } from '@/lib/logging/types';
-import { ipcClient } from '@/lib/ipc';
-import { UserSession, UserPerformanceSettings } from '@/lib/backend';
+import { UserSession } from '@/lib/backend';
 import { UserAccount } from '@/types';
-
-/**
- * Safely formats a number to a fixed number of decimal places.
- * Returns a zero-value string (e.g. "0.00") when `v` is null, undefined, or NaN,
- * preventing `.toFixed()` crashes when the backend returns null metrics.
- *
- * @param v      - The numeric value to format (may be null/undefined from the backend)
- * @param digits - Number of decimal places (default: 2)
- * @returns      Formatted string, e.g. "3.14" or "0.00" for invalid inputs
- */
-const formatNumber = (v: number | null | undefined, digits = 2): string => {
-  if (typeof v !== 'number' || Number.isNaN(v)) return (0).toFixed(digits);
-  return v.toFixed(digits);
-};
-
-// Performance settings form schema
-const performanceSchema = z.object({
-  cache_enabled: z.boolean(),
-  cache_size: z.number().min(50).max(500),
-  offline_mode: z.boolean(),
-  sync_on_startup: z.boolean(),
-  background_sync: z.boolean(),
-  image_compression: z.boolean(),
-  preload_data: z.boolean(),
-});
-
-type PerformanceFormData = z.infer<typeof performanceSchema>;
+import { usePerformanceSettings, formatNumber } from '../hooks/usePerformanceSettings';
 
 interface PerformanceSettingsTabProps {
   user?: UserSession;
   profile?: UserAccount;
 }
 
-interface CacheStats {
-  total_keys: number;
-  used_memory_bytes: number;
-  used_memory_mb: number | null;
-  hit_rate?: number | null;
-  miss_rate?: number | null;
-  avg_response_time_ms?: number | null;
-  cache_types: CacheTypeInfo[];
-}
-
-interface CacheTypeInfo {
-  cache_type: string;
-  keys_count: number;
-  memory_used_mb: number | null;
-  hit_rate?: number | null;
-}
-
-interface SyncStats {
-  lastSync: string;
-  pendingUploads: number;
-  pendingDownloads: number;
-  syncStatus: 'idle' | 'syncing' | 'error';
-}
-
-interface SyncStatusResponse {
-  status?: string;
-}
-
 export function PerformanceTab({ user }: PerformanceSettingsTabProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [cacheStats, setCacheStats] = useState<CacheStats>({
-    total_keys: 0,
-    used_memory_bytes: 0,
-    used_memory_mb: 0,
-    cache_types: [],
-  });
-  const [syncStats, setSyncStats] = useState<SyncStats>({
-    lastSync: '',
-    pendingUploads: 0,
-    pendingDownloads: 0,
-    syncStatus: 'idle',
-  });
-  const [isOnline, setIsOnline] = useState(true);
-
-  const { logInfo, logError, logUserAction } = useLogger({
-    context: LogDomain.PERFORMANCE,
-    component: 'PerformanceTab',
-  });
-
-  const form = useForm<PerformanceFormData>({
-    resolver: zodResolver(performanceSchema),
-    defaultValues: {
-      cache_enabled: true,
-      cache_size: 100,
-      offline_mode: false,
-      sync_on_startup: true,
-      background_sync: true,
-      image_compression: true,
-      preload_data: false,
-    },
-  });
-
-  // Load performance settings and stats
-  useEffect(() => {
-    const loadPerformanceData = async () => {
-      if (!user?.token) return;
-
-      setIsLoading(true);
-      try {
-        const [userSettings, cacheStatsResponse] = await Promise.all([
-          ipcClient.settings.getUserSettings(user.token),
-          ipcClient.performance.getCacheStatistics(user.token).catch((error) => {
-            logError('Failed to load cache statistics', { error: error instanceof Error ? error.message : error });
-            return null;
-          }),
-        ]);
-
-        if (userSettings?.performance) {
-          form.reset(userSettings.performance as UserPerformanceSettings);
-        }
-
-        if (cacheStatsResponse) {
-          setCacheStats(cacheStatsResponse as unknown as CacheStats);
-        } else {
-          setCacheStats({
-            total_keys: 0,
-            used_memory_bytes: 0,
-            used_memory_mb: 0,
-            cache_types: [],
-          });
-        }
-
-        setSyncStats({
-          lastSync: new Date(Date.now() - 1800000).toISOString(),
-          pendingUploads: 3,
-          pendingDownloads: 0,
-          syncStatus: 'idle',
-        });
-
-        setIsOnline(navigator.onLine);
-
-        logInfo('Performance data loaded successfully');
-      } catch (error) {
-        logError('Failed to load performance data', { error: error instanceof Error ? error.message : error });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadPerformanceData();
-
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [logInfo, logError, form, user?.token]);
-
-  const onSubmit = async (data: PerformanceFormData) => {
-    if (!user?.token) {
-      setSaveError('No authentication token available');
-      return;
-    }
-
-    setIsSaving(true);
-    setSaveError(null);
-    setSaveSuccess(false);
-
-    logUserAction('Performance settings update initiated', {
-      changedFields: Object.keys(form.formState.dirtyFields),
-      userId: user.user_id
-    });
-
-    try {
-      await ipcClient.settings.updateUserPerformance(data, user.token);
-
-      setSaveSuccess(true);
-      logInfo('Performance settings updated successfully', { userId: user.user_id });
-
-      // Reset success message after 3 seconds
-      setTimeout(() => setSaveSuccess(false), 3000);
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error saving performance settings';
-      setSaveError(errorMessage);
-      logError('Performance settings update failed', { error: errorMessage, userId: user.user_id });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleClearCache = async () => {
-    if (!user?.token) return;
-
-    logUserAction('Cache clear initiated');
-
-    try {
-      await ipcClient.performance.clearApplicationCache({}, user.token);
-
-      // Reload cache statistics
-      const cacheStatsResponse = await ipcClient.performance.getCacheStatistics(user.token) as unknown as CacheStats;
-      setCacheStats(cacheStatsResponse);
-
-      logInfo('Cache cleared successfully');
-    } catch (error) {
-      logError('Cache clear failed', { error: error instanceof Error ? error.message : error });
-    }
-  };
-
-  const handleForceSync = async () => {
-    if (!user?.token) return;
-
-    logUserAction('Manual sync initiated');
-
-    try {
-      setSyncStats(prev => ({ ...prev, syncStatus: 'syncing' }));
-
-      // Use the real sync command
-      await ipcClient.sync.syncNow();
-
-      // Get updated sync status
-      const syncStatus = await ipcClient.sync.getStatus() as SyncStatusResponse;
-
-      setSyncStats(prev => ({
-        ...prev,
-        lastSync: new Date().toISOString(),
-        pendingUploads: 0,
-        pendingDownloads: 0,
-        syncStatus: syncStatus?.status === 'running' ? 'syncing' : 'idle',
-      }));
-
-      logInfo('Manual sync completed successfully');
-    } catch (error) {
-      setSyncStats(prev => ({ ...prev, syncStatus: 'error' }));
-      logError('Manual sync failed', { error: error instanceof Error ? error.message : error });
-    }
-  };
+  const {
+    isLoading,
+    isSaving,
+    saveSuccess,
+    saveError,
+    cacheStats,
+    syncStats,
+    isOnline,
+    form,
+    onSubmit,
+    handleClearCache,
+    handleForceSync,
+  } = usePerformanceSettings(user);
 
   if (isLoading) {
     return (

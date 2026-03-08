@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { ArrowRight, Loader2, Car, Layers } from 'lucide-react';
 import { toast } from 'sonner';
-import { PPF_ZONES } from '@/domains/tasks/components/TaskForm/types';
+import { PPF_ZONES } from '@/domains/tasks';
 
 export interface VehicleInfo {
   plate: string;

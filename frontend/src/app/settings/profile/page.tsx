@@ -6,7 +6,7 @@ import { useAuth } from '@/domains/auth';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 
 const ProfileSettingsTab = dynamic(
-  () => import('@/domains/settings/components/ProfileSettingsTab').then(mod => ({ default: mod.ProfileSettingsTab })),
+  () => import('@/domains/settings').then(mod => ({ default: mod.ProfileSettingsTab })),
   { loading: () => <LoadingState message="Chargement du profil..." /> }
 );
 

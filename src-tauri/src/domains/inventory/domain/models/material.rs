@@ -332,7 +332,7 @@ impl FromSqlRow for Material {
                 .and_then(|s| serde_json::from_str(&s).ok()),
             is_active: row.get::<_, i32>("is_active")? != 0,
             is_discontinued: row.get::<_, i32>("is_discontinued")? != 0,
-            is_expired: false, // Placeholder, will be calculated next
+            is_expired: false,   // Placeholder, will be calculated next
             is_low_stock: false, // Placeholder, will be calculated next
             storage_location: row.get("storage_location")?,
             warehouse_id: row.get("warehouse_id")?,
@@ -909,6 +909,16 @@ pub struct InventoryStats {
     pub recent_transactions: Vec<InventoryTransaction>,
     pub stock_turnover_rate: f64,
     pub average_inventory_age: f64,
+}
+
+/// Aggregated dashboard payload — S-1 perf: replaces 4 IPC calls with 1.
+#[derive(Debug, Serialize, ts_rs::TS)]
+#[ts(export)]
+pub struct InventoryDashboardData {
+    pub materials: Vec<Material>,
+    pub stats: InventoryStats,
+    pub low_stock: LowStockMaterialsResponse,
+    pub expired: Vec<Material>,
 }
 
 /// Inventory movement summary

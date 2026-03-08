@@ -6,7 +6,7 @@ import { useAuth } from '@/domains/auth';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 
 const PerformanceTab = dynamic(
-  () => import('@/domains/settings/components/PerformanceTab').then(mod => ({ default: mod.PerformanceTab })),
+  () => import('@/domains/settings').then(mod => ({ default: mod.PerformanceTab })),
   { loading: () => <LoadingState message="Chargement des performances..." /> }
 );
 

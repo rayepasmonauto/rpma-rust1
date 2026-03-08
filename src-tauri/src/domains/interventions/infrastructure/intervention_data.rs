@@ -47,7 +47,7 @@ impl InterventionDataService {
         user_id: &str,
     ) -> InterventionResult<Intervention> {
         // Get task_number, vehicle_plate, and client info from task
-        let (task_number, vehicle_plate, client_id, customer_name, customer_email, customer_phone): 
+        let (task_number, vehicle_plate, client_id, customer_name, customer_email, customer_phone):
             (String, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>) = tx
             .query_row(
                 "SELECT task_number, vehicle_plate, client_id, customer_name, customer_email, customer_phone FROM tasks WHERE id = ?",
@@ -359,6 +359,15 @@ impl InterventionDataService {
         step: &InterventionStep,
     ) -> InterventionResult<()> {
         self.repository.save_step_with_tx(tx, step)
+    }
+
+    /// QW-3: batch variant — prepare once, execute N times within the provided transaction.
+    pub fn save_steps_batch_with_tx(
+        &self,
+        tx: &Transaction,
+        steps: &[InterventionStep],
+    ) -> InterventionResult<()> {
+        self.repository.save_steps_batch_with_tx(tx, steps)
     }
 
     pub fn save_step(&self, step: &InterventionStep) -> InterventionResult<()> {

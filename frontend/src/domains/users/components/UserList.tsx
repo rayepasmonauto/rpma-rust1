@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { UserAccount } from '@/types';
-import { useAuth } from '@/domains/auth';
 import { bigintToNumber } from '@/lib/utils/timestamp-conversion';
-import { ipcClient } from '@/lib/ipc';
+import { useUserActions } from '../api/useUserActions';
 import { ChangeRoleDialog } from './ChangeRoleDialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useTranslation } from '@/shared/hooks/useTranslation';
@@ -17,7 +16,7 @@ interface UserListProps {
 }
 
 export function UserList({ users, onEdit, onRefresh }: UserListProps) {
-  const { user } = useAuth();
+  const { deleteUser } = useUserActions();
   const { t } = useTranslation();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [roleChangeUser, setRoleChangeUser] = useState<{
@@ -35,12 +34,11 @@ export function UserList({ users, onEdit, onRefresh }: UserListProps) {
     try {
       setDeletingId(userToDelete.id);
 
-      if (!user || !user.token) {
+      const success = await deleteUser(userToDelete.id);
+      if (!success) {
         toast.error(t('users.notAuthenticated'));
         return;
       }
-
-      await ipcClient.users.delete(userToDelete.id, user.token);
 
       onRefresh();
       toast.success(t('users.deactivatedSuccess'));

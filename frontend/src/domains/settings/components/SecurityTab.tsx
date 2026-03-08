@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import {
   Shield,
   Lock,
@@ -25,199 +22,34 @@ import {
   MapPin
 } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useLogger } from '@/shared/hooks/useLogger';
-import { LogDomain } from '@/lib/logging/types';
-import { ipcClient } from '@/lib/ipc';
 import { UserSession } from '@/lib/backend';
 import { UserAccount } from '@/types';
-
-// Password change form schema
-const passwordChangeSchema = z.object({
-  current_password: z.string().min(1, 'Mot de passe actuel requis'),
-  new_password: z.string()
-    .min(12, 'Le mot de passe doit contenir au moins 12 caractères')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-      'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial'),
-  confirm_password: z.string(),
-}).refine((data) => data.new_password === data.confirm_password, {
-  message: "Les mots de passe ne correspondent pas",
-  path: ["confirm_password"],
-});
-
-type PasswordChangeFormData = z.infer<typeof passwordChangeSchema>;
+import { useSecuritySettings } from '../hooks/useSecuritySettings';
 
 interface SecuritySettingsTabProps {
   user?: UserSession;
   profile?: UserAccount;
 }
 
-interface LoginSession {
-  id: string;
-  device: string;
-  browser: string;
-  location: string;
-  ip_address: string;
-  last_active: string;
-  current_session: boolean;
-}
-
-interface SessionResponse {
-  id: string;
-  device_info?: {
-    device_name?: string;
-    device_type?: string;
-  };
-  user_agent?: string;
-  location?: string;
-  ip_address?: string;
-  last_activity: string;
-}
-
 export function SecurityTab({ user }: SecuritySettingsTabProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [passwordChangeSuccess, setPasswordChangeSuccess] = useState(false);
-  const [passwordChangeError, setPasswordChangeError] = useState<string | null>(null);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loginSessions, setLoginSessions] = useState<LoginSession[]>([]);
-  const [sessionTimeout, setSessionTimeout] = useState(480); // 8 hours in minutes
-
-  const { logInfo, logError, logUserAction } = useLogger({
-    context: LogDomain.SECURITY,
-    component: 'SecurityTab',
-  });
-
-  const passwordForm = useForm<PasswordChangeFormData>({
-    resolver: zodResolver(passwordChangeSchema),
-    defaultValues: {
-      current_password: '',
-      new_password: '',
-      confirm_password: '',
-    },
-  });
-
-  // Load security settings and sessions
-  useEffect(() => {
-    const loadSecurityData = async () => {
-      if (!user?.token) return;
-
-      setIsLoading(true);
-      try {
-        const [sessionsResponse, timeoutConfig] = await Promise.all([
-          ipcClient.settings.getActiveSessions(user.token),
-          ipcClient.settings.getSessionTimeoutConfig(user.token),
-        ]);
-
-        if (sessionsResponse && Array.isArray(sessionsResponse)) {
-          const formattedSessions = (sessionsResponse as unknown as SessionResponse[]).map((session) => ({
-            id: session.id,
-            device: session.device_info?.device_name || session.device_info?.device_type || 'Unknown Device',
-            browser: session.user_agent || 'Unknown Browser',
-            location: session.location || 'Unknown Location',
-            ip_address: session.ip_address || 'Unknown IP',
-            last_active: session.last_activity,
-            current_session: false,
-          }));
-          setLoginSessions(formattedSessions);
-        }
-
-        setSessionTimeout((timeoutConfig as { timeout_minutes?: number })?.timeout_minutes || 480);
-
-        logInfo('Security data loaded successfully', { userId: user.user_id });
-      } catch (error) {
-        logError('Failed to load security data', {
-          error: error instanceof Error ? error.message : error,
-          userId: user.user_id
-        });
-        setLoginSessions([
-          {
-            id: 'current',
-            device: 'Current Device',
-            browser: navigator.userAgent.split(' ').pop() || 'Unknown',
-            location: 'Current Location',
-            ip_address: 'Current IP',
-            last_active: new Date().toISOString(),
-            current_session: true,
-          },
-        ]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadSecurityData();
-  }, [user?.token, user?.user_id, logInfo, logError]);
-
-  const onPasswordChange = async (data: PasswordChangeFormData) => {
-    if (!user?.token) {
-      setPasswordChangeError('No authentication token available');
-      return;
-    }
-
-    setIsChangingPassword(true);
-    setPasswordChangeError(null);
-    setPasswordChangeSuccess(false);
-
-    logUserAction('Password change initiated', { userId: user.user_id });
-
-    try {
-      await ipcClient.settings.changeUserPassword({
-        current_password: data.current_password,
-        new_password: data.new_password,
-      }, user.token);
-
-      setPasswordChangeSuccess(true);
-      passwordForm.reset();
-      logInfo('Password changed successfully', { userId: user.user_id });
-
-      // Reset success message after 5 seconds
-      setTimeout(() => setPasswordChangeSuccess(false), 5000);
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error changing password';
-      setPasswordChangeError(errorMessage);
-      logError('Password change failed', { error: errorMessage, userId: user.user_id });
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
-
-  const handleRevokeSession = async (sessionId: string) => {
-    if (!user?.token) return;
-
-    logUserAction('Session revocation initiated', { sessionId });
-
-    try {
-      await ipcClient.settings.revokeSession(sessionId, user.token);
-
-      setLoginSessions(prev => prev.filter(session => session.id !== sessionId));
-      logInfo('Session revoked successfully', { sessionId });
-
-    } catch (error) {
-      logError('Session revocation failed', {
-        sessionId,
-        error: error instanceof Error ? error.message : error
-      });
-    }
-  };
-
-  const handleUpdateSessionTimeout = async (minutes: number) => {
-    if (!user?.token) return;
-
-    logUserAction('Session timeout update initiated', { minutes });
-
-    try {
-      await ipcClient.settings.updateSessionTimeout(minutes, user.token);
-
-      setSessionTimeout(minutes);
-      logInfo('Session timeout updated', { minutes });
-
-    } catch (error) {
-      logError('Session timeout update failed', { minutes, error: error instanceof Error ? error.message : error });
-    }
-  };
+  const {
+    isLoading,
+    isChangingPassword,
+    passwordChangeSuccess,
+    passwordChangeError,
+    showCurrentPassword,
+    showNewPassword,
+    showConfirmPassword,
+    loginSessions,
+    sessionTimeout,
+    passwordForm,
+    onPasswordChange,
+    handleRevokeSession,
+    handleUpdateSessionTimeout,
+    toggleShowCurrentPassword,
+    toggleShowNewPassword,
+    toggleShowConfirmPassword,
+  } = useSecuritySettings(user);
 
   if (isLoading) {
     return (
@@ -277,7 +109,7 @@ export function SecurityTab({ user }: SecuritySettingsTabProps) {
                           variant="ghost"
                           size="sm"
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          onClick={toggleShowCurrentPassword}
                         >
                           {showCurrentPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -310,7 +142,7 @@ export function SecurityTab({ user }: SecuritySettingsTabProps) {
                           variant="ghost"
                           size="sm"
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          onClick={toggleShowNewPassword}
                         >
                           {showNewPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -346,7 +178,7 @@ export function SecurityTab({ user }: SecuritySettingsTabProps) {
                           variant="ghost"
                           size="sm"
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          onClick={toggleShowConfirmPassword}
                         >
                           {showConfirmPassword ? (
                             <EyeOff className="h-4 w-4" />

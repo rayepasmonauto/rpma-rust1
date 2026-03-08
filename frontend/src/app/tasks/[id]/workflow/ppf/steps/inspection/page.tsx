@@ -19,7 +19,7 @@ import type { Defect } from '@/domains/interventions';
 import { buildStepExportPayload, downloadJsonFile, getEffectiveStepData } from '@/domains/interventions';
 
 const VehicleDiagram = dynamic(
-  () => import('@/domains/interventions/components/workflow/ppf/VehicleDiagram').then(mod => ({ default: mod.VehicleDiagram })),
+  () => import('@/domains/interventions').then(mod => ({ default: mod.VehicleDiagram })),
   { 
     loading: () => (
       <div className="h-[400px] w-full rounded-lg border border-border bg-card animate-pulse flex items-center justify-center">
