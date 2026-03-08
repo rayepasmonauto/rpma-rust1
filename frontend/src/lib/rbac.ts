@@ -26,11 +26,6 @@ const allPermissions = [
 ] as const;
 
 /**
- * Wildcard permission for admin role
- */
-const _WILDCARD_PERMISSION = '*';
-
-/**
  * Type for user roles
  */
 export type UserRole = 'admin' | 'supervisor' | 'technician' | 'viewer';
@@ -41,20 +36,46 @@ export type UserRole = 'admin' | 'supervisor' | 'technician' | 'viewer';
 export type Permission = typeof allPermissions[number];
 
 /**
- * Check if a user role has a specific permission
- * @param role - User role
- * @param permission - Permission to check
- * @returns True if user has permission
+ * Role-to-permissions matrix.
+ * Enforced on the frontend as defense-in-depth;
+ * the Rust backend is the authoritative RBAC enforcement point.
  */
-export const hasPermission = (_role: UserRole, _permission: Permission): boolean => {
-  return true;
+const rolePermissions: Record<UserRole, readonly Permission[]> = {
+  admin: allPermissions,
+  supervisor: [
+    'task:read', 'task:write', 'task:update',
+    'client:read', 'client:write', 'client:update',
+    'report:read', 'report:write',
+    'inventory:read', 'inventory:write',
+    'calendar:read', 'calendar:write',
+    'photo:upload', 'photo:delete',
+    'user:read',
+  ],
+  technician: [
+    'task:read', 'task:write', 'task:update',
+    'client:read',
+    'inventory:read',
+    'calendar:read',
+    'photo:upload',
+  ],
+  viewer: [
+    'task:read',
+    'client:read',
+    'report:read',
+    'inventory:read',
+    'calendar:read',
+  ],
+} as const;
+
+/**
+ * Check if a user role has a specific permission.
+ */
+export const hasPermission = (role: UserRole, permission: Permission): boolean => {
+  return (rolePermissions[role] as readonly string[]).includes(permission);
 };
 
 /**
- * Check if a user role has any of the specified permissions
- * @param role - User role
- * @param permissions - Array of permissions to check
- * @returns True if user has any of the permissions
+ * Check if a user role has any of the specified permissions.
  */
 export const hasAnyPermission = (
   role: UserRole,
@@ -64,10 +85,7 @@ export const hasAnyPermission = (
 };
 
 /**
- * Check if a user role has all of the specified permissions
- * @param role - User role
- * @param permissions - Array of permissions to check
- * @returns True if user has all permissions
+ * Check if a user role has all of the specified permissions.
  */
 export const hasAllPermissions = (
   role: UserRole,
@@ -77,12 +95,10 @@ export const hasAllPermissions = (
 };
 
 /**
- * Get all permissions for a role
- * @param role - User role
- * @returns Array of permissions
+ * Get all permissions granted to a role.
  */
-export const getRolePermissions = (_role: UserRole): Permission[] => {
-  return [];
+export const getRolePermissions = (role: UserRole): Permission[] => {
+  return [...rolePermissions[role]];
 };
 
 /**

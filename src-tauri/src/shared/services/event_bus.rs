@@ -39,7 +39,7 @@ impl InMemoryEventBus {
         H: EventHandler + 'static,
     {
         let handler = Arc::new(handler);
-        let mut handlers = self.handlers.lock().unwrap();
+        let mut handlers = self.handlers.lock().unwrap_or_else(|e| e.into_inner());
 
         for event_type in handler.interested_events() {
             handlers
@@ -56,7 +56,7 @@ impl InMemoryEventBus {
     pub async fn publish(&self, event: DomainEvent) -> Result<(), String> {
         let event_type = event.event_type();
         let handlers = {
-            let handlers = self.handlers.lock().unwrap();
+            let handlers = self.handlers.lock().unwrap_or_else(|e| e.into_inner());
             handlers.get(event_type).cloned().unwrap_or_default()
         };
 
@@ -98,7 +98,7 @@ impl InMemoryEventBus {
 
     /// Get the number of registered handlers for an event type
     pub fn handler_count(&self, event_type: &str) -> usize {
-        let handlers = self.handlers.lock().unwrap();
+        let handlers = self.handlers.lock().unwrap_or_else(|e| e.into_inner());
         handlers.get(event_type).map(|h| h.len()).unwrap_or(0)
     }
 
