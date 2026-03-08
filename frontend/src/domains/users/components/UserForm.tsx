@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { UserAccount, UserRole } from '@/types';
-import { useAuth } from '@/domains/auth';
-import { ipcClient } from '@/lib/ipc';
+import { useUserActions } from '../api/useUserActions';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 
 interface UserFormProps {
@@ -14,7 +13,7 @@ interface UserFormProps {
 }
 
 export function UserForm({ user, onClose, onSuccess }: UserFormProps) {
-  const { user: authUser } = useAuth();
+  const { createUser, updateUser } = useUserActions();
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
     id: '',
@@ -83,29 +82,32 @@ export function UserForm({ user, onClose, onSuccess }: UserFormProps) {
     try {
       setLoading(true);
 
-      if (!authUser || !authUser.token) {
-        toast.error(t('users.notAuthenticated'));
-        return;
-      }
-
       if (isEditing && user) {
         // Update existing user
-        await ipcClient.users.update(formData.id, {
+        const success = await updateUser(formData.id, {
           email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
           role: formData.role,
           is_active: formData.is_active,
-        }, authUser.token);
+        });
+        if (!success) {
+          toast.error(t('users.notAuthenticated'));
+          return;
+        }
       } else {
         // Create new user
-        await ipcClient.users.create({
+        const success = await createUser({
           email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
           role: formData.role,
           password: formData.password,
-        }, authUser.token);
+        });
+        if (!success) {
+          toast.error(t('users.notAuthenticated'));
+          return;
+        }
       }
 
       onSuccess();

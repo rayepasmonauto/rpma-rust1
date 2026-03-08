@@ -708,6 +708,10 @@ export const fr = {
     createNewUser: "Créer un nouvel utilisateur",
     saving: "Enregistrement...",
     signedInAs: "Connecté en tant que",
+    roleUpdated: "Rôle mis à jour avec succès",
+    roleUpdateFailed: "Échec de la mise à jour du rôle : ",
+    changeRoleDescription: "Changer le rôle de {name} ({email})",
+    newRole: "Nouveau rôle",
   },
 
   // Team/Technicians

@@ -5,8 +5,8 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth } from '@/domains/auth';
-import { ipcClient } from '@/shared/utils';
+import { useUserActions } from '../api/useUserActions';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 
 interface ChangeRoleDialogProps {
   userId: string;
@@ -25,27 +25,30 @@ export function ChangeRoleDialog({
   open,
   onOpenChange
 }: ChangeRoleDialogProps) {
-  const { user } = useAuth();
+  const { changeRole } = useUserActions();
+  const { t } = useTranslation();
   const [selectedRole, setSelectedRole] = useState(currentRole);
   const [isLoading, setIsLoading] = useState(false);
 
   const roles = [
-    { value: 'viewer', label: 'Observateur' },
-    { value: 'technician', label: 'Technicien' },
-    { value: 'supervisor', label: 'Superviseur' },
-    { value: 'admin', label: 'Administrateur' }
+    { value: 'viewer', label: t('users.roleViewer') },
+    { value: 'technician', label: t('users.roleTechnician') },
+    { value: 'supervisor', label: t('users.roleSupervisor') },
+    { value: 'admin', label: t('users.roleAdmin') }
   ];
 
   const handleSave = async () => {
-    if (!user?.token) return;
-
     setIsLoading(true);
     try {
-      await ipcClient.users.changeRole(userId, selectedRole, user.token);
+      const success = await changeRole(userId, selectedRole);
+      if (!success) {
+        toast.error(t('users.notAuthenticated'));
+        return;
+      }
       onOpenChange(false);
-      toast.success('Rôle mis à jour avec succès');
+      toast.success(t('users.roleUpdated'));
     } catch (error) {
-      toast.error('Échec de la mise à jour du rôle : ' + (error instanceof Error ? error.message : ''));
+      toast.error(t('users.roleUpdateFailed') + (error instanceof Error ? error.message : ''));
     } finally {
       setIsLoading(false);
     }
@@ -55,15 +58,15 @@ export function ChangeRoleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Changer le rôle de l&apos;utilisateur</DialogTitle>
+          <DialogTitle>{t('users.changeRole')}</DialogTitle>
           <DialogDescription>
-            Changer le rôle de {userName} ({userEmail})
+            {t('users.changeRoleDescription', { name: userName, email: userEmail })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nouveau rôle
+            {t('users.newRole')}
           </label>
           <Select value={selectedRole} onValueChange={setSelectedRole}>
             <SelectTrigger>
@@ -81,10 +84,10 @@ export function ChangeRoleDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Annuler
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleSave} disabled={isLoading || selectedRole === currentRole}>
-            {isLoading ? 'Enregistrement...' : 'Enregistrer'}
+            {isLoading ? t('users.saving') : t('common.save')}
           </Button>
         </DialogFooter>
       </DialogContent>
