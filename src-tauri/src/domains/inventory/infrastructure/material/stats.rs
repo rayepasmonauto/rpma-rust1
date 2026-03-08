@@ -19,19 +19,15 @@ impl super::MaterialService {
     /// Get material statistics.
     pub fn get_material_stats(&self) -> MaterialResult<MaterialStats> {
         debug!("Fetching material statistics");
-        let total_materials: i32 = self
-            .db
-            .query_single_value(
-                "SELECT COUNT(*) FROM materials WHERE deleted_at IS NULL",
-                [],
-            )?;
+        let total_materials: i32 = self.db.query_single_value(
+            "SELECT COUNT(*) FROM materials WHERE deleted_at IS NULL",
+            [],
+        )?;
 
-        let active_materials: i32 = self
-            .db
-            .query_single_value(
-                "SELECT COUNT(*) FROM materials WHERE is_active = 1 AND deleted_at IS NULL",
-                [],
-            )?;
+        let active_materials: i32 = self.db.query_single_value(
+            "SELECT COUNT(*) FROM materials WHERE is_active = 1 AND deleted_at IS NULL",
+            [],
+        )?;
 
         let low_stock_materials: i32 = self.db.query_single_value(
             r#"
