@@ -105,7 +105,7 @@ export function QuoteDetailPageContent() {
     refetch,
   } = useQuoteDetailPage(quoteId);
 
-  if (loading) {
+  if (loading && !quote) {
     return (
       <PageShell>
         <LoadingState />
@@ -120,6 +120,8 @@ export function QuoteDetailPageContent() {
       </PageShell>
     );
   }
+
+  const quoteItems = quote.items ?? [];
 
   const statusActions = (
     <>
@@ -501,7 +503,7 @@ export function QuoteDetailPageContent() {
                   </div>
                 )}
 
-                {quote.items.length === 0 ? (
+                {quoteItems.length === 0 ? (
                   <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
                     <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
                     <p className="mt-4 text-sm text-muted-foreground">Aucun article</p>
@@ -556,7 +558,7 @@ export function QuoteDetailPageContent() {
                   </div>
                 )}
 
-                {quote.items.length > 0 && (
+                {quoteItems.length > 0 && (
                   <div className="border-t pt-4 space-y-2 text-right">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Sous-total HT</span>
@@ -616,4 +618,3 @@ export function QuoteDetailPageContent() {
     </PageShell>
   );
 }
-
