@@ -31,9 +31,9 @@ export interface Quote {
   subtotal: number;
   tax_total: number;
   total: number;
-  discount_type?: string | null;
-  discount_value?: number | null;
-  discount_amount?: number | null;
+  discount_type: string | null;
+  discount_value: number | null;
+  discount_amount: number | null;
   vehicle_plate: string | null;
   vehicle_make: string | null;
   vehicle_model: string | null;
@@ -126,6 +126,7 @@ export interface CreateQuoteRequest {
  */
 export interface UpdateQuoteRequest {
   valid_until?: number | null;
+  description?: string | null;
   notes?: string | null;
   terms?: string | null;
   discount_type?: string | null;
@@ -191,6 +192,15 @@ export interface UpdateQuoteAttachmentRequest {
 export interface QuoteAcceptResponse {
   quote: Quote;
   task_created: { task_id: string } | null;
+}
+
+/**
+ * Response for convert-to-task action
+ */
+export interface ConvertQuoteToTaskResponse {
+  quote: Quote;
+  task_id: string;
+  task_number: string;
 }
 
 /**

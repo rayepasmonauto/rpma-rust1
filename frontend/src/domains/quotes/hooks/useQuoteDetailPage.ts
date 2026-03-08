@@ -44,11 +44,11 @@ export function useQuoteDetailPage(quoteId: string) {
     const item: CreateQuoteItemRequest = {
       kind: newKind,
       label: newLabel,
-      description: newDescription || undefined,
+      description: newDescription || null,
       qty: newQty,
       unit_price: Math.round(newUnitPrice * 100),
       tax_rate: newTaxRate,
-      position: quote?.items.length || 0,
+      position: quote?.items?.length || 0,
     };
 
     const result = await addItem(quoteId, item);
@@ -248,4 +248,3 @@ export function useQuoteDetailPage(quoteId: string) {
     refetch,
   };
 }
-

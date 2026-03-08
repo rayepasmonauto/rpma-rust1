@@ -15,7 +15,7 @@ impl super::MaterialService {
     /// Create a new material.
     pub fn create_material(
         &self,
-        request: CreateMaterialRequest,
+        mut request: CreateMaterialRequest,
         created_by: Option<String>,
     ) -> MaterialResult<Material> {
         let created_by = created_by
@@ -23,12 +23,18 @@ impl super::MaterialService {
             .ok_or_else(|| {
                 MaterialError::Authorization("User ID is required to create materials".to_string())
             })?;
+
+        if request.sku.trim().is_empty() {
+            request.sku = format!("SKU-{}", Uuid::new_v4().to_string().chars().take(8).collect::<String>());
+            info!(new_sku = %request.sku, "SKU not provided, generated a new one.");
+        }
+
         self.validate_create_request(&request)?;
 
         debug!(sku = %request.sku, created_by = %created_by, "Creating material");
         let id = Uuid::new_v4().to_string();
         let mut material =
-            Material::new(id.clone(), request.sku, request.name, request.material_type);
+            Material::new(id.clone(), request.sku.clone(), request.name.clone(), request.material_type);
 
         material.description = request.description;
         material.category = request.category;
@@ -52,6 +58,7 @@ impl super::MaterialService {
         material.batch_number = request.batch_number;
         material.storage_location = request.storage_location;
         material.warehouse_id = request.warehouse_id;
+        material.current_stock = request.current_stock.unwrap_or(0.0);
         material.created_by = Some(created_by.clone());
         material.updated_by = Some(created_by);
 
@@ -64,7 +71,10 @@ impl super::MaterialService {
     pub fn get_material(&self, id: &str) -> MaterialResult<Option<Material>> {
         Ok(self
             .db
-            .query_single_as::<Material>("SELECT * FROM materials WHERE id = ?", params![id])?)
+            .query_single_as::<Material>(
+                "SELECT * FROM materials WHERE id = ? AND deleted_at IS NULL",
+                params![id],
+            )?)
     }
 
     /// Get material by ID, returning an error if not found.
@@ -81,7 +91,7 @@ impl super::MaterialService {
 
         let placeholders: Vec<&str> = ids.iter().map(|_| "?").collect();
         let sql = format!(
-            "SELECT * FROM materials WHERE id IN ({})",
+            "SELECT * FROM materials WHERE id IN ({}) AND deleted_at IS NULL",
             placeholders.join(", ")
         );
 
@@ -102,7 +112,10 @@ impl super::MaterialService {
     pub fn get_material_by_sku(&self, sku: &str) -> MaterialResult<Option<Material>> {
         Ok(self
             .db
-            .query_single_as::<Material>("SELECT * FROM materials WHERE sku = ?", params![sku])?)
+            .query_single_as::<Material>(
+                "SELECT * FROM materials WHERE sku = ? AND deleted_at IS NULL",
+                params![sku],
+            )?)
     }
 
     /// List materials with optional type/category filters and pagination.
@@ -130,6 +143,9 @@ impl super::MaterialService {
         if active_only {
             conditions.push("is_active = 1");
         }
+
+        // Always exclude soft-deleted materials (migration 050)
+        conditions.push("deleted_at IS NULL");
 
         let where_clause = if conditions.is_empty() {
             String::new()
@@ -220,7 +236,7 @@ impl super::MaterialService {
         Ok(material)
     }
 
-    /// Soft-delete a material (marks it inactive and discontinued).
+    /// Soft-delete a material (marks it as deleted).
     pub fn delete_material(&self, id: &str, deleted_by: Option<String>) -> MaterialResult<()> {
         let deleted_by = deleted_by
             .filter(|user_id| !user_id.trim().is_empty())
@@ -231,9 +247,9 @@ impl super::MaterialService {
             .get_material(id)?
             .ok_or_else(|| MaterialError::NotFound(format!("Material {} not found", id)))?;
 
-        if !material.is_active || material.is_discontinued {
+        if material.deleted_at.is_some() {
             return Err(MaterialError::Validation(
-                "Material is already inactive or discontinued".to_string(),
+                "Material is already deleted".to_string(),
             ));
         }
 
@@ -241,8 +257,6 @@ impl super::MaterialService {
         self.db.execute(
             r#"
             UPDATE materials SET
-                is_active = 0,
-                is_discontinued = 1,
                 updated_at = ?,
                 updated_by = ?,
                 deleted_at = ?,
@@ -265,10 +279,6 @@ impl super::MaterialService {
     // ── Private CRUD helpers ──────────────────────────────────────────────────
 
     fn validate_create_request(&self, request: &CreateMaterialRequest) -> MaterialResult<()> {
-        if request.sku.trim().is_empty() {
-            return Err(MaterialError::Validation("SKU is required".to_string()));
-        }
-
         if request.name.trim().is_empty() {
             return Err(MaterialError::Validation("Name is required".to_string()));
         }
@@ -278,6 +288,21 @@ impl super::MaterialService {
             request.maximum_stock,
             request.reorder_point,
         )?;
+
+        if let Some(initial_stock) = request.current_stock {
+            if !initial_stock.is_finite() || initial_stock < 0.0 {
+                return Err(MaterialError::Validation(
+                    "Initial stock must be a non-negative number".to_string(),
+                ));
+            }
+            if let Some(max_stock) = request.maximum_stock {
+                if initial_stock > max_stock {
+                    return Err(MaterialError::Validation(
+                        "Initial stock cannot exceed maximum stock".to_string(),
+                    ));
+                }
+            }
+        }
 
         if let Ok(Some(_)) = self.get_material_by_sku(&request.sku) {
             warn!(sku = %request.sku, "Duplicate SKU rejected on create");
