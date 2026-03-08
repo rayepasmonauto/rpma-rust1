@@ -13,7 +13,7 @@ use crate::shared::services::cross_domain::InterventionStep;
 use crate::shared::services::cross_domain::Photo;
 
 use super::report_view_model::{
-    build_intervention_report_view_model, score_to_stars, ReportStep, ReportViewModel,
+    build_intervention_report_view_model, ReportStep, ReportViewModel,
 };
 
 use genpdf::{elements, fonts, style, Alignment, Document, Element, SimplePageDecorator};
@@ -129,115 +129,111 @@ impl InterventionPdfReport {
 // ---------------------------------------------------------------------------
 
 impl InterventionPdfReport {
-    // -- Helpers for section separators & styled text --
+    // -- Layout helpers --
 
+    /// Bold section title with a thin horizontal rule.
     fn section_title(doc: &mut Document, title: &str) {
         doc.push(elements::Break::new(0.8));
         doc.push(
             elements::Paragraph::new(title)
-                .styled(style::Style::new().bold().with_font_size(14)),
+                .styled(style::Style::new().bold().with_font_size(13)),
         );
-        // Thin rule below the title (simulated with a line of underscores)
         doc.push(
-            elements::Paragraph::new("________________________________________")
-                .styled(style::Style::new().with_font_size(6)),
+            elements::Paragraph::new("________________________________________________")
+                .styled(style::Style::new().with_font_size(4)),
         );
         doc.push(elements::Break::new(0.3));
     }
 
-    fn label_value(doc: &mut Document, label: &str, value: &str) {
-        doc.push(elements::Paragraph::new(&format!("{}: {}", label, value)));
-    }
-
-    fn label_value_bold(doc: &mut Document, label: &str, value: &str) {
-        doc.push(elements::Paragraph::new(&format!("{}: {}", label, value))
-            .styled(style::Style::new().bold()));
+    /// Build a 2-column key–value `TableLayout` (label bold / value normal).
+    fn kv_table(pairs: &[(&str, &str)]) -> elements::TableLayout {
+        let mut table = elements::TableLayout::new(vec![3, 7]);
+        for (label, value) in pairs {
+            let mut row = table.row();
+            row.push_element(
+                elements::Paragraph::new(*label)
+                    .styled(style::Style::new().bold()),
+            );
+            row.push_element(elements::Paragraph::new(*value));
+            let _ = row.push();
+        }
+        table
     }
 
     // -- 1. Header / title page --
 
     fn render_header(doc: &mut Document, vm: &ReportViewModel) {
-        doc.push(elements::Break::new(1.5));
-
+        doc.push(elements::Break::new(2.0));
         doc.push(
-            elements::Paragraph::new(&vm.meta.report_title.to_uppercase())
+            elements::Paragraph::new("RAPPORT D'INTERVENTION PPF")
                 .aligned(Alignment::Center)
-                .styled(style::Style::new().bold().with_font_size(20)),
+                .styled(style::Style::new().bold().with_font_size(24)),
         );
-
-        doc.push(elements::Break::new(1.0));
-
+        doc.push(elements::Break::new(0.6));
         doc.push(
-            elements::Paragraph::new(&format!(
-                "Intervention: {}",
-                vm.meta.intervention_id
-            ))
-            .aligned(Alignment::Center)
-            .styled(style::Style::new().with_font_size(10)),
+            elements::Paragraph::new(&vm.meta.report_title)
+                .aligned(Alignment::Center)
+                .styled(style::Style::new().with_font_size(14)),
         );
-
-        if vm.meta.task_number != vm.display.placeholder_not_specified {
-            doc.push(
-                elements::Paragraph::new(&format!(
-                    "Tache: {}",
-                    vm.meta.task_number
-                ))
+        doc.push(elements::Break::new(0.8));
+        doc.push(
+            elements::Paragraph::new(&format!("Intervention : {}", vm.meta.intervention_id))
                 .aligned(Alignment::Center)
                 .styled(style::Style::new().with_font_size(10)),
+        );
+        if vm.meta.task_number != vm.display.placeholder_not_specified {
+            doc.push(
+                elements::Paragraph::new(&format!("Tache : {}", vm.meta.task_number))
+                    .aligned(Alignment::Center)
+                    .styled(style::Style::new().with_font_size(10)),
             );
         }
-
         doc.push(
             elements::Paragraph::new(&format!(
-                "Genere le: {}",
+                "Date de generation : {}",
                 vm.meta.generated_at
             ))
             .aligned(Alignment::Center)
             .styled(style::Style::new().with_font_size(10)),
         );
-
-        doc.push(elements::Break::new(2.0));
+        doc.push(elements::Break::new(3.0));
     }
 
     // -- 2. Summary --
 
     fn render_summary(doc: &mut Document, vm: &ReportViewModel) {
         Self::section_title(doc, "RESUME DE L'INTERVENTION");
-
-        Self::label_value_bold(
-            doc,
-            "Statut",
-            &format!("{} {}", vm.summary.status_badge, vm.summary.status),
-        );
-        Self::label_value(doc, "Technicien", &vm.summary.technician_name);
-        Self::label_value(doc, "Type", &vm.summary.intervention_type);
-        Self::label_value(doc, "Duree estimee", &vm.summary.estimated_duration);
-        Self::label_value(doc, "Duree reelle", &vm.summary.actual_duration);
-        Self::label_value(
-            doc,
-            "Progression",
-            &format!("{:.1}%", vm.summary.completion_percentage),
-        );
-
-        doc.push(elements::Break::new(0.5));
+        let status_display = format!("{} {}", vm.summary.status_badge, vm.summary.status);
+        let completion = format!("{:.1}%", vm.summary.completion_percentage);
+        doc.push(Self::kv_table(&[
+            ("Statut", &status_display),
+            ("Technicien", &vm.summary.technician_name),
+            ("Type d'intervention", &vm.summary.intervention_type),
+            ("Duree estimee", &vm.summary.estimated_duration),
+            ("Duree reelle", &vm.summary.actual_duration),
+            ("Progression", &completion),
+        ]));
     }
 
-    // -- 3. Client & Vehicle (side-by-side conceptually; genpdf has limited columns) --
+    // -- 3. Client & Vehicle --
 
     fn render_client_and_vehicle(doc: &mut Document, vm: &ReportViewModel) {
         Self::section_title(doc, "CLIENT");
-        Self::label_value(doc, "Nom", &vm.client.name);
-        Self::label_value(doc, "Email", &vm.client.email);
-        Self::label_value(doc, "Telephone", &vm.client.phone);
+        doc.push(Self::kv_table(&[
+            ("Nom", &vm.client.name),
+            ("Email", &vm.client.email),
+            ("Telephone", &vm.client.phone),
+        ]));
 
         Self::section_title(doc, "VEHICULE");
-        Self::label_value(doc, "Plaque", &vm.vehicle.plate);
-        Self::label_value(doc, "Marque", &vm.vehicle.make);
-        Self::label_value(doc, "Modele", &vm.vehicle.model);
-        Self::label_value(doc, "Annee", &vm.vehicle.year);
-        Self::label_value(doc, "Couleur", &vm.vehicle.color);
-        Self::label_value(doc, "VIN", &vm.vehicle.vin);
-
+        let make_model = format!("{} {}", vm.vehicle.make, vm.vehicle.model);
+        doc.push(Self::kv_table(&[
+            ("Plaque", &vm.vehicle.plate),
+            ("Marque / Modele", &make_model),
+            ("Annee", &vm.vehicle.year),
+            ("Couleur", &vm.vehicle.color),
+            ("VIN", &vm.vehicle.vin),
+        ]));
         doc.push(elements::Break::new(0.5));
     }
 
@@ -245,11 +241,13 @@ impl InterventionPdfReport {
 
     fn render_work_conditions(doc: &mut Document, vm: &ReportViewModel) {
         Self::section_title(doc, "CONDITIONS DE TRAVAIL");
-        Self::label_value(doc, "Meteo", &vm.work_conditions.weather);
-        Self::label_value(doc, "Eclairage", &vm.work_conditions.lighting);
-        Self::label_value(doc, "Lieu", &vm.work_conditions.location);
-        Self::label_value(doc, "Temperature", &vm.work_conditions.temperature);
-        Self::label_value(doc, "Humidite", &vm.work_conditions.humidity);
+        doc.push(Self::kv_table(&[
+            ("Meteo", &vm.work_conditions.weather),
+            ("Eclairage", &vm.work_conditions.lighting),
+            ("Lieu de travail", &vm.work_conditions.location),
+            ("Temperature", &vm.work_conditions.temperature),
+            ("Humidite", &vm.work_conditions.humidity),
+        ]));
         doc.push(elements::Break::new(0.5));
     }
 
@@ -257,24 +255,49 @@ impl InterventionPdfReport {
 
     fn render_materials(doc: &mut Document, vm: &ReportViewModel) {
         Self::section_title(doc, "MATERIAUX UTILISES");
-        Self::label_value(doc, "Type de film", &vm.materials.film_type);
-        Self::label_value(doc, "Marque", &vm.materials.film_brand);
-        Self::label_value(doc, "Modele", &vm.materials.film_model);
+        doc.push(Self::kv_table(&[
+            ("Type de film", &vm.materials.film_type),
+            ("Marque", &vm.materials.film_brand),
+            ("Modele", &vm.materials.film_model),
+        ]));
 
         if !vm.materials.consumptions.is_empty() {
+            doc.push(elements::Break::new(0.4));
             doc.push(
                 elements::Paragraph::new(&format!(
-                    "Consommations enregistrees: {}",
+                    "Consommations ({} enregistree(s)) :",
                     vm.materials.consumptions.len()
                 ))
-                .styled(style::Style::new().italic()),
+                .styled(style::Style::new().bold()),
             );
-            for c in &vm.materials.consumptions {
-                doc.push(elements::Paragraph::new(&format!(
-                    "  - {} | Qte: {:.2} | Cout: {} | Dechets: {:.2}",
-                    c.material_id, c.quantity_used, c.total_cost, c.waste_quantity,
-                )));
+            let mut con_table = elements::TableLayout::new(vec![4, 2, 2, 2]);
+            {
+                let mut row = con_table.row();
+                row.push_element(
+                    elements::Paragraph::new("Materiau").styled(style::Style::new().bold()),
+                );
+                row.push_element(
+                    elements::Paragraph::new("Qte").styled(style::Style::new().bold()),
+                );
+                row.push_element(
+                    elements::Paragraph::new("Cout").styled(style::Style::new().bold()),
+                );
+                row.push_element(
+                    elements::Paragraph::new("Dechets").styled(style::Style::new().bold()),
+                );
+                let _ = row.push();
             }
+            for c in &vm.materials.consumptions {
+                let qty = format!("{:.2}", c.quantity_used);
+                let waste = format!("{:.2}", c.waste_quantity);
+                let mut row = con_table.row();
+                row.push_element(elements::Paragraph::new(&c.material_id));
+                row.push_element(elements::Paragraph::new(&qty));
+                row.push_element(elements::Paragraph::new(&c.total_cost));
+                row.push_element(elements::Paragraph::new(&waste));
+                let _ = row.push();
+            }
+            doc.push(con_table);
         }
 
         doc.push(elements::Break::new(0.5));
@@ -301,47 +324,67 @@ impl InterventionPdfReport {
     }
 
     fn render_single_step(doc: &mut Document, step: &ReportStep) {
-        // Step header with badge
-        let header = format!(
-            "Etape {}: {} - {} {}",
-            step.number, step.title, step.status_badge, step.status
-        );
+        // Step header
         doc.push(
-            elements::Paragraph::new(&header)
-                .styled(style::Style::new().bold().with_font_size(11)),
+            elements::Paragraph::new(&format!(
+                "Etape {} - {} | {} {}",
+                step.number, step.title, step.status_badge, step.status
+            ))
+            .styled(style::Style::new().bold().with_font_size(12)),
         );
+        doc.push(elements::Break::new(0.15));
 
-        // Timing
+        // Timing & counters (as a kv table)
+        let mut timing: Vec<(String, String)> = Vec::new();
         if step.started_at != "Non renseigne" {
-            Self::label_value(doc, "  Debut", &step.started_at);
+            timing.push(("Debut".to_string(), step.started_at.clone()));
         }
         if step.completed_at != "Non renseigne" {
-            Self::label_value(doc, "  Fin", &step.completed_at);
+            timing.push(("Fin".to_string(), step.completed_at.clone()));
         }
         if step.duration != "Non renseigne" {
-            Self::label_value(doc, "  Duree", &step.duration);
+            timing.push(("Duree".to_string(), step.duration.clone()));
         }
-
-        // Photos
         if step.photo_count > 0 {
-            Self::label_value(doc, "  Photos", &step.photo_count.to_string());
+            timing.push(("Photos".to_string(), step.photo_count.to_string()));
+        }
+        if step.quality_score != "Non evalue" {
+            timing.push(("Score qualite".to_string(), step.quality_score.clone()));
+        }
+        if !timing.is_empty() {
+            let refs: Vec<(&str, &str)> = timing
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect();
+            doc.push(Self::kv_table(&refs));
         }
 
         // Notes
         if step.notes != "Aucune observation" {
-            Self::label_value(doc, "  Notes", &step.notes);
+            doc.push(elements::Break::new(0.2));
+            doc.push(elements::Paragraph::new("Notes :").styled(style::Style::new().bold()));
+            doc.push(elements::Paragraph::new(&format!("  {}", step.notes)));
+        }
+
+        // Zones
+        if !step.zones.is_empty() {
+            doc.push(elements::Break::new(0.2));
+            doc.push(
+                elements::Paragraph::new(&format!("Zones : {}", step.zones.join(", ")))
+                    .styled(style::Style::new().italic()),
+            );
         }
 
         // Checklist
         if !step.checklist.is_empty() {
+            doc.push(elements::Break::new(0.2));
             doc.push(
-                elements::Paragraph::new("  Checklist:")
-                    .styled(style::Style::new().italic()),
+                elements::Paragraph::new("Checklist :").styled(style::Style::new().bold()),
             );
             for item in &step.checklist {
                 let mark = if item.checked { "[X]" } else { "[ ]" };
                 doc.push(elements::Paragraph::new(&format!(
-                    "    {} {}",
+                    "  {} {}",
                     mark, item.label
                 )));
             }
@@ -349,58 +392,51 @@ impl InterventionPdfReport {
 
         // Defects
         if !step.defects.is_empty() {
+            doc.push(elements::Break::new(0.2));
             doc.push(
-                elements::Paragraph::new("  Defauts:")
-                    .styled(style::Style::new().italic()),
+                elements::Paragraph::new("Defauts detectes :")
+                    .styled(style::Style::new().bold()),
             );
             for d in &step.defects {
-                doc.push(elements::Paragraph::new(&format!("    - {}", d)));
+                doc.push(elements::Paragraph::new(&format!("  - {}", d)));
             }
         }
 
         // Observations
         if !step.observations.is_empty() {
+            doc.push(elements::Break::new(0.2));
             doc.push(
-                elements::Paragraph::new("  Observations:")
-                    .styled(style::Style::new().italic()),
+                elements::Paragraph::new("Observations :").styled(style::Style::new().bold()),
             );
             for obs in &step.observations {
-                doc.push(elements::Paragraph::new(&format!("    - {}", obs)));
+                doc.push(elements::Paragraph::new(&format!("  - {}", obs)));
             }
         }
 
         // Environment
         if !step.environment.is_empty() {
+            doc.push(elements::Break::new(0.2));
             doc.push(
-                elements::Paragraph::new("  Environnement:")
-                    .styled(style::Style::new().italic()),
+                elements::Paragraph::new("Environnement :")
+                    .styled(style::Style::new().bold()),
             );
             for kv in &step.environment {
                 doc.push(elements::Paragraph::new(&format!(
-                    "    {}: {}",
+                    "  {}: {}",
                     kv.key, kv.value
                 )));
             }
         }
 
-        // Zones
-        if !step.zones.is_empty() {
-            Self::label_value(
-                doc,
-                "  Zones",
-                &step.zones.join(", "),
-            );
-        }
-
         // Measurements
         if !step.measurements.is_empty() {
+            doc.push(elements::Break::new(0.2));
             doc.push(
-                elements::Paragraph::new("  Mesures:")
-                    .styled(style::Style::new().italic()),
+                elements::Paragraph::new("Mesures :").styled(style::Style::new().bold()),
             );
             for kv in &step.measurements {
                 doc.push(elements::Paragraph::new(&format!(
-                    "    {}: {}",
+                    "  {}: {}",
                     kv.key, kv.value
                 )));
             }
@@ -408,49 +444,87 @@ impl InterventionPdfReport {
 
         // Validation data
         if !step.validation_data.is_empty() {
+            doc.push(elements::Break::new(0.2));
             doc.push(
-                elements::Paragraph::new("  Donnees de validation:")
-                    .styled(style::Style::new().italic()),
+                elements::Paragraph::new("Donnees de validation :")
+                    .styled(style::Style::new().bold()),
             );
             for kv in &step.validation_data {
                 doc.push(elements::Paragraph::new(&format!(
-                    "    {}: {}",
+                    "  {}: {}",
                     kv.key, kv.value
                 )));
             }
         }
 
-        // Quality score
-        if step.quality_score != "Non evalue" {
-            Self::label_value(doc, "  Score qualite", &step.quality_score);
+        // Approval
+        if step.approval_data.approved_by != "Non renseigne" {
+            doc.push(elements::Break::new(0.2));
+            doc.push(elements::Paragraph::new(&format!(
+                "Valide par : {} le {}",
+                step.approval_data.approved_by, step.approval_data.approved_at
+            )));
+        }
+        if step.approval_data.rejection_reason != "Aucune" {
+            doc.push(elements::Break::new(0.2));
+            doc.push(
+                elements::Paragraph::new(&format!(
+                    "Motif de rejet : {}",
+                    step.approval_data.rejection_reason
+                ))
+                .styled(style::Style::new().italic()),
+            );
         }
 
-        doc.push(elements::Break::new(0.4));
+        doc.push(elements::Break::new(0.6));
     }
 
     // -- 7. Quality & customer validation --
 
     fn render_quality_and_validation(doc: &mut Document, vm: &ReportViewModel) {
-        Self::section_title(doc, "CONTROLE QUALITE ET VALIDATION");
-
-        Self::label_value_bold(doc, "Score qualite global", &vm.quality.global_quality_score);
+        Self::section_title(doc, "CONTROLE QUALITE");
+        doc.push(
+            elements::Paragraph::new(&format!(
+                "Score global : {}",
+                vm.quality.global_quality_score
+            ))
+            .styled(style::Style::new().bold().with_font_size(12)),
+        );
 
         if !vm.quality.checkpoints.is_empty() {
+            doc.push(elements::Break::new(0.4));
             doc.push(
-                elements::Paragraph::new("Scores par etape:")
+                elements::Paragraph::new("Scores par etape :")
                     .styled(style::Style::new().bold()),
             );
-            for cp in &vm.quality.checkpoints {
-                doc.push(elements::Paragraph::new(&format!(
-                    "  {} ({}): {}",
-                    cp.step_name, cp.step_status, cp.score
-                )));
+            let mut cp_table = elements::TableLayout::new(vec![5, 3, 2]);
+            {
+                let mut row = cp_table.row();
+                row.push_element(
+                    elements::Paragraph::new("Etape").styled(style::Style::new().bold()),
+                );
+                row.push_element(
+                    elements::Paragraph::new("Statut").styled(style::Style::new().bold()),
+                );
+                row.push_element(
+                    elements::Paragraph::new("Score").styled(style::Style::new().bold()),
+                );
+                let _ = row.push();
             }
+            for cp in &vm.quality.checkpoints {
+                let mut row = cp_table.row();
+                row.push_element(elements::Paragraph::new(&cp.step_name));
+                row.push_element(elements::Paragraph::new(&cp.step_status));
+                row.push_element(elements::Paragraph::new(&cp.score));
+                let _ = row.push();
+            }
+            doc.push(cp_table);
         }
 
         if !vm.quality.final_observations.is_empty() {
+            doc.push(elements::Break::new(0.4));
             doc.push(
-                elements::Paragraph::new("Observations finales:")
+                elements::Paragraph::new("Observations finales :")
                     .styled(style::Style::new().bold()),
             );
             for obs in &vm.quality.final_observations {
@@ -458,64 +532,72 @@ impl InterventionPdfReport {
             }
         }
 
-        doc.push(elements::Break::new(0.5));
-
-        // Customer validation
-        doc.push(
-            elements::Paragraph::new("VALIDATION CLIENT")
-                .styled(style::Style::new().bold().with_font_size(12)),
-        );
-        doc.push(elements::Break::new(0.2));
-
-        Self::label_value(doc, "Satisfaction", &vm.customer_validation.satisfaction);
-        Self::label_value(
-            doc,
-            "Signature",
-            if vm.customer_validation.signature_present {
-                "[OK] Signee electroniquement"
-            } else {
-                "Non signee"
-            },
-        );
-        Self::label_value(doc, "Commentaires", &vm.customer_validation.comments);
-
+        Self::section_title(doc, "VALIDATION CLIENT");
+        let sig_status = if vm.customer_validation.signature_present {
+            "Signee electroniquement"
+        } else {
+            "Non signee"
+        };
+        doc.push(Self::kv_table(&[
+            ("Satisfaction", &vm.customer_validation.satisfaction),
+            ("Signature", sig_status),
+            ("Commentaires", &vm.customer_validation.comments),
+        ]));
         doc.push(elements::Break::new(0.5));
     }
 
     // -- 8. Photos --
 
     fn render_photos(doc: &mut Document, vm: &ReportViewModel) {
-        Self::section_title(doc, "DOCUMENTATION PHOTOS");
+        if vm.photos.total_count == 0 {
+            return;
+        }
 
-        doc.push(elements::Paragraph::new(&format!(
-            "Nombre total de photos: {}",
-            vm.photos.total_count
-        )));
+        Self::section_title(doc, "DOCUMENTATION PHOTOS");
+        doc.push(
+            elements::Paragraph::new(&format!(
+                "Total : {} photo(s)",
+                vm.photos.total_count
+            ))
+            .styled(style::Style::new().bold()),
+        );
 
         if !vm.photos.grouped_by_step.is_empty() {
+            doc.push(elements::Break::new(0.4));
             doc.push(
-                elements::Paragraph::new("Par etape:")
+                elements::Paragraph::new("Repartition par etape :")
                     .styled(style::Style::new().bold()),
             );
-            for group in &vm.photos.grouped_by_step {
-                doc.push(elements::Paragraph::new(&format!(
-                    "  {}: {}",
-                    group.label, group.count
-                )));
-            }
+            let by_step: Vec<(String, String)> = vm
+                .photos
+                .grouped_by_step
+                .iter()
+                .map(|g| (g.label.clone(), g.count.to_string()))
+                .collect();
+            let by_step_refs: Vec<(&str, &str)> = by_step
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect();
+            doc.push(Self::kv_table(&by_step_refs));
         }
 
         if !vm.photos.grouped_by_category.is_empty() {
+            doc.push(elements::Break::new(0.4));
             doc.push(
-                elements::Paragraph::new("Par categorie:")
+                elements::Paragraph::new("Repartition par categorie :")
                     .styled(style::Style::new().bold()),
             );
-            for group in &vm.photos.grouped_by_category {
-                doc.push(elements::Paragraph::new(&format!(
-                    "  {}: {}",
-                    group.label, group.count
-                )));
-            }
+            let by_cat: Vec<(String, String)> = vm
+                .photos
+                .grouped_by_category
+                .iter()
+                .map(|g| (g.label.clone(), g.count.to_string()))
+                .collect();
+            let by_cat_refs: Vec<(&str, &str)> = by_cat
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect();
+            doc.push(Self::kv_table(&by_cat_refs));
         }
 
         doc.push(elements::Break::new(0.5));
@@ -525,18 +607,21 @@ impl InterventionPdfReport {
 
     fn render_footer(doc: &mut Document, vm: &ReportViewModel) {
         doc.push(elements::Break::new(2.0));
-
+        doc.push(
+            elements::Paragraph::new("________________________________________________")
+                .aligned(Alignment::Center)
+                .styled(style::Style::new().with_font_size(6)),
+        );
         doc.push(
             elements::Paragraph::new(&format!(
-                "Rapport genere le: {} | ID: {}",
+                "Rapport genere le : {} | Intervention : {}",
                 vm.meta.generated_at, vm.meta.intervention_id
             ))
             .aligned(Alignment::Center)
             .styled(style::Style::new().with_font_size(8)),
         );
-
         doc.push(
-            elements::Paragraph::new("Application RPMA PPF Intervention")
+            elements::Paragraph::new("RPMA - Application PPF Intervention")
                 .aligned(Alignment::Center)
                 .styled(style::Style::new().with_font_size(8)),
         );
@@ -832,9 +917,9 @@ mod tests {
 
     #[test]
     fn test_score_to_stars() {
-        assert_eq!(score_to_stars(100), "*****");
-        assert_eq!(score_to_stars(80), "****");
-        assert_eq!(score_to_stars(0), "");
+        assert_eq!(report_view_model::score_to_stars(100), "*****");
+        assert_eq!(report_view_model::score_to_stars(80), "****");
+        assert_eq!(report_view_model::score_to_stars(0), "");
     }
 
     #[test]

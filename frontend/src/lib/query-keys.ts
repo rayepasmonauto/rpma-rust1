@@ -18,3 +18,9 @@ export const quoteKeys = {
   all: ['quotes'],
   byId: (quoteId: string) => [...quoteKeys.all, quoteId],
 };
+
+export const reportKeys = {
+  all: ['reports'],
+  byIntervention: (interventionId: string) => ['report', 'byIntervention', interventionId],
+  preview: (interventionId: string) => ['report-preview', interventionId],
+};
