@@ -54,7 +54,11 @@ pub async fn get_app_settings(
     let correlation_id = crate::commands::init_correlation_context(&correlation_id, None);
 
     // Always require authentication and validate admin role
-    let user = crate::authenticate!(&session_token, &state, crate::shared::contracts::auth::UserRole::Admin);
+    let user = crate::authenticate!(
+        &session_token,
+        &state,
+        crate::shared::contracts::auth::UserRole::Admin
+    );
 
     crate::commands::update_correlation_context_user(&user.user_id);
 

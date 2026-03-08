@@ -56,10 +56,9 @@ impl InventoryTransactionRepository {
         }
         let mut stmt = tx.prepare_cached(&sql).map_err(|e| e.to_string())?;
         let existing: HashSet<String> = stmt
-            .query_map(
-                rusqlite::params_from_iter(param_values.iter()),
-                |row| row.get::<_, String>(0),
-            )
+            .query_map(rusqlite::params_from_iter(param_values.iter()), |row| {
+                row.get::<_, String>(0)
+            })
             .map_err(|e| e.to_string())?
             .filter_map(|r| r.ok())
             .collect();

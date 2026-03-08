@@ -6,7 +6,7 @@ import { useAuth } from '@/domains/auth';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 
 const AccessibilityTab = dynamic(
-  () => import('@/domains/settings/components/AccessibilityTab').then(mod => ({ default: mod.AccessibilityTab })),
+  () => import('@/domains/settings').then(mod => ({ default: mod.AccessibilityTab })),
   { loading: () => <LoadingState message="Chargement de l'accessibilite..." /> }
 );
 

@@ -6,7 +6,7 @@ import { useAuth } from '@/domains/auth';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 
 const SecurityTab = dynamic(
-  () => import('@/domains/settings/components/SecurityTab').then(mod => ({ default: mod.SecurityTab })),
+  () => import('@/domains/settings').then(mod => ({ default: mod.SecurityTab })),
   { loading: () => <LoadingState message="Chargement de la securite..." /> }
 );
 

@@ -25,10 +25,12 @@ else
     ERRORS=$((ERRORS + 1))
 fi
 
-# 2. Validate required exports in backend.ts
+# 2. Validate required exports
 REQUIRED_EXPORTS=("TaskStatus" "TaskPriority" "UserAccount")
 for exp in "${REQUIRED_EXPORTS[@]}"; do
-    if grep -q "export type $exp\|export interface $exp" "$BACKEND_TS" 2>/dev/null; then
+    # Search in backend.ts (legacy) and backend/ directory (split)
+    if grep -q "export type $exp\|export interface $exp" "$BACKEND_TS" 2>/dev/null || \
+       ( [ -d "frontend/src/lib/backend" ] && grep -q "export type $exp\|export interface $exp" frontend/src/lib/backend/*.ts 2>/dev/null ); then
         echo -e "${GREEN}✓${NC} Export found: $exp"
     else
         echo -e "${RED}✗${NC} Missing export: $exp"

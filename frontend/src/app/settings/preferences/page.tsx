@@ -6,7 +6,7 @@ import { useAuth } from '@/domains/auth';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 
 const PreferencesTab = dynamic(
-  () => import('@/domains/settings/components/PreferencesTab').then(mod => ({ default: mod.PreferencesTab })),
+  () => import('@/domains/settings').then(mod => ({ default: mod.PreferencesTab })),
   { loading: () => <LoadingState message="Chargement des preferences..." /> }
 );
 

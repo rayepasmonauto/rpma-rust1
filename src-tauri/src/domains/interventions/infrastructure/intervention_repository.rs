@@ -545,18 +545,55 @@ impl InterventionRepository {
         for step in steps {
             let f = StepDbFields::from_step(step);
             stmt.execute(params![
-                step.id, step.intervention_id, step.step_number, step.step_name, f.step_type, f.step_status,
-                step.description, f.instructions_json, f.quality_checkpoints_json, step.is_mandatory, step.requires_photos,
-                step.min_photos_required, step.max_photos_allowed, step.started_at.inner(), step.completed_at.inner(), step.paused_at.inner(),
-                step.duration_seconds, step.estimated_duration_seconds, f.step_data_json, f.collected_data_json, f.measurements_json,
-                f.observations_json, step.photo_count, step.required_photos_completed, f.photo_urls_json, f.validation_data_json,
-                f.validation_errors_json, step.validation_score, step.requires_supervisor_approval, step.approved_by,
-                step.approved_at.inner(), step.rejection_reason, step.location_lat, step.location_lon, step.location_accuracy,
-                step.device_timestamp.inner(), step.server_timestamp.inner(), step.title, step.notes, step.synced, step.last_synced_at.inner(),
-                step.created_at, step.updated_at
+                step.id,
+                step.intervention_id,
+                step.step_number,
+                step.step_name,
+                f.step_type,
+                f.step_status,
+                step.description,
+                f.instructions_json,
+                f.quality_checkpoints_json,
+                step.is_mandatory,
+                step.requires_photos,
+                step.min_photos_required,
+                step.max_photos_allowed,
+                step.started_at.inner(),
+                step.completed_at.inner(),
+                step.paused_at.inner(),
+                step.duration_seconds,
+                step.estimated_duration_seconds,
+                f.step_data_json,
+                f.collected_data_json,
+                f.measurements_json,
+                f.observations_json,
+                step.photo_count,
+                step.required_photos_completed,
+                f.photo_urls_json,
+                f.validation_data_json,
+                f.validation_errors_json,
+                step.validation_score,
+                step.requires_supervisor_approval,
+                step.approved_by,
+                step.approved_at.inner(),
+                step.rejection_reason,
+                step.location_lat,
+                step.location_lon,
+                step.location_accuracy,
+                step.device_timestamp.inner(),
+                step.server_timestamp.inner(),
+                step.title,
+                step.notes,
+                step.synced,
+                step.last_synced_at.inner(),
+                step.created_at,
+                step.updated_at
             ])?;
         }
-        debug!(count = steps.len(), "Saved intervention steps batch (transaction)");
+        debug!(
+            count = steps.len(),
+            "Saved intervention steps batch (transaction)"
+        );
         Ok(())
     }
 

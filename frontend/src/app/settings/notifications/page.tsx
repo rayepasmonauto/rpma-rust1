@@ -6,7 +6,7 @@ import { useAuth } from '@/domains/auth';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 
 const NotificationsTab = dynamic(
-  () => import('@/domains/settings/components/NotificationsTab').then(mod => ({ default: mod.NotificationsTab })),
+  () => import('@/domains/settings').then(mod => ({ default: mod.NotificationsTab })),
   { loading: () => <LoadingState message="Chargement des notifications..." /> }
 );
 

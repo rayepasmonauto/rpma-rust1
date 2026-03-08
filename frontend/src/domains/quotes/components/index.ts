@@ -28,3 +28,4 @@ export { QuotesStatusTabs } from './QuotesStatusTabs';
 export { QuoteDetailPageContent } from './QuoteDetailPageContent';
 export { QuoteWorkflowPanel } from './QuoteWorkflowPanel';
 export type { QuoteWorkflowPanelProps } from './QuoteWorkflowPanel';
+export { QuoteCharts } from './QuoteCharts';

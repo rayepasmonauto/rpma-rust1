@@ -47,7 +47,7 @@ impl InterventionDataService {
         user_id: &str,
     ) -> InterventionResult<Intervention> {
         // Get task_number, vehicle_plate, and client info from task
-        let (task_number, vehicle_plate, client_id, customer_name, customer_email, customer_phone): 
+        let (task_number, vehicle_plate, client_id, customer_name, customer_email, customer_phone):
             (String, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>) = tx
             .query_row(
                 "SELECT task_number, vehicle_plate, client_id, customer_name, customer_email, customer_phone FROM tasks WHERE id = ?",

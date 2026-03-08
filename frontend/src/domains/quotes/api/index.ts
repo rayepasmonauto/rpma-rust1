@@ -38,6 +38,7 @@ export {
   QuotesListTable,
   QuotesStatusTabs,
   QuoteWorkflowPanel,
+  QuoteCharts,
   STATUS_LABELS,
 } from '../components';
 export type {

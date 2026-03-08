@@ -48,7 +48,7 @@ const SecurityDashboard = dynamic(
 );
 
 const AddUserModal = dynamic(
-  () => import('@/domains/admin/components/AddUserModal').then((mod) => ({ default: mod.AddUserModal })),
+  () => import('@/domains/admin').then((mod) => ({ default: mod.AddUserModal })),
   { ssr: false }
 );
 
