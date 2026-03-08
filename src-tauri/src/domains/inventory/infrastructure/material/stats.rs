@@ -29,37 +29,7 @@ impl super::MaterialService {
             [],
         )?;
 
-        let low_stock_materials: i32 = self.db.query_single_value(
-            r#"
-            SELECT COUNT(*) FROM materials
-            WHERE is_active = 1
-              AND deleted_at IS NULL
-              AND (current_stock - 0.0) <= COALESCE(minimum_stock, ?)
-            "#,
-            params![DEFAULT_LOW_STOCK_THRESHOLD],
-        )?;
-
-        let expired_materials: i32 = self.db.query_single_value(
-            r#"
-            SELECT COUNT(*) FROM materials
-            WHERE is_active = 1
-              AND deleted_at IS NULL
-              AND expiry_date IS NOT NULL
-              AND expiry_date <= ?
-            "#,
-            params![crate::shared::contracts::common::now()],
-        )?;
-
-        let total_value: f64 = self.db.query_single_value(
-            r#"
-            SELECT COALESCE(SUM(current_stock * unit_cost), 0)
-            FROM materials
-            WHERE unit_cost IS NOT NULL AND is_active = 1 AND deleted_at IS NULL
-            "#,
-            [],
-        )?;
-
-        // ADR-011 fix: use query_multiple instead of get_connection()+prepare()+query_map()
+        // materials_by_type uses GROUP BY — kept as separate query (incompatible with above aggregation).
         let type_rows: Vec<(String, i32)> = self.db.query_multiple(
             "SELECT material_type, COUNT(*) AS count FROM materials WHERE is_active = 1 AND deleted_at IS NULL GROUP BY material_type",
             [],
