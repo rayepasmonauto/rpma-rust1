@@ -679,7 +679,6 @@ impl QuoteRepository {
     fn invalidate_cache(&self, id: &str) {
         self.cache.remove(&self.cache_key_builder.id(id));
     }
-
 }
 
 // CreateTaskFromQuoteParams and create_task_from_quote() have been removed.

@@ -17,7 +17,7 @@ export interface QuoteItemsTableProps {
   onDeleteItem?: (itemId: string) => void;
 }
 
-export function QuoteItemsTable({ items = [], editable = false, onDeleteItem }: QuoteItemsTableProps) {
+export function QuoteItemsTable({ items, editable = false, onDeleteItem }: QuoteItemsTableProps) {
   const normalizedItems = items ?? [];
 
   if (normalizedItems.length === 0) {

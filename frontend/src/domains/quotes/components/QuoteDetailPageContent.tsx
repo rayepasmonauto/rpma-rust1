@@ -105,12 +105,12 @@ export function QuoteDetailPageContent() {
     refetch,
   } = useQuoteDetailPage(quoteId);
 
-  if (!quote && !error) {
+  if (loading && !quote) {
     return (
       <PageShell>
         <LoadingState />
       </PageShell>
-      );
+    );
   }
 
   if (error || !quote) {
