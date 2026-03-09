@@ -1,1 +1,0 @@
--- Migration 029: Add first_name and last_name to users (handled in Rust for idempotency)
