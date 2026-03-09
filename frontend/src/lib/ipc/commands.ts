@@ -261,11 +261,17 @@ export const IPC_COMMANDS = {
   QUOTE_MARK_SENT: 'quote_mark_sent',
   QUOTE_MARK_ACCEPTED: 'quote_mark_accepted',
   QUOTE_MARK_REJECTED: 'quote_mark_rejected',
+  QUOTE_MARK_EXPIRED: 'quote_mark_expired',
+  QUOTE_MARK_CHANGES_REQUESTED: 'quote_mark_changes_requested',
+  QUOTE_REOPEN: 'quote_reopen',
+  QUOTE_DUPLICATE: 'quote_duplicate',
   QUOTE_EXPORT_PDF: 'quote_export_pdf',
   QUOTE_ATTACHMENTS_GET: 'quote_attachments_get',
   QUOTE_ATTACHMENT_CREATE: 'quote_attachment_create',
   QUOTE_ATTACHMENT_UPDATE: 'quote_attachment_update',
   QUOTE_ATTACHMENT_DELETE: 'quote_attachment_delete',
+  QUOTE_ATTACHMENT_OPEN: 'quote_attachment_open',
+  QUOTE_CONVERT_TO_TASK: 'quote_convert_to_task',
 
   // WebSocket commands
   INIT_WEBSOCKET_SERVER: 'init_websocket_server',
