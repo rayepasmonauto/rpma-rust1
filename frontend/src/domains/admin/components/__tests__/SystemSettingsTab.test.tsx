@@ -163,7 +163,7 @@ describe('Configuration tabs regressions', () => {
     });
 
     const user = userEvent.setup();
-    await user.click(screen.getByRole('button', { name: /Supprimer la règle Règle Test/i }));
+    await user.click(await screen.findByLabelText(/Supprimer la règle Règle Test/i));
 
     expect(screen.getByTestId('confirm-dialog')).toBeInTheDocument();
     expect(screen.getByTestId('confirm-dialog')).toHaveTextContent('Supprimer la règle');
@@ -175,4 +175,3 @@ describe('Configuration tabs regressions', () => {
     });
   });
 });
-
