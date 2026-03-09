@@ -16,6 +16,7 @@ use std::sync::Arc;
 // ── Submodules ────────────────────────────────────────────────────────────────
 
 pub(crate) mod columns;
+mod mapping;
 pub mod query;
 mod read_ops;
 mod repository_impl;

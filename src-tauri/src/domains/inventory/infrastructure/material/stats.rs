@@ -1,8 +1,6 @@
 //! Read-only stats and reporting queries.
 
-use crate::domains::inventory::domain::material::{
-    effective_threshold, DEFAULT_LOW_STOCK_THRESHOLD,
-};
+use crate::domains::inventory::domain::material::effective_threshold;
 use crate::domains::inventory::domain::models::material::{
     InterventionMaterialSummary, LowStockMaterial, LowStockMaterialsResponse, Material,
     MaterialConsumptionSummary, MaterialStats,

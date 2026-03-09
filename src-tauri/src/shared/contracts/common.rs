@@ -5,8 +5,6 @@ use std::str::FromStr;
 // Conditional import removed
 use ts_rs::TS;
 
-// rusqlite for database operations
-
 /// Weather conditions for intervention
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
 #[serde(rename_all = "lowercase")]
@@ -157,18 +155,7 @@ impl std::fmt::Display for FilmType {
     }
 }
 
-impl rusqlite::ToSql for FilmType {
-    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
-        Ok(self.to_string().into())
-    }
-}
 
-impl rusqlite::types::FromSql for FilmType {
-    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
-        let s = String::column_result(value)?;
-        Self::from_str(&s).map_err(|_| rusqlite::types::FromSqlError::InvalidType)
-    }
-}
 
 /// GPS coordinates
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

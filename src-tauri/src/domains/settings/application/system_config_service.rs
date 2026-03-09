@@ -4,7 +4,7 @@
 //! infrastructure layer.  No SQL lives here.
 
 use crate::commands::AppError;
-use crate::domains::settings::domain::models::settings::{AppSettings, GeneralSettings};
+use crate::domains::settings::domain::models::settings::AppSettings;
 use crate::domains::settings::infrastructure::settings::SettingsService;
 use crate::shared::contracts::auth::{UserRole, UserSession};
 use std::sync::Arc;

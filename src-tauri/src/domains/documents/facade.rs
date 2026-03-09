@@ -4,7 +4,7 @@ use crate::domains::documents::infrastructure::photo::PhotoService;
 use crate::domains::documents::infrastructure::photo::{
     GetPhotosRequest, GetPhotosResponse, PhotoMetadataUpdate, StorePhotoRequest, StorePhotoResponse,
 };
-use crate::domains::documents::infrastructure::report_export as report_export_service;
+use crate::domains::documents::application::report_export as report_export_service;
 use crate::shared::contracts::auth::UserSession;
 use crate::shared::ipc::errors::AppError;
 
