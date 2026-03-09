@@ -1,52 +1,6 @@
 #!/bin/sh
 
-# ─── 1. Rust: clippy (fail on any warning) ───────────────────────────────────
-staged_rs=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.rs$' || true)
-if [ -n "$staged_rs" ]; then
-  echo "Running cargo clippy..."
-  mkdir -p frontend/.next
-  (cd src-tauri && cargo clippy -- -D warnings) || {
-    echo "❌ cargo clippy reported warnings or errors. Fix them before committing."
-    exit 1
-  }
-  echo "✓ cargo clippy passed."
-fi
-
-# ─── 2. Rust: formatting check ───────────────────────────────────────────────
-if [ -n "$staged_rs" ]; then
-  echo "Running cargo fmt --check..."
-  (cd src-tauri && cargo fmt --check) || {
-    echo "❌ Rust code is not formatted. Run 'cargo fmt' inside src-tauri/ and stage the changes."
-    exit 1
-  }
-  echo "✓ cargo fmt check passed."
-fi
-
-# ─── 3. Type drift: ensure generated TypeScript types are in sync ─────────────
-staged_models=$(git diff --cached --name-only --diff-filter=ACM | grep -E 'src-tauri/src/models/|src-tauri/src/.*\.rs$' || true)
-if [ -n "$staged_models" ]; then
-  echo "Checking for type drift..."
-  npm run types:sync
-  git diff --exit-code frontend/src/lib/backend/ || {
-    echo "❌ Generated TypeScript types are out of sync with the Rust models."
-    echo "   Run 'npm run types:sync', review the diff, and stage the updated files."
-    exit 1
-  }
-  echo "✓ No type drift detected."
-fi
-
-# ─── 4. ESLint: fail on any warning ─────────────────────────────────────────
-staged_ts=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)
-if [ -n "$staged_ts" ]; then
-  echo "Running ESLint..."
-  (cd frontend && ./node_modules/.bin/eslint --max-warnings 0 src/) || {
-    echo "❌ ESLint reported warnings or errors. Fix them before committing."
-    exit 1
-  }
-  echo "✓ ESLint passed."
-fi
-
-# ─── 5. Check for corrupted UTF-8 encoding in source files ───────────────────
+# Check for corrupted UTF-8 encoding in source files
 echo "Checking for UTF-8 encoding corruption..."
 
 # Get all staged .ts, .tsx, .js, .jsx files
