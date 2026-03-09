@@ -150,4 +150,29 @@ export const settingsIpc = {
     safeInvoke<JsonObject>(IPC_COMMANDS.UPDATE_DATA_CONSENT, {
       request: { ...request, session_token: sessionToken }
     }),
+
+  updateBusinessRules: (rules: JsonValue[], sessionToken: string): Promise<JsonValue> =>
+    safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_BUSINESS_RULES, {
+      request: { rules, session_token: sessionToken }
+    }),
+
+  updateSecurityPolicies: (policies: JsonValue[], sessionToken: string): Promise<JsonValue> =>
+    safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_SECURITY_POLICIES, {
+      request: { policies, session_token: sessionToken }
+    }),
+
+  updateIntegrations: (integrations: JsonValue[], sessionToken: string): Promise<JsonValue> =>
+    safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_INTEGRATIONS, {
+      request: { integrations, session_token: sessionToken }
+    }),
+
+  updatePerformanceConfigs: (configs: JsonValue[], sessionToken: string): Promise<JsonValue> =>
+    safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_PERFORMANCE_CONFIGS, {
+      request: { configs, session_token: sessionToken }
+    }),
+
+  updateBusinessHours: (hours: JsonObject, sessionToken: string): Promise<JsonValue> =>
+    safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_BUSINESS_HOURS, {
+      request: { hours, session_token: sessionToken }
+    }),
 };

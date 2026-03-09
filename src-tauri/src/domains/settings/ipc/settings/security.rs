@@ -5,9 +5,7 @@
 
 use crate::commands::{ApiResponse, AppError, AppState};
 use crate::domains::settings::domain::models::settings::UserSecuritySettings;
-use crate::domains::settings::ipc::settings::core::{
-    handle_settings_error, load_app_settings, settings_user_id, update_app_settings,
-};
+use crate::domains::settings::ipc::settings::core::{handle_settings_error, settings_user_id};
 
 use tracing::info;
 
@@ -38,7 +36,10 @@ pub async fn update_security_settings(
         ));
     }
 
-    let mut app_settings = load_app_settings().map_err(|e| AppError::Database(e))?;
+    let mut app_settings = state
+        .settings_service
+        .get_app_settings_db()
+        .map_err(|e| handle_settings_error(e, "Load app settings"))?;
 
     if let Some(two_factor_enabled) = request.two_factor_enabled {
         app_settings.security.two_factor_enabled = two_factor_enabled;
@@ -59,12 +60,14 @@ pub async fn update_security_settings(
         app_settings.security.login_attempts_max = login_attempts_max;
     }
 
-    update_app_settings(app_settings)
+    state
+        .settings_service
+        .save_app_settings_db(&app_settings, settings_user_id(&user))
         .map(|_| {
             ApiResponse::success("Security settings updated successfully".to_string())
                 .with_correlation_id(Some(correlation_id.clone()))
         })
-        .map_err(|e| AppError::Database(e))
+        .map_err(|e| handle_settings_error(e, "Update security settings"))
 }
 
 /// Update user security settings

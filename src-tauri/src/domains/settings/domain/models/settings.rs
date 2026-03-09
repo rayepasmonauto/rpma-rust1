@@ -110,7 +110,7 @@ pub struct DiagnosticSettings {
     pub metrics_collection: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct AppSettings {
     pub general: GeneralSettings,
     pub security: SecuritySettings,
@@ -118,6 +118,39 @@ pub struct AppSettings {
     pub appearance: AppearanceSettings,
     pub data_management: DataManagementSettings,
     pub storage: StorageSettings,
+    #[serde(default)]
+    #[ts(type = "unknown[]")]
+    pub business_rules: Vec<serde_json::Value>,
+    #[serde(default)]
+    #[ts(type = "unknown[]")]
+    pub security_policies: Vec<serde_json::Value>,
+    #[serde(default)]
+    #[ts(type = "unknown[]")]
+    pub integrations: Vec<serde_json::Value>,
+    #[serde(default)]
+    #[ts(type = "unknown[]")]
+    pub performance_configs: Vec<serde_json::Value>,
+    #[serde(default)]
+    #[ts(type = "Record<string, unknown>")]
+    pub business_hours: serde_json::Value,
+}
+
+impl Default for AppSettings {
+    fn default() -> Self {
+        Self {
+            general: GeneralSettings::default(),
+            security: SecuritySettings::default(),
+            notifications: NotificationSettings::default(),
+            appearance: AppearanceSettings::default(),
+            data_management: DataManagementSettings::default(),
+            storage: StorageSettings::default(),
+            business_rules: vec![],
+            security_policies: vec![],
+            integrations: vec![],
+            performance_configs: vec![],
+            business_hours: serde_json::Value::Object(serde_json::Map::new()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]

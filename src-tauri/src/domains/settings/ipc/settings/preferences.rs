@@ -5,9 +5,7 @@
 
 use crate::commands::{ApiResponse, AppError, AppState};
 use crate::domains::settings::domain::models::settings::UserPreferences;
-use crate::domains::settings::ipc::settings::core::{
-    handle_settings_error, load_app_settings, settings_user_id, update_app_settings,
-};
+use crate::domains::settings::ipc::settings::core::{handle_settings_error, settings_user_id};
 
 use serde::Deserialize;
 use tracing::info;
@@ -72,7 +70,10 @@ pub async fn update_general_settings(
         ));
     }
 
-    let mut app_settings = load_app_settings().map_err(|e| AppError::Database(e))?;
+    let mut app_settings = state
+        .settings_service
+        .get_app_settings_db()
+        .map_err(|e| handle_settings_error(e, "Load app settings"))?;
 
     if let Some(auto_save) = request.auto_save {
         app_settings.general.auto_save = auto_save;
@@ -90,12 +91,14 @@ pub async fn update_general_settings(
         app_settings.general.currency = currency;
     }
 
-    update_app_settings(app_settings)
+    state
+        .settings_service
+        .update_general_settings_db(&app_settings.general, settings_user_id(&user))
         .map(|_| {
             ApiResponse::success("General settings updated successfully".to_string())
                 .with_correlation_id(correlation_id_clone.clone())
         })
-        .map_err(|e| AppError::Database(e))
+        .map_err(|e| handle_settings_error(e, "Update general settings"))
 }
 
 /// Update user preferences

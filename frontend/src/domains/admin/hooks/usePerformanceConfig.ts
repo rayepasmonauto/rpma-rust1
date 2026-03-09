@@ -112,8 +112,8 @@ export function usePerformanceConfig() {
         updatedConfigs = [...performanceConfigs, newConfig];
       }
 
-      await settingsOperations.updateGeneralSettings(
-        { performance_configs: updatedConfigs as unknown as JsonValue } as Record<string, JsonValue>,
+      await settingsOperations.updatePerformanceConfigs(
+        updatedConfigs as unknown as JsonValue[],
         sessionToken
       );
 
@@ -135,8 +135,8 @@ export function usePerformanceConfig() {
     try {
       const sessionToken = session?.token || '';
       const updatedConfigs = performanceConfigs.filter((config) => config.id !== configToDelete.id);
-      await settingsOperations.updateGeneralSettings(
-        { performance_configs: updatedConfigs as unknown as JsonValue } as Record<string, JsonValue>,
+      await settingsOperations.updatePerformanceConfigs(
+        updatedConfigs as unknown as JsonValue[],
         sessionToken
       );
       toast.success('Configuration supprimée avec succès');
@@ -161,8 +161,8 @@ export function usePerformanceConfig() {
       const updatedConfigs = performanceConfigs.map(c =>
         c.id === config.id ? { ...c, isActive: !c.isActive } : c
       );
-      await settingsOperations.updateGeneralSettings(
-        { performance_configs: updatedConfigs as unknown as JsonValue } as Record<string, JsonValue>,
+      await settingsOperations.updatePerformanceConfigs(
+        updatedConfigs as unknown as JsonValue[],
         sessionToken
       );
       toast.success(`Configuration ${config.isActive ? 'désactivée' : 'activée'} avec succès`);
