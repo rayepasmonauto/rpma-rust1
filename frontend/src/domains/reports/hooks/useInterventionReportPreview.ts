@@ -40,6 +40,7 @@ export function useInterventionReportPreview(
       );
     },
     select: (data) => data,
+    staleTime: 5 * 60 * 1000,
   });
 
   return {

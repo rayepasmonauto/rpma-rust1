@@ -27,6 +27,7 @@ export function useInterventionReport({ interventionId }: UseInterventionReportO
     queryFn: () => reportsIpc.getByIntervention(interventionId!),
     enabled: !!interventionId,
     select: (data) => data ?? null,
+    staleTime: 5 * 60 * 1000,
   });
 
   const mutation = useMutation({

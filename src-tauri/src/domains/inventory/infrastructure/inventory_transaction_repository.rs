@@ -6,7 +6,6 @@ use rusqlite::params;
 use crate::domains::inventory::domain::models::material::InventoryTransaction;
 use crate::shared::db::Database;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct InventoryTransactionRepository {
     db: Arc<Database>,

@@ -8,7 +8,7 @@ use crate::shared::services::domain_event::DomainEvent;
 use crate::shared::services::event_bus::EventHandler;
 use async_trait::async_trait;
 use std::sync::Arc;
-use tracing::debug;
+use tracing::{debug, warn};
 
 /// WebSocket event handler that broadcasts domain events to connected clients
 pub struct WebSocketEventHandler {

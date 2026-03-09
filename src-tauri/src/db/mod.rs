@@ -228,7 +228,6 @@ impl QueryMetrics {
     }
 }
 
-#[allow(dead_code)]
 impl Database {
     /// Create new database connection pool
     ///
