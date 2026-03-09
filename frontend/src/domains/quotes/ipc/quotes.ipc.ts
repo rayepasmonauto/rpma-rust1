@@ -1,4 +1,5 @@
 import { safeInvoke, invalidatePattern } from '@/lib/ipc/core';
+import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import { signalMutation } from '@/lib/data-freshness';
 import type { JsonObject } from '@/types/json';
 
@@ -95,7 +96,7 @@ export const quotesIpc = {
   },
 
   markExpired: async (id: string, sessionToken: string) => {
-    const result = await safeInvoke('quote_mark_expired', {
+    const result = await safeInvoke(IPC_COMMANDS.QUOTE_MARK_EXPIRED, {
       request: { session_token: sessionToken, id }
     });
     invalidatePattern('quote:');
@@ -104,7 +105,7 @@ export const quotesIpc = {
   },
 
   markChangesRequested: async (id: string, sessionToken: string) => {
-    const result = await safeInvoke('quote_mark_changes_requested', {
+    const result = await safeInvoke(IPC_COMMANDS.QUOTE_MARK_CHANGES_REQUESTED, {
       request: { session_token: sessionToken, id }
     });
     invalidatePattern('quote:');
@@ -113,7 +114,7 @@ export const quotesIpc = {
   },
 
   reopen: async (id: string, sessionToken: string) => {
-    const result = await safeInvoke('quote_reopen', {
+    const result = await safeInvoke(IPC_COMMANDS.QUOTE_REOPEN, {
       request: { session_token: sessionToken, id }
     });
     invalidatePattern('quote:');
@@ -122,7 +123,7 @@ export const quotesIpc = {
   },
 
   duplicate: async (id: string, sessionToken: string) => {
-    const result = await safeInvoke('quote_duplicate', {
+    const result = await safeInvoke(IPC_COMMANDS.QUOTE_DUPLICATE, {
       request: { session_token: sessionToken, id }
     });
     invalidatePattern('quote:');
@@ -141,7 +142,7 @@ export const quotesIpc = {
     }),
 
   openAttachment: (attachmentId: string, sessionToken: string) =>
-    safeInvoke('quote_attachment_open', {
+    safeInvoke(IPC_COMMANDS.QUOTE_ATTACHMENT_OPEN, {
       request: { session_token: sessionToken, attachment_id: attachmentId }
     }),
 
@@ -185,7 +186,7 @@ export const quotesIpc = {
     },
     sessionToken: string
   ) => {
-    const result = await safeInvoke('quote_convert_to_task', {
+    const result = await safeInvoke(IPC_COMMANDS.QUOTE_CONVERT_TO_TASK, {
       request: {
         session_token: sessionToken,
         quote_id: quoteId,

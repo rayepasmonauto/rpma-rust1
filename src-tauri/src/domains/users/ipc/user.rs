@@ -162,12 +162,13 @@ pub async fn get_users(
     _search: Option<String>,
     _role: Option<String>,
     session_token: String,
+    correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<serde_json::Value, AppError> {
     let limit = Some(page_size);
     let offset = Some((page - 1) * page_size);
 
-    match execute_user_action(UserAction::List { limit, offset }, session_token, state).await? {
+    match execute_user_action(UserAction::List { limit, offset }, session_token, correlation_id, state).await? {
         UserResponse::List(users) => Ok(serde_json::json!({
             "users": users.data,
             "total": users.data.len(),
@@ -182,9 +183,10 @@ pub async fn get_users(
 pub async fn create_user(
     user_data: CreateUserRequest,
     session_token: String,
+    correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<serde_json::Value, AppError> {
-    match execute_user_action(UserAction::Create { data: user_data }, session_token, state).await? {
+    match execute_user_action(UserAction::Create { data: user_data }, session_token, correlation_id, state).await? {
         UserResponse::Created(user) => Ok(serde_json::json!(user)),
         _ => Err(AppError::Internal("Failed to create user".to_string())),
     }
@@ -195,6 +197,7 @@ pub async fn update_user(
     user_id: String,
     user_data: UpdateUserRequest,
     session_token: String,
+    correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<serde_json::Value, AppError> {
     match execute_user_action(
@@ -203,6 +206,7 @@ pub async fn update_user(
             data: user_data,
         },
         session_token,
+        correlation_id,
         state,
     )
     .await?
@@ -217,6 +221,7 @@ pub async fn update_user_status(
     user_id: String,
     is_active: bool,
     session_token: String,
+    correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<(), AppError> {
     let update_data = UpdateUserRequest {
@@ -233,6 +238,7 @@ pub async fn update_user_status(
             data: update_data,
         },
         session_token,
+        correlation_id,
         state,
     )
     .await?
@@ -248,9 +254,10 @@ pub async fn update_user_status(
 pub async fn delete_user(
     user_id: String,
     session_token: String,
+    correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<(), AppError> {
-    match execute_user_action(UserAction::Delete { id: user_id }, session_token, state).await? {
+    match execute_user_action(UserAction::Delete { id: user_id }, session_token, correlation_id, state).await? {
         UserResponse::Deleted => Ok(()),
         _ => Err(AppError::Internal("Failed to delete user".to_string())),
     }
@@ -259,12 +266,13 @@ pub async fn delete_user(
 async fn execute_user_action(
     action: UserAction,
     session_token: String,
+    correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<UserResponse, AppError> {
     let request = UserCrudRequest {
         action,
         session_token,
-        correlation_id: None,
+        correlation_id,
     };
 
     let response = user_crud(request, state).await?;
