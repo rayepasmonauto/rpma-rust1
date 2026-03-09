@@ -73,7 +73,7 @@ describe('EditTaskModal', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /mise à jour/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /mise.*jour/i })).toBeDisabled();
   });
 
   it('uses standardized info toast when no changes are detected', () => {
@@ -85,7 +85,7 @@ describe('EditTaskModal', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /mettre à jour/i }));
+    fireEvent.click(screen.getByRole('button', { name: /mettre.*jour/i }));
 
     expect(mockEnhancedToast.info).toHaveBeenCalledWith('Aucune modification détectée');
     expect(mockMutate).not.toHaveBeenCalled();
