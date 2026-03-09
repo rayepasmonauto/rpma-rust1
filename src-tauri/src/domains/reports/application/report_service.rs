@@ -1,7 +1,8 @@
-use crate::commands::{AppError, AppResult};
+use crate::commands::AppResult;
 use crate::db::Database;
-use crate::domains::documents::infrastructure::report_export as report_export_service;
+use crate::domains::documents::application::report_export as report_export_service;
 use crate::domains::reports::domain::models::intervention_report::InterventionReport;
+use crate::domains::reports::domain::ports::ReportRepositoryPort;
 use crate::domains::reports::infrastructure::report_repository::ReportRepository;
 use crate::shared::contracts::auth::UserSession;
 use crate::shared::services::document_storage::DocumentStorageService;
@@ -11,14 +12,14 @@ use std::sync::Arc;
 
 /// Application service that orchestrates report generation, persistence, and retrieval.
 pub struct ReportService {
-    repository: ReportRepository,
+    repository: Box<dyn ReportRepositoryPort>,
     db: Arc<Database>,
     app_data_dir: std::path::PathBuf,
 }
 
 impl ReportService {
     pub fn new(db: Arc<Database>, app_data_dir: std::path::PathBuf) -> Self {
-        let repository = ReportRepository::new(db.clone());
+        let repository = Box::new(ReportRepository::new(db.clone()));
         Self {
             repository,
             db,
@@ -60,7 +61,7 @@ impl ReportService {
         let output_path = DocumentStorageService::get_document_path(&self.app_data_dir, &file_name);
 
         let pdf_report =
-            crate::domains::documents::infrastructure::report_pdf::InterventionPdfReport::new(
+            crate::domains::documents::application::report_pdf::InterventionPdfReport::new(
                 intervention_data.intervention.clone(),
                 intervention_data.workflow_steps.clone(),
                 intervention_data.photos.clone(),

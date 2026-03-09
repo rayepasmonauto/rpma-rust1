@@ -1,5 +1,4 @@
 mod facade;
-pub(crate) use facade::SyncFacade;
 pub(crate) mod application;
 #[cfg(feature = "export-types")]
 pub mod domain;

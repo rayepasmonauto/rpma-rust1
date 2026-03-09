@@ -107,7 +107,7 @@ pub async fn export_intervention_report(
     let output_path = DocumentStorageService::get_document_path(app_data_dir, &file_name);
 
     let pdf_report =
-        crate::domains::documents::infrastructure::report_pdf::InterventionPdfReport::new(
+        crate::domains::documents::application::report_pdf::InterventionPdfReport::new(
             intervention_data.intervention.clone(),
             intervention_data.workflow_steps.clone(),
             intervention_data.photos.clone(),
@@ -150,7 +150,7 @@ pub async fn save_intervention_report(
     }
 
     let pdf_report =
-        crate::domains::documents::infrastructure::report_pdf::InterventionPdfReport::new(
+        crate::domains::documents::application::report_pdf::InterventionPdfReport::new(
             intervention_data.intervention.clone(),
             intervention_data.workflow_steps.clone(),
             intervention_data.photos.clone(),
