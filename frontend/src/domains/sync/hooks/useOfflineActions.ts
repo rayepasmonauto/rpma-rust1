@@ -36,6 +36,15 @@ type OfflineAction = {
 const OFFLINE_ACTIONS_KEY = 'offline_actions';
 const MAX_RETRIES = 3;
 
+function isValidOfflineAction(a: unknown): a is OfflineAction {
+  return (
+    typeof a === 'object' && a !== null &&
+    typeof (a as OfflineAction).id === 'string' &&
+    typeof (a as OfflineAction).type === 'string' &&
+    typeof (a as OfflineAction).status === 'string'
+  );
+}
+
 export const useOfflineActions = () => {
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [actions, setActions] = useState<OfflineAction[]>([]);
@@ -45,7 +54,15 @@ export const useOfflineActions = () => {
   useEffect(() => {
     const savedActions = localStorage.getItem(OFFLINE_ACTIONS_KEY);
     if (savedActions) {
-      setActions(JSON.parse(savedActions));
+      try {
+        const parsed = JSON.parse(savedActions);
+        if (Array.isArray(parsed)) {
+          setActions(parsed.filter(isValidOfflineAction));
+        }
+      } catch {
+        // Corrupted data — discard silently to avoid crashing on startup
+        localStorage.removeItem(OFFLINE_ACTIONS_KEY);
+      }
     }
 
     // Set up online/offline detection

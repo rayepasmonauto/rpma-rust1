@@ -5,9 +5,7 @@
 
 use crate::commands::{ApiResponse, AppError, AppState};
 use crate::domains::settings::domain::models::settings::UserNotificationSettings;
-use crate::domains::settings::ipc::settings::core::{
-    handle_settings_error, load_app_settings, settings_user_id, update_app_settings,
-};
+use crate::domains::settings::ipc::settings::core::{handle_settings_error, settings_user_id};
 
 use serde::Deserialize;
 use tracing::info;
@@ -74,7 +72,10 @@ pub async fn update_notification_settings(
         ));
     }
 
-    let mut app_settings = load_app_settings().map_err(|e| AppError::Database(e))?;
+    let mut app_settings = state
+        .settings_service
+        .get_app_settings_db()
+        .map_err(|e| handle_settings_error(e, "Load app settings"))?;
 
     if let Some(push_notifications) = request.push_notifications {
         app_settings.notifications.push_notifications = push_notifications;
@@ -98,12 +99,14 @@ pub async fn update_notification_settings(
         app_settings.notifications.daily_digest = daily_digest;
     }
 
-    update_app_settings(app_settings)
+    state
+        .settings_service
+        .save_app_settings_db(&app_settings, settings_user_id(&user))
         .map(|_| {
             ApiResponse::success("Notification settings updated successfully".to_string())
                 .with_correlation_id(Some(correlation_id.clone()))
         })
-        .map_err(|e| AppError::Database(e))
+        .map_err(|e| handle_settings_error(e, "Update notification settings"))
 }
 
 /// Update user notification settings

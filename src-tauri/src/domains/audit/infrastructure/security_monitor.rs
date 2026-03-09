@@ -199,7 +199,7 @@ impl SecurityMonitorService {
     pub fn log_event(&self, event: SecurityEvent) -> Result<(), String> {
         // Store in cache
         {
-            let mut cache = self.events_cache.lock().unwrap();
+            let mut cache = self.events_cache.lock().unwrap_or_else(|e| e.into_inner());
             cache.push(event.clone());
             // Keep only last 1000 events in memory
             if cache.len() > 1000 {
@@ -245,7 +245,7 @@ impl SecurityMonitorService {
     pub fn create_alert(&self, alert: SecurityAlert) -> Result<(), String> {
         // Store in cache
         {
-            let mut cache = self.alerts_cache.lock().unwrap();
+            let mut cache = self.alerts_cache.lock().unwrap_or_else(|e| e.into_inner());
             cache.push(alert.clone());
             // Keep only last 100 alerts in memory
             if cache.len() > 100 {
@@ -292,18 +292,18 @@ impl SecurityMonitorService {
 
     /// Get security metrics
     pub fn get_metrics(&self) -> SecurityMetrics {
-        self.metrics.lock().unwrap().clone()
+        self.metrics.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 
     /// Get recent security events
     pub fn get_recent_events(&self, limit: usize) -> Vec<SecurityEvent> {
-        let cache = self.events_cache.lock().unwrap();
+        let cache = self.events_cache.lock().unwrap_or_else(|e| e.into_inner());
         cache.iter().rev().take(limit).cloned().collect()
     }
 
     /// Get active alerts
     pub fn get_active_alerts(&self) -> Vec<SecurityAlert> {
-        let cache = self.alerts_cache.lock().unwrap();
+        let cache = self.alerts_cache.lock().unwrap_or_else(|e| e.into_inner());
         cache
             .iter()
             .filter(|alert| !alert.resolved)
@@ -325,7 +325,7 @@ impl SecurityMonitorService {
         ).map_err(|e| format!("Failed to acknowledge alert: {}", e))?;
 
         // Update cache
-        let mut cache = self.alerts_cache.lock().unwrap();
+        let mut cache = self.alerts_cache.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(alert) = cache.iter_mut().find(|a| a.id == alert_id) {
             alert.acknowledged = true;
             alert.acknowledged_by = Some(user_id.to_string());
@@ -352,7 +352,7 @@ impl SecurityMonitorService {
         ).map_err(|e| format!("Failed to resolve alert: {}", e))?;
 
         // Update cache
-        let mut cache = self.alerts_cache.lock().unwrap();
+        let mut cache = self.alerts_cache.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(alert) = cache.iter_mut().find(|a| a.id == alert_id) {
             alert.resolved = true;
             alert.resolved_at = Some(Utc::now());
@@ -417,7 +417,7 @@ impl SecurityMonitorService {
     // Private methods
 
     fn update_metrics(&self, event: &SecurityEvent) {
-        let mut metrics = self.metrics.lock().unwrap();
+        let mut metrics = self.metrics.lock().unwrap_or_else(|e| e.into_inner());
 
         metrics.total_events_today += 1;
 

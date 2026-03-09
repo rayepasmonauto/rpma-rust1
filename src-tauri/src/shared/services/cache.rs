@@ -241,7 +241,7 @@ impl CacheManager {
         let duration = start_time.elapsed();
 
         // Update statistics
-        let mut stats = self.stats.lock().unwrap();
+        let mut stats = self.stats.lock().unwrap_or_else(|e| e.into_inner());
         if result.is_some() {
             // Cache hit
             stats.total_keys += 1;
@@ -299,7 +299,7 @@ impl CacheManager {
         };
 
         // Clear memory cache
-        let mut memory_cache = self.memory_cache.lock().unwrap();
+        let mut memory_cache = self.memory_cache.lock().unwrap_or_else(|e| e.into_inner());
         memory_cache.retain(|key, _| !key.starts_with(prefix));
 
         // Clear disk cache
@@ -340,7 +340,7 @@ impl CacheManager {
     /// Clear all cache data
     pub fn clear_all(&self) -> Result<(), AppError> {
         // Clear memory cache
-        let mut memory_cache = self.memory_cache.lock().unwrap();
+        let mut memory_cache = self.memory_cache.lock().unwrap_or_else(|e| e.into_inner());
         memory_cache.clear();
 
         // Clear disk cache
@@ -364,10 +364,10 @@ impl CacheManager {
 
     /// Get cache statistics
     pub fn get_stats(&self) -> Result<CacheStats, AppError> {
-        let mut stats = self.stats.lock().unwrap().clone();
+        let mut stats = self.stats.lock().unwrap_or_else(|e| e.into_inner()).clone();
 
         // Update memory usage
-        let memory_cache = self.memory_cache.lock().unwrap();
+        let memory_cache = self.memory_cache.lock().unwrap_or_else(|e| e.into_inner());
         stats.total_keys = memory_cache.len() as u64;
         stats.used_memory_bytes = memory_cache
             .values()
@@ -518,7 +518,7 @@ impl CacheManager {
             ttl,
         };
 
-        let mut cache = self.memory_cache.lock().unwrap();
+        let mut cache = self.memory_cache.lock().unwrap_or_else(|e| e.into_inner());
         cache.insert(key.to_string(), (entry, data.into_bytes()));
 
         debug!("Stored in memory cache: {}", key);
@@ -526,7 +526,7 @@ impl CacheManager {
     }
 
     fn get_memory(&self, key: &str) -> Result<Option<String>, AppError> {
-        let mut cache = self.memory_cache.lock().unwrap();
+        let mut cache = self.memory_cache.lock().unwrap_or_else(|e| e.into_inner());
         if let Some((entry, data)) = cache.get_mut(key) {
             entry.last_accessed = SystemTime::now();
             entry.access_count += 1;
@@ -550,7 +550,7 @@ impl CacheManager {
     }
 
     fn delete_memory(&self, key: &str) -> Result<(), AppError> {
-        let mut cache = self.memory_cache.lock().unwrap();
+        let mut cache = self.memory_cache.lock().unwrap_or_else(|e| e.into_inner());
         cache.remove(key);
         Ok(())
     }

@@ -273,8 +273,12 @@ export interface QuotePageStats {
   changes_requested: number;
 }
 
-export function computeQuoteStats(quotes: any[]): QuotePageStats {
-  const stats = {
+interface QuoteWithStatus {
+  status: QuoteStatus;
+}
+
+export function computeQuoteStats(quotes: QuoteWithStatus[]): QuotePageStats {
+  const stats: QuotePageStats = {
     total: 0,
     draft: 0,
     sent: 0,
@@ -285,13 +289,12 @@ export function computeQuoteStats(quotes: any[]): QuotePageStats {
     changes_requested: 0,
   };
 
-  quotes.forEach(q => {
+  for (const q of quotes) {
     stats.total++;
-    const status = q.status as QuoteStatus;
-    if (status && stats[status as keyof QuotePageStats] !== undefined) {
-      (stats as any)[status]++;
+    if (q.status in stats) {
+      (stats[q.status as keyof QuotePageStats] as number)++;
     }
-  });
+  }
 
   return stats;
 }

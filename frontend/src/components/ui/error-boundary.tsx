@@ -195,7 +195,13 @@ function DefaultErrorFallback({ error, resetError, errorInfo }: ErrorBoundaryFal
             </Button>
 
             <Button
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => {
+                if (typeof window.location.assign === 'function') {
+                  window.location.assign('/dashboard');
+                  return;
+                }
+                window.location.href = '/dashboard';
+              }}
               className="w-full flex items-center justify-center gap-2 border-[hsl(var(--rpma-border))] text-muted-foreground hover:bg-border/20 hover:text-foreground transition-all duration-200 hover:scale-105"
               variant="outline"
               size="lg"
@@ -256,6 +262,7 @@ export function ErrorAlert({
 
   return (
     <motion.div
+      data-testid="error-alert"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}

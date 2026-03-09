@@ -192,7 +192,7 @@ impl QueryPerformanceMonitor {
         }
 
         // Record stats
-        let mut stats = self.query_stats.lock().unwrap();
+        let mut stats = self.query_stats.lock().unwrap_or_else(|e| e.into_inner());
         let query_stats = stats.entry(query.to_string()).or_insert(QueryStats {
             execution_count: 0,
             total_time: Duration::from_secs(0),
@@ -212,7 +212,7 @@ impl QueryPerformanceMonitor {
 
     /// Get performance statistics for all queries
     pub fn get_stats(&self) -> HashMap<String, QueryStats> {
-        self.query_stats.lock().unwrap().clone()
+        self.query_stats.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 
     /// Get slow queries (above threshold)
@@ -228,7 +228,7 @@ impl QueryPerformanceMonitor {
 
     /// Clear all statistics
     pub fn clear_stats(&self) {
-        self.query_stats.lock().unwrap().clear();
+        self.query_stats.lock().unwrap_or_else(|e| e.into_inner()).clear();
     }
 }
 
@@ -260,18 +260,18 @@ impl PreparedStatementCache {
 
     /// Record usage of a prepared statement
     pub fn record_usage(&self, sql: &str) {
-        let mut stats = self.stats.lock().unwrap();
+        let mut stats = self.stats.lock().unwrap_or_else(|e| e.into_inner());
         *stats.entry(sql.to_string()).or_insert(0) += 1;
     }
 
     /// Clear all statistics
     pub fn clear(&self) {
-        self.stats.lock().unwrap().clear();
+        self.stats.lock().unwrap_or_else(|e| e.into_inner()).clear();
     }
 
     /// Get cache statistics
     pub fn stats(&self) -> HashMap<String, usize> {
-        self.stats.lock().unwrap().clone()
+        self.stats.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 }
 
@@ -303,7 +303,7 @@ impl LoadMonitor {
     }
 
     fn record_wait_time(&self, duration: std::time::Duration) {
-        let mut times = self.connection_wait_times.lock().unwrap();
+        let mut times = self.connection_wait_times.lock().unwrap_or_else(|e| e.into_inner());
         times.push_back(duration);
         if times.len() > self.max_samples {
             times.pop_front();
@@ -311,7 +311,7 @@ impl LoadMonitor {
     }
 
     fn get_average_wait_time(&self) -> Option<std::time::Duration> {
-        let times = self.connection_wait_times.lock().unwrap();
+        let times = self.connection_wait_times.lock().unwrap_or_else(|e| e.into_inner());
         if times.is_empty() {
             return None;
         }
@@ -345,7 +345,7 @@ impl DynamicPoolManager {
     }
 
     pub fn get_config(&self) -> PoolConfig {
-        self.current_config.lock().unwrap().clone()
+        self.current_config.lock().unwrap_or_else(|e| e.into_inner()).clone()
     }
 
     pub fn record_connection_wait(&self, duration: std::time::Duration) {
@@ -353,7 +353,7 @@ impl DynamicPoolManager {
     }
 
     pub fn adjust_pool_size(&self) -> Option<PoolConfig> {
-        let mut config = self.current_config.lock().unwrap();
+        let mut config = self.current_config.lock().unwrap_or_else(|e| e.into_inner());
 
         if self.load_monitor.should_increase_pool() && config.max_connections < 50 {
             // Increase pool size gradually

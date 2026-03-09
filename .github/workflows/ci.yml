@@ -83,12 +83,7 @@ jobs:
 
       - name: Frontend – Tests
         working-directory: frontend
-        run: |
-          if npm run | grep -q "test:ci"; then
-            npm run test:ci
-          else
-            echo "No test:ci script – skipping."
-          fi
+        run: npm run test:ci
 
       - name: Frontend – Build
         working-directory: frontend
@@ -98,11 +93,16 @@ jobs:
 
       - name: Scripts checks (arch/type-drift/schema)
         run: |
+          # NOTE: --strict has pre-existing violations in documents/ domain (intentional cross-domain via cross_domain.rs).
+          # Tracked as tech debt. Keep || true until violations are resolved.
           node scripts/architecture-check.js --strict || true
           node scripts/anti-spaghetti-guards.js
           node scripts/enforce-backend-module-boundaries.js
+          # NOTE: requires --features="export-types" on Rust side; script handles it internally but
+          # fails when the feature is not compiled. Tracked as CI config debt.
           node scripts/ci-type-drift-check.js || true
-          node scripts/detect-schema-drift.js || true
+          # Schema drift is fully reliable — must not be silenced.
+          node scripts/detect-schema-drift.js
 
       # ── Rust checks (stable only) ─────────────────────────
       - name: Rust – fmt

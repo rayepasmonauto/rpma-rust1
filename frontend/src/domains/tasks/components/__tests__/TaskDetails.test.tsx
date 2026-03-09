@@ -2,23 +2,37 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthContext } from '@/domains/auth';
 import { taskService } from '../../services/task.service';
 import { TaskDetails } from '../TaskDetails';
 import { TaskWithDetails } from '@/shared/types';
 import { format } from 'date-fns';
 
 // Mock dependencies
-jest.mock('../../services/task.service', () => ({
-  taskService: {
+jest.mock('../../services/task.service', () => {
+  const mockTaskServiceInstance = {
     updateTask: jest.fn(),
-  },
-}));
+    getTaskById: jest.fn(),
+  };
+  return {
+    taskService: mockTaskServiceInstance,
+    TaskService: {
+      getInstance: () => mockTaskServiceInstance,
+    },
+  };
+});
 
 jest.mock('../../hooks/useTasks', () => ({
   useTasks: () => ({
     deleteTask: jest.fn(),
   }),
+}));
+
+const mockUseAuth = jest.fn(() => ({
+  user: { id: 'user-123', token: 'mock-token' },
+}));
+
+jest.mock('@/domains/auth', () => ({
+  useAuth: () => mockUseAuth(),
 }));
 
 jest.mock('../TaskChecklist', () => ({
@@ -136,9 +150,7 @@ const createTestWrapper = () => {
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <AuthContext.Provider value={mockAuthContext}>
-        {children}
-      </AuthContext.Provider>
+      {children}
     </QueryClientProvider>
   );
 
@@ -154,6 +166,7 @@ describe('TaskDetails', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUpdateTask.mockResolvedValue({} as Record<string, unknown>);
+    mockUseAuth.mockReturnValue({ user: { id: 'user-123', token: 'mock-token' } });
   });
 
   describe('Rendering', () => {

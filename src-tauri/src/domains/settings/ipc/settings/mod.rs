@@ -10,6 +10,7 @@ pub mod notifications;
 pub mod preferences;
 pub mod profile;
 pub mod security;
+pub mod system_config;
 
 // Re-export all commands for backward compatibility
 #[allow(unused_imports)]
@@ -24,3 +25,5 @@ pub use preferences::*;
 pub use profile::*;
 #[allow(unused_imports)]
 pub use security::*;
+#[allow(unused_imports)]
+pub use system_config::*;

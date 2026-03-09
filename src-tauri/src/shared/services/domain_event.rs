@@ -285,13 +285,13 @@ impl InMemoryEventStore {
 
     /// Clear all events
     pub fn clear(&self) {
-        let mut events = self.events.lock().unwrap();
+        let mut events = self.events.lock().unwrap_or_else(|e| e.into_inner());
         events.clear();
     }
 
     /// Get total event count
     pub fn count(&self) -> usize {
-        let events = self.events.lock().unwrap();
+        let events = self.events.lock().unwrap_or_else(|e| e.into_inner());
         events.len()
     }
 }
@@ -304,19 +304,19 @@ impl Default for InMemoryEventStore {
 
 impl EventStore for InMemoryEventStore {
     fn store(&self, envelope: &EventEnvelope) -> Result<(), String> {
-        let mut events = self.events.lock().unwrap();
+        let mut events = self.events.lock().unwrap_or_else(|e| e.into_inner());
         events.push(envelope.clone());
         Ok(())
     }
 
     fn store_batch(&self, envelopes: &[EventEnvelope]) -> Result<(), String> {
-        let mut events = self.events.lock().unwrap();
+        let mut events = self.events.lock().unwrap_or_else(|e| e.into_inner());
         events.extend_from_slice(envelopes);
         Ok(())
     }
 
     fn query(&self, filter: EventFilter) -> Result<Vec<EventEnvelope>, String> {
-        let events = self.events.lock().unwrap();
+        let events = self.events.lock().unwrap_or_else(|e| e.into_inner());
 
         let filtered: Vec<_> = events
             .iter()

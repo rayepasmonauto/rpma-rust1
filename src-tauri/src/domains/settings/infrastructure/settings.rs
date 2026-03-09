@@ -469,4 +469,107 @@ mod tests {
         assert_eq!(consent_count, 0);
         assert_eq!(session_count, 0);
     }
+
+    // ── app_settings (global configuration) tests ────────────────────────────
+
+    #[test]
+    fn app_settings_persist_and_reload() {
+        let (_test_db, settings_service, _auth_service) = setup_services();
+
+        // First load should return defaults and auto-insert the 'global' row.
+        let defaults = settings_service
+            .get_app_settings_db()
+            .expect("first load should return defaults");
+        assert_eq!(defaults.general.language, "fr");
+        assert!(defaults.business_rules.is_empty());
+
+        // Mutate and save.
+        let mut to_save = defaults.clone();
+        to_save.general.language = "en".to_string();
+        to_save.general.timezone = "UTC".to_string();
+        to_save.business_rules = vec![serde_json::json!({ "id": "br-1", "name": "Test rule" })];
+
+        settings_service
+            .save_app_settings_db(&to_save, "test-user")
+            .expect("save should succeed");
+
+        // Reload from DB and verify persistence.
+        let reloaded = settings_service
+            .get_app_settings_db()
+            .expect("reload should succeed");
+
+        assert_eq!(reloaded.general.language, "en");
+        assert_eq!(reloaded.general.timezone, "UTC");
+        assert_eq!(reloaded.business_rules.len(), 1);
+        assert_eq!(reloaded.business_rules[0]["id"], "br-1");
+    }
+
+    #[test]
+    fn app_settings_granular_business_rules_update() {
+        let (_test_db, settings_service, _auth_service) = setup_services();
+
+        // Bootstrap defaults.
+        settings_service
+            .get_app_settings_db()
+            .expect("bootstrap should succeed");
+
+        let rules = vec![
+            serde_json::json!({ "id": "rule-a", "name": "Rule A", "isActive": true }),
+            serde_json::json!({ "id": "rule-b", "name": "Rule B", "isActive": false }),
+        ];
+        settings_service
+            .update_business_rules_db(&rules, "admin-user")
+            .expect("update_business_rules_db should succeed");
+
+        let reloaded = settings_service
+            .get_app_settings_db()
+            .expect("reload should succeed");
+        assert_eq!(reloaded.business_rules.len(), 2);
+        assert_eq!(reloaded.business_rules[0]["id"], "rule-a");
+        assert_eq!(reloaded.business_rules[1]["id"], "rule-b");
+
+        // Delete one by saving only the remaining rule.
+        settings_service
+            .update_business_rules_db(
+                &[serde_json::json!({ "id": "rule-a", "name": "Rule A", "isActive": true })],
+                "admin-user",
+            )
+            .expect("delete one rule should succeed");
+
+        let after_delete = settings_service
+            .get_app_settings_db()
+            .expect("reload after delete should succeed");
+        assert_eq!(after_delete.business_rules.len(), 1);
+    }
+
+    #[test]
+    fn app_settings_business_hours_roundtrip() {
+        let (_test_db, settings_service, _auth_service) = setup_services();
+
+        // Bootstrap defaults.
+        settings_service
+            .get_app_settings_db()
+            .expect("bootstrap should succeed");
+
+        let hours = serde_json::json!({
+            "enabled": true,
+            "timezone": "Europe/Paris",
+            "schedule": {
+                "monday": { "start": "09:00", "end": "17:00", "enabled": true }
+            }
+        });
+
+        settings_service
+            .update_business_hours_db(&hours, "admin-user")
+            .expect("update_business_hours_db should succeed");
+
+        let reloaded = settings_service
+            .get_app_settings_db()
+            .expect("reload should succeed");
+        assert_eq!(reloaded.business_hours["timezone"], "Europe/Paris");
+        assert_eq!(
+            reloaded.business_hours["schedule"]["monday"]["start"],
+            "09:00"
+        );
+    }
 }

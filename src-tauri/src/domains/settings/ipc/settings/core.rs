@@ -9,42 +9,11 @@ use crate::shared::contracts::auth::UserSession;
 
 use std::sync::Mutex;
 
-// Global settings storage (in production, this would be persisted to database/file)
-static APP_SETTINGS: Mutex<Option<AppSettings>> = Mutex::new(None);
+// SystemConfiguration is not yet persisted to the database.
+// It will be migrated in a future iteration.
 static SYSTEM_CONFIG: Mutex<Option<SystemConfiguration>> = Mutex::new(None);
 
-/// Initialize app settings from database or defaults
-pub fn initialize_app_settings() -> Result<(), String> {
-    // This would load settings from database in a real implementation
-    Ok(())
-}
-
-/// Get app settings with lazy initialization
-pub fn load_app_settings() -> Result<AppSettings, String> {
-    let mut settings = APP_SETTINGS
-        .lock()
-        .map_err(|_| "Failed to lock app settings")?;
-
-    if settings.is_none() {
-        // Initialize with defaults - in production this would load from DB
-        *settings = Some(AppSettings::default());
-    }
-
-    settings
-        .clone()
-        .ok_or_else(|| "Failed to get app settings".to_string())
-}
-
-/// Update app settings
-pub fn update_app_settings(new_settings: AppSettings) -> Result<(), String> {
-    let mut settings = APP_SETTINGS
-        .lock()
-        .map_err(|_| "Failed to lock app settings")?;
-    *settings = Some(new_settings);
-    Ok(())
-}
-
-/// Get app settings (command)
+/// Get app settings (command) — reads from the `app_settings` table.
 #[tauri::command]
 pub async fn get_app_settings(
     session_token: String,
@@ -53,7 +22,6 @@ pub async fn get_app_settings(
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let correlation_id = crate::commands::init_correlation_context(&correlation_id, None);
 
-    // Always require authentication and validate admin role
     let user = crate::authenticate!(
         &session_token,
         &state,
@@ -62,18 +30,23 @@ pub async fn get_app_settings(
 
     crate::commands::update_correlation_context_user(&user.user_id);
 
-    let settings = load_app_settings().map_err(AppError::Database)?;
+    let settings = state
+        .settings_service
+        .get_app_settings_db()
+        .map_err(|e| handle_settings_error(e, "get_app_settings"))?;
+
     Ok(ApiResponse::success(settings).with_correlation_id(Some(correlation_id.clone())))
 }
 
-/// Get system configuration with lazy initialization
+/// Get system configuration with lazy initialization.
+///
+/// `SystemConfiguration` is not yet persisted — returns in-memory defaults.
 pub fn get_system_config() -> Result<SystemConfiguration, String> {
     let mut config = SYSTEM_CONFIG
         .lock()
-        .map_err(|_| "Failed to lock system config")?;
+        .unwrap_or_else(|p| p.into_inner());
 
     if config.is_none() {
-        // Initialize with defaults - in production this would load from DB
         *config = Some(SystemConfiguration::default());
     }
 
@@ -82,16 +55,7 @@ pub fn get_system_config() -> Result<SystemConfiguration, String> {
         .ok_or_else(|| "Failed to get system config".to_string())
 }
 
-/// Update system configuration
-pub fn update_system_config(new_config: SystemConfiguration) -> Result<(), String> {
-    let mut config = SYSTEM_CONFIG
-        .lock()
-        .map_err(|_| "Failed to lock system config")?;
-    *config = Some(new_config);
-    Ok(())
-}
-
-/// Common authentication helper for settings operations
+/// Common authentication helper for settings operations.
 pub fn authenticate_user(session_token: &str, state: &AppState) -> Result<UserSession, AppError> {
     state
         .auth_service
@@ -99,7 +63,7 @@ pub fn authenticate_user(session_token: &str, state: &AppState) -> Result<UserSe
         .map_err(|e| AppError::Authentication(format!("Session validation failed: {}", e)))
 }
 
-/// Validate settings update permissions
+/// Validate settings update permissions.
 pub fn validate_settings_permissions(
     user: &UserSession,
     required_role: crate::shared::contracts::auth::UserRole,
@@ -114,7 +78,7 @@ pub fn validate_settings_permissions(
     Ok(())
 }
 
-/// Common error handling for settings operations
+/// Common error handling for settings operations.
 pub fn handle_settings_error<E: std::fmt::Display>(error: E, operation: &str) -> AppError {
     tracing::error!("Settings operation '{}' failed: {}", operation, error);
     AppError::Database(format!("{} failed: {}", operation, error))

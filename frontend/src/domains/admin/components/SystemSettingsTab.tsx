@@ -141,32 +141,40 @@ export function SystemSettingsTab() {
     }
   }, [session?.token]);
 
+  const defaultBusinessHours: BusinessHoursConfig = {
+    enabled: true,
+    timezone: 'Europe/Paris',
+    schedule: {
+      monday: { start: '08:00', end: '18:00', enabled: true },
+      tuesday: { start: '08:00', end: '18:00', enabled: true },
+      wednesday: { start: '08:00', end: '18:00', enabled: true },
+      thursday: { start: '08:00', end: '18:00', enabled: true },
+      friday: { start: '08:00', end: '18:00', enabled: true },
+      saturday: { start: '09:00', end: '13:00', enabled: false },
+      sunday: { start: '00:00', end: '00:00', enabled: false },
+    },
+  };
+
   const loadBusinessHours = useCallback(async () => {
     const timer = logPerformanceRef.current('Load business hours');
     try {
       logInfoRef.current('Loading business hours configuration');
-
-      const defaultBusinessHours: BusinessHoursConfig = {
-        enabled: true,
-        timezone: 'Europe/Paris',
-        schedule: {
-          monday: { start: '08:00', end: '18:00', enabled: true },
-          tuesday: { start: '08:00', end: '18:00', enabled: true },
-          wednesday: { start: '08:00', end: '18:00', enabled: true },
-          thursday: { start: '08:00', end: '18:00', enabled: true },
-          friday: { start: '08:00', end: '18:00', enabled: true },
-          saturday: { start: '09:00', end: '13:00', enabled: false },
-          sunday: { start: '00:00', end: '00:00', enabled: false },
-        },
-      };
-      setBusinessHours(defaultBusinessHours);
+      const sessionToken = session?.token || '';
+      const data = await settingsOperations.getAppSettings(sessionToken);
+      const appSettings = data as Record<string, JsonValue>;
+      const stored = appSettings?.business_hours as unknown as BusinessHoursConfig | undefined;
+      setBusinessHours(
+        stored && stored.schedule ? stored : defaultBusinessHours
+      );
       logInfoRef.current('Business hours loaded successfully');
     } catch (error) {
       logErrorRef.current('Error loading business hours', { error: error instanceof Error ? error.message : error });
+      setBusinessHours(defaultBusinessHours);
     } finally {
       timer();
     }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.token]);
 
   useEffect(() => {
     let cancelled = false;
@@ -213,6 +221,10 @@ export function SystemSettingsTab() {
       }
 
       await settingsOperations.updateGeneralSettings(updateRequest as unknown as JsonObject, sessionToken);
+
+      if (businessHours) {
+        await settingsOperations.updateBusinessHours(businessHours as unknown as JsonObject, sessionToken);
+      }
 
       logFormSubmit(configurations, true);
       toast.success('Configurations sauvegardées avec succès');

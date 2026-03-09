@@ -366,13 +366,7 @@ export function PPFWorkflowProvider({ taskId, children }: PPFWorkflowProviderPro
       queryClient.invalidateQueries({ queryKey: interventionKeys.activeForTask(taskId) });
       toast.success('Étape terminée');
     },
-    onError: (error) => {
-      console.error('🔍 [DEBUG] PPFWorkflowContext - completeStepMutation error:', error);
-      console.error('🔍 [DEBUG] PPFWorkflowContext - Error details:', {
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        name: error instanceof Error ? error.name : undefined
-      });
+    onError: () => {
       toast.error('Erreur lors de la finalisation de l\'étape');
     }
   });

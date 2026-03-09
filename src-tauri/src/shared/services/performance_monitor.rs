@@ -63,7 +63,7 @@ impl PerformanceMonitorService {
     pub fn record_metric(&self, metric: PerformanceMetric) -> Result<(), String> {
         // Add to cache
         {
-            let mut cache = self.metrics_cache.lock().unwrap();
+            let mut cache = self.metrics_cache.lock().unwrap_or_else(|e| e.into_inner());
             cache.push_back(metric.clone());
             // Keep only last 1000 metrics in memory
             if cache.len() > 1000 {
@@ -72,7 +72,7 @@ impl PerformanceMonitorService {
         }
 
         // Invalidate stats cache
-        *self.stats_cache.lock().unwrap() = None;
+        *self.stats_cache.lock().unwrap_or_else(|e| e.into_inner()) = None;
 
         // Store in database
         let metadata_json = metric
@@ -101,8 +101,8 @@ impl PerformanceMonitorService {
     pub fn get_stats(&self) -> Result<PerformanceStats, String> {
         // Check if we have cached stats that are still fresh (within last minute)
         {
-            let stats_cache = self.stats_cache.lock().unwrap();
-            let last_updated = self.stats_last_updated.lock().unwrap();
+            let stats_cache = self.stats_cache.lock().unwrap_or_else(|e| e.into_inner());
+            let last_updated = self.stats_last_updated.lock().unwrap_or_else(|e| e.into_inner());
 
             if let (Some(stats), Some(updated)) = (&*stats_cache, &*last_updated) {
                 if Utc::now().signed_duration_since(*updated) < Duration::minutes(1) {
@@ -205,15 +205,15 @@ impl PerformanceMonitorService {
         };
 
         // Cache the stats
-        *self.stats_cache.lock().unwrap() = Some(stats.clone());
-        *self.stats_last_updated.lock().unwrap() = Some(Utc::now());
+        *self.stats_cache.lock().unwrap_or_else(|e| e.into_inner()) = Some(stats.clone());
+        *self.stats_last_updated.lock().unwrap_or_else(|e| e.into_inner()) = Some(Utc::now());
 
         Ok(stats)
     }
 
     /// Get recent performance metrics
     pub fn get_recent_metrics(&self, limit: usize) -> Vec<PerformanceMetric> {
-        let cache = self.metrics_cache.lock().unwrap();
+        let cache = self.metrics_cache.lock().unwrap_or_else(|e| e.into_inner());
         cache.iter().rev().take(limit).cloned().collect()
     }
 
@@ -252,7 +252,7 @@ impl CommandPerformanceTracker {
     pub fn start_tracking(&self, command_name: &str, user_id: Option<String>) -> CommandTimer {
         let start_time = Instant::now();
         {
-            let mut active = self.active_commands.lock().unwrap();
+            let mut active = self.active_commands.lock().unwrap_or_else(|e| e.into_inner());
             active.insert(command_name.to_string(), start_time);
         }
 
@@ -266,7 +266,7 @@ impl CommandPerformanceTracker {
 
     /// Get current active command count
     pub fn active_command_count(&self) -> usize {
-        self.active_commands.lock().unwrap().len()
+        self.active_commands.lock().unwrap_or_else(|e| e.into_inner()).len()
     }
 
     /// Get performance statistics
@@ -310,7 +310,7 @@ impl Drop for CommandTimer {
 
         // Remove from active commands
         {
-            let mut active = self.active_commands.lock().unwrap();
+            let mut active = self.active_commands.lock().unwrap_or_else(|e| e.into_inner());
             active.remove(&self.command_name);
         }
 
