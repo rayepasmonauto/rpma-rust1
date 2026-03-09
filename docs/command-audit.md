@@ -229,6 +229,7 @@ This report was built by reading the live repository files under `/home/runner/w
 - The workflow apt-get setup commands are CI/bootstrap steps rather than normal project entry points and are not safe to run on most local developer machines without root privileges.
 - No `justfile`, `Justfile`, `taskfile.yml`, or `Taskfile.yml` exists, so there are no additional task-runner commands beyond the sources listed above.
 - Inside the script source tree, `TODO`/`FIXME`/`placeholder` strings appear only in rule logic or scanner text (for example `validate-bounded-contexts.js`, `architecture-check.js`, `migration-health-check.js`, and `test-health-check.sh`); there are no open developer TODO comments that describe unfinished script implementations.
+- Recommended follow-up: either remove the seven broken root `package.json` script entries or restore the missing `scripts/*.js` files so the documented command surface matches the runnable one.
 
 ## D. Recommended AGENTS.MD / CLAUDE.MD Snippet
 
