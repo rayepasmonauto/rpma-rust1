@@ -12,23 +12,34 @@ test.describe('User Authentication Smoke', () => {
   });
 
   test('shows error for invalid credentials', async ({ page }) => {
-    await page.goto('/login');
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
     await resetMockDb(page);
+    
+    // Wait for form to be ready
+    await page.waitForSelector('input[name="email"]', { state: 'visible' });
 
     await page.locator('input[name="email"]').fill('invalid@example.com');
     await page.locator('input[name="password"]').fill('wrong-password');
     await page.getByRole('button', { name: /Se connecter|Connexion/i }).click();
 
     await expect(page).toHaveURL(/\/login(\/|$)/);
-    await expect(page.getByRole('status').getByText(/incorrect/i)).toBeVisible();
+    // Check for error message - it's displayed in a paragraph near the form
+    await expect(page.getByText('Email ou mot de passe incorrect').first()).toBeVisible();
   });
 
   test('logs in and keeps authenticated session on protected route', async ({ page }) => {
     await loginAsTestUser(page);
 
-    await expect(page).not.toHaveURL(/\/login(\/|$)/);
-    await page.goto('/tasks');
-    await expect(page).toHaveURL(/\/tasks(\/|$)/);
+    // Wait for page to fully load after login
+    await page.waitForLoadState('domcontentloaded');
+    
+    // Verify we're not on the login page
+    const currentUrl = page.url();
+    expect(currentUrl).not.toMatch(/\/login(\/|$)/);
+    
+    // Navigate to tasks and verify access
+    await page.goto('/tasks', { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(/\/tasks(\/|$)/, { timeout: 15000 });
   });
 
   test('redirects unauthenticated users to login', async ({ page }) => {

@@ -20,10 +20,10 @@ export default defineConfig({
     'intervention-management.spec.ts',
     'inventory-management.spec.ts',
   ],
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: 'html',
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${WEB_SERVER_PORT}`,
@@ -32,13 +32,15 @@ export default defineConfig({
   webServer: {
     command: `npm run dev:next -- --port ${WEB_SERVER_PORT}`,
     port: WEB_SERVER_PORT,
-    reuseExistingServer,
+    reuseExistingServer: false,
     timeout: WEB_SERVER_TIMEOUT_MS,
     env: {
       NEXT_PUBLIC_IPC_MOCK: 'true',
       NODE_ENV: 'test',
       PORT: WEB_SERVER_PORT.toString(),
-    }
+    },
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
   projects: runAllBrowsers
     ? [
