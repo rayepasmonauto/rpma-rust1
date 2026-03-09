@@ -208,6 +208,17 @@ Task-specific requirements:
 - IPC changes: verify thin handlers, auth/RBAC, wrapper compatibility, and run `node scripts/ipc-authorization-audit.js` if available
 - Schema/migration changes: run migration validation, impacted backend tests, and regenerate types if contracts changed
 
+## Commands
+
+Use the real command surfaces below; do not invent a root `npm run test` shortcut.
+
+- **App / dev:** `npm run dev`, `npm run dev:types`, `npm run frontend:dev`
+- **Frontend checks:** `npm run frontend:lint`, `npm run frontend:type-check`, `cd frontend && npm run test:ci`, `cd frontend && npm run test:e2e`
+- **Backend checks:** `npm run backend:check`, `npm run backend:clippy`, `npm run backend:fmt`, `make test`, `cd src-tauri && cargo test --test <target>`
+- **Types:** `npm run types:sync`, `npm run types:validate`, `npm run types:drift-check`, `npm run types:watch`
+- **Architecture / security:** `npm run validate:bounded-contexts`, `npm run architecture:check`, `npm run backend:boundaries:check`, `node scripts/ipc-authorization-audit.js`, `npm run ipc:consistency-check`, `npm run security:audit`
+- **Database / migrations:** `node scripts/validate-migration-system.js`, `node scripts/detect-schema-drift.js`, `npm run backend:migration:fresh-db-test`
+- **Reference:** the full verified registry, script inventory, and broken-reference list live in `docs/command-audit.md`.
 
 ## When unsure
 
