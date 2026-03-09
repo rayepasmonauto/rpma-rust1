@@ -242,7 +242,7 @@ pub async fn task_crud(
                 .validate_task_action(crate::commands::TaskAction::Create { data })
                 .await
                 .map_err(|e| {
-                    error!("Task validation failed: {}", e);
+                    warn!("Task validation failed: {}", e);
                     AppError::Validation(format!("Task validation failed: {}", e))
                 })?;
 
@@ -301,7 +301,7 @@ pub async fn task_crud(
                 })
                 .await
                 .map_err(|e| {
-                    error!("Task validation failed: {}", e);
+                    warn!("Task validation failed: {}", e);
                     AppError::Validation(format!("Task validation failed: {}", e))
                 })?;
 

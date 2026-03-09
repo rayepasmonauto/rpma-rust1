@@ -155,6 +155,7 @@ pub async fn has_admins(
     }
 }
 
+#[tracing::instrument(skip(state))]
 #[tauri::command]
 pub async fn get_users(
     page: i32,
@@ -179,6 +180,7 @@ pub async fn get_users(
     }
 }
 
+#[tracing::instrument(skip(state))]
 #[tauri::command]
 pub async fn create_user(
     user_data: CreateUserRequest,
@@ -192,6 +194,7 @@ pub async fn create_user(
     }
 }
 
+#[tracing::instrument(skip(state))]
 #[tauri::command]
 pub async fn update_user(
     user_id: String,
@@ -216,6 +219,7 @@ pub async fn update_user(
     }
 }
 
+#[tracing::instrument(skip(state))]
 #[tauri::command]
 pub async fn update_user_status(
     user_id: String,
@@ -250,6 +254,7 @@ pub async fn update_user_status(
     }
 }
 
+#[tracing::instrument(skip(state))]
 #[tauri::command]
 pub async fn delete_user(
     user_id: String,

@@ -28,6 +28,7 @@ impl ReportService {
     }
 
     /// Generate a report for an intervention: create PDF, persist metadata, return report.
+    #[tracing::instrument(skip(self))]
     pub async fn generate_report(
         &self,
         intervention_id: &str,

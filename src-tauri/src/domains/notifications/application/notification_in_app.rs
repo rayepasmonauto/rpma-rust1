@@ -21,6 +21,7 @@ impl NotificationInAppService {
         NotificationRepository::new(self.db.clone(), self.cache.clone())
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn find_by_user(
         &self,
         user_id: &str,
@@ -32,6 +33,7 @@ impl NotificationInAppService {
             .map_err(|e| e.to_string())
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn count_unread(&self, user_id: &str) -> Result<i32, String> {
         self.repo()
             .count_unread(user_id)
@@ -39,10 +41,12 @@ impl NotificationInAppService {
             .map_err(|e| e.to_string())
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn mark_read(&self, id: &str) -> Result<(), String> {
         self.repo().mark_read(id).await.map_err(|e| e.to_string())
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn mark_all_read(&self, user_id: &str) -> Result<(), String> {
         self.repo()
             .mark_all_read(user_id)
@@ -50,6 +54,7 @@ impl NotificationInAppService {
             .map_err(|e| e.to_string())
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn delete(&self, id: &str) -> Result<(), String> {
         self.repo()
             .delete(id)
@@ -58,6 +63,7 @@ impl NotificationInAppService {
             .map_err(|e| e.to_string())
     }
 
+    #[tracing::instrument(skip(self))]
     pub async fn save(&self, notification: Notification) -> Result<Notification, String> {
         self.repo()
             .save(notification)

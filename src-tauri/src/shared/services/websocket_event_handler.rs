@@ -167,7 +167,7 @@ impl WebSocketEventHandler {
                 user_id, reason, ..
             } => {
                 // Don't broadcast auth failures for security
-                debug!("Auth failure for user {:?}: {}", user_id, reason);
+                warn!("Auth failure for user {:?}: {}", user_id, reason);
                 None
             }
             DomainEvent::AuthenticationSuccess { user_id, .. } => {
