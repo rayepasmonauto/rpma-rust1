@@ -156,7 +156,7 @@ impl UserAccount {
     ) -> Self {
         let now = now();
         Self {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             email,
             username,
             first_name,

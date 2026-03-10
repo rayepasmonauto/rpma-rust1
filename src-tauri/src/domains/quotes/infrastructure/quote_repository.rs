@@ -574,7 +574,7 @@ impl QuoteRepository {
         req: &CreateQuoteAttachmentRequest,
         created_by: Option<&str>,
     ) -> RepoResult<String> {
-        let id = uuid::Uuid::new_v4().to_string();
+        let id = crate::shared::utils::uuid::generate_uuid_string();
         let now = chrono::Utc::now().timestamp_millis();
         let attachment_type = req
             .attachment_type

@@ -300,7 +300,10 @@ impl SecurityMonitorService {
 
     /// Get security metrics
     pub fn get_metrics(&self) -> SecurityMetrics {
-        self.metrics.lock().unwrap_or_else(|e| e.into_inner()).clone()
+        self.metrics
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
     }
 
     /// Get recent security events
@@ -447,7 +450,7 @@ impl SecurityMonitorService {
             && self.alert_thresholds.alert_on_critical_events
         {
             let alert = SecurityAlert {
-                id: uuid::Uuid::new_v4().to_string(),
+                id: crate::shared::utils::uuid::generate_uuid_string(),
                 event_id: event.id.clone(),
                 title: format!("Critical Security Event: {:?}", event.event_type),
                 description: format!(
@@ -471,7 +474,7 @@ impl SecurityMonitorService {
             if let Some(ip) = &event.ip_address {
                 if self.should_block_ip(ip)? && self.alert_thresholds.auto_block_brute_force {
                     let alert = SecurityAlert {
-                        id: uuid::Uuid::new_v4().to_string(),
+                        id: crate::shared::utils::uuid::generate_uuid_string(),
                         event_id: event.id.clone(),
                         title: "Brute Force Attack Detected".to_string(),
                         description: format!(
@@ -507,7 +510,7 @@ impl SecurityMonitorService {
         reason: &str,
     ) -> Result<(), String> {
         let event = SecurityEvent {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             event_type: SecurityEventType::AuthenticationFailure,
             severity: AlertSeverity::Medium,
             timestamp: Utc::now(),
@@ -529,7 +532,7 @@ impl SecurityMonitorService {
     /// TODO: document
     pub fn log_auth_success(&self, user_id: &str, ip: Option<&str>) -> Result<(), String> {
         let event = SecurityEvent {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             event_type: SecurityEventType::AuthenticationFailure, // Note: This is actually success, but we track it
             severity: AlertSeverity::Low,
             timestamp: Utc::now(),
@@ -556,7 +559,7 @@ impl SecurityMonitorService {
         details: HashMap<String, serde_json::Value>,
     ) -> Result<(), String> {
         let event = SecurityEvent {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             event_type: SecurityEventType::SuspiciousActivity,
             severity: AlertSeverity::Medium,
             timestamp: Utc::now(),
@@ -574,7 +577,7 @@ impl SecurityMonitorService {
     /// TODO: document
     pub fn log_rate_limit_exceeded(&self, ip: Option<&str>, endpoint: &str) -> Result<(), String> {
         let event = SecurityEvent {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             event_type: SecurityEventType::RateLimitExceeded,
             severity: AlertSeverity::Low,
             timestamp: Utc::now(),

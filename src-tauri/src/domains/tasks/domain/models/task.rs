@@ -677,7 +677,7 @@ impl TaskHistory {
         changed_by: Option<String>,
     ) -> Self {
         Self {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             task_id,
             old_status,
             new_status,

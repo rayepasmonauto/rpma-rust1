@@ -136,7 +136,7 @@ impl super::AuthService {
         })?;
 
         // Create session with a UUID token
-        let token = uuid::Uuid::new_v4().to_string();
+        let token = crate::shared::utils::uuid::generate_uuid_string();
         let session = UserSession::new(
             account.id,
             account.username,

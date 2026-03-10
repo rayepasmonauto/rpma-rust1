@@ -340,7 +340,7 @@ impl AlertingService {
     /// Trigger an alert
     fn trigger_alert(&mut self, rule: &AlertRule) -> Result<(), String> {
         let alert = Alert {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             rule_id: rule.id.clone(),
             title: rule.name.clone(),
             message: rule.description.clone(),

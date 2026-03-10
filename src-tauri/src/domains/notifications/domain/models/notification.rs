@@ -282,7 +282,7 @@ impl NotificationPreferences {
     pub fn new(user_id: String) -> Self {
         let now = chrono::Utc::now().timestamp();
         Self {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             user_id,
             email_enabled: true,
             sms_enabled: false,
@@ -431,7 +431,7 @@ impl NotificationMessage {
     ) -> Self {
         let now = Utc::now();
         Self {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             user_id,
             notification_type,
             channel,
@@ -477,7 +477,7 @@ impl Notification {
         entity_url: String,
     ) -> Self {
         Self {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             created_at: Utc::now(),
             r#type,
             title,

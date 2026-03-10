@@ -15,7 +15,6 @@ use crate::domains::quotes::infrastructure::quote_validation;
 use chrono::Utc;
 use std::sync::Arc;
 use tracing::{info, warn};
-use uuid::Uuid;
 
 /// Service for quote-related business operations.
 pub struct QuoteService {
@@ -47,7 +46,7 @@ impl QuoteService {
         req.validate()?;
 
         let now = Utc::now().timestamp_millis();
-        let id = Uuid::new_v4().to_string();
+        let id = crate::shared::utils::uuid::generate_uuid_string();
         let quote_number = self
             .repo
             .next_quote_number()
@@ -90,7 +89,7 @@ impl QuoteService {
             .iter()
             .enumerate()
             .map(|(i, item_req)| QuoteItem {
-                id: Uuid::new_v4().to_string(),
+                id: crate::shared::utils::uuid::generate_uuid_string(),
                 quote_id: id.clone(),
                 kind: item_req.kind.clone(),
                 label: item_req.label.clone(),
@@ -195,7 +194,7 @@ impl QuoteService {
             .ok_or_else(|| "Quote not found".to_string())?;
 
         let now = Utc::now().timestamp_millis();
-        let new_id = Uuid::new_v4().to_string();
+        let new_id = crate::shared::utils::uuid::generate_uuid_string();
         let new_number = self
             .repo
             .next_quote_number()
@@ -237,7 +236,7 @@ impl QuoteService {
             .items
             .iter()
             .map(|item| QuoteItem {
-                id: Uuid::new_v4().to_string(),
+                id: crate::shared::utils::uuid::generate_uuid_string(),
                 quote_id: new_id.clone(),
                 kind: item.kind.clone(),
                 label: item.label.clone(),
@@ -290,7 +289,7 @@ impl QuoteService {
         let position = req.position.unwrap_or(quote.items.len() as i32);
 
         let item = QuoteItem {
-            id: Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             quote_id: quote_id.to_string(),
             kind: req.kind,
             label: req.label,

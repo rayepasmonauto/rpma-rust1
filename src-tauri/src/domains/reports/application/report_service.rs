@@ -82,7 +82,7 @@ impl ReportService {
         let now = Utc::now();
         let now_millis = now.timestamp_millis();
         let report = InterventionReport {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             intervention_id: intervention_id.to_string(),
             report_number,
             generated_at: now,

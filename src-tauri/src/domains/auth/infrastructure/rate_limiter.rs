@@ -178,7 +178,7 @@ impl RateLimiterService {
                  (id, identifier, attempt_count, first_attempt, last_attempt, is_locked, lock_until, created_at, updated_at)
                  VALUES (?, ?, 1, ?, ?, 0, NULL, ?, ?)",
                 params![
-                    uuid::Uuid::new_v4().to_string(),
+                    crate::shared::utils::uuid::generate_uuid_string(),
                     identifier,
                     now.to_rfc3339(),
                     now.to_rfc3339(),
@@ -341,7 +341,7 @@ impl RateLimiterService {
                  (id, identifier, attempt_count, first_attempt, last_attempt, is_locked, lock_until, created_at, updated_at)
                  VALUES (?, ?, 1, ?, ?, 0, NULL, ?, ?)",
                 params![
-                    uuid::Uuid::new_v4().to_string(),
+                    crate::shared::utils::uuid::generate_uuid_string(),
                     identifier,
                     now.to_rfc3339(),
                     now.to_rfc3339(),

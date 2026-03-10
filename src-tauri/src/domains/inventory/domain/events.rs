@@ -2,7 +2,6 @@
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 pub use crate::shared::services::event_system::DomainEvent;
 
@@ -19,7 +18,7 @@ pub struct MaterialConsumed {
 impl From<MaterialConsumed> for DomainEvent {
     fn from(event: MaterialConsumed) -> Self {
         DomainEvent::MaterialConsumed {
-            id: Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             material_id: event.material_id,
             intervention_id: event.intervention_id,
             quantity: event.quantity,
