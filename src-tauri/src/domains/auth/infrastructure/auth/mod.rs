@@ -28,6 +28,7 @@ use crate::shared::services::security_monitor::SecurityMonitorService;
 use crate::shared::services::validation::ValidationService;
 use tracing::warn;
 
+/// TODO: document
 #[derive(Clone, Debug)]
 pub struct AuthService {
     db: crate::db::Database,
@@ -44,6 +45,7 @@ impl AuthService {
         &self.security_monitor
     }
 
+    /// TODO: document
     pub fn new(db: crate::db::Database) -> Result<Self, String> {
         let db_arc = std::sync::Arc::new(db.clone());
         let session_repository = SessionRepository::new(db_arc);
