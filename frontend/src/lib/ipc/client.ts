@@ -1,7 +1,6 @@
 import './mock/init';
 import { safeInvoke } from './utils';
 import { cachedInvoke, invalidatePattern } from './cache';
-import { requireSessionToken } from '@/shared/contracts/session';
 import { signalMutation } from '@/lib/data-freshness';
 import type { ApiError } from '@/lib/backend';
 import type { JsonObject, JsonValue } from '@/types/json';
@@ -260,27 +259,24 @@ export const ipcClient = {
 
     /**
      * Logs out the current user
-     * @param token - User's session token
      * @returns Promise resolving when logout is complete
      */
-    logout: (token: string) =>
-      safeInvoke<void>('auth_logout', { token }),
+    logout: () =>
+      safeInvoke<void>('auth_logout', {}),
 
     /**
-     * Validates a user session token
-     * @param token - Session token to validate
-     * @returns Promise resolving to user session data if valid
+     * Returns the current backend session (in-memory) if authenticated.
      */
-    validateSession: (token: string) =>
-      cachedInvoke(`auth:session:${token}`, 'auth_validate_session', {}, validateUserSession, 30000),
+    validateSession: () =>
+      safeInvoke<UserSession>('auth_validate_session', {}, validateUserSession),
 
     /**
      * Enables 2FA for the current user
      * @param sessionToken - User's session token
      * @returns Promise resolving to 2FA setup data
      */
-    enable2FA: (sessionToken: string) =>
-      safeInvoke<JsonValue>('enable_2fa', { session_token: sessionToken }),
+    enable2FA: () =>
+      safeInvoke<JsonValue>('enable_2fa', {}),
 
     /**
      * Verifies 2FA setup with verification code
@@ -288,11 +284,10 @@ export const ipcClient = {
      * @param sessionToken - User's session token
      * @returns Promise resolving when setup is verified
      */
-    verify2FASetup: (verificationCode: string, backupCodes: string[], sessionToken: string) =>
+    verify2FASetup: (verificationCode: string, backupCodes: string[]) =>
       safeInvoke<void>('verify_2fa_setup', {
         verification_code: verificationCode,
-        backup_codes: backupCodes,
-        session_token: sessionToken
+        backup_codes: backupCodes
       }),
 
     /**
@@ -300,16 +295,16 @@ export const ipcClient = {
      * @param sessionToken - User's session token
      * @returns Promise resolving when 2FA is disabled
      */
-    disable2FA: (password: string, sessionToken: string) =>
-      safeInvoke<void>('disable_2fa', { password, session_token: sessionToken }),
+    disable2FA: (password: string) =>
+      safeInvoke<void>('disable_2fa', { password }),
 
     /**
      * Regenerates backup codes for 2FA
      * @param sessionToken - User's session token
      * @returns Promise resolving to new backup codes
      */
-    regenerateBackupCodes: (sessionToken: string) =>
-      safeInvoke<JsonValue>('regenerate_backup_codes', { session_token: sessionToken }),
+    regenerateBackupCodes: () =>
+      safeInvoke<JsonValue>('regenerate_backup_codes', {}),
 
     /**
      * Checks if 2FA is enabled for a user
@@ -317,8 +312,8 @@ export const ipcClient = {
      * @param sessionToken - User's session token
      * @returns Promise resolving to 2FA status
      */
-    is2FAEnabled: (sessionToken: string) =>
-      safeInvoke<boolean>('is_2fa_enabled', { session_token: sessionToken }),
+    is2FAEnabled: () =>
+      safeInvoke<boolean>('is_2fa_enabled', {}),
   },
 
   // Task operations
@@ -326,14 +321,12 @@ export const ipcClient = {
     /**
      * Creates a new task
      * @param data - Task creation data
-     * @param sessionToken - User's session token
      * @returns Promise resolving to the created task
      */
-    create: async (data: CreateTaskRequest, sessionToken: string): Promise<Task> => {
+    create: async (data: CreateTaskRequest): Promise<Task> => {
       const result = await safeInvoke<JsonValue>('task_crud', {
         request: {
           action: { action: 'Create', data },
-          session_token: sessionToken
         }
       });
       invalidatePattern('task:');
@@ -344,14 +337,12 @@ export const ipcClient = {
     /**
      * Retrieves a task by ID
      * @param id - Task ID
-     * @param sessionToken - User's session token
      * @returns Promise resolving to the task or null if not found
      */
-    get: (id: string, sessionToken: string): Promise<Task | null> =>
+    get: (id: string): Promise<Task | null> =>
       cachedInvoke(`task:${id}`, 'task_crud', {
         request: {
           action: { action: 'Get', id },
-          session_token: sessionToken
         }
       }, (data: JsonValue) => extractAndValidate(data, validateTask, true) as Task | null),
 
@@ -359,14 +350,12 @@ export const ipcClient = {
      * Updates an existing task
      * @param id - Task ID
      * @param data - Task update data
-     * @param sessionToken - User's session token
      * @returns Promise resolving to the updated task
      */
-    update: async (id: string, data: UpdateTaskRequest, sessionToken: string): Promise<Task> => {
+    update: async (id: string, data: UpdateTaskRequest): Promise<Task> => {
       const result = await safeInvoke<JsonValue>('task_crud', {
         request: {
           action: { action: 'Update', id, data },
-          session_token: sessionToken
         }
       });
       invalidatePattern('task:');
@@ -377,10 +366,9 @@ export const ipcClient = {
     /**
      * Lists tasks with optional filters
      * @param filters - Query filters for the task list
-     * @param sessionToken - User's session token
      * @returns Promise resolving to paginated task list response
      */
-    list: (filters: Partial<TaskQuery>, sessionToken: string): Promise<TaskListResponse> =>
+    list: (filters: Partial<TaskQuery>): Promise<TaskListResponse> =>
       safeInvoke<JsonValue>('task_crud', {
         request: {
           action: {
@@ -398,8 +386,7 @@ export const ipcClient = {
               sort_by: filters.sort_by ?? 'created_at',
               sort_order: filters.sort_order ?? 'desc'
             }
-          },
-          session_token: sessionToken
+          }
         }
       }).then(result => {
         // task_crud returns TaskListResponse which itself has a `data` field,
@@ -414,14 +401,12 @@ export const ipcClient = {
     /**
      * Deletes a task by ID
      * @param id - Task ID to delete
-     * @param sessionToken - User's session token
      * @returns Promise resolving when deletion is complete
      */
-    delete: async (id: string, sessionToken: string): Promise<void> => {
+    delete: async (id: string): Promise<void> => {
       await safeInvoke<void>('task_crud', {
         request: {
           action: { action: 'Delete', id },
-          session_token: sessionToken
         }
       });
       invalidatePattern('task:');
@@ -430,14 +415,12 @@ export const ipcClient = {
 
     /**
      * Retrieves task statistics
-     * @param sessionToken - User's session token
      * @returns Promise resolving to task statistics
      */
-    statistics: (sessionToken: string): Promise<TaskStatistics> =>
+    statistics: (): Promise<TaskStatistics> =>
       safeInvoke<JsonValue>('task_crud', {
         request: {
-          action: { action: 'GetStatistics' },
-          session_token: sessionToken
+          action: { action: 'GetStatistics' }
         }
 }).then(result => extractAndValidate(result) as TaskStatistics),
 
@@ -445,23 +428,21 @@ export const ipcClient = {
      * Checks if a user can be assigned to a task
      * @param taskId - Task ID to check
      * @param userId - User ID to check assignment for
-     * @param sessionToken - User's session token
      * @returns Promise resolving to assignment validation result
      */
-    checkTaskAssignment: (taskId: string, userId: string, sessionToken: string) =>
+    checkTaskAssignment: (taskId: string, userId: string) =>
       safeInvoke<JsonValue>('check_task_assignment', {
-        request: { task_id: taskId, user_id: userId, session_token: sessionToken }
+        request: { task_id: taskId, user_id: userId }
       }),
 
     /**
      * Checks if a task is available for assignment
      * @param taskId - Task ID to check
-     * @param sessionToken - User's session token
      * @returns Promise resolving to availability check result
      */
-    checkTaskAvailability: (taskId: string, sessionToken: string) =>
+    checkTaskAvailability: (taskId: string) =>
       safeInvoke<JsonValue>('check_task_availability', {
-        request: { task_id: taskId, session_token: sessionToken }
+        request: { task_id: taskId }
       }),
 
     /**
@@ -469,27 +450,24 @@ export const ipcClient = {
      * @param taskId - Task ID
      * @param oldUserId - Previous user ID (if any)
      * @param newUserId - New user ID
-     * @param sessionToken - User's session token
      * @returns Promise resolving to validation result
      */
-    validateTaskAssignmentChange: (taskId: string, oldUserId: string | null, newUserId: string, sessionToken: string) =>
+    validateTaskAssignmentChange: (taskId: string, oldUserId: string | null, newUserId: string) =>
       safeInvoke<JsonValue>('validate_task_assignment_change', {
-        request: { task_id: taskId, old_user_id: oldUserId, new_user_id: newUserId, session_token: sessionToken }
+        request: { task_id: taskId, old_user_id: oldUserId, new_user_id: newUserId }
       }),
 
     /**
      * Edits a task with specific updates
      * @param taskId - Task ID to edit
      * @param updates - Task update data
-     * @param sessionToken - User's session token
      * @returns Promise resolving to the updated task
      */
-    editTask: async (taskId: string, updates: JsonObject, sessionToken: string): Promise<Task> => {
+    editTask: async (taskId: string, updates: JsonObject): Promise<Task> => {
       const result = await safeInvoke<JsonValue>('edit_task', {
         request: {
           task_id: taskId,
           data: updates,
-          session_token: sessionToken
         }
       });
       invalidatePattern('task:');
@@ -501,15 +479,13 @@ export const ipcClient = {
      * Adds a note to a task
      * @param taskId - Task ID
      * @param note - Note content
-     * @param sessionToken - User's session token
      * @returns Promise resolving when note is added
      */
-    addTaskNote: async (taskId: string, note: string, sessionToken: string): Promise<void> => {
+    addTaskNote: async (taskId: string, note: string): Promise<void> => {
       await safeInvoke<void>('add_task_note', {
         request: {
           task_id: taskId,
           note,
-          session_token: sessionToken
         }
       });
       invalidatePattern('task:');
@@ -521,16 +497,14 @@ export const ipcClient = {
      * @param taskId - Task ID
      * @param message - Message content
      * @param messageType - Type of message
-     * @param sessionToken - User's session token
      * @returns Promise resolving when message is sent
      */
-    sendTaskMessage: async (taskId: string, message: string, messageType: string, sessionToken: string): Promise<void> => {
+    sendTaskMessage: async (taskId: string, message: string, messageType: string): Promise<void> => {
       await safeInvoke<void>('send_task_message', {
         request: {
           task_id: taskId,
           message,
-          message_type: messageType,
-          session_token: sessionToken
+          message_type: messageType
         }
       });
     },
@@ -540,16 +514,14 @@ export const ipcClient = {
      * @param taskId - Task ID
      * @param newDate - New due date
      * @param reason - Reason for delay
-     * @param sessionToken - User's session token
      * @returns Promise resolving when task is delayed
      */
-    delayTask: async (taskId: string, newDate: string, reason: string, sessionToken: string): Promise<void> => {
+    delayTask: async (taskId: string, newDate: string, reason: string): Promise<void> => {
       await safeInvoke<void>('delay_task', {
         request: {
           task_id: taskId,
           new_scheduled_date: newDate,
-          reason,
-          session_token: sessionToken
+          reason
         }
       });
       invalidatePattern('task:');
@@ -562,17 +534,15 @@ export const ipcClient = {
      * @param issueType - Type of issue
      * @param severity - Issue severity
      * @param description - Issue description
-     * @param sessionToken - User's session token
      * @returns Promise resolving when issue is reported
      */
-    reportTaskIssue: async (taskId: string, issueType: string, severity: string, description: string, sessionToken: string): Promise<void> => {
+    reportTaskIssue: async (taskId: string, issueType: string, severity: string, description: string): Promise<void> => {
       await safeInvoke<void>('report_task_issue', {
         request: {
           task_id: taskId,
           issue_type: issueType,
           severity,
-          description,
-          session_token: sessionToken
+          description
         }
       });
     },
@@ -580,10 +550,9 @@ export const ipcClient = {
     /**
      * Exports tasks to CSV format
      * @param options - Export options
-     * @param sessionToken - User's session token
      * @returns Promise resolving to CSV data string
      */
-    exportTasksCsv: (options: { include_notes?: boolean; date_range?: { start_date?: string; end_date?: string } }, sessionToken: string): Promise<string> =>
+    exportTasksCsv: (options: { include_notes?: boolean; date_range?: { start_date?: string; end_date?: string } }): Promise<string> =>
       safeInvoke<string>('export_tasks_csv', {
         request: {
           include_client_data: options.include_notes ?? false,
@@ -593,34 +562,29 @@ export const ipcClient = {
                 date_to: options.date_range.end_date
               }
             : undefined,
-          session_token: sessionToken
         }
       }),
 
     /**
      * Imports tasks from CSV data
      * @param options - Import options with CSV lines
-     * @param sessionToken - User's session token
      * @returns Promise resolving to import result
      */
-    importTasksBulk: (options: { csv_lines: string[]; skip_duplicates?: boolean; update_existing?: boolean }, sessionToken: string): Promise<{ total_processed: number; successful: number; failed: number; errors: string[]; duplicates_skipped: number }> =>
+    importTasksBulk: (options: { csv_lines: string[]; skip_duplicates?: boolean; update_existing?: boolean }): Promise<{ total_processed: number; successful: number; failed: number; errors: string[]; duplicates_skipped: number }> =>
       safeInvoke<{ total_processed: number; successful: number; failed: number; errors: string[]; duplicates_skipped: number }>('import_tasks_bulk', {
         request: {
           csv_data: options.csv_lines.join('\n'),
-          update_existing: options.update_existing ?? false,
-          session_token: sessionToken
+          update_existing: options.update_existing ?? false
         }
       }),
   },
 
   // Client operations
   clients: {
-    create: async (data: CreateClientRequest, sessionToken: string): Promise<Client> => {
+    create: async (data: CreateClientRequest): Promise<Client> => {
       const result = await safeInvoke<JsonValue>('client_crud', {
         request: {
           action: { action: 'Create', data },
-          session_token: sessionToken,
-          sessionToken: sessionToken
         }
       });
       invalidatePattern('client:');
@@ -628,34 +592,28 @@ export const ipcClient = {
       return extractAndValidate(result, validateClient) as Client;
     },
 
-    get: (id: string, sessionToken: string): Promise<Client | null> =>
+    get: (id: string): Promise<Client | null> =>
       cachedInvoke(`client:${id}`, 'client_crud', {
         request: {
           action: { action: 'Get', id },
-          session_token: sessionToken,
-          sessionToken: sessionToken
         }
       }, (data: JsonValue) => extractAndValidate(data, validateClient, true) as Client | null),
 
-    getWithTasks: (id: string, sessionToken: string): Promise<Client | null> =>
+    getWithTasks: (id: string): Promise<Client | null> =>
       cachedInvoke(`client-with-tasks:${id}`, 'client_crud', {
         request: {
           action: { action: 'GetWithTasks', id },
-          session_token: sessionToken,
-          sessionToken: sessionToken
         }
       }, (data: JsonValue) => extractAndValidate(data, validateClient, true) as Client | null),
 
-    search: (query: string, limit: number, sessionToken: string): Promise<Client[]> =>
+    search: (query: string, limit: number): Promise<Client[]> =>
       safeInvoke<JsonValue>('client_crud', {
         request: {
           action: { action: 'Search', query, limit },
-          session_token: sessionToken,
-          sessionToken: sessionToken
         }
       }).then(result => extractAndValidate(result) as Client[]),
 
-    list: async (filters: Partial<ClientQuery>, sessionToken: string): Promise<ClientListResponse> => {
+    list: async (filters: Partial<ClientQuery>): Promise<ClientListResponse> => {
       const result = await safeInvoke<JsonValue>('client_crud', {
         request: {
           action: {
@@ -668,15 +626,13 @@ export const ipcClient = {
               sort_by: filters.sort_by ?? 'created_at',
               sort_order: filters.sort_order ?? 'desc'
             }
-          },
-          session_token: sessionToken,
-          sessionToken: sessionToken
+          }
         }
       });
       return extractAndValidate(result) as ClientListResponse;
     },
 
-    listWithTasks: async (filters: Partial<ClientQuery>, limitTasks: number, sessionToken: string): Promise<ClientWithTasks[]> => {
+    listWithTasks: async (filters: Partial<ClientQuery>, limitTasks: number): Promise<ClientWithTasks[]> => {
       const result = await safeInvoke<JsonValue>('client_crud', {
         request: {
           action: {
@@ -690,29 +646,23 @@ export const ipcClient = {
               sort_order: filters.sort_order ?? 'desc'
             },
             limit_tasks: limitTasks
-          },
-          session_token: sessionToken,
-          sessionToken: sessionToken
+          }
         }
       });
       return extractAndValidate(result) as ClientWithTasks[];
     },
 
-    stats: (sessionToken: string): Promise<ClientStatistics> =>
+    stats: (): Promise<ClientStatistics> =>
       safeInvoke<JsonValue>('client_crud', {
         request: {
-          action: { action: 'Stats' },
-          session_token: sessionToken,
-          sessionToken: sessionToken
+          action: { action: 'Stats' }
         }
       }).then(result => extractAndValidate(result) as ClientStatistics),
 
-    update: async (id: string, data: UpdateClientRequest, sessionToken: string): Promise<Client> => {
+    update: async (id: string, data: UpdateClientRequest): Promise<Client> => {
       const result = await safeInvoke<JsonValue>('client_crud', {
         request: {
           action: { action: 'Update', id, data },
-          session_token: sessionToken,
-          sessionToken: sessionToken
         }
       });
       invalidatePattern('client:');
@@ -720,12 +670,10 @@ export const ipcClient = {
       return extractAndValidate(result, validateClient) as Client;
     },
 
-    delete: async (id: string, sessionToken: string): Promise<void> => {
+    delete: async (id: string): Promise<void> => {
       await safeInvoke<void>('client_crud', {
         request: {
           action: { action: 'Delete', id },
-          session_token: sessionToken,
-          sessionToken: sessionToken
         }
       });
       invalidatePattern('client:');
