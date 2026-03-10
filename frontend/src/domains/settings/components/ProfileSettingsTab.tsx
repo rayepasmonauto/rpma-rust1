@@ -66,7 +66,7 @@ export function ProfileSettingsTab({ user, profile }: ProfileSettingsTabProps) {
       setUsingDefaultSettings(false);
       
       try {
-        const settings = await ipcClient.settings.getUserSettings(user.token);
+        const settings = await ipcClient.settings.getUserSettings();
         setUserSettings(settings);
         logInfo('User settings loaded', { userId: user.user_id });
       } catch (error) {

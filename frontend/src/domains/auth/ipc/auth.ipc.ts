@@ -5,11 +5,11 @@ import type { UserSession, SignupRequest } from '@/lib/ipc/types/auth.types';
 import type { JsonValue } from '@/types/json';
 
 // Re-export getUserProfile from users to avoid circular dependency
-const getUserProfile = (id: string, sessionToken: string): Promise<JsonValue> =>
+// safeInvoke auto-injects session_token for protected commands
+const getUserProfile = (id: string): Promise<JsonValue> =>
   safeInvoke<JsonValue>(IPC_COMMANDS.USER_CRUD, {
     request: {
       action: { action: 'Get', id },
-      session_token: sessionToken
     }
   }, (data: JsonValue) => extractAndValidate(data, undefined, { handleNotFound: true }));
 
@@ -29,28 +29,27 @@ export const authIpc = {
     safeInvoke<void>(IPC_COMMANDS.AUTH_LOGOUT, { token }),
 
   validateSession: (token: string): Promise<UserSession> =>
-    cachedInvoke(`auth:session:${token}`, IPC_COMMANDS.AUTH_VALIDATE_SESSION, { sessionToken: token }, validateUserSession, 30000),
+    cachedInvoke(`auth:session:${token}`, IPC_COMMANDS.AUTH_VALIDATE_SESSION, {}, validateUserSession, 30000),
 
-  enable2FA: (sessionToken: string): Promise<JsonValue> =>
-    safeInvoke<JsonValue>(IPC_COMMANDS.ENABLE_2FA, { session_token: sessionToken }),
+  // 2FA commands are listed in NOT_IMPLEMENTED_COMMANDS and short-circuited by safeInvoke;
+  // session_token injection is not needed at the IPC layer.
+  enable2FA: (): Promise<JsonValue> =>
+    safeInvoke<JsonValue>(IPC_COMMANDS.ENABLE_2FA, {}),
 
-  verify2FASetup: (verificationCode: string, backupCodes: string[], sessionToken: string): Promise<void> =>
+  verify2FASetup: (verificationCode: string, backupCodes: string[]): Promise<void> =>
     safeInvoke<void>(IPC_COMMANDS.VERIFY_2FA_SETUP, {
       verification_code: verificationCode,
       backup_codes: backupCodes,
-      session_token: sessionToken
     }),
 
-  disable2FA: (password: string, sessionToken: string): Promise<void> =>
-    safeInvoke<void>(IPC_COMMANDS.DISABLE_2FA, { password, session_token: sessionToken }),
+  disable2FA: (password: string): Promise<void> =>
+    safeInvoke<void>(IPC_COMMANDS.DISABLE_2FA, { password }),
 
-  regenerateBackupCodes: (sessionToken: string): Promise<JsonValue> =>
-    safeInvoke<JsonValue>(IPC_COMMANDS.REGENERATE_BACKUP_CODES, { session_token: sessionToken }),
+  regenerateBackupCodes: (): Promise<JsonValue> =>
+    safeInvoke<JsonValue>(IPC_COMMANDS.REGENERATE_BACKUP_CODES, {}),
 
-  is2FAEnabled: (sessionToken: string): Promise<boolean> =>
-    safeInvoke<boolean>(IPC_COMMANDS.IS_2FA_ENABLED, {
-      session_token: sessionToken
-    }),
+  is2FAEnabled: (): Promise<boolean> =>
+    safeInvoke<boolean>(IPC_COMMANDS.IS_2FA_ENABLED, {}),
 
   getUserProfile,
 };
