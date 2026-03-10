@@ -159,11 +159,11 @@ pub async fn intervention_advance_step(
     }
 }
 
+/// TODO: document
 #[tauri::command]
 #[instrument(
     skip(state, session_token, progress_data),
     fields(user_id, correlation_id)
-/// TODO: document
 )]
 pub async fn intervention_save_step_progress(
     intervention_id: String,
