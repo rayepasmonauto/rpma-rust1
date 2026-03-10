@@ -176,7 +176,8 @@ function OrganizationSection() {
   const { data: organization, isLoading } = useOrganization(user?.token ?? null);
 
   const orgName = organization?.name || 'Organisation';
-  const orgLogo = organization?.logo_url || organization?.logo_data;
+  const orgLogoSrc = organization?.logo_url 
+    || (organization?.logo_data ? `data:image/png;base64,${organization.logo_data}` : null);
   const orgInitials = orgName.slice(0, 2).toUpperCase();
 
   return (
@@ -185,10 +186,10 @@ function OrganizationSection() {
       className="flex items-center justify-between px-4 py-3 hover:bg-muted/20 cursor-pointer"
     >
       <div className="flex items-center gap-3">
-        {orgLogo ? (
+        {orgLogoSrc ? (
           <div className="h-8 w-8 rounded-md overflow-hidden bg-muted flex items-center justify-center">
             <img 
-              src={orgLogo} 
+              src={orgLogoSrc} 
               alt={orgName}
               className="object-cover w-full h-full"
             />
@@ -293,7 +294,8 @@ function OrganizationSectionMobile({ onClose }: { onClose?: () => void }) {
   const { data: organization, isLoading } = useOrganization(user?.token ?? null);
 
   const orgName = organization?.name || 'Organisation';
-  const orgLogo = organization?.logo_url || organization?.logo_data;
+  const orgLogoSrc = organization?.logo_url 
+    || (organization?.logo_data ? `data:image/png;base64,${organization.logo_data}` : null);
   const orgInitials = orgName.slice(0, 2).toUpperCase();
 
   return (
@@ -303,10 +305,10 @@ function OrganizationSectionMobile({ onClose }: { onClose?: () => void }) {
       className="flex items-center justify-between px-4 py-3 hover:bg-muted/20 cursor-pointer"
     >
       <div className="flex items-center gap-3">
-        {orgLogo ? (
+        {orgLogoSrc ? (
           <div className="h-8 w-8 rounded-md overflow-hidden bg-muted flex items-center justify-center">
             <img 
-              src={orgLogo} 
+              src={orgLogoSrc} 
               alt={orgName}
               className="object-cover w-full h-full"
             />
