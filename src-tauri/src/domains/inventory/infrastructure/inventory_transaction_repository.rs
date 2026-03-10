@@ -45,7 +45,7 @@ impl InventoryTransactionRepository {
         if refs.is_empty() {
             return Ok(HashSet::new());
         }
-        let placeholders = refs.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
+        let placeholders = crate::shared::utils::sql::in_clause_placeholders(refs);
         let sql = format!(
             "SELECT reference_number FROM inventory_transactions \
              WHERE reference_type = ? AND reference_number IN ({})",

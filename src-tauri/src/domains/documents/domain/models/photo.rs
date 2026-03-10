@@ -131,7 +131,7 @@ impl Photo {
     pub fn new(intervention_id: String, file_path: String) -> Self {
         let now = now();
         Self {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             intervention_id,
             step_id: None,
             step_number: None,

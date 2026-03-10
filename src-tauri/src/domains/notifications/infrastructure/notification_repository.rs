@@ -511,7 +511,7 @@ mod tests {
         let repo = NotificationTemplateRepository::new(Arc::new(db), Arc::clone(&cache));
 
         let template = NotificationTemplate::new(
-            uuid::Uuid::new_v4().to_string(),
+            crate::shared::utils::uuid::generate_uuid_string(),
             "Test Template".to_string(),
             NotificationType::TaskAssignment,
             NotificationChannel::Email,
@@ -544,7 +544,7 @@ mod tests {
         let repo = NotificationTemplateRepository::new(Arc::new(db), Arc::clone(&cache));
 
         let template1 = NotificationTemplate::new(
-            uuid::Uuid::new_v4().to_string(),
+            crate::shared::utils::uuid::generate_uuid_string(),
             "Test Template 1".to_string(),
             NotificationType::TaskAssignment,
             NotificationChannel::Email,
@@ -553,7 +553,7 @@ mod tests {
             vec!["var1".to_string()],
         );
         let template2 = NotificationTemplate::new(
-            uuid::Uuid::new_v4().to_string(),
+            crate::shared::utils::uuid::generate_uuid_string(),
             "Test Template 2".to_string(),
             NotificationType::TaskCompletion,
             NotificationChannel::Sms,
@@ -576,7 +576,7 @@ mod tests {
         let repo = NotificationTemplateRepository::new(Arc::new(db), Arc::clone(&cache));
 
         let template = NotificationTemplate::new(
-            uuid::Uuid::new_v4().to_string(),
+            crate::shared::utils::uuid::generate_uuid_string(),
             "Test Template".to_string(),
             NotificationType::TaskAssignment,
             NotificationChannel::Email,
@@ -597,7 +597,7 @@ mod tests {
         let repo = NotificationTemplateRepository::new(Arc::new(db), Arc::clone(&cache));
 
         let mut template = NotificationTemplate::new(
-            uuid::Uuid::new_v4().to_string(),
+            crate::shared::utils::uuid::generate_uuid_string(),
             "Test Template".to_string(),
             NotificationType::TaskAssignment,
             NotificationChannel::Email,
@@ -619,7 +619,7 @@ mod tests {
         let repo = NotificationTemplateRepository::new(Arc::new(db), Arc::clone(&cache));
 
         let template = NotificationTemplate::new(
-            uuid::Uuid::new_v4().to_string(),
+            crate::shared::utils::uuid::generate_uuid_string(),
             "Test Template".to_string(),
             NotificationType::TaskAssignment,
             NotificationChannel::Email,
@@ -641,7 +641,7 @@ mod tests {
         let repo = NotificationTemplateRepository::new(Arc::new(db), Arc::clone(&cache));
 
         let template1 = NotificationTemplate::new(
-            uuid::Uuid::new_v4().to_string(),
+            crate::shared::utils::uuid::generate_uuid_string(),
             "Test Template 1".to_string(),
             NotificationType::TaskAssignment,
             NotificationChannel::Email,
@@ -650,7 +650,7 @@ mod tests {
             vec!["var1".to_string()],
         );
         let template2 = NotificationTemplate::new(
-            uuid::Uuid::new_v4().to_string(),
+            crate::shared::utils::uuid::generate_uuid_string(),
             "Test Template 2".to_string(),
             NotificationType::TaskAssignment,
             NotificationChannel::Sms,
@@ -659,7 +659,7 @@ mod tests {
             vec!["var2".to_string()],
         );
         let template3 = NotificationTemplate::new(
-            uuid::Uuid::new_v4().to_string(),
+            crate::shared::utils::uuid::generate_uuid_string(),
             "Test Template 3".to_string(),
             NotificationType::TaskCompletion,
             NotificationChannel::Email,
@@ -686,7 +686,7 @@ mod tests {
         let repo = NotificationTemplateRepository::new(Arc::new(db), Arc::clone(&cache));
 
         let template1 = NotificationTemplate::new(
-            uuid::Uuid::new_v4().to_string(),
+            crate::shared::utils::uuid::generate_uuid_string(),
             "Test Template 1".to_string(),
             NotificationType::TaskAssignment,
             NotificationChannel::Email,

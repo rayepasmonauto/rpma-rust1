@@ -40,7 +40,7 @@ impl SessionService {
         email: String,
         role: UserRole,
     ) -> Result<UserSession, AppError> {
-        let token = uuid::Uuid::new_v4().to_string();
+        let token = crate::shared::utils::uuid::generate_uuid_string();
         let session = UserSession::new(
             user_id,
             username.clone(),

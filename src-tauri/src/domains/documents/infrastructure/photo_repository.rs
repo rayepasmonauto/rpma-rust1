@@ -626,7 +626,7 @@ mod tests {
         let cache = Arc::new(Cache::new(100));
         let repo = PhotoRepository::new(Arc::new(db), Arc::clone(&cache));
 
-        let intervention_id = uuid::Uuid::new_v4().to_string();
+        let intervention_id = crate::shared::utils::uuid::generate_uuid_string();
         let task_id = format!("task-{}", intervention_id);
         seed_task(repo.db.as_ref(), &task_id);
         seed_intervention(repo.db.as_ref(), &intervention_id, &task_id);
@@ -655,7 +655,7 @@ mod tests {
         let cache = Arc::new(Cache::new(100));
         let repo = PhotoRepository::new(Arc::new(db), Arc::clone(&cache));
 
-        let intervention_id = uuid::Uuid::new_v4().to_string();
+        let intervention_id = crate::shared::utils::uuid::generate_uuid_string();
         let task_id = format!("task-{}", intervention_id);
         seed_task(repo.db.as_ref(), &task_id);
         seed_intervention(repo.db.as_ref(), &intervention_id, &task_id);
@@ -675,7 +675,7 @@ mod tests {
         let cache = Arc::new(Cache::new(100));
         let repo = PhotoRepository::new(Arc::new(db), Arc::clone(&cache));
 
-        let intervention_id = uuid::Uuid::new_v4().to_string();
+        let intervention_id = crate::shared::utils::uuid::generate_uuid_string();
         let task_id = format!("task-{}", intervention_id);
         seed_task(repo.db.as_ref(), &task_id);
         seed_intervention(repo.db.as_ref(), &intervention_id, &task_id);
@@ -692,7 +692,7 @@ mod tests {
         let cache = Arc::new(Cache::new(100));
         let repo = PhotoRepository::new(Arc::new(db), Arc::clone(&cache));
 
-        let intervention_id = uuid::Uuid::new_v4().to_string();
+        let intervention_id = crate::shared::utils::uuid::generate_uuid_string();
         let task_id = format!("task-{}", intervention_id);
         seed_task(repo.db.as_ref(), &task_id);
         seed_intervention(repo.db.as_ref(), &intervention_id, &task_id);
@@ -710,7 +710,7 @@ mod tests {
         let cache = Arc::new(Cache::new(100));
         let repo = PhotoRepository::new(Arc::new(db), Arc::clone(&cache));
 
-        let intervention_id = uuid::Uuid::new_v4().to_string();
+        let intervention_id = crate::shared::utils::uuid::generate_uuid_string();
         let task_id = format!("task-{}", intervention_id);
         seed_task(repo.db.as_ref(), &task_id);
         seed_intervention(repo.db.as_ref(), &intervention_id, &task_id);
@@ -728,7 +728,7 @@ mod tests {
         let cache = Arc::new(Cache::new(100));
         let repo = PhotoRepository::new(Arc::new(db), Arc::clone(&cache));
 
-        let intervention_id = uuid::Uuid::new_v4().to_string();
+        let intervention_id = crate::shared::utils::uuid::generate_uuid_string();
         let task_id = format!("task-{}", intervention_id);
         seed_task(repo.db.as_ref(), &task_id);
         seed_intervention(repo.db.as_ref(), &intervention_id, &task_id);
@@ -748,7 +748,7 @@ mod tests {
         let cache = Arc::new(Cache::new(100));
         let repo = PhotoRepository::new(Arc::new(db), Arc::clone(&cache));
 
-        let intervention_id = uuid::Uuid::new_v4().to_string();
+        let intervention_id = crate::shared::utils::uuid::generate_uuid_string();
         let task_id = format!("task-{}", intervention_id);
         seed_task(repo.db.as_ref(), &task_id);
         seed_intervention(repo.db.as_ref(), &intervention_id, &task_id);

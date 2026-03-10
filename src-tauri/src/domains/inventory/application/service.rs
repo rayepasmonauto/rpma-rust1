@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use tracing::instrument;
-use uuid::Uuid;
 
 use crate::domains::inventory::domain::models::material::{
     InventoryDashboardData, InventoryStats, InventoryTransaction, InventoryTransactionType,
@@ -162,7 +161,7 @@ impl InventoryService {
 
             let total_used = consumption.quantity_used + consumption.waste_quantity;
             let mut transaction = InventoryTransaction::new(
-                Uuid::new_v4().to_string(),
+                crate::shared::utils::uuid::generate_uuid_string(),
                 consumption.material_id.clone(),
                 InventoryTransactionType::StockOut,
                 total_used,

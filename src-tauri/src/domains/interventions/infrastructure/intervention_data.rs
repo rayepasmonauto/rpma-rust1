@@ -66,7 +66,7 @@ impl InterventionDataService {
             })?;
         let vehicle_plate = vehicle_plate.unwrap_or_else(|| "UNKNOWN".to_string());
 
-        let intervention_id = uuid::Uuid::new_v4().to_string();
+        let intervention_id = crate::shared::utils::uuid::generate_uuid_string();
 
         let mut intervention =
             Intervention::new(request.task_id.clone(), task_number.clone(), vehicle_plate);

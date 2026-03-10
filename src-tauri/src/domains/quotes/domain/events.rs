@@ -2,7 +2,6 @@
 
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 pub use crate::shared::services::event_system::DomainEvent;
 
@@ -38,7 +37,7 @@ pub struct QuoteConvertedToTask {
 impl From<QuoteShared> for DomainEvent {
     fn from(event: QuoteShared) -> Self {
         DomainEvent::QuoteShared {
-            id: Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             quote_id: event.quote_id,
             quote_number: event.quote_number,
             shared_by: event.shared_by,
@@ -53,7 +52,7 @@ impl From<QuoteShared> for DomainEvent {
 impl From<QuoteCustomerResponded> for DomainEvent {
     fn from(event: QuoteCustomerResponded) -> Self {
         DomainEvent::QuoteCustomerResponded {
-            id: Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             quote_id: event.quote_id,
             quote_number: event.quote_number,
             action: event.action,
@@ -69,7 +68,7 @@ impl From<QuoteCustomerResponded> for DomainEvent {
 impl From<QuoteConvertedToTask> for DomainEvent {
     fn from(event: QuoteConvertedToTask) -> Self {
         DomainEvent::QuoteConvertedToTask {
-            id: Uuid::new_v4().to_string(),
+            id: crate::shared::utils::uuid::generate_uuid_string(),
             quote_id: event.quote_id,
             quote_number: event.quote_number,
             task_id: event.task_id,
