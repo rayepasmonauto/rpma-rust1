@@ -97,19 +97,19 @@ export const taskIpc = {
 
   checkTaskAssignment: async (taskId: string, userId: string): Promise<TaskAssignmentCheckResponse> => {
     return safeInvoke<TaskAssignmentCheckResponse>(IPC_COMMANDS.CHECK_TASK_ASSIGNMENT, {
-      request: { task_id: taskId, user_id: userId, session_token: sessionToken }
+      request: { task_id: taskId, user_id: userId }
     });
   },
 
   checkTaskAvailability: async (taskId: string): Promise<TaskAvailabilityCheckResponse> => {
     return safeInvoke<TaskAvailabilityCheckResponse>(IPC_COMMANDS.CHECK_TASK_AVAILABILITY, {
-      request: { task_id: taskId, session_token: sessionToken }
+      request: { task_id: taskId }
     });
   },
 
   getTaskHistory: async (taskId: string): Promise<TaskHistoryEntry[]> => {
     return safeInvoke<TaskHistoryEntry[]>(IPC_COMMANDS.GET_TASK_HISTORY, {
-      request: { task_id: taskId, session_token: sessionToken }
+      request: { task_id: taskId }
     });
   },
 
@@ -119,7 +119,7 @@ export const taskIpc = {
     newUserId: string
   ): Promise<JsonValue> => {
     return safeInvoke<JsonValue>(IPC_COMMANDS.VALIDATE_TASK_ASSIGNMENT_CHANGE, {
-      request: { task_id: taskId, old_user_id: oldUserId, new_user_id: newUserId, session_token: sessionToken }
+      request: { task_id: taskId, old_user_id: oldUserId, new_user_id: newUserId, }
     });
   },
 

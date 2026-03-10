@@ -92,7 +92,7 @@ export function usePreferencesForm(user?: UserSession) {
 
       setIsLoading(true);
       try {
-        const settings = await ipcClient.settings.getUserSettings(user.token);
+        const settings = await ipcClient.settings.getUserSettings();
 
         // Apply loaded preferences to form
         if (settings) {

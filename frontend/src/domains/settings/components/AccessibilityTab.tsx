@@ -85,7 +85,7 @@ export function AccessibilityTab({ user }: AccessibilitySettingsTabProps) {
 
       setIsLoading(true);
       try {
-        const userSettings = await ipcClient.settings.getUserSettings(user.token);
+        const userSettings = await ipcClient.settings.getUserSettings();
 
         // Apply accessibility settings if available
         if (userSettings?.accessibility) {

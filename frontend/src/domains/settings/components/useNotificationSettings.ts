@@ -92,7 +92,7 @@ export function useNotificationSettings(user?: UserSession) {
 
       setIsLoading(true);
       try {
-        const userSettings = await ipcClient.settings.getUserSettings(user.token);
+        const userSettings = await ipcClient.settings.getUserSettings();
 
         if (userSettings?.notifications) {
           form.reset(userSettings.notifications as unknown as NotificationsFormData);
