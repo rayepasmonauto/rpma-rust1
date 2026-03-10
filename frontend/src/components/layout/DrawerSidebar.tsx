@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronRight, MessageSquare, Users, Package, Workflow, Settings, Activity, Trash2, X, LogOut, User, Shield, HelpCircle } from 'lucide-react';
+import { ChevronRight, MessageSquare, Users, Package, Workflow, Settings, Activity, Trash2, X, LogOut, User, Shield, HelpCircle, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/domains/auth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -197,18 +197,21 @@ export function DrawerSidebar({ isOpen, onToggle }: { isOpen: boolean; onToggle:
       </div>
 
       <div className="border-b border-[hsl(var(--rpma-border))]">
-        <div className="flex items-center justify-between px-4 py-3 hover:bg-muted/20 cursor-pointer">
+        <Link
+          href="/settings/organization"
+          className="flex items-center justify-between px-4 py-3 hover:bg-muted/20 cursor-pointer"
+        >
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
-              R
+              <Building2 className="h-4 w-4" />
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Entreprise</div>
-              <div className="text-sm font-semibold text-foreground">RPMA</div>
+              <div className="text-sm font-semibold text-foreground">Organisation</div>
             </div>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        </div>
+        </Link>
         <UserDropdown />
       </div>
 
@@ -290,18 +293,22 @@ export function DrawerSidebarMobile({ isOpen, onClose }: { isOpen: boolean; onCl
         </div>
 
         <div className="border-b border-[hsl(var(--rpma-border))]">
-          <div className="flex items-center justify-between px-4 py-3 hover:bg-muted/20 cursor-pointer">
+          <Link
+            href="/settings/organization"
+            onClick={onClose}
+            className="flex items-center justify-between px-4 py-3 hover:bg-muted/20 cursor-pointer"
+          >
             <div className="flex items-center gap-3">
               <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground">
-                R
+                <Building2 className="h-4 w-4" />
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Entreprise</div>
-                <div className="text-sm font-semibold text-foreground">RPMA</div>
+                <div className="text-sm font-semibold text-foreground">Organisation</div>
               </div>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </div>
+          </Link>
           <UserDropdown onMobileClose={onClose} />
         </div>
 

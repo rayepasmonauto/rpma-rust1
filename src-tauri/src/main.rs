@@ -223,6 +223,14 @@ fn main() {
             domains::settings::ipc::settings::get_data_consent,
             domains::settings::ipc::settings::update_data_consent,
             domains::settings::ipc::settings::upload_user_avatar,
+            // ── Organizations ────────────────────────────────────────────
+            domains::organizations::ipc::get_onboarding_status,
+            domains::organizations::ipc::complete_onboarding,
+            domains::organizations::ipc::get_organization,
+            domains::organizations::ipc::update_organization,
+            domains::organizations::ipc::upload_logo,
+            domains::organizations::ipc::get_organization_settings,
+            domains::organizations::ipc::update_organization_settings,
             // ── Notifications ────────────────────────────────────────────
             domains::notifications::ipc::notification::initialize_notification_service,
             domains::notifications::ipc::notification::send_notification,
