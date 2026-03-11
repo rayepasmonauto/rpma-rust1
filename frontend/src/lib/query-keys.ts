@@ -27,3 +27,9 @@ export const reportKeys = {
   byIntervention: (interventionId: string) => ['report', 'byIntervention', interventionId],
   preview: (interventionId: string) => ['report-preview', interventionId],
 };
+
+export const auditKeys = {
+  all: ['audit'],
+  logs: () => [...auditKeys.all, 'logs'],
+  byFilters: (filters: Record<string, unknown>) => [...auditKeys.logs(), filters],
+};

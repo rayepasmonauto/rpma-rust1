@@ -253,23 +253,11 @@ export const useOfflineQueue = (
       throw new Error(`Insufficient permissions for ${operation.type}`);
     }
 
-    // Simulate API call (replace with actual IPC call)
-    await simulateApiCall(operation);
+    // TODO: Replace with real IPC dispatch per operation.type
+    // e.g. await tasksIpc.updateStatus(operation.entityId, operation.data)
+    throw new Error(`useOfflineQueue.processOperation is not yet implemented for type: ${operation.type}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [permissionChecker]);
-
-  // Simulate API call (replace with actual implementation)
-  const simulateApiCall = useCallback(async (_operation: QueueOperation): Promise<void> => {
-    // Add delay to simulate network latency
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
-    
-    // Randomly fail for testing
-    if (Math.random() < 0.1) { // 10% failure rate
-      throw new Error('Simulated network error');
-    }
-    
-    // Success
-  }, []);
 
   // Retry failed operations
   const retryFailedOperations = useCallback(() => {
