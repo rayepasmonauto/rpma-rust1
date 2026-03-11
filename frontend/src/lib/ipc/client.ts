@@ -224,7 +224,7 @@ function extractAndValidate<T>(
   return validator ? validator(result) : result as T;
 }
 
-const getUserSettingsCacheKey = (sessionToken: string): string => `user-settings:${sessionToken}`;
+const getUserSettingsCacheKey = (): string => `user-settings`;
 const invalidateUserSettingsCache = (): void => {
   invalidatePattern('user-settings');
 };
@@ -272,7 +272,6 @@ export const ipcClient = {
 
     /**
      * Enables 2FA for the current user
-     * @param sessionToken - User's session token
      * @returns Promise resolving to 2FA setup data
      */
     enable2FA: () =>
@@ -281,7 +280,7 @@ export const ipcClient = {
     /**
      * Verifies 2FA setup with verification code
      * @param verificationCode - TOTP verification code
-     * @param sessionToken - User's session token
+     * @param backupCodes - Backup codes for 2FA
      * @returns Promise resolving when setup is verified
      */
     verify2FASetup: (verificationCode: string, backupCodes: string[]) =>
@@ -292,7 +291,7 @@ export const ipcClient = {
 
     /**
      * Disables 2FA for the current user
-     * @param sessionToken - User's session token
+     * @param password - User's password
      * @returns Promise resolving when 2FA is disabled
      */
     disable2FA: (password: string) =>
@@ -300,16 +299,13 @@ export const ipcClient = {
 
     /**
      * Regenerates backup codes for 2FA
-     * @param sessionToken - User's session token
      * @returns Promise resolving to new backup codes
      */
     regenerateBackupCodes: () =>
       safeInvoke<JsonValue>('regenerate_backup_codes', {}),
 
     /**
-     * Checks if 2FA is enabled for a user
-     * @param userId - User ID to check
-     * @param sessionToken - User's session token
+     * Checks if 2FA is enabled for current user
      * @returns Promise resolving to 2FA status
      */
     is2FAEnabled: () =>
@@ -685,9 +681,8 @@ export const ipcClient = {
 
     // Photo operations
     photos: {
-       list: async (interventionId: string, sessionToken: string): Promise<Photo[]> => {
+       list: async (interventionId: string): Promise<Photo[]> => {
          const response = await safeInvoke<{photos: Photo[], total: number}>('document_get_photos', {
-           session_token: sessionToken,
            request: { intervention_id: interventionId }
          });
          return response.photos ?? [];
@@ -696,12 +691,9 @@ export const ipcClient = {
        upload: async (
          interventionId: string,
          file: { name: string; mimeType: string; bytes: Uint8Array },
-         photoType: string,
-         sessionToken: string
+         photoType: string
        ): Promise<Photo> => {
          const response = await safeInvoke<{photo: Photo, file_path: string}>('document_store_photo', {
-           sessionToken: sessionToken,
-           session_token: sessionToken,
            request: {
              intervention_id: interventionId,
              file_name: file.name,
@@ -709,26 +701,22 @@ export const ipcClient = {
              photo_type: photoType,
              is_required: false
            },
-           imageData: Array.from(file.bytes),
            image_data: Array.from(file.bytes)
          });
          return response.photo;
        },
 
-       delete: (photoId: string, sessionToken: string) =>
+       delete: (photoId: string) =>
          safeInvoke<void>('document_delete_photo', {
-           session_token: sessionToken,
            photo_id: photoId
          }),
     },
 
     // Intervention operations
   interventions: {
-        start: async (data: StartInterventionRequest, sessionToken: string) => {
+        start: async (data: StartInterventionRequest) => {
           const result = await safeInvoke<JsonValue>('intervention_workflow', {
             action: { action: 'Start', data },
-            session_token: sessionToken,
-            sessionToken: sessionToken,
             task_id: data.task_id
           });
           // Extract Started response from InterventionWorkflowResponse
@@ -743,11 +731,9 @@ export const ipcClient = {
           throw new Error('Invalid response format for intervention start');
         },
 
-    get: async (id: string, sessionToken: string) => {
+    get: async (id: string) => {
       const result = await safeInvoke<JsonValue>('intervention_workflow', {
-        action: { action: 'Get', id },
-        session_token: sessionToken,
-        sessionToken: sessionToken
+        action: { action: 'Get', id }
       });
       // Extract intervention from Retrieved response
       if (result && typeof result === 'object' && 'type' in result) {
@@ -759,14 +745,12 @@ export const ipcClient = {
       throw new Error('Invalid response format for intervention get');
     },
 
-      getActiveByTask: async (taskId: string, sessionToken: string) => {
+      getActiveByTask: async (taskId: string) => {
         try {
           console.debug('[IPC] getActiveByTask called for task:', taskId);
 
           const result = await safeInvoke<JsonValue>('intervention_workflow', {
             action: { action: 'GetActiveByTask', task_id: taskId },
-            session_token: sessionToken,
-            sessionToken: sessionToken,
             task_id: taskId
           });
 
@@ -792,13 +776,12 @@ export const ipcClient = {
         }
       },
 
-      getLatestByTask: async (taskId: string, sessionToken: string) => {
+      getLatestByTask: async (taskId: string) => {
         try {
           console.debug('[IPC] getLatestByTask called for task:', taskId);
 
           const result = await safeInvoke<JsonValue>('intervention_get_latest_by_task', {
-            taskId: taskId,
-            sessionToken: sessionToken
+            taskId: taskId
           });
 
           console.debug('[IPC] getLatestByTask raw result:', result);
@@ -823,7 +806,7 @@ export const ipcClient = {
         }
       },
 
-      advanceStep: async (stepData: AdvanceStepRequest, sessionToken: string) => {
+      advanceStep: async (stepData: AdvanceStepRequest) => {
         const result = await safeInvoke<JsonValue>('intervention_progress', {
           action: {
             action: 'AdvanceStep',
@@ -834,9 +817,7 @@ export const ipcClient = {
             photos: stepData.photos,
             quality_check_passed: stepData.quality_check_passed,
             issues: stepData.issues
-          },
-          session_token: sessionToken,
-          sessionToken: sessionToken
+          }
         });
         // Return the full StepAdvanced response
         if (result && typeof result === 'object' && 'type' in result) {
@@ -850,20 +831,16 @@ export const ipcClient = {
         throw new Error('Invalid response format for advance step');
       },
 
-    getStep: async (stepId: string, sessionToken: string) => {
+    getStep: async (stepId: string) => {
       const result = await safeInvoke<JsonValue>('intervention_get_step', {
-        step_id: stepId,
-        session_token: sessionToken,
-        sessionToken: sessionToken
+        step_id: stepId
       });
       return extractAndValidate(result, validateInterventionStep) as InterventionStep;
     },
 
-    getProgress: async (interventionId: string, sessionToken: string) => {
+    getProgress: async (interventionId: string) => {
       const result = await safeInvoke<JsonValue>('intervention_progress', {
-        action: { action: 'Get', intervention_id: interventionId },
-        session_token: sessionToken,
-        sessionToken: sessionToken
+        action: { action: 'Get', intervention_id: interventionId }
       });
       // Extract progress data from Retrieved response
       if (result && typeof result === 'object' && 'type' in result) {
@@ -878,14 +855,12 @@ export const ipcClient = {
       throw new Error('Invalid response format for get progress');
     },
 
-    saveStepProgress: async (stepData: SaveStepProgressRequest, sessionToken: string) => {
+    saveStepProgress: async (stepData: SaveStepProgressRequest) => {
       const result = await safeInvoke<JsonValue>('intervention_progress', {
         action: {
           action: 'SaveStepProgress',
           ...stepData,
-        },
-        session_token: sessionToken,
-        sessionToken: sessionToken
+        }
       });
       // Extract updated step from StepProgressSaved response
       if (result && typeof result === 'object' && 'type' in result) {
@@ -899,11 +874,9 @@ export const ipcClient = {
       throw new Error('Invalid response format for save step progress');
     },
 
-    updateWorkflow: async (id: string, data: JsonObject, sessionToken: string) => {
+    updateWorkflow: async (id: string, data: JsonObject) => {
       const result = await safeInvoke<JsonValue>('intervention_workflow', {
-        action: { action: 'Update', id, data },
-        session_token: sessionToken,
-        sessionToken: sessionToken
+        action: { action: 'Update', id, data }
       });
       // Extract response from Updated response
       if (result && typeof result === 'object' && 'type' in result) {
@@ -917,11 +890,9 @@ export const ipcClient = {
       throw new Error('Invalid response format for update workflow');
     },
 
-    finalize: async (data: FinalizeInterventionRequest, sessionToken: string) => {
+    finalize: async (data: FinalizeInterventionRequest) => {
       const result = await safeInvoke<JsonValue>('intervention_workflow', {
-        action: { action: 'Finalize', data },
-        session_token: sessionToken,
-        sessionToken: sessionToken
+        action: { action: 'Finalize', data }
       });
       // Return the full Finalized response
       if (result && typeof result === 'object' && 'type' in result) {
@@ -935,11 +906,10 @@ export const ipcClient = {
       throw new Error('Invalid response format for finalize intervention');
     },
 
-    list: async (filters: { status?: string; technician_id?: string; limit?: number; offset?: number }, sessionToken: string) => {
+    list: async (filters: { status?: string; technician_id?: string; limit?: number; offset?: number }) => {
       const result = await safeInvoke<JsonValue>('intervention_management', {
         request: {
-          action: { List: { filters } },
-          session_token: sessionToken
+          action: { List: { filters } }
         }
       });
       // Extract interventions from ListRetrieved response
@@ -958,21 +928,21 @@ export const ipcClient = {
 
   // Notification operations
   notifications: {
-    initialize: (config: NotificationConfig, sessionToken: string) =>
-      safeInvoke<void>('initialize_notification_service', { config, session_token: sessionToken }),
+    initialize: (config: NotificationConfig) =>
+      safeInvoke<void>('initialize_notification_service', { config }),
 
-    send: (request: SendNotificationRequest, sessionToken: string) =>
-      safeInvoke<void>('send_notification', { request, session_token: sessionToken }),
+    send: (request: SendNotificationRequest) =>
+      safeInvoke<void>('send_notification', { request }),
 
-    testConfig: (recipient: string, channel: 'Email' | 'Sms' | 'Push', sessionToken: string) =>
-      safeInvoke<string>('test_notification_config', { recipient, channel, session_token: sessionToken }),
+    testConfig: (recipient: string, channel: 'Email' | 'Sms' | 'Push') =>
+      safeInvoke<string>('test_notification_config', { recipient, channel }),
 
-    getStatus: (sessionToken: string) =>
-      safeInvoke<JsonValue>('get_notification_status', { session_token: sessionToken }),
+    getStatus: () =>
+      safeInvoke<JsonValue>('get_notification_status', {}),
 
     // Recent activities for admin dashboard
-    getRecentActivities: (sessionToken: string) =>
-      safeInvoke<JsonValue[]>('get_recent_activities', { session_token: sessionToken }),
+    getRecentActivities: () =>
+      safeInvoke<JsonValue[]>('get_recent_activities', {}),
   },
 
   // Settings operations
@@ -981,8 +951,7 @@ export const ipcClient = {
       safeInvoke<JsonValue>('get_app_settings', {}),
 
     updateNotificationSettings: async (request: JsonObject) => {
-      const sessionToken = await requireSessionToken();
-      return safeInvoke<JsonValue>('update_notification_settings', { request: { ...request, session_token: sessionToken } });
+      return safeInvoke<JsonValue>('update_notification_settings', { request });
     },
 
     // User settings operations
@@ -1002,8 +971,7 @@ export const ipcClient = {
     },
 
     updateUserSecurity: async (request: JsonObject) => {
-      const sessionToken = await requireSessionToken();
-      const result = await safeInvoke<JsonValue>('update_user_security', { request: { ...request, session_token: sessionToken } });
+      const result = await safeInvoke<JsonValue>('update_user_security', { request });
       invalidateUserSettingsCache();
       return result;
     },
@@ -1015,22 +983,19 @@ export const ipcClient = {
     },
 
     updateUserAccessibility: async (request: JsonObject) => {
-      const sessionToken = await requireSessionToken();
-      const result = await safeInvoke<JsonValue>('update_user_accessibility', { request: { ...request, session_token: sessionToken } });
+      const result = await safeInvoke<JsonValue>('update_user_accessibility', { request });
       invalidateUserSettingsCache();
       return result;
     },
 
     updateUserNotifications: async (request: JsonObject) => {
-      const sessionToken = await requireSessionToken();
-      const result = await safeInvoke<JsonValue>('update_user_notifications', { request: { ...request, session_token: sessionToken } });
+      const result = await safeInvoke<JsonValue>('update_user_notifications', { request });
       invalidateUserSettingsCache();
       return result;
     },
 
     changeUserPassword: async (request: JsonObject) => {
-      const sessionToken = await requireSessionToken();
-      const result = await safeInvoke<string>('change_user_password', { request: { ...request, session_token: sessionToken } });
+      const result = await safeInvoke<string>('change_user_password', { request });
       invalidateUserSettingsCache();
       return result;
     },
@@ -1063,9 +1028,8 @@ export const ipcClient = {
       safeInvoke<JsonObject>('export_user_data', {}),
 
     deleteUserAccount: async (confirmation: string) => {
-      const sessionToken = await requireSessionToken();
       const result = await safeInvoke<string>('delete_user_account', {
-        request: { confirmation, session_token: sessionToken }
+        request: { confirmation }
       });
       invalidateUserSettingsCache();
       return result;
@@ -1074,9 +1038,9 @@ export const ipcClient = {
     getDataConsent: () =>
       safeInvoke<JsonObject>('get_data_consent', {}),
 
-    updateDataConsent: (request: JsonObject, sessionToken: string) =>
+    updateDataConsent: (request: JsonObject) =>
       safeInvoke<JsonObject>('update_data_consent', {
-        request: { ...request, session_token: sessionToken }
+        request
       }),
   },
 
@@ -1100,97 +1064,87 @@ export const ipcClient = {
 
   // Dashboard operations
   dashboard: {
-    getStats: (sessionToken: string, timeRange?: 'day' | 'week' | 'month' | 'year') =>
-      safeInvoke<{ tasks?: { total?: number; completed?: number; pending?: number; active?: number }; clients?: { total?: number; active?: number }; users?: { total?: number; active?: number; admins?: number; technicians?: number }; sync?: { status?: string; pending_operations?: number; completed_operations?: number } }>('dashboard_get_stats', { session_token: sessionToken, timeRange }),
+    getStats: (timeRange?: 'day' | 'week' | 'month' | 'year') =>
+      safeInvoke<{ tasks?: { total?: number; completed?: number; pending?: number; active?: number }; clients?: { total?: number; active?: number }; users?: { total?: number; active?: number; admins?: number; technicians?: number }; sync?: { status?: string; pending_operations?: number; completed_operations?: number } }>('dashboard_get_stats', { timeRange }),
   },
 
   // User operations
     users: {
-      create: (data: CreateUserRequest, sessionToken: string): Promise<JsonValue> =>
+      create: (data: CreateUserRequest): Promise<JsonValue> =>
         safeInvoke<JsonValue>('user_crud', {
           request: {
-            action: { action: 'Create', data },
-            session_token: sessionToken
+            action: { action: 'Create', data }
           }
         }),
 
-      get: (id: string, sessionToken: string): Promise<JsonValue> =>
+      get: (id: string): Promise<JsonValue> =>
         safeInvoke<JsonValue>('user_crud', {
           request: {
-            action: { action: 'Get', id },
-            session_token: sessionToken
+            action: { action: 'Get', id }
           }
         }, (data: JsonValue) => extractAndValidate(data, undefined, true)),
 
-      list: (limit: number, offset: number, sessionToken: string): Promise<UserListResponse> =>
+      list: (limit: number, offset: number): Promise<UserListResponse> =>
         safeInvoke<JsonValue>('user_crud', {
           request: {
-            action: { action: 'List', limit, offset },
-            session_token: sessionToken
+            action: { action: 'List', limit, offset }
           }
         }).then(result => extractAndValidate(result) as UserListResponse),
 
-      update: (id: string, data: UpdateUserRequest, sessionToken: string): Promise<JsonValue> =>
+      update: (id: string, data: UpdateUserRequest): Promise<JsonValue> =>
         safeInvoke<JsonValue>('user_crud', {
           request: {
-            action: { action: 'Update', id, data },
-            session_token: sessionToken
+            action: { action: 'Update', id, data }
           }
         }),
 
-      delete: (id: string, sessionToken: string): Promise<void> =>
+      delete: (id: string): Promise<void> =>
         safeInvoke<void>('user_crud', {
           request: {
-            action: { action: 'Delete', id },
-            session_token: sessionToken
+            action: { action: 'Delete', id }
           }
         }),
 
-      changeRole: (userId: string, newRole: string, sessionToken: string): Promise<void> =>
+      changeRole: (userId: string, newRole: string): Promise<void> =>
         safeInvoke<void>('user_crud', {
           request: {
-            action: { ChangeRole: { id: userId, new_role: newRole } },
-            session_token: sessionToken
+            action: { ChangeRole: { id: userId, new_role: newRole } }
           }
         }),
 
-      updateEmail: (userId: string, newEmail: string, sessionToken: string): Promise<JsonValue> =>
+      updateEmail: (userId: string, newEmail: string): Promise<JsonValue> =>
         safeInvoke<JsonValue>('user_crud', {
           request: {
-            action: { action: 'Update', id: userId, data: { email: newEmail } },
-            session_token: sessionToken
+            action: { action: 'Update', id: userId, data: { email: newEmail } }
           }
         }),
 
-      changePassword: (userId: string, newPassword: string, sessionToken: string): Promise<void> =>
+      changePassword: (userId: string, newPassword: string): Promise<void> =>
         safeInvoke<void>('user_crud', {
           request: {
-            action: { ChangePassword: { id: userId, new_password: newPassword } },
-            session_token: sessionToken
+            action: { ChangePassword: { id: userId, new_password: newPassword } }
           }
         }),
 
-      banUser: (userId: string, sessionToken: string): Promise<JsonValue> =>
+      banUser: (userId: string): Promise<JsonValue> =>
         safeInvoke<JsonValue>('user_crud', {
           request: {
-            action: { Ban: { id: userId } },
-            session_token: sessionToken
+            action: { Ban: { id: userId } }
           }
         }),
 
-      unbanUser: (userId: string, sessionToken: string): Promise<JsonValue> =>
+      unbanUser: (userId: string): Promise<JsonValue> =>
         safeInvoke<JsonValue>('user_crud', {
           request: {
-            action: { Unban: { id: userId } },
-            session_token: sessionToken
+            action: { Unban: { id: userId } }
           }
         }),
    },
 
   // Bootstrap operations
   bootstrap: {
-    firstAdmin: (userId: string, sessionToken: string) =>
-      safeInvoke<string>('bootstrap_first_admin', { request: { user_id: userId, session_token: sessionToken } }),
+    firstAdmin: (userId: string) =>
+      safeInvoke<string>('bootstrap_first_admin', { request: { user_id: userId } }),
     hasAdmins: () =>
       safeInvoke<boolean>('has_admins'),
   },
@@ -1218,11 +1172,11 @@ export const ipcClient = {
 
   // Performance operations
   performance: {
-    getStats: (sessionToken: string) =>
-      safeInvoke<JsonValue>('get_performance_stats', { session_token: sessionToken }),
+    getStats: () =>
+      safeInvoke<JsonValue>('get_performance_stats', {}),
 
-    getMetrics: (limit: number, sessionToken: string) =>
-      safeInvoke<JsonValue>('get_performance_metrics', { limit, session_token: sessionToken }),
+    getMetrics: (limit: number) =>
+      safeInvoke<JsonValue>('get_performance_metrics', { limit }),
 
     cleanupMetrics: () =>
       safeInvoke<JsonValue>('cleanup_performance_metrics', {}),
@@ -1249,14 +1203,14 @@ export const ipcClient = {
     getApplicationMetrics: () =>
       safeInvoke<JsonValue>('get_performance_stats'),
 
-    getDatabaseStatus: (sessionToken: string) =>
-      safeInvoke<JsonValue>('diagnose_database', { session_token: sessionToken }),
+    getDatabaseStatus: () =>
+      safeInvoke<JsonValue>('diagnose_database', {}),
 
-    getDatabaseStats: (sessionToken: string) =>
-      safeInvoke<JsonValue>('get_database_stats', { session_token: sessionToken }),
+    getDatabaseStats: () =>
+      safeInvoke<JsonValue>('get_database_stats', {}),
 
-    getDatabasePoolHealth: (sessionToken: string) =>
-      safeInvoke<JsonValue>('get_database_pool_health', { session_token: sessionToken }),
+    getDatabasePoolHealth: () =>
+      safeInvoke<JsonValue>('get_database_pool_health', {}),
 
     getAppInfo: () =>
       safeInvoke<JsonValue>('get_app_info'),
@@ -1267,52 +1221,51 @@ export const ipcClient = {
 
   // Audit operations
   audit: {
-    getMetrics: (sessionToken: string) =>
-      safeInvoke<JsonValue>('get_security_metrics', { session_token: sessionToken }),
+    getMetrics: () =>
+      safeInvoke<JsonValue>('get_security_metrics', {}),
 
-    getEvents: (limit: number, sessionToken: string) =>
-      safeInvoke<JsonValue>('get_security_events', { limit, session_token: sessionToken }),
+    getEvents: (limit: number) =>
+      safeInvoke<JsonValue>('get_security_events', { limit }),
 
-    getAlerts: (sessionToken: string) =>
-      safeInvoke<JsonValue>('get_security_alerts', { session_token: sessionToken }),
+    getAlerts: () =>
+      safeInvoke<JsonValue>('get_security_alerts', {}),
 
-    acknowledgeAlert: (alertId: string, sessionToken: string) =>
-      safeInvoke<JsonValue>('acknowledge_security_alert', { alert_id: alertId, session_token: sessionToken }),
+    acknowledgeAlert: (alertId: string) =>
+      safeInvoke<JsonValue>('acknowledge_security_alert', { alert_id: alertId }),
 
-    resolveAlert: (alertId: string, actionsTaken: string[], sessionToken: string) =>
-      safeInvoke<JsonValue>('resolve_security_alert', { alert_id: alertId, actions_taken: actionsTaken, session_token: sessionToken }),
+    resolveAlert: (alertId: string, actionsTaken: string[]) =>
+      safeInvoke<JsonValue>('resolve_security_alert', { alert_id: alertId, actions_taken: actionsTaken }),
 
-    cleanupEvents: (sessionToken: string) =>
-      safeInvoke<JsonValue>('cleanup_security_events', { session_token: sessionToken }),
+    cleanupEvents: () =>
+      safeInvoke<JsonValue>('cleanup_security_events', {}),
   },
 
   // Calendar operations
   calendar: {
-    getEvents: (startDate: string, endDate: string, technicianId: string | undefined, sessionToken: string) =>
+    getEvents: (startDate: string, endDate: string, technicianId?: string) =>
       safeInvoke('get_events', {
         start_date: startDate,
         end_date: endDate,
-        technician_id: technicianId,
-        session_token: sessionToken
+        technician_id: technicianId
       }),
 
-    getEventById: (id: string, sessionToken: string) =>
-      safeInvoke('get_event_by_id', { request: { id, session_token: sessionToken } }),
+    getEventById: (id: string) =>
+      safeInvoke('get_event_by_id', { request: { id } }),
 
-    createEvent: (eventData: CreateEventInput, sessionToken: string) =>
-      safeInvoke('create_event', { request: { event_data: eventData as unknown as JsonObject, session_token: sessionToken } }),
+    createEvent: (eventData: CreateEventInput) =>
+      safeInvoke('create_event', { request: { event_data: eventData as unknown as JsonObject } }),
 
-    updateEvent: (id: string, eventData: UpdateEventInput, sessionToken: string) =>
-      safeInvoke('update_event', { request: { id, event_data: eventData as unknown as JsonObject, session_token: sessionToken } }),
+    updateEvent: (id: string, eventData: UpdateEventInput) =>
+      safeInvoke('update_event', { request: { id, event_data: eventData as unknown as JsonObject } }),
 
-    deleteEvent: (id: string, sessionToken: string) =>
-      safeInvoke('delete_event', { request: { id, session_token: sessionToken } }),
+    deleteEvent: (id: string) =>
+      safeInvoke('delete_event', { request: { id } }),
 
-    getEventsForTechnician: (technicianId: string, sessionToken: string) =>
-      safeInvoke('get_events_for_technician', { request: { technician_id: technicianId, session_token: sessionToken } }),
+    getEventsForTechnician: (technicianId: string) =>
+      safeInvoke('get_events_for_technician', { request: { technician_id: technicianId } }),
 
-     getEventsForTask: (taskId: string, sessionToken: string) =>
-       safeInvoke('get_events_for_task', { request: { task_id: taskId, session_token: sessionToken } }),
+     getEventsForTask: (taskId: string) =>
+       safeInvoke('get_events_for_task', { request: { task_id: taskId } }),
    },
 
   // Intervention operations
@@ -1320,51 +1273,43 @@ export const ipcClient = {
      /**
       * Gets the active intervention for a task
       * @param taskId - Task ID
-      * @param sessionToken - User's session token
       * @returns Promise resolving to active intervention
       */
-     getActiveByTask: (taskId: string, sessionToken: string) =>
+     getActiveByTask: (taskId: string) =>
        safeInvoke('intervention_get_active_by_task', {
-         task_id: taskId,
-         session_token: sessionToken
+         task_id: taskId
        }),
 
      /**
       * Saves step progress for an intervention
       * @param request - Step progress data
-      * @param sessionToken - User's session token
       * @param correlationId - Correlation ID for tracking
       * @returns Promise resolving to updated step
       */
-     saveStepProgress: (request: SaveStepProgressRequest, sessionToken: string, correlationId: string) =>
+     saveStepProgress: (request: SaveStepProgressRequest, correlationId: string) =>
        safeInvoke('intervention_save_step_progress', {
          request,
-         session_token: sessionToken,
          correlation_id: correlationId
        }),
 
      /**
       * Gets a specific step by ID
       * @param stepId - Step ID
-      * @param sessionToken - User's session token
       * @returns Promise resolving to step data
       */
-     getStep: (stepId: string, sessionToken: string) =>
+     getStep: (stepId: string) =>
        safeInvoke('intervention_get_step', {
-         step_id: stepId,
-         session_token: sessionToken
+         step_id: stepId
        }),
 
      /**
       * Gets intervention progress
       * @param interventionId - Intervention ID
-      * @param sessionToken - User's session token
       * @returns Promise resolving to intervention progress
       */
-    getProgress: (interventionId: string, sessionToken: string) =>
+    getProgress: (interventionId: string) =>
       safeInvoke('intervention_get_progress', {
-        intervention_id: interventionId,
-        session_token: sessionToken
+        intervention_id: interventionId
       }),
   },
 
@@ -1372,7 +1317,6 @@ export const ipcClient = {
   material: {
     /**
      * Lists materials with pagination and filtering
-     * @param sessionToken - User's session token
      * @param query - Query parameters for filtering and pagination
      * @returns Promise resolving to paginated material list
      */
@@ -1384,7 +1328,6 @@ export const ipcClient = {
     /**
      * Creates a new material
      * @param data - Material creation data
-     * @param sessionToken - User's session token
      * @returns Promise resolving to created material
      */
     create: (data: MaterialCreateRequest) =>
@@ -1396,7 +1339,6 @@ export const ipcClient = {
      * Updates an existing material
      * @param id - Material ID
      * @param data - Material update data
-     * @param sessionToken - User's session token
      * @returns Promise resolving to updated material
      */
     update: (id: string, data: MaterialUpdateRequest) => {
@@ -1411,7 +1353,6 @@ export const ipcClient = {
     /**
      * Gets a material by ID
      * @param id - Material ID
-     * @param sessionToken - User's session token
      * @returns Promise resolving to material details
      */
     get: (id: string) =>
@@ -1420,7 +1361,6 @@ export const ipcClient = {
     /**
      * Deletes a material
      * @param id - Material ID
-     * @param sessionToken - User's session token
      * @returns Promise resolving to deletion result
      */
     delete: (id: string) => {
@@ -1432,7 +1372,6 @@ export const ipcClient = {
     /**
      * Updates material stock levels
      * @param data - Stock update data
-     * @param sessionToken - User's session token
      * @returns Promise resolving to updated material with current stock
      */
     updateStock: (data: StockUpdateRequest) => {
@@ -1446,7 +1385,6 @@ export const ipcClient = {
     /**
      * Adjusts material stock with correction reason
      * @param data - Stock adjustment data
-     * @param sessionToken - User's session token
      * @returns Promise resolving to updated material with current stock
      */
     adjustStock: (data: StockAdjustmentRequest) =>
@@ -1457,7 +1395,6 @@ export const ipcClient = {
     /**
      * Records material consumption for an intervention
      * @param data - Consumption recording data
-     * @param sessionToken - User's session token
      * @returns Promise resolving to consumption record
      */
     recordConsumption: (data: ConsumptionRecordRequest) => {
@@ -1471,7 +1408,6 @@ export const ipcClient = {
     /**
      * Gets consumption history for a material
      * @param materialId - Material ID
-     * @param sessionToken - User's session token
      * @param query - Query parameters for pagination and filtering
      * @returns Promise resolving to consumption history
      */
@@ -1485,7 +1421,6 @@ export const ipcClient = {
     /**
      * Creates an inventory transaction
      * @param data - Transaction creation data
-     * @param sessionToken - User's session token
      * @returns Promise resolving to created transaction
      */
     createInventoryTransaction: (data: InventoryTransactionRequest) => {
@@ -1499,7 +1434,6 @@ export const ipcClient = {
     /**
      * Gets transaction history for a material
      * @param materialId - Material ID
-     * @param sessionToken - User's session token
      * @param query - Query parameters for pagination and filtering
      * @returns Promise resolving to transaction history
      */
@@ -1513,7 +1447,6 @@ export const ipcClient = {
     /**
      * Creates a new material category
      * @param data - Category creation data
-     * @param sessionToken - User's session token
      * @returns Promise resolving to created category
      */
     createCategory: (data: CategoryCreateRequest) =>
@@ -1523,7 +1456,6 @@ export const ipcClient = {
 
     /**
      * Lists all material categories
-     * @param sessionToken - User's session token
      * @returns Promise resolving to category list
      */
     listCategories: () =>
@@ -1532,7 +1464,6 @@ export const ipcClient = {
     /**
      * Creates a new supplier
      * @param data - Supplier creation data
-     * @param sessionToken - User's session token
      * @returns Promise resolving to created supplier
      */
     createSupplier: (data: SupplierCreateRequest) =>
@@ -1542,7 +1473,6 @@ export const ipcClient = {
 
     /**
      * Lists all suppliers
-     * @param sessionToken - User's session token
      * @returns Promise resolving to supplier list
      */
     listSuppliers: () =>
@@ -1550,7 +1480,6 @@ export const ipcClient = {
 
     /**
      * Gets material statistics
-     * @param sessionToken - User's session token
      * @returns Promise resolving to material statistics
      */
     getStats: () =>
@@ -1558,7 +1487,6 @@ export const ipcClient = {
 
     /**
      * Gets materials with low stock levels
-     * @param sessionToken - User's session token
      * @returns Promise resolving to low stock materials
      */
     getLowStockMaterials: () =>
@@ -1566,7 +1494,6 @@ export const ipcClient = {
 
     /**
      * Gets expired or near-expiry materials
-     * @param sessionToken - User's session token
      * @returns Promise resolving to expired materials
      */
     getExpiredMaterials: () =>
@@ -1575,7 +1502,6 @@ export const ipcClient = {
     /**
      * Gets inventory movement summary for a material
      * @param materialId - Material ID
-     * @param sessionToken - User's session token
      * @returns Promise resolving to inventory movement summary
      */
     getInventoryMovementSummary: (materialId: string) =>

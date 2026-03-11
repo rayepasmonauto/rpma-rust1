@@ -1,16 +1,13 @@
 import { safeInvoke, cachedInvoke, extractAndValidate } from '@/lib/ipc/core';
 import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import { validateUserSession } from '@/lib/validation/backend-type-guards';
-import { requireSessionToken } from '@/shared/contracts/session';
 import type { UserSession, SignupRequest } from '@/lib/ipc/types/auth.types';
 import type { JsonValue } from '@/types/json';
 
 const getUserProfile = async (id: string): Promise<JsonValue> => {
-  const sessionToken = await requireSessionToken();
   return safeInvoke<JsonValue>(IPC_COMMANDS.USER_CRUD, {
     request: {
       action: { action: 'Get', id },
-      session_token: sessionToken,
     }
   }, (data: JsonValue) => extractAndValidate(data, undefined, { handleNotFound: true }));
 };

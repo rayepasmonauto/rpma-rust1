@@ -6,7 +6,7 @@ use crate::domains::users::application::{
 use crate::domains::users::{UsersCommand, UsersDomainResponse, UsersFacade, UsersServices};
 use crate::shared::app_state::AppState;
 use crate::shared::context::{AuthContext, RequestContext};
-use crate::shared::ipc::AuthGuard;
+use crate::resolve_context;
 use crate::shared::ipc::{ApiResponse, AppError};
 use serde::Deserialize;
 use tracing::{debug, info, instrument};
@@ -37,7 +37,7 @@ pub async fn user_crud(
     let action = request.action;
     debug!("User CRUD operation requested with action: {:?}", action);
 
-    let ctx = AuthGuard::require_authenticated(&state, &request.correlation_id)?;
+    let ctx = resolve_context!(&state, &request.correlation_id);
 
     let facade = UsersFacade::new();
     let services = UsersServices {
@@ -70,7 +70,7 @@ pub async fn bootstrap_first_admin(
 ) -> Result<ApiResponse<String>, AppError> {
     let user_id = request.user_id.trim().to_string();
     let facade = UsersFacade::new();
-    let ctx = AuthGuard::require_authenticated(&state, &request.correlation_id)?;
+    let ctx = resolve_context!(&state, &request.correlation_id);
     let services = UsersServices {
         account_manager: state.auth_service.clone()
             as std::sync::Arc<dyn crate::shared::contracts::user_account::UserAccountManager>,

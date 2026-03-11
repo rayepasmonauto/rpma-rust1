@@ -3,13 +3,14 @@
 //! This module provides IPC commands to send backend logs to the frontend console
 //! for simultaneous debugging of frontend and backend.
 
+use crate::commands::{AppState, UserRole};
+use crate::resolve_context;
+use crate::shared::ipc::AppError;
 use serde::Deserialize;
 use tauri::command;
 use tracing::{debug, error, info, warn};
 
 use super::ApiResponse;
-use crate::commands::{AppState, UserRole};
-use crate::shared::ipc::AuthGuard;
 
 /// Log level enum
 #[derive(Deserialize, Debug)]
@@ -37,8 +38,7 @@ pub async fn send_log_to_frontend(
     state: AppState<'_>,
     log_message: LogMessage,
 ) -> Result<(), String> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Technician, &log_message.correlation_id)
-        .map_err(|e| e.to_string())?;
+    let _ctx = resolve_context!(&state, &log_message.correlation_id, UserRole::Technician);
 
     let level_str = match log_message.level {
         LogLevel::Debug => "DEBUG",
@@ -85,8 +85,7 @@ pub async fn log_task_creation_debug(
     state: AppState<'_>,
     request: LogTaskCreationDebugRequest,
 ) -> Result<ApiResponse<()>, String> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Technician, &request.correlation_id)
-        .map_err(|e| e.to_string())?;
+    let _ctx = resolve_context!(&state, &request.correlation_id, UserRole::Technician);
 
     let correlation_id = request.correlation_id.clone();
     debug!(
@@ -118,8 +117,7 @@ pub async fn log_client_creation_debug(
     state: AppState<'_>,
     request: LogClientCreationDebugRequest,
 ) -> Result<ApiResponse<()>, String> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Technician, &request.correlation_id)
-        .map_err(|e| e.to_string())?;
+    let _ctx = resolve_context!(&state, &request.correlation_id, UserRole::Technician);
 
     let correlation_id = request.correlation_id.clone();
     debug!(

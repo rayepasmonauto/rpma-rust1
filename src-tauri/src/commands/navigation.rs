@@ -1,7 +1,7 @@
 //! Navigation commands for desktop app routing and history management
 
 use crate::commands::{AppState, UserRole};
-use crate::shared::ipc::AuthGuard;
+use crate::resolve_context;
 use lazy_static::lazy_static;
 use std::collections::VecDeque;
 use std::sync::Mutex;
@@ -75,10 +75,7 @@ pub async fn navigation_update(
     _options: serde_json::Value,
     correlation_id: Option<String>,
 ) -> Result<(), String> {
-    let _ctx =
-        AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id).map_err(|e| {
-            e.to_string()
-        })?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
 
     let mut history = NAVIGATION_HISTORY.lock().map_err(|e| e.to_string())?;
     history.add(path);
@@ -93,10 +90,7 @@ pub async fn navigation_add_to_history(
     path: String,
     correlation_id: Option<String>,
 ) -> Result<(), String> {
-    let _ctx =
-        AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id).map_err(|e| {
-            e.to_string()
-        })?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
 
     let mut history = NAVIGATION_HISTORY.lock().map_err(|e| e.to_string())?;
     history.add(path);
@@ -110,10 +104,7 @@ pub async fn navigation_go_back(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<Option<String>, String> {
-    let _ctx =
-        AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id).map_err(|e| {
-            e.to_string()
-        })?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
 
     let mut history = NAVIGATION_HISTORY.lock().map_err(|e| e.to_string())?;
     Ok(history.go_back().cloned())
@@ -126,10 +117,7 @@ pub async fn navigation_go_forward(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<Option<String>, String> {
-    let _ctx =
-        AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id).map_err(|e| {
-            e.to_string()
-        })?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
 
     let mut history = NAVIGATION_HISTORY.lock().map_err(|e| e.to_string())?;
     Ok(history.go_forward().cloned())
@@ -142,10 +130,7 @@ pub async fn navigation_get_current(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<Option<String>, String> {
-    let _ctx =
-        AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id).map_err(|e| {
-            e.to_string()
-        })?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
 
     let history = NAVIGATION_HISTORY.lock().map_err(|e| e.to_string())?;
     Ok(history.get_current().cloned())
@@ -158,10 +143,7 @@ pub async fn navigation_refresh(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<(), String> {
-    let _ctx =
-        AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id).map_err(|e| {
-            e.to_string()
-        })?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
 
     // This command triggers a refresh in the frontend
     // The actual refresh is handled by the frontend calling window.location.reload()
@@ -176,10 +158,7 @@ pub async fn shortcuts_register(
     shortcuts: serde_json::Value,
     correlation_id: Option<String>,
 ) -> Result<(), String> {
-    let _ctx =
-        AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id).map_err(|e| {
-            e.to_string()
-        })?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
 
     debug!("Registering keyboard shortcuts");
 

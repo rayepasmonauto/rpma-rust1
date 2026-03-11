@@ -58,7 +58,7 @@ export function useWorkflowActions(taskId: string) {
   const [error, setError] = useState<string | null>(null);
 
   const handleWorkflowAction = useCallback(async (action: string) => {
-    if (!session?.token || action === 'disabled') return;
+    if (action === 'disabled') return;
 
     setIsLoading(true);
     setError(null);
@@ -79,7 +79,7 @@ export function useWorkflowActions(taskId: string) {
             work_location: 'outdoor',
             temperature: null,
             humidity: null,
-            technician_id: session.id,
+            technician_id: session?.id || '',
             assistant_ids: null,
             scheduled_start: new Date().toISOString(),
             estimated_duration: 120,
@@ -90,7 +90,7 @@ export function useWorkflowActions(taskId: string) {
             special_instructions: null,
           };
 
-          const result = await ipcClient.interventions.start(interventionData, session.token);
+          const result = await ipcClient.interventions.start(interventionData);
 
           if (result?.intervention) {
             toast.success('Workflow démarré avec succès');
@@ -120,7 +120,7 @@ export function useWorkflowActions(taskId: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [session?.token, session?.id, taskId, router]);
+  }, [session?.id, taskId, router]);
 
   return {
     isLoading,

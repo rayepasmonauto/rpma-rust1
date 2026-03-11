@@ -2,7 +2,6 @@ import { safeInvoke, extractAndValidate, cachedInvoke, invalidatePattern } from 
 import { signalMutation } from '@/lib/data-freshness';
 import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import { validateClient, validateClientListResponse } from '@/lib/validation/backend-type-guards';
-import { requireSessionToken } from '@/shared/contracts/session';
 import type { JsonValue } from '@/types/json';
 import type {
   Client,
@@ -16,11 +15,9 @@ import type {
 
 export const clientIpc = {
   create: async (data: CreateClientRequest): Promise<Client> => {
-    const sessionToken = await requireSessionToken();
     const result = await safeInvoke<JsonValue>(IPC_COMMANDS.CLIENT_CRUD, {
       request: {
         action: { action: 'Create', data },
-        session_token: sessionToken
       }
     });
     invalidatePattern('client:');
@@ -31,31 +28,25 @@ export const clientIpc = {
   },
 
   get: async (id: string): Promise<Client | null> => {
-    const sessionToken = await requireSessionToken();
     return cachedInvoke(`client:${id}`, IPC_COMMANDS.CLIENT_CRUD, {
       request: {
         action: { action: 'Get', id },
-        session_token: sessionToken
       }
     }, (data: JsonValue) => extractAndValidate(data, validateClient, { handleNotFound: true }) as Client | null);
   },
 
   getWithTasks: async (id: string): Promise<Client | null> => {
-    const sessionToken = await requireSessionToken();
     return cachedInvoke(`client-with-tasks:${id}`, IPC_COMMANDS.CLIENT_CRUD, {
       request: {
         action: { action: 'GetWithTasks', id },
-        session_token: sessionToken
       }
     }, (data: JsonValue) => extractAndValidate(data, validateClient, { handleNotFound: true }) as Client | null);
   },
 
   search: async (query: string, limit: number): Promise<Client[]> => {
-    const sessionToken = await requireSessionToken();
     const result = await safeInvoke<JsonValue>(IPC_COMMANDS.CLIENT_CRUD, {
       request: {
         action: { action: 'Search', query, limit },
-        session_token: sessionToken
       }
     });
     const payload = extractAndValidate(result) as JsonValue;
@@ -64,7 +55,6 @@ export const clientIpc = {
   },
 
   list: async (filters: Partial<ClientQuery>): Promise<ClientListResponse> => {
-    const sessionToken = await requireSessionToken();
     const result = await safeInvoke<JsonValue>(IPC_COMMANDS.CLIENT_CRUD, {
       request: {
         action: {
@@ -78,7 +68,6 @@ export const clientIpc = {
             sort_order: filters.sort_order ?? 'desc'
           }
         },
-        session_token: sessionToken
       }
     });
     // safeInvoke already unwrapped ApiResponse; result = { type: "List", data: ClientListResponse }
@@ -91,7 +80,6 @@ export const clientIpc = {
   },
 
   listWithTasks: async (filters: Partial<ClientQuery>, limitTasks: number): Promise<ClientWithTasks[]> => {
-    const sessionToken = await requireSessionToken();
     const result = await safeInvoke<JsonValue>(IPC_COMMANDS.CLIENT_CRUD, {
       request: {
         action: {
@@ -106,7 +94,6 @@ export const clientIpc = {
           },
           limit_tasks: limitTasks
         },
-        session_token: sessionToken
       }
     });
     const payload = extractAndValidate(result) as JsonValue;
@@ -114,22 +101,18 @@ export const clientIpc = {
   },
 
   stats: async (): Promise<ClientStatistics> => {
-    const sessionToken = await requireSessionToken();
     const result = await safeInvoke<JsonValue>(IPC_COMMANDS.CLIENT_CRUD, {
       request: {
         action: { action: 'Stats' },
-        session_token: sessionToken
       }
     });
     return extractAndValidate(result) as ClientStatistics;
   },
 
   update: async (id: string, data: UpdateClientRequest): Promise<Client> => {
-    const sessionToken = await requireSessionToken();
     const result = await safeInvoke<JsonValue>(IPC_COMMANDS.CLIENT_CRUD, {
       request: {
         action: { action: 'Update', id, data },
-        session_token: sessionToken
       }
     });
     invalidatePattern('client:');
@@ -138,11 +121,9 @@ export const clientIpc = {
   },
 
   delete: async (id: string): Promise<void> => {
-    const sessionToken = await requireSessionToken();
     await safeInvoke<void>(IPC_COMMANDS.CLIENT_CRUD, {
       request: {
         action: { action: 'Delete', id },
-        session_token: sessionToken
       }
     });
     invalidatePattern('client:');

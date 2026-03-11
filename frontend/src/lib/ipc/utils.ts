@@ -342,8 +342,6 @@ function sanitizeArgs(args?: JsonObject): JsonObject | undefined {
     'password',
     'token',
     'refresh_token',
-    'session_token',
-    'sessiontoken',
     'secret',
     'key',
     'auth',

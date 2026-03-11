@@ -78,8 +78,7 @@ pub use crate::shared::contracts::auth::UserRole;
 pub use crate::shared::ipc::response::{ApiResponse, CompressedApiResponse};
 pub use correlation_helpers::*;
 pub use errors::{AppError, AppResult};
-
-use crate::shared::ipc::AuthGuard;
+use crate::resolve_context;
 
 // Re-export performance commands
 #[allow(unused_imports)]
@@ -227,7 +226,7 @@ pub async fn get_database_status(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<serde_json::Value>, AppError> {
-    let ctx = AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id)?;
+    let ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
     debug!("Database status requested");
 
     let status = crate::shared::services::system::SystemService::get_database_status(&state.db)
@@ -247,7 +246,7 @@ pub async fn get_database_pool_stats(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<serde_json::Value>, AppError> {
-    let ctx = AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id)?;
+    let ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
     debug!("Database pool statistics requested");
 
     let db = &state.db;
@@ -268,7 +267,7 @@ pub async fn get_database_pool_health(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<crate::db::PoolHealth>, AppError> {
-    let ctx = AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id)?;
+    let ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
     debug!("Database pool health requested");
 
     let health = state.db.get_pool_health();
@@ -292,7 +291,7 @@ pub async fn get_large_test_data(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<CompressedApiResponse, AppError> {
-    let ctx = AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id)?;
+    let ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
     debug!("Large test data requested");
 
     // Generate a large dataset to test compression
@@ -323,7 +322,7 @@ pub async fn vacuum_database(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<()>, AppError> {
-    let ctx = AuthGuard::require_role(&state, UserRole::Admin, &correlation_id)?;
+    let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
     info!("Database vacuum operation requested");
 
     let db = &state.db;

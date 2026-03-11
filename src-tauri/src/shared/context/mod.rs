@@ -20,4 +20,4 @@ pub mod session_resolver;
 pub use app_context::AppContext;
 pub use auth_context::AuthContext;
 pub use request_context::RequestContext;
-pub use session_resolver::resolve_request_context;
+pub use session_resolver::{resolve_context, resolve_request_context};

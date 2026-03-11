@@ -31,7 +31,8 @@ use crate::shared::logging::correlation::{self, CorrelationContext};
 ///     let correlation_id = init_correlation_context(&request.correlation_id, None);
 ///     
 ///     // ... authenticate user ...
-///     let user = authenticate!(&request.session_token, &state);
+///     let ctx = resolve_context!(&state, &request.correlation_id);
+///     let user = ctx.auth;
 ///     
 ///     // Update context with user_id after authentication
 ///     update_correlation_context_user(&user.user_id);
@@ -60,7 +61,8 @@ pub fn init_correlation_context(correlation_id: &Option<String>, user_id: Option
 ///
 /// # Example
 /// ```rust
-/// let user = authenticate!(&session_token, &state);
+/// let ctx = resolve_context!(&state, &correlation_id);
+/// let user = ctx.auth;
 /// update_correlation_context_user(&user.user_id);
 /// ```
 pub fn update_correlation_context_user(user_id: &str) {
