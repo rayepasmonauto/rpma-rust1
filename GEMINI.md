@@ -1,207 +1,233 @@
 # GEMINI.md
 
-Stack:
-- Frontend: Next.js 14, React 18, TypeScript, Tailwind, shadcn/ui
-- Backend: Rust + Tauri
-- Database: SQLite (WAL)
-- Types: Rust models exported to TypeScript via ts-rs
+## Stack
 
-## 📁 Project Structure
+* Frontend: Next.js 14, React 18, TypeScript, Tailwind CSS, shadcn/ui.
+* Backend: Rust + Tauri.
+* Database: SQLite with WAL mode.
+* Types: Rust models exported to TypeScript via ts-rs. Generated files live in `frontend/src/types/` and must not be edited manually.
 
-```
+## Project structure
+
+```text
 rpma-rust1/
-├── frontend/                    # Next.js 14 App
+├── frontend/                  # Next.js App Router app
 │   ├── src/
-│   │   ├── app/                 # App Router pages (~38 pages)
-│   │   ├── components/          # Shared React components (179+)
-│   │   ├── domains/             # Feature domains (auth, interventions, inventory, tasks)
+│   │   ├── app/               # Route pages and layouts
+│   │   ├── components/        # Shared UI components
+│   │   ├── domains/           # Frontend feature domains
 │   │   │   └── [domain]/
-│   │   │       ├── api/         # Public API surface for the domain
-│   │   │       ├── components/  # Domain-specific components
-│   │   │       ├── hooks/       # Domain-specific hooks
-│   │   │       ├── ipc/         # IPC call wrappers
-│   │   │       └── services/    # Frontend business logic
-│   │   ├── hooks/               # Shared custom hooks (63+)
-│   │   ├── lib/                 # Utilities and IPC client (20 domain modules)
-│   │   ├── shared/              # Shared utils, types, UI primitives
-│   │   └── types/               # ⚠️ AUTO-GENERATED — DO NOT EDIT MANUALLY
+│   │   │       ├── api/       # React Query public API surface
+│   │   │       ├── components/ # Domain UI
+│   │   │       ├── hooks/     # Domain hooks
+│   │   │       ├── ipc/       # Domain IPC wrappers
+│   │   │       ├── services/  # Frontend business logic
+│   │   │       └── stores/    # Zustand stores when needed
+│   │   ├── hooks/             # Shared custom hooks
+│   │   ├── lib/               # IPC client, utilities, query keys
+│   │   ├── shared/            # Shared contracts and helpers
+│   │   └── types/             # AUTO-GENERATED — DO NOT EDIT
 │   └── package.json
 │
-├── src-tauri/                   # Rust/Tauri backend
+├── src-tauri/
 │   ├── src/
-│   │   ├── commands/            # 65 IPC command handlers
-│   │   ├── domains/             # Bounded contexts (DDD)
+│   │   ├── commands/          # Cross-domain/system command modules
+│   │   ├── domains/           # Backend bounded contexts
 │   │   │   └── [domain]/
-│   │   │       ├── application/ # Use cases / application services
-│   │   │       ├── domain/      # Domain models, value objects, rules
-│   │   │       ├── infrastructure/ # SQL repositories, external adapters
-│   │   │       ├── ipc/         # Tauri command entry points
-│   │   │       └── tests/       # Domain tests
-│   │   ├── models/              # 21 data models (ts-rs exports)
-│   │   ├── repositories/        # 20 repository files
-│   │   ├── services/            # 88 service files
-│   │   ├── shared/              # Shared backend utilities, errors
-│   │   └── db/                  # Database init, pool, migrations
-│   ├── migrations/              # Embedded SQLite migrations
-│   ├── benches/                 # Criterion benchmarks
-│   ├── tests/                   # Integration test suites
-│   │   ├── auth_commands_test.rs
-│   │   ├── client_commands_test.rs
-│   │   ├── intervention_commands_test.rs
-│   │   ├── task_commands_test.rs
-│   │   └── user_commands_test.rs
+│   │   │       ├── ipc/           # Tauri command entry points, thin only
+│   │   │       ├── application/   # Use cases, orchestration, auth enforcement
+│   │   │       ├── domain/        # Pure business rules, entities, validation
+│   │   │       ├── infrastructure/# Repositories, SQL, adapters
+│   │   │       └── tests/         # unit, integration, permission, validation
+│   │   ├── shared/                # Errors, auth middleware, event bus, utilities
+│   │   ├── db/                    # DB connection, pool, pragmas, migrations
+│   │   ├── main.rs                # Tauri builder and command registration
+│   │   └── bin/                   # Type export binary
+│   ├── migrations/                # Embedded SQLite migrations
 │   └── Cargo.toml
 │
-├── migrations/                  # Root-level SQL migration files (6 files)
-├── migration-tests/             # Migration validation tests
-├── scripts/                     # Build, validation, and utility scripts
-├── docs/                        # Project documentation
-│   ├── adr/                     # Architectural Decision Records
-│   └── agent-pack/              # Agent documentation pack
-├── Makefile                     # Shorthand commands (see below)
-├── package.json                 # Root package.json (npm workspaces)
-├── Cargo.toml                   # Workspace root
-├── deny.toml                    # cargo-deny security config
-├── commitlint.config.js         # Conventional commit rules
-└── tsconfig.json
-```
+├── scripts/                       # Validation, architecture, IPC, type scripts
+├── docs/                          # Project docs and ADRs
+├── Makefile
+├── package.json
+└── Cargo.toml
 
-Core architecture:
-- Backend domains follow strict layering: `ipc -> application -> domain -> infrastructure`
-- Frontend code should stay organized by domain under `frontend/src/domains/<domain>/`
-- Cross-domain backend internals are private; use only approved public interfaces
+```
 
 ## Commands
 
 Use the real command surfaces below; do not invent a root `npm run test` shortcut.
 
-- **App / dev:** `npm run dev`, `npm run dev:types`, `npm run frontend:dev`
+* **App / dev:** `npm run dev`, `npm run dev:types`, `npm run frontend:dev`
+* **Frontend checks:** `npm run frontend:lint`, `npm run frontend:type-check`, `cd frontend && npm run test:ci`, `cd frontend && npm run test:e2e`
+* **Backend checks:** `npm run backend:check`, `npm run backend:clippy`, `npm run backend:fmt`, `make test`, `cd src-tauri && cargo test --test <target>`
+* **Types:** `npm run types:sync`, `npm run types:validate`, `npm run types:drift-check`, `npm run types:watch`
+* **Database / migrations:** `node scripts/validate-migration-system.js`, `node scripts/detect-schema-drift.js`, `npm run backend:migration:fresh-db-test`
 
-- **Frontend checks:** `npm run frontend:lint`, `npm run frontend:type-check`, `cd frontend && npm run test:ci`, `cd frontend && npm run test:e2e`
+## Non-negotiable engineering rules
 
-- **Backend checks:** `npm run backend:check`, `npm run backend:clippy`, `npm run backend:fmt`, `make test`, `cd src-tauri && cargo test --test <target>`
+### 1) Preserve offline-first behavior
 
-- **Types:** `npm run types:sync`, `npm run types:validate`, `npm run types:drift-check`, `npm run types:watch`
+* Local SQLite is the system of record.
+* New features must work without internet unless the requirement explicitly says otherwise.
+* If sync-related behavior is involved, enqueue/track work using existing sync mechanisms instead of inventing ad hoc network flows.
 
-- **Architecture / security:** `npm run validate:bounded-contexts`, `npm run architecture:check`, `npm run backend:boundaries:check`, `node scripts/ipc-authorization-audit.js`, `npm run ipc:consistency-check`, `npm run security:audit`
+### 2) Respect DDD and layer boundaries
 
-- **Database / migrations:** `node scripts/validate-migration-system.js`, `node scripts/detect-schema-drift.js`, `npm run backend:migration:fresh-db-test`
+* Do not have React components call Tauri directly if the repo already uses domain IPC wrappers.
+* Do not put authorization in the frontend only.
+* Do not place SQL in application/domain layers.
+* Do not place business validation only in the UI.
 
+### 3) Preserve domain isolation
 
-## Non-negotiable rules
+* Put new code in the owning domain.
+* Do not import another domain’s internal components/services/repositories directly.
+* If cross-domain collaboration is required, use existing public interfaces, shared services, or established event patterns.
 
-Never:
-- Edit generated type files manually.
-- Put business logic in IPC handlers.
-- Put SQL outside infrastructure or migration files.
-- Import another backend domain’s internals.
-- Bypass session validation or RBAC on protected commands.
-- Use ad hoc frontend-backend calls when the project IPC wrapper pattern exists.
-- Disable checks, weaken tests, or remove coverage just to get green CI.
-- Make unrelated refactors during a focused task.
-- Claim behavior exists without verifying it in the repository.
+### 4) Keep IPC thin
 
-Always:
-- Make the smallest safe change.
-- Reuse an existing local pattern before creating a new abstraction.
-- Keep public contracts stable unless the task explicitly requires change.
-- Add or update tests for every behavior change.
-- Report exactly what changed, what was validated, and what remains uncertain.
+* IPC handlers should authenticate, establish request context, map inputs/outputs, and delegate.
+* Complex orchestration belongs in the application layer.
 
-## Backend rules
+### 5) Enforce RBAC and session security
 
-Respect this layer order for all backend changes:
-`ipc -> application -> domain -> infrastructure`
+* Every new command or privileged action must be authenticated and role-checked according to existing patterns.
+* Never assume frontend hiding is sufficient protection.
+* Permission failure paths must be tested.
 
-Layer responsibilities:
-- `ipc/`: command boundary only; serialization, auth entry checks, routing, error mapping
-- `application/`: use cases, orchestration, transactions, authorization enforcement
-- `domain/`: business rules, entities, value objects, validation, no I/O
-- `infrastructure/`: repositories, SQL, persistence, external adapters
+### 6) Keep types generated, not duplicated
 
-Hard constraints:
-- IPC handlers must stay thin.
-- Application code must not execute raw SQL directly.
-- Domain code must not perform I/O.
-- New backend behavior belongs in the owning bounded context.
+* Do not manually redefine Rust-owned payload types in TypeScript if they are meant to cross the IPC boundary.
+* Use the generated types workflow already present in the repo.
 
-## Frontend rules
+### 7) Make changes incrementally
 
-Use domain-local organization under `frontend/src/domains/<domain>/` where possible.
+* Prefer small, reviewable diffs.
+* Reuse existing abstractions before creating new ones.
+* Avoid broad refactors unless the task explicitly requires them.
 
-Hard constraints:
-- Do not manually redefine payload types if generated types already exist.
-- Prefer existing shared UI primitives and established UX patterns.
-- Route backend calls through the project IPC wrapper layer.
-- Do not introduce direct `invoke()` usage in new code unless that exact area already uses an approved alternative pattern.
+---
 
-## IPC rules
+## Expected repo patterns
 
-The Tauri IPC boundary is strict and thin.
+### Backend
 
-For protected commands:
-- Require and validate `session_token`
-- Pass or generate `correlation_id`
-- Delegate logic to application services
-- Return responses/errors consistent with existing `AppError` and wrapper conventions
+When implementing backend functionality, follow the existing domain structure under the Rust backend domains. A typical feature belongs inside one domain and should usually touch:
 
-When adding or changing a command:
-- Verify whether it is public or protected
-- Preserve command naming unless a breaking change is required
-- Verify frontend wrapper compatibility, including token handling, correlation handling, and timeouts
-- Verify auth and RBAC behavior end to end
+* `ipc/` for Tauri command handlers
+* `application/` for use-case orchestration
+* `domain/` for entities, value objects, validation, rules
+* `infrastructure/` for repositories and persistence
 
-## Required task workflow
+### Frontend
 
-Before editing:
+The frontend mirrors backend bounded contexts. Domain-specific frontend code should live under the corresponding frontend domain structure. Common expectations:
+
+* `api/` for React Query hooks
+* `components/` for domain UI
+* `hooks/` for domain hooks/Zustand state
+* `ipc/` for typed domain wrappers
+* `services/` for frontend-side business shaping/transforms
+
+Use shared UI primitives from the common UI layer, but do not import another domain’s private UI internals.
+
+### IPC calling convention
+
+Frontend code should use:
+
+1. shared safe IPC foundation
+2. domain-level typed IPC wrappers
+
+Do not call low-level Tauri invoke directly from arbitrary components if the project already provides the abstraction.
+
+---
+
+## How to implement features
+
+When asked to build or modify a feature, follow this order:
+
 1. Identify the owning domain.
-2. Identify the exact files likely to change.
-3. Identify the existing pattern/file to imitate.
-4. State whether the task touches IPC, auth, schema, generated types, or domain boundaries.
-5. State the minimal validation plan.
+2. Find the existing end-to-end path for the nearest similar feature.
+3. Extend the backend through the proper layers.
+4. Extend or regenerate shared types if IPC payloads changed.
+5. Add/update frontend domain IPC wrappers, query hooks, and UI.
+6. Add tests for success, validation failure, and authorization failure.
+7. Run the project verification commands relevant to the change.
 
-Implementation:
-1. Make the smallest safe change.
-2. Reuse existing patterns.
-3. Avoid unrelated cleanup/refactors.
-4. If the request conflicts with architecture or security rules, do not implement the shortcut; implement the compliant version or explain why it is unsafe.
+Prefer adapting an existing vertical slice over inventing a parallel architecture.
 
-After editing:
-1. Update tests for impacted behavior.
-2. Run the smallest relevant validation set.
-3. Report changed files, validation run, and unresolved risks.
+---
 
-## Required test policy
+## Testing requirements
 
-Testing is mandatory for behavior changes.
+Testing is mandatory, not optional. The repository’s testing policy requires:
 
-Minimum expectations:
-- Bug fix: add or update at least one regression test
-- New feature: cover success path, validation failure, and permission failure when protected
-- Prefer deterministic tests
-- Keep tests in the owning domain where possible
+* Bug fixes must include a regression test.
+* New features must include:
+* success-path coverage
+* input validation failure coverage
+* permission/RBAC failure coverage
 
-Never:
-- Delete or weaken tests to make a build pass
-- Leave permission-sensitive behavior untested when access control is part of the change
 
-Tests:
-- relevant unit tests
-- relevant domain tests
-- relevant integration tests
-- migration/performance tests when impacted
+* Tests should live in the owning domain.
 
-Task-specific requirements:
-- Rust model changes: run all type sync/validation/drift commands
-- Domain boundary/backend structure changes: run bounded-context + architecture checks
-- IPC changes: verify thin handlers, auth/RBAC, wrapper compatibility, and run `node scripts/ipc-authorization-audit.js` if available
-- Schema/migration changes: run migration validation, impacted backend tests, and regenerate types if contracts changed
+Before considering work complete, run the most relevant checks available in the repo, especially the quality and architecture enforcement commands already defined by the project. The repository includes checks for architecture boundaries, backend boundaries, type integrity, RBAC auditing, migration freshness, and maintainability/complexity.
 
+If you cannot run commands in the environment, still write the code and explicitly list which checks should be run by the human reviewer.
+
+---
+
+## Database and persistence guidance
+
+Use SQLite as the primary local store and preserve established reliability/performance assumptions such as WAL-oriented local operation and pooled access patterns.
+
+When changing persistence behavior:
+
+* Keep SQL and repository details in infrastructure.
+* Respect migration workflows already used by the repository.
+* Avoid schema shortcuts that bypass the migration system.
+* Consider impact on sync, reporting, and auditability where relevant.
+
+Do not introduce remote-first persistence assumptions.
+
+---
+
+## Frontend guidance
+
+On the frontend:
+
+* Mirror backend domain boundaries.
+* Use TanStack Query for server/backend state.
+* Use Zustand for local/global UI state where appropriate.
+* Keep pages/components thin when possible; move reusable logic into domain hooks/services.
+* Use typed IPC wrappers instead of raw invoke calls.
+* Use generated types from Rust contracts instead of handwritten duplicates.
+
+When building forms or workflows, ensure the frontend validates for UX, but keep the backend/domain as the ultimate enforcer of business rules.
+
+---
+
+## What not to do
+
+Do not:
+
+* Invent a second architecture beside the current DDD structure.
+* Bypass domain IPC wrappers from frontend components.
+* Put business logic in SQL, page components, or Tauri command glue.
+* Duplicate generated cross-boundary types manually.
+* Create cross-domain imports that violate boundaries.
+* Skip tests because the change looks “small.”
+* Make large opportunistic refactors unrelated to the task.
+* Replace existing stack choices unless explicitly requested and justified.
+
+---
 
 ## When unsure
 
 If a requirement is ambiguous or conflicts with architecture rules, choose the most conservative compliant option and explicitly say so.
 
 when unsure check docs:
-- `docs/agent-pack/README.md`
-- `docs/adr/`
+
+* `docs/agent-pack/README.md`
+* `docs/adr/`
