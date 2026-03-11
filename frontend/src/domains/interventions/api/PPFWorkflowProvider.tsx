@@ -253,7 +253,7 @@ export function PPFWorkflowProvider({ taskId, children }: PPFWorkflowProviderPro
     queryKey: ['task', taskId],
     queryFn: async (): Promise<Task | null> => {
       if (!session?.token || !taskId) return null;
-      const result = await ipcClient.tasks.get(taskId, session.token);
+      const result = await ipcClient.tasks.get(taskId);
       return result as Task;
     },
     enabled: !!session?.token && !!taskId,

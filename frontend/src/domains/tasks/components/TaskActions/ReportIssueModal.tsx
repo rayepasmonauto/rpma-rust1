@@ -31,7 +31,7 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({ task, open, onOpenC
   const reportIssueMutation = useMutation({
     mutationFn: async ({ issueType, severity, description }: { issueType: string; severity: string; description: string }) => {
       if (!user?.token) throw new Error('User not authenticated');
-      return await ipcClient.tasks.reportTaskIssue(task.id, issueType, severity, description, user.token);
+      return await ipcClient.tasks.reportTaskIssue(task.id, issueType, severity, description);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });

@@ -72,8 +72,7 @@ export class PPFPhotoService {
           mimeType: file.type || 'application/octet-stream',
           bytes: new Uint8Array(buffer),
         },
-        'intervention',
-        token
+        'intervention'
       );
 
       const raw = result as unknown as Record<string, unknown>;
@@ -86,7 +85,7 @@ export class PPFPhotoService {
   static async getPhotos(interventionId: string, _stepNumber?: number): Promise<PPFPhoto[]> {
     try {
       const token = await this.getSessionToken();
-      const photos = await ipcClient.photos.list(interventionId, token);
+      const photos = await ipcClient.photos.list(interventionId);
 
       return (photos as unknown as Array<Record<string, unknown>>).map(photo =>
         this.mapPhotoResponse(photo, interventionId)
@@ -99,7 +98,7 @@ export class PPFPhotoService {
   static async deletePhoto(photoId: string): Promise<void> {
     try {
       const token = await this.getSessionToken();
-      await ipcClient.photos.delete(photoId, token);
+      await ipcClient.photos.delete(photoId);
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to delete photo');
     }

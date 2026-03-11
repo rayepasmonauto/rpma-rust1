@@ -13,7 +13,7 @@ export async function sendTestNotification(
   recipient: string,
   sessionToken: string
 ): Promise<string> {
-  return ipcClient.notifications.testConfig(recipient, 'Email', sessionToken);
+  return ipcClient.notifications.testConfig(recipient, 'Email');
 }
 
 // Notification settings form schema

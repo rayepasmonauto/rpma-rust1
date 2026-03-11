@@ -36,22 +36,22 @@ export interface SendNotificationRequest {
 
 export class NotificationService {
   static async initializeNotificationService(config: NotificationConfig, sessionToken: string): Promise<void> {
-    return ipcClient.notifications.initialize(config as unknown as IpcNotificationConfig, sessionToken);
+    return ipcClient.notifications.initialize(config as unknown as IpcNotificationConfig);
   }
 
   static async sendNotification(request: SendNotificationRequest, sessionToken: string): Promise<void> {
     return ipcClient.notifications.send({
       ...request,
       correlation_id: request.correlation_id ?? null,
-    }, sessionToken);
+    });
   }
 
   static async testNotificationConfig(recipient: string, channel: 'Email' | 'Sms' | 'Push', sessionToken: string): Promise<string> {
-    return ipcClient.notifications.testConfig(recipient, channel, sessionToken);
+    return ipcClient.notifications.testConfig(recipient, channel);
   }
 
   static async getNotificationStatus(sessionToken: string): Promise<JsonValue> {
-    return ipcClient.notifications.getStatus(sessionToken);
+    return ipcClient.notifications.getStatus();
   }
 }
 

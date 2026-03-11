@@ -50,7 +50,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
   const editTaskMutation = useMutation({
     mutationFn: async (updates: Record<string, unknown>) => {
       if (!user?.token) throw new Error('User not authenticated');
-      return await ipcClient.tasks.editTask(task.id, updates as JsonObject, user.token);
+      return await ipcClient.tasks.editTask(task.id, updates as JsonObject);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });

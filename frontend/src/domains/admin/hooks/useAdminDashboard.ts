@@ -60,11 +60,11 @@ export function useAdminDashboard(): UseAdminDashboardReturn {
       if (!user?.token) return;
 
       try {
-        const rawStats = await ipcClient.dashboard.getStats(user.token);
+        const rawStats = await ipcClient.dashboard.getStats();
 
         const [healthCheck, dbStats] = await Promise.all([
           ipcClient.admin.healthCheck().catch(() => 'unknown'),
-          ipcClient.admin.getDatabaseStats(user.token).catch(() => ({ size_bytes: 0 })),
+          ipcClient.admin.getDatabaseStats().catch(() => ({ size_bytes: 0 })),
         ]);
 
         setDashboardStats(rawStats);
@@ -84,7 +84,7 @@ export function useAdminDashboard(): UseAdminDashboardReturn {
         });
 
         try {
-          const activitiesData = await ipcClient.notifications.getRecentActivities(user.token);
+          const activitiesData = await ipcClient.notifications.getRecentActivities();
           const mappedActivities: RecentActivity[] = (activitiesData as Record<string, unknown>[]).map((activity) => ({
             id: activity.id as string,
             type: activity.type as RecentActivity['type'],

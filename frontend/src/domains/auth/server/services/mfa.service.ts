@@ -54,7 +54,7 @@ export class MFAService {
 
   async setupMFA(sessionToken: string): Promise<MFASetupResponse> {
     try {
-      const result = await ipcClient.auth.enable2FA(sessionToken);
+      const result = await ipcClient.auth.enable2FA();
       const payload = extractMFASetupPayload(result);
       return {
         secret: payload.secret ?? '',
@@ -68,7 +68,7 @@ export class MFAService {
 
   async verifyMFA(request: MFAVerificationRequest, sessionToken: string): Promise<boolean> {
     try {
-      await ipcClient.auth.verify2FASetup(request.code, [], sessionToken);
+      await ipcClient.auth.verify2FASetup(request.code, []);
       return true;
     } catch {
       return false;
@@ -77,7 +77,7 @@ export class MFAService {
 
   async disableMFA(sessionToken: string, password: string): Promise<void> {
     try {
-      await ipcClient.auth.disable2FA(password, sessionToken);
+      await ipcClient.auth.disable2FA(password);
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to disable MFA');
     }
@@ -85,7 +85,7 @@ export class MFAService {
 
   async regenerateBackupCodes(sessionToken: string): Promise<string[]> {
     try {
-      const result = await ipcClient.auth.regenerateBackupCodes(sessionToken);
+      const result = await ipcClient.auth.regenerateBackupCodes();
       const payload = extractMFASetupPayload(result);
       return payload.backup_codes ?? [];
     } catch (error) {
@@ -95,7 +95,7 @@ export class MFAService {
 
   async setupTOTP(sessionToken: string): Promise<TOTPSetupResponse> {
     try {
-      const result = await ipcClient.auth.enable2FA(sessionToken);
+      const result = await ipcClient.auth.enable2FA();
       const payload = extractMFASetupPayload(result);
       return {
         success: true,

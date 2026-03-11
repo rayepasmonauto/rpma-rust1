@@ -30,7 +30,7 @@ const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChang
   const delayTaskMutation = useMutation({
     mutationFn: async ({ newDate, reason }: { newDate: string; reason: string }) => {
       if (!user?.token) throw new Error('User not authenticated');
-      return await ipcClient.tasks.delayTask(task.id, newDate, reason, user.token);
+      return await ipcClient.tasks.delayTask(task.id, newDate, reason);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });

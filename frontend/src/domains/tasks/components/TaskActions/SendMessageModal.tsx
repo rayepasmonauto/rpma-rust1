@@ -30,7 +30,7 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({ task, open, onOpenC
   const sendMessageMutation = useMutation({
     mutationFn: async ({ message, messageType }: { message: string; messageType: string }) => {
       if (!user?.token) throw new Error('User not authenticated');
-      return await ipcClient.tasks.sendTaskMessage(task.id, message, messageType, user.token);
+      return await ipcClient.tasks.sendTaskMessage(task.id, message, messageType);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });

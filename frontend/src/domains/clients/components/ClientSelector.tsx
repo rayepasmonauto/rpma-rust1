@@ -52,7 +52,7 @@ export function ClientSelector({
         search: query.trim() || undefined,
         sort_by: 'name',
         sort_order: 'asc',
-      }, session.token);
+      });
       setClients(Array.isArray(result.data) ? result.data : []);
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -82,7 +82,7 @@ export function ClientSelector({
       try {
         const session = await AuthSecureStorage.getSession();
         if (!session.token) return;
-        const client = await ipcClient.clients.get(value, session.token);
+        const client = await ipcClient.clients.get(value);
         if (cancelled) return;
         if (client) {
           setSelectedClientCache(client);

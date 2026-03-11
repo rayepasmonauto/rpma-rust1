@@ -17,7 +17,7 @@ export function TaskAttachments({ taskId }: TaskAttachmentsProps) {
     queryFn: async () => {
       if (!session?.token) return null;
       try {
-        const result = await ipcClient.interventions.getActiveByTask(taskId, session.token);
+        const result = await ipcClient.interventions.getActiveByTask(taskId);
         return result;
       } catch {
         return null;

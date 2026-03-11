@@ -40,7 +40,7 @@ export function TaskPhotos({ taskId, interventionId }: TaskPhotosProps) {
       if (!interventionId) {
         return [];
       }
-      return await ipcClient.photos.list(interventionId, user.token);
+      return await ipcClient.photos.list(interventionId);
     },
     enabled: !!user?.token && !!interventionId,
     staleTime: 2 * 60 * 1000,
@@ -78,8 +78,7 @@ export function TaskPhotos({ taskId, interventionId }: TaskPhotosProps) {
           mimeType: file.type || 'application/octet-stream',
           bytes: new Uint8Array(buffer),
         },
-        type.toLowerCase(),
-        user.token
+        type.toLowerCase()
       );
 
       toast({
@@ -120,7 +119,7 @@ export function TaskPhotos({ taskId, interventionId }: TaskPhotosProps) {
       if (!user?.token) {
         throw new Error('User not authenticated');
       }
-      return await ipcClient.photos.delete(photoId, user.token);
+      return await ipcClient.photos.delete(photoId);
     },
     onMutate: async (photoId: string) => {
       const queryKey = interventionId ? interventionKeys.photos(interventionId) : ['interventions', 'photos', taskId];

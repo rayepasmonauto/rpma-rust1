@@ -46,7 +46,7 @@ export class AuthService {
 
   static async logout(token: string): Promise<AuthResponse<void>> {
     try {
-      await ipcClient.auth.logout(token);
+      await ipcClient.auth.logout();
       return { success: true };
     } catch (error) {
       return {
@@ -58,7 +58,7 @@ export class AuthService {
 
   static async validateSession(token: string): Promise<AuthResponse<UserSession>> {
     try {
-      const data = await ipcClient.auth.validateSession(token);
+      const data = await ipcClient.auth.validateSession();
       return { success: true, data };
     } catch (error) {
       return {
@@ -75,7 +75,7 @@ export class AuthService {
   ): Promise<AuthResponse<UserSession>> {
     try {
       if (sessionToken) {
-        const data = await ipcClient.users.updateEmail(userId, newEmail, sessionToken) as UserSession;
+        const data = await ipcClient.users.updateEmail(userId, newEmail) as UserSession;
         return { success: true, data };
       }
       return { success: true };
@@ -94,7 +94,7 @@ export class AuthService {
   ): Promise<AuthResponse<void>> {
     try {
       if (sessionToken) {
-        await ipcClient.users.changePassword(userId, newPassword, sessionToken);
+        await ipcClient.users.changePassword(userId, newPassword);
       }
       return { success: true };
     } catch (error) {
@@ -108,7 +108,7 @@ export class AuthService {
   static async banUser(userId: string, sessionToken?: string): Promise<AuthResponse<void>> {
     try {
       if (sessionToken) {
-        await ipcClient.users.banUser(userId, sessionToken);
+        await ipcClient.users.banUser(userId);
       }
       return { success: true };
     } catch (error) {
@@ -122,7 +122,7 @@ export class AuthService {
   static async deleteUser(userId: string, sessionToken?: string): Promise<AuthResponse<void>> {
     try {
       if (sessionToken) {
-        await ipcClient.users.delete(userId, sessionToken);
+        await ipcClient.users.delete(userId);
       }
       return { success: true };
     } catch (error) {

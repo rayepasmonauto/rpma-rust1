@@ -42,9 +42,9 @@ export default function TaskManager() {
     try {
       setIsLoading(true);
       const [tasksResult, clientsResult, clientsResult2] = await Promise.all([
-        ipcClient.tasks.list({ page: 1, limit: 100, status: null, technician_id: null, client_id: null, priority: null, search: null, from_date: null, to_date: null, sort_by: "created_at", sort_order: "desc" }, user.token),
-        ipcClient.clients.list({ page: 1, limit: 100, sort_by: "created_at", sort_order: "desc" }, user.token),
-        ipcClient.clients.list({ page: 1, limit: 100, sort_by: "name", sort_order: "asc" }, user.token),
+        ipcClient.tasks.list({ page: 1, limit: 100, status: null, technician_id: null, client_id: null, priority: null, search: null, from_date: null, to_date: null, sort_by: "created_at", sort_order: "desc" }),
+        ipcClient.clients.list({ page: 1, limit: 100, sort_by: "created_at", sort_order: "desc" }),
+        ipcClient.clients.list({ page: 1, limit: 100, sort_by: "name", sort_order: "asc" }),
       ]);
 
       const tasksData = tasksResult;
@@ -120,7 +120,7 @@ export default function TaskManager() {
         tags: null,
       };
 
-      await ipcClient.tasks.create(taskData, user.token);
+      await ipcClient.tasks.create(taskData);
       toast.success('Tâche créée avec succès');
       setShowCreateForm(false);
       loadData();
@@ -173,7 +173,7 @@ export default function TaskManager() {
         technician_id: null
       };
 
-      await ipcClient.tasks.update(editingTask.id, updateData, user.token);
+      await ipcClient.tasks.update(editingTask.id, updateData);
       toast.success('Tâche mise à jour avec succès');
       setEditingTask(null);
       loadData();
@@ -197,7 +197,7 @@ export default function TaskManager() {
     if (!user?.token || !taskToDelete) return;
 
     try {
-      await ipcClient.tasks.delete(taskToDelete, user.token);
+      await ipcClient.tasks.delete(taskToDelete);
       toast.success('Tâche supprimée avec succès');
       loadData();
     } catch (error) {

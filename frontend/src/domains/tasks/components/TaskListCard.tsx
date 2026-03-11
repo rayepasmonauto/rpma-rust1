@@ -55,7 +55,7 @@ export const TaskListCard = React.memo(({
     if (!user?.token) return;
     queryClient.prefetchQuery({
       queryKey: taskKeys.byId(task.id),
-      queryFn: () => ipcClient.tasks.get(task.id, user.token),
+      queryFn: () => ipcClient.tasks.get(task.id),
       staleTime: 5 * 60 * 1000,
     });
   }, [queryClient, task.id, user?.token]);

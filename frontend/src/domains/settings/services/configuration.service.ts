@@ -403,7 +403,7 @@ export class ConfigurationService {
   static async getConfigurationHistory(_configurationType?: string, _configurationId?: string, _limit?: number): Promise<ServiceResponse<Configuration[]>> {
     try {
       const token = await this.getSessionToken();
-      const events = await ipcClient.audit.getEvents(_limit || 50, token);
+      const events = await ipcClient.audit.getEvents(_limit || 50);
 
       const allEvents = (Array.isArray(events) ? events : []) as Array<Record<string, unknown>>;
       const configEvents = allEvents

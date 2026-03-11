@@ -62,8 +62,8 @@ export function SecurityDashboard({ onRefresh: _onRefresh }: SecurityDashboardPr
       setError(null);
 
       const [metricsData, alertsData, sessionsData] = await Promise.all([
-        ipcClient.audit.getMetrics(user.token),
-        ipcClient.audit.getAlerts(user.token),
+        ipcClient.audit.getMetrics(),
+        ipcClient.audit.getAlerts(),
         ipcClient.settings.getActiveSessions(),
       ]);
 
@@ -87,7 +87,7 @@ export function SecurityDashboard({ onRefresh: _onRefresh }: SecurityDashboardPr
     if (!user?.token) return;
 
     try {
-      await ipcClient.audit.acknowledgeAlert(alertId, user.token);
+      await ipcClient.audit.acknowledgeAlert(alertId);
       toast.success('Alerte acquittée');
       loadSecurityData(); // Refresh data
     } catch (err) {
