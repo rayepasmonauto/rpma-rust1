@@ -8,6 +8,14 @@ import type {
   UserPerformanceSettings,
   UserProfileSettings,
 } from '@/lib/backend';
+import type {
+  UpdatePreferencesRequest,
+  UpdateNotificationsRequest,
+  UpdateAccessibilityRequest,
+  UpdatePerformanceRequest,
+  UpdateProfileRequest,
+  ChangePasswordRequest,
+} from '@/types/settings.types';
 import {
   DEFAULT_PREFERENCES,
   DEFAULT_ACCESSIBILITY,
@@ -15,29 +23,19 @@ import {
   DEFAULT_PERFORMANCE,
 } from './defaults';
 
+export type {
+  UpdatePreferencesRequest,
+  UpdateNotificationsRequest,
+  UpdateAccessibilityRequest,
+  UpdatePerformanceRequest,
+  UpdateProfileRequest,
+  ChangePasswordRequest,
+};
+
 export interface SettingsServiceResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
-}
-
-export type UpdatePreferencesRequest = Partial<UserPreferences>;
-export type UpdateNotificationsRequest = Partial<UserNotificationSettings>;
-export type UpdateAccessibilityRequest = Partial<UserAccessibilitySettings>;
-export type UpdatePerformanceRequest = Partial<UserPerformanceSettings>;
-export type UpdateProfileRequest = Partial<UserProfileSettings> & {
-  first_name?: string;
-  last_name?: string;
-  profile_picture?: string;
-};
-
-export interface ChangePasswordRequest {
-  current_password?: string;
-  new_password?: string;
-  confirm_password?: string;
-  currentPassword?: string;
-  newPassword?: string;
-  confirmPassword?: string;
 }
 
 function ok<T>(data: T): SettingsServiceResponse<T> {

@@ -1,11 +1,9 @@
 import { ipcClient } from '@/lib/ipc';
 import type { AuthResponse } from '@/types';
 import type { UserSession } from '@/lib/backend';
+import type { LoginCredentials } from '@/types/auth.types';
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
+export type { LoginCredentials };
 
 export interface SignupCredentials {
   email: string;

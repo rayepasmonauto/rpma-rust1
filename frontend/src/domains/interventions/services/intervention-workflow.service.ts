@@ -5,13 +5,9 @@ import { interventionsIpc } from '../ipc/interventions.ipc';
 import type { AdvanceStepRequest, FinalizeInterventionRequest, JsonValue, StartInterventionRequest } from '@/lib/backend';
 import type { PPFIntervention } from './ppf';
 import type { ListResponse } from '@/types/api';
-import type { PPFInterventionStep } from '@/types/ppf-intervention';
+import type { PPFInterventionStep, AdvanceStepDTO } from '@/types/ppf-intervention';
 
-export interface AdvanceStepDTO {
-  interventionId: string;
-  stepNumber: number;
-  collected_data?: Record<string, unknown>;
-}
+export type { AdvanceStepDTO };
 
 export class InterventionWorkflowService {
   private static notImplemented<T>(message: string): ApiResponse<T> {

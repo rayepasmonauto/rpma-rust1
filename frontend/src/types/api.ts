@@ -216,14 +216,3 @@ export interface UserSession {
 }
 
 export type UserRole = 'admin' | 'technician' | 'supervisor' | 'viewer' | 'manager';
-
-// Dashboard stats
-export interface DashboardStats {
-  totalTasks: number;
-  activeTasks: number;
-  completedTasks: number;
-  pendingTasks: number;
-  totalClients: number;
-  syncStatus: 'online' | 'offline' | 'syncing';
-  lastSync: string | null;
-}

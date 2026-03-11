@@ -78,7 +78,7 @@ export interface Task {
   technician?: Technician;
   execution?: TaskExecution;
   photos?: TaskPhoto[];
-  history?: TaskHistoryEntry[];
+  history?: TaskFieldChange[];
 }
 
 /**
@@ -467,9 +467,9 @@ export interface TechnicianPerformance {
 }
 
 /**
- * Entrée d'historique de tâche
+ * Entrée d'historique de champ (audit trail de modification de champ)
  */
-export interface TaskHistoryEntry {
+export interface TaskFieldChange {
   id: string;
   taskId: string;
   fieldName: string;
