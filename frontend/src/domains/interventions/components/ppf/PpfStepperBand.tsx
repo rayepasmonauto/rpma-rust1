@@ -3,6 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import type { StepType } from '@/lib/backend';
+import { PPF_STEP_CONFIG } from './ppfWorkflow.config';
 
 type StepItem = {
   id: StepType;
@@ -32,9 +33,12 @@ export function PpfStepperBand({
           const isActive = step.id === currentStepId;
           const isLocked = !isDone && !isActive && !canAccessStep(step.id);
           const previousStep = index > 0 ? steps[index - 1] : null;
+          const previousStepLabel = previousStep
+            ? (PPF_STEP_CONFIG[previousStep.id]?.label ?? previousStep.label)
+            : null;
           const lockReason = isLocked
             ? previousStep && previousStep.status !== 'completed'
-              ? `Complétez d'abord « ${previousStep.label} »`
+              ? `Complétez d'abord « ${previousStepLabel} »`
               : 'Étape verrouillée'
             : null;
           const circleClasses = cn(

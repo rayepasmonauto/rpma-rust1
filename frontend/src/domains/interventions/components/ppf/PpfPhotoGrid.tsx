@@ -56,10 +56,6 @@ function getFriendlyUploadErrorMessage(error: unknown): string {
   if (message.includes('format') || message.includes('mime') || message.includes('type')) {
     return "Format d'image non pris en charge. Utilisez une photo JPG ou PNG.";
   }
-  if (message.includes('network') || message.includes('offline')) {
-    return 'Téléversement indisponible hors ligne. Réessayez lorsque la connexion est rétablie.';
-  }
-
   return 'Impossible de téléverser les photos pour le moment. Veuillez réessayer.';
 }
 
