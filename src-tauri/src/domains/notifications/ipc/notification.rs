@@ -1,18 +1,21 @@
 //! Notification commands for Tauri
+//!
+//! Only in-app notifications are functional. Push/Email/SMS channels
+//! are not implemented — see the in-app notification and message
+//! sub-modules for the working notification surface.
 
 use crate::commands::{ApiResponse, AppError, AppState};
 use crate::resolve_context;
 use crate::domains::notifications::application::{
-    build_notification_config, SendNotificationRequest, UpdateNotificationConfigRequest,
+    SendNotificationRequest, UpdateNotificationConfigRequest,
 };
 use crate::domains::notifications::domain::models::notification::{
-    NotificationChannel, NotificationType, TemplateVariables,
+    NotificationChannel, NotificationConfig, NotificationType, TemplateVariables,
 };
 use crate::domains::notifications::infrastructure::notification::NotificationService;
 use lazy_static::lazy_static;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-// Conditional import removed
 use tracing::{error, info, instrument};
 
 lazy_static! {
@@ -20,7 +23,10 @@ lazy_static! {
         Arc::new(Mutex::new(None));
 }
 
-/// Initialize the notification service with configuration
+/// Initialize the notification service with configuration.
+///
+/// Currently only stores configuration; actual delivery is limited
+/// to in-app notifications.
 #[tauri::command]
 #[instrument(skip(config, state))]
 pub async fn initialize_notification_service(
@@ -29,21 +35,27 @@ pub async fn initialize_notification_service(
 ) -> Result<ApiResponse<()>, AppError> {
     let ctx = resolve_context!(&state, &config.correlation_id);
 
-    // Build config via application layer
-    let notification_config = build_notification_config(&config).map_err(|e| {
-        error!(error = %e, "Failed to build notification config");
-        AppError::Validation(e)
-    })?;
+    let notification_config = NotificationConfig {
+        email: None,
+        sms: None,
+        push_enabled: false,
+        quiet_hours_start: config.quiet_hours_start.clone(),
+        quiet_hours_end: config.quiet_hours_end.clone(),
+        timezone: config
+            .timezone
+            .clone()
+            .unwrap_or_else(|| "Europe/Paris".to_string()),
+    };
 
     let service = NotificationService::new(notification_config);
     let mut global_service = NOTIFICATION_SERVICE.lock().await;
     *global_service = Some(service);
 
-    info!("Notification service initialized");
+    info!("Notification service initialized (in-app only)");
     Ok(ApiResponse::success(()).with_correlation_id(Some(ctx.correlation_id)))
 }
 
-/// Send a notification
+/// Send a notification (in-app only).
 #[tauri::command]
 #[instrument(skip(state, request), fields(user_id = %request.user_id))]
 pub async fn send_notification(
@@ -73,7 +85,9 @@ pub async fn send_notification(
     Ok(ApiResponse::success(()).with_correlation_id(Some(ctx.correlation_id)))
 }
 
-/// Test notification configuration
+/// Test notification configuration.
+///
+/// Push/Email/SMS channels are not available — returns an error for those.
 #[tauri::command]
 #[instrument(skip(state))]
 pub async fn test_notification_config(
@@ -82,55 +96,18 @@ pub async fn test_notification_config(
     correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<String>, AppError> {
-    let ctx = resolve_context!(&state, &correlation_id);
+    let _ctx = resolve_context!(&state, &correlation_id);
 
-    let service_guard = NOTIFICATION_SERVICE.lock().await;
-    let service = service_guard.as_ref().ok_or(AppError::Configuration(
-        "Notification service not initialized".to_string(),
-    ))?;
-
-    let test_variables = TemplateVariables {
-        user_name: Some("Test User".to_string()),
-        task_title: Some("Test Task".to_string()),
-        task_id: Some("TEST-001".to_string()),
-        client_name: Some("Test Client".to_string()),
-        due_date: Some("2024-12-31".to_string()),
-        status: Some("Pending".to_string()),
-        priority: Some("High".to_string()),
-        assignee_name: Some("Test Assignee".to_string()),
-        system_message: Some("This is a test notification".to_string()),
-    };
-
-    let notification_type = match channel {
-        NotificationChannel::Email => NotificationType::SystemAlert,
-        NotificationChannel::Sms => NotificationType::SystemAlert,
-        NotificationChannel::Push => {
-            return Err(AppError::NotImplemented(
-                "Push notifications not implemented yet".to_string(),
+    match channel {
+        NotificationChannel::Email | NotificationChannel::Sms | NotificationChannel::Push => {
+            Err(AppError::NotImplemented(
+                "Only in-app notifications are available. Email/SMS/Push channels are not implemented.".to_string(),
             ))
         }
-    };
-
-    service
-        .send_notification(
-            "test-user".to_string(),
-            notification_type,
-            recipient,
-            test_variables,
-        )
-        .await
-        .map_err(|e| {
-            error!(error = %e, "Failed to send test notification");
-            AppError::Internal(e)
-        })?;
-
-    Ok(
-        ApiResponse::success("Test notification sent successfully".to_string())
-            .with_correlation_id(Some(ctx.correlation_id)),
-    )
+    }
 }
 
-/// Get notification service status
+/// Get notification service status.
 #[tauri::command]
 #[instrument(skip(state))]
 pub async fn get_notification_status(
@@ -140,18 +117,13 @@ pub async fn get_notification_status(
     let ctx = resolve_context!(&state, &correlation_id);
 
     let service_guard = NOTIFICATION_SERVICE.lock().await;
-    let _is_initialized = service_guard.is_some();
 
-    let config = if let Some(service) = service_guard.as_ref() {
-        let config = service.get_config().await;
+    let config = if service_guard.is_some() {
         serde_json::json!({
             "initialized": true,
-            "email_configured": config.email.is_some(),
-            "sms_configured": config.sms.is_some(),
-            "push_enabled": config.push_enabled,
-            "quiet_hours_start": config.quiet_hours_start,
-            "quiet_hours_end": config.quiet_hours_end,
-            "timezone": config.timezone
+            "email_configured": false,
+            "sms_configured": false,
+            "push_enabled": false,
         })
     } else {
         serde_json::json!({

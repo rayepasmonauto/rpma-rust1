@@ -14,9 +14,10 @@ pub struct GeneralSettings {
     pub currency: String,
 }
 
-/// TODO: document
+/// Security configuration.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct SecuritySettings {
+    /// NOT IMPLEMENTED — planned for v3, has no effect.
     pub two_factor_enabled: bool,
     pub session_timeout: u32, // minutes
     pub password_min_length: u8,
