@@ -4,13 +4,14 @@
 Accepted
 
 ## Context
-Frequent database queries for stable entities (e.g., categories, users, settings) can impact responsiveness. An in-memory caching layer is required to minimize database I/O for read-heavy workloads.
+Frequent database queries for stable entities (e.g., categories, users, settings) can impact responsiveness. An in-memory caching layer is required to minimize database I/O for read-heavy workloads while staying within the broader resource limits of the desktop environment.
 
 ## Decision
 
 ### Cache Implementation
 - A centralized, thread-safe `Cache` utility (`src-tauri/src/shared/repositories/cache.rs`) provides in-memory storage with LRU eviction.
 - Caching is applied at the **Infrastructure Layer** (Repositories).
+- This repository-specific cache is a subset of the broader application-wide memory management system.
 
 ### TTL and Invalidation Policy
 - **TTL Tiers**: `SHORT` (1m), `MEDIUM` (5m), `LONG` (15m).
@@ -26,3 +27,4 @@ Frequent database queries for stable entities (e.g., categories, users, settings
 - Reduced CPU and I/O overhead for frequent UI refresh cycles.
 - Improved responsiveness for dashboard and list views.
 - Cache consistency is maintained through explicit invalidation on writes.
+
