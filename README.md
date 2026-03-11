@@ -34,7 +34,6 @@ Ce logiciel est **propriétaire**. Tous droits réservés — [Raye Pas Mon Auto
 
 <div align="center">
 
-**RPMA v2** — La solution de gestion PPF moderne, offline-first et sécurisée  
-au service du réseau [Raye Pas Mon Auto](https://www.rayepasmonauto.com/) · ✉️ [Rayepasmonauto@gmail.com](mailto:Rayepasmonauto@gmail.com)
+**RPMA** — La solution de gestion PPF moderne, offline-first et sécurisée [Raye Pas Mon Auto](https://www.rayepasmonauto.com/) · ✉️ [Rayepasmonauto@gmail.com](mailto:Rayepasmonauto@gmail.com)
 
 </div>
