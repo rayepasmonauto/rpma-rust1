@@ -1,16 +1,16 @@
 ﻿import React, { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { TaskWithDetails } from '@/lib/backend';
+import { ipcClient } from '@/lib/ipc';
+import enhancedToast from '@/lib/enhanced-toast';
+import { taskKeys } from '@/lib/query-keys';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { TaskWithDetails } from '@/lib/backend';
-import { useAuth } from '@/domains/auth';
-import { ipcClient } from '@/lib/ipc';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { InlineLoading } from '@/components/ui/loading';
-import enhancedToast from '@/lib/enhanced-toast';
-import { taskKeys } from '@/lib/query-keys';
+import { useAuth } from '@/domains/auth';
 
 interface DelayTaskModalProps {
   task: TaskWithDetails;
@@ -30,7 +30,7 @@ const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChang
   const delayTaskMutation = useMutation({
     mutationFn: async ({ newDate, reason }: { newDate: string; reason: string }) => {
       if (!user?.token) throw new Error('User not authenticated');
-      return await ipcClient.tasks.delayTask(task.id, newDate, reason, user.token);
+      return await ipcClient.tasks.delayTask(task.id, newDate, reason);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });

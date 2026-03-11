@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { ChecklistView } from './TaskInfo/ChecklistView';
-import { ChecklistItem } from '@/types/task.types';
 import { TaskStatus } from '@/lib/backend';
+import { ChecklistItem } from '@/types/task.types';
+import { ChecklistView } from './TaskInfo/ChecklistView';
 
 export interface TaskChecklistProps {
   items?: ChecklistItem[];

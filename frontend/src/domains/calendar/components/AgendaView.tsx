@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { getCalendarTaskLabel } from './TaskCard';
 import type { CalendarTask } from '@/lib/backend';
+import { getCalendarTaskLabel } from './TaskCard';
 
 interface AgendaViewProps {
   tasks: CalendarTask[];

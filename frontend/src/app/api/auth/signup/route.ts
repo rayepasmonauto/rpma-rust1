@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { userService } from '@/domains/users/server';
-import { createLogger, LogContext } from '@/lib/logger';
 import { z } from 'zod';
+import { createLogger, LogContext } from '@/lib/logger';
+import { userService } from '@/domains/users/server';
 
 const logger = createLogger('AuthSignup');
 

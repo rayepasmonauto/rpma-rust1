@@ -1,8 +1,8 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { configurationService } from '@/domains/admin/server';
 import type { UserRole } from '@/lib/backend';
 import { getAuthenticatedUser } from '@/lib/api-auth';
+import { configurationService } from '@/domains/admin/server';
 
 type UserProfile = {
   role: UserRole;

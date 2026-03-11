@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { validateApiAuth } from '@/lib/api-auth';
-import { z } from 'zod';
 import type { Database as _Database, Json } from '@/types/database.types';
 
 // Zod schema for performance config validation

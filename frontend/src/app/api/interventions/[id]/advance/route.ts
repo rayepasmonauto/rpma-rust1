@@ -7,14 +7,15 @@
 
 
  import { NextResponse } from 'next/server';
-
- export const dynamic = 'force-dynamic';
 import { z } from 'zod';
-import { interventionWorkflowService } from '@/domains/interventions/server';
-import type { AdvanceStepDTO } from '@/types/ppf-intervention';
+
 import { handleApiError } from '@/lib/api-error';
 import { ApiResponseFactory, HttpStatus } from '@/lib/http-status';
 import type { AdvanceStepRequest } from '@/lib/backend';
+import type { AdvanceStepDTO } from '@/types/ppf-intervention';
+import { interventionWorkflowService } from '@/domains/interventions/server';
+
+export const dynamic = 'force-dynamic';
 
 // Schï¿½ma de validation pour avancer une ï¿½tape - redï¿½fini pour ï¿½viter le bug
 const AdvanceStepSchema = z.object({
@@ -92,7 +93,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       ));
     }
 
-    const sessionToken = authHeader.replace('Bearer ', '');
+    const _sessionToken = authHeader.replace('Bearer ', '');
 
     // 4. Validation de l'existence de l'intervention
     const workflowService = interventionWorkflowService;

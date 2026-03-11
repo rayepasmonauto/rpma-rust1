@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Droplets, Thermometer } from 'lucide-react';
+import type { StepType } from '@/lib/backend';
 import {
   PpfChecklist,
   PpfDefectsPanel,
@@ -14,7 +15,6 @@ import {
   getPPFStepPath,
   usePpfWorkflow,
 } from '@/domains/interventions';
-import type { StepType } from '@/lib/backend';
 import type { Defect } from '@/domains/interventions';
 import { buildStepExportPayload, downloadJsonFile, getEffectiveStepData } from '@/domains/interventions';
 

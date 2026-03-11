@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/domains/auth';
-import { clientService, type ClientStats } from '../services';
 import { useMutationCounter } from '@/lib/data-freshness';
 import type { ClientWithTasks, CustomerType } from '@/lib/backend';
-import { useLogger } from '@/shared/hooks/useLogger';
 import { LogDomain } from '@/lib/logging/types';
+import { useLogger } from '@/shared/hooks/useLogger';
 import { normalizeError } from '@/types/utility.types';
+import { useAuth } from '@/domains/auth';
+import { clientService, type ClientStats } from '../services';
 
 export interface ClientFilters {
   search?: string;

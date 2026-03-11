@@ -1,6 +1,6 @@
 ﻿ import { NextResponse } from 'next/server';
- import { configurationService } from '@/domains/admin/server';
  import { withAuth } from '@/lib/middleware/auth.middleware';
+ import { configurationService } from '@/domains/admin/server';
 
  export const dynamic = 'force-dynamic';
 

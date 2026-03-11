@@ -93,8 +93,8 @@ export class ChangeLogService {
 
   async getChangeLogs(filters?: ChangeLogFilters): Promise<ChangeLogWithUser[]> {
     try {
-      const token = await this.getSessionToken();
-      const events = await ipcClient.audit.getEvents(100, token);
+      const _token = await this.getSessionToken();
+      const events = await ipcClient.audit.getEvents(100);
 
       const allEvents = (Array.isArray(events) ? events : []) as Array<Record<string, unknown>>;
 

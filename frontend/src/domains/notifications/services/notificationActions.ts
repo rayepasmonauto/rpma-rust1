@@ -1,5 +1,5 @@
-import { notificationApi } from '@/lib/ipc/notification';
 import { toast } from 'sonner';
+import { notificationApi } from '@/lib/ipc/notification';
 
 export async function getNotifications() {
   try {

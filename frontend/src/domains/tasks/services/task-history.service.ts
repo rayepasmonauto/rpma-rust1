@@ -53,10 +53,10 @@ export class TaskHistoryService {
     actionType?: string;
   } = {}): Promise<{ history: TaskHistoryEntry[]; totalCount: number; hasMore: boolean }> {
     try {
-      const token = await TaskHistoryService.getSessionToken();
+      const _token = await TaskHistoryService.getSessionToken();
 
       // Use security events as audit trail for task history
-      const events = await ipcClient.audit.getEvents(100, token);
+      const events = await ipcClient.audit.getEvents(100);
       const allEvents = (Array.isArray(events) ? events : []) as Array<Record<string, unknown>>;
 
       let history = allEvents
@@ -77,7 +77,7 @@ export class TaskHistoryService {
 
       // If filtering by taskId but no events found, try to build history from task data
       if (filters.taskId && history.length === 0) {
-        const task = await ipcClient.tasks.get(filters.taskId, token);
+        const task = await ipcClient.tasks.get(filters.taskId);
         if (task) {
           const raw = task as unknown as Record<string, unknown>;
           history = [{

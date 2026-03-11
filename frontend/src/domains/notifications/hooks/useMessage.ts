@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { messageApi } from '@/lib/ipc/message';
-import { useAuth } from '@/domains/auth';
 import type {
   Message,
   MessageQuery,
@@ -10,10 +10,10 @@ import type {
   SendMessageRequest,
   UpdateNotificationPreferencesRequest
 } from '@/lib/backend';
-import { toast } from 'sonner';
+import { useAuth } from '@/domains/auth';
 
 export function useMessage() {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function useMessage() {
       toast.error(message);
       return { success: false, error: message };
     }
-  }, [user?.token]);
+  }, []);
 
   const fetchMessages = useCallback(async (query: MessageQuery = {
     message_type: null,
@@ -60,7 +60,7 @@ export function useMessage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.token]);
+  }, []);
 
   const markAsRead = useCallback(async (messageId: string) => {
     try {
@@ -76,7 +76,7 @@ export function useMessage() {
       const message = err instanceof Error ? err.message : 'Failed to mark message as read';
       toast.error(message);
     }
-  }, [user?.token]);
+  }, []);
 
   return {
     messages,
@@ -91,7 +91,7 @@ export function useMessage() {
 }
 
 export function useMessageTemplates() {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -112,7 +112,7 @@ export function useMessageTemplates() {
     } finally {
       setLoading(false);
     }
-  }, [user?.token]);
+  }, []);
 
   useEffect(() => {
     fetchTemplates();
@@ -127,7 +127,7 @@ export function useMessageTemplates() {
 }
 
 export function useNotificationPreferences(userId?: string) {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -145,7 +145,7 @@ export function useNotificationPreferences(userId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [user?.token]);
+  }, []);
 
   const updatePreferences = useCallback(async (
     uid: string,
@@ -161,7 +161,7 @@ export function useNotificationPreferences(userId?: string) {
       toast.error(message);
       return { success: false, error: message };
     }
-  }, [user?.token]);
+  }, []);
 
   useEffect(() => {
     if (userId) {

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '../api/useAuth';
 import { createLogger } from '@/shared/utils';
+import { useAuth } from '../api/useAuth';
 
 const logger = createLogger('useLoginForm');
 

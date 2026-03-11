@@ -56,7 +56,7 @@ export class TaskApiService {
         sort_by: filters.sort_by,
         sort_order: filters.sort_order,
         technician_id: filters.technician_id
-      }, session.token);
+      });
 
       const response: PaginatedResponse<TaskWithDetails> = {
         data: result.data || [],
@@ -112,7 +112,7 @@ export class TaskApiService {
         technician_id: updates.technician_id ?? null,
       };
 
-      const updatedTask = await ipcClient.tasks.update(id, updateData, session.token);
+      const updatedTask = await ipcClient.tasks.update(id, updateData);
       return { data: updatedTask };
     } catch (error) {
       return { error: error as Error };
@@ -126,7 +126,7 @@ export class TaskApiService {
         return { error: new Error('Authentication required') };
       }
 
-      await ipcClient.tasks.delete(id, session.token);
+      await ipcClient.tasks.delete(id);
       return { data: undefined };
     } catch (error) {
       return { error: error as Error };

@@ -4,13 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { ChevronRight, MessageSquare, Users, Package, Workflow, Settings, Activity, Trash2, X, LogOut, User, Shield, HelpCircle, Building2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/domains/auth';
-import { useOrganization } from '@/domains/organizations';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useAuth } from '@/domains/auth';
+import { useOrganization } from '@/domains/organizations';
 
 interface NavItem {
   href?: string;

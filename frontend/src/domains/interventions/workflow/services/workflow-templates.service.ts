@@ -3,30 +3,9 @@
  * Manages SOP templates and workflow definitions
  */
 
-export interface SOPTemplate {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  steps: SOPStep[];
-  estimatedDuration: number;
-  requiredSkills: string[];
-  createdAt: string;
-  updatedAt: string;
-}
+import type { SOPTemplate, SOPStep } from '@/types/task.types';
 
-export interface SOPStep {
-  id: string;
-  templateId: string;
-  stepNumber: number;
-  title: string;
-  description: string;
-  instructions: string;
-  estimatedDuration: number;
-  requiredPhotos: number;
-  qualityCheckpoints: string[];
-  isMandatory: boolean;
-}
+export type { SOPTemplate, SOPStep };
 
 export interface SOPInstruction {
   id: string;

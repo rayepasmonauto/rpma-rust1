@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { toast } from 'sonner';
-import { mfaService } from '../server';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { mfaService } from '../server';
 
 interface TOTPSetupProps {
   sessionToken: string;

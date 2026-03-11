@@ -13,6 +13,16 @@ Roles follow a strict linear hierarchy: `Admin > Supervisor > Technician > Viewe
 - `AuthMiddleware::has_permission` implements this comparison.
 - Higher roles inherit all permissions of lower roles.
 
+### Functional RBAC Policies
+- **Task Management**:
+  - `Admin` and `Supervisor` roles can manage all tasks and assignments.
+  - `Technician` can only view and modify tasks **explicitly assigned** to them.
+  - `Technician` is restricted from modifying administrative fields (e.g., `title`, `priority`, `client_id`, `vehicle_vin`) and can only update operational fields (e.g., `status`, `notes`, `actual_duration`).
+  - `Viewer` has read-only access to task information.
+- **Settings Management**:
+  - `AppSettings` and `SystemConfig` are restricted to the `Admin` role.
+  - Users can manage their own `Profile`, `Preferences`, and `Security` settings regardless of role.
+
 ### Enforcement Mechanism
 - All protected IPC commands require a valid `session_token`.
 - `AuthMiddleware::authenticate_command` validates the token and extracts the `UserSession`.
@@ -32,3 +42,4 @@ Roles follow a strict linear hierarchy: `Admin > Supervisor > Technician > Viewe
 - Unauthorized access is blocked at the IPC entry point.
 - The hierarchy simplifies permission management by avoiding complex many-to-many role-permission mappings.
 - Security consistency is verified automatically by CI scripts.
+- Data integrity is preserved by restricting field-level modifications based on operational roles.

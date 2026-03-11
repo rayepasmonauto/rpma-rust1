@@ -1,11 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Progress } from '@/components/ui/progress';
-import { Badge, type BadgeProps } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Material } from '@/shared/types';
 import { 
   AlertTriangle, 
   CheckCircle, 
@@ -13,6 +8,11 @@ import {
   TrendingUp,
   Minus
 } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Material } from '@/shared/types';
 
 interface StockLevelIndicatorProps {
   material: Material;

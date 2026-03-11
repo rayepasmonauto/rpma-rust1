@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
-import * as React from 'react';
 import { webcrypto } from 'crypto';
 import { TextDecoder, TextEncoder } from 'util';
+import * as React from 'react';
 
 // Web crypto polyfill for tests
 if (typeof global.crypto === 'undefined') {

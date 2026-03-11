@@ -1,7 +1,7 @@
 'use client';
 
-import { ReportPreviewStepCard } from './ReportPreviewStepCard';
 import type { ReportStepViewModel } from '../../services/report-view-model.types';
+import { ReportPreviewStepCard } from './ReportPreviewStepCard';
 
 interface ReportPreviewStepsListProps {
   steps: ReportStepViewModel[];

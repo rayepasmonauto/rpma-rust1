@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { useAuth } from '@/domains/auth';
 import { ipcClient, convertTimestamps } from '@/shared/utils';
 import type { CreateUserRequest, UserAccount } from '@/shared/types';
+import { useAuth } from '@/domains/auth';
 
 export interface UseAdminUserManagementReturn {
   users: UserAccount[];
@@ -38,7 +38,7 @@ export function useAdminUserManagement(): UseAdminUserManagementReturn {
 
     try {
       setIsLoading(true);
-      const result = await ipcClient.users.list(50, 0, user.token);
+      const result = await ipcClient.users.list(50, 0);
       if (result && result.data) {
         const normalizedUsers = (result.data || []).map(u => convertTimestamps(u));
         setUsers(normalizedUsers as UserAccount[]);
@@ -54,7 +54,7 @@ export function useAdminUserManagement(): UseAdminUserManagementReturn {
     if (!user?.token) return;
 
     try {
-      await ipcClient.users.create(userData, user.token);
+      await ipcClient.users.create(userData);
       setShowAddModal(false);
       loadUsers();
     } catch (error) {
@@ -70,7 +70,7 @@ export function useAdminUserManagement(): UseAdminUserManagementReturn {
     }
 
     try {
-      await ipcClient.users.delete(userId, user.token);
+      await ipcClient.users.delete(userId);
       loadUsers();
     } catch (error) {
       console.error('Failed to delete user:', error);
@@ -82,9 +82,9 @@ export function useAdminUserManagement(): UseAdminUserManagementReturn {
 
     try {
       if (isActive) {
-        await ipcClient.users.unbanUser(userId, user.token);
+        await ipcClient.users.unbanUser(userId);
       } else {
-        await ipcClient.users.banUser(userId, user.token);
+        await ipcClient.users.banUser(userId);
       }
       loadUsers();
     } catch (error) {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
 import { Thermometer, Droplets, Ruler, CheckCircle, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type WorkflowHeaderBandProps = {
   stepLabel: string;

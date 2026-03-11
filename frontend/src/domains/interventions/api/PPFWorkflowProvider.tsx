@@ -4,10 +4,10 @@ import React, { createContext, useContext, useMemo, useCallback, ReactNode } fro
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ipcClient } from '@/lib/ipc';
-import { useAuth } from '@/domains/auth';
 import { interventionKeys } from '@/lib/query-keys';
 import type { Intervention, InterventionStep, Task } from '@/lib/backend';
 import type { StepType } from '@/lib/StepType';
+import { useAuth } from '@/domains/auth';
 import { buildPPFStepsFromData, getCurrentPPFStepId } from '../utils/ppf-workflow';
 import { interventionsIpc } from '../ipc/interventions.ipc';
 
@@ -253,7 +253,7 @@ export function PPFWorkflowProvider({ taskId, children }: PPFWorkflowProviderPro
     queryKey: ['task', taskId],
     queryFn: async (): Promise<Task | null> => {
       if (!session?.token || !taskId) return null;
-      const result = await ipcClient.tasks.get(taskId, session.token);
+      const result = await ipcClient.tasks.get(taskId);
       return result as Task;
     },
     enabled: !!session?.token && !!taskId,

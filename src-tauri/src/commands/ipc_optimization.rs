@@ -12,7 +12,7 @@ use crate::commands::streaming::{
 use crate::commands::AppResult;
 use crate::commands::{AppState, UserRole};
 use crate::domains::sync::domain::stream_policy::estimate_total_chunks;
-use crate::shared::ipc::AuthGuard;
+use crate::resolve_context;
 use base64::{engine::general_purpose, Engine as _};
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
@@ -96,7 +96,7 @@ pub async fn compress_data_for_ipc(
     request: CompressDataRequest,
     correlation_id: Option<String>,
 ) -> AppResult<CompressDataResponse> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Technician, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Technician);
     let config = CompressionConfig {
         min_size: request.min_size.unwrap_or(1024),
         ..Default::default()
@@ -134,7 +134,7 @@ pub async fn decompress_data_from_ipc(
     request: DecompressDataRequest,
     correlation_id: Option<String>,
 ) -> AppResult<serde_json::Value> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Technician, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Technician);
     let data: serde_json::Value = decompress_json(&request.compressed)
         .map_err(|e| crate::commands::AppError::Internal(format!("Decompression failed: {}", e)))?;
 
@@ -149,7 +149,7 @@ pub async fn start_stream_transfer(
     request: StartStreamRequest,
     correlation_id: Option<String>,
 ) -> AppResult<StartStreamResponse> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Technician, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Technician);
     let mut manager = STREAM_MANAGER.lock().await;
 
     let chunk_size = request
@@ -187,7 +187,7 @@ pub async fn send_stream_chunk(
     request: SendStreamChunkRequest,
     correlation_id: Option<String>,
 ) -> AppResult<SendStreamChunkResponse> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Technician, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Technician);
     let manager = STREAM_MANAGER.lock().await;
 
     let completed = manager
@@ -212,7 +212,7 @@ pub async fn get_stream_data(
     request: GetStreamDataRequest,
     correlation_id: Option<String>,
 ) -> AppResult<GetStreamDataResponse> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Technician, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Technician);
     let mut manager = STREAM_MANAGER.lock().await;
 
     let is_complete = manager
@@ -249,7 +249,7 @@ pub async fn get_ipc_stats(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> AppResult<serde_json::Value> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Technician, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Technician);
     // Return mock stats for now - in production you'd track real metrics
     let stats = serde_json::json!({
         "compression": {

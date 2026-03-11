@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { CreateQuoteItemRequest, QuoteItemKind } from '@/shared/types';
 import { useToast } from '@/components/ui/use-toast';
+import type { ConvertQuoteToTaskResponse } from '@/types/quote.types';
 import { useAuth } from '@/domains/auth';
 import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
 import {
@@ -14,7 +15,6 @@ import {
   useQuoteItems,
   useQuoteStatus,
 } from './useQuotes';
-import type { ConvertQuoteToTaskResponse } from '@/types/quote.types';
 
 export type ActiveTab = 'details' | 'items' | 'images' | 'documents' | 'history';
 

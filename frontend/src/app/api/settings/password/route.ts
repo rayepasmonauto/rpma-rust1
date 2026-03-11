@@ -1,5 +1,5 @@
-﻿import { settingsService } from '@/domains/settings/server';
-import { withAuth, NextRequestWithUser } from '@/lib/middleware/auth.middleware';
+﻿import { withAuth, NextRequestWithUser } from '@/lib/middleware/auth.middleware';
+import { settingsService } from '@/domains/settings/server';
 import { settingsError, settingsSuccess } from '../_shared';
 
 export const PUT = withAuth(async (request: NextRequestWithUser) => {

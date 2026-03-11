@@ -1,10 +1,10 @@
 ﻿import React from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { toast } from 'sonner';
+import { AuthSecureStorage, SecureStorage } from '@/lib/secureStorage';
 import { AuthProvider } from '../api/AuthProvider';
 import { useAuth } from '../api/useAuth';
 import { authIpc } from '../ipc/auth.ipc';
-import { AuthSecureStorage, SecureStorage } from '@/lib/secureStorage';
-import { toast } from 'sonner';
 
 jest.mock('../ipc/auth.ipc', () => ({
   authIpc: {

@@ -16,6 +16,7 @@ pub use crate::domains::interventions::infrastructure::intervention::Interventio
 // Client domain
 pub use crate::domains::clients::infrastructure::client::ClientService;
 pub use crate::domains::clients::infrastructure::client::ClientStat;
+pub use crate::domains::clients::domain::models::client::{CreateClientRequest, CustomerType};
 
 // Settings domain
 pub use crate::domains::settings::infrastructure::settings::SettingsService;
@@ -28,6 +29,10 @@ pub use crate::domains::tasks::infrastructure::task::TaskService;
 
 // Auth domain
 pub use crate::domains::auth::infrastructure::auth::AuthService;
+pub use crate::shared::contracts::auth::UserRole;
+pub use crate::domains::audit::infrastructure::audit_service::{
+    ActionResult, AuditEventType, AuditService,
+};
 
 // --- Cross-domain shared types ---
 // Client types
@@ -44,6 +49,23 @@ pub use crate::domains::interventions::domain::models::step::{InterventionStep, 
 
 // Inventory types
 pub use crate::domains::inventory::domain::models::material::MaterialConsumption;
+pub use crate::domains::inventory::infrastructure::material::{
+    CreateMaterialRequest, MaterialService, RecordConsumptionRequest, UpdateStockRequest,
+};
+pub use crate::domains::inventory::domain::models::material::{MaterialType, UnitOfMeasure};
 
 // Task types
 pub use crate::domains::tasks::domain::models::task::{PaginationInfo, SortOrder, Task, TaskQuery};
+pub use crate::domains::tasks::domain::models::task::{CreateTaskRequest, TaskStatus};
+
+// Intervention requests
+pub use crate::domains::interventions::infrastructure::intervention::{
+    AdvanceStepRequest, FinalizeInterventionRequest, StartInterventionRequest,
+};
+
+// Quote services and models
+pub use crate::domains::quotes::QuotesFacade;
+pub use crate::domains::quotes::infrastructure::quote::QuoteService;
+pub use crate::domains::quotes::domain::models::quote::{
+    CreateQuoteItemRequest, CreateQuoteRequest, QuoteItemKind, QuoteStatus,
+};

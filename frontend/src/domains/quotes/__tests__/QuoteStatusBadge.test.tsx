@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { QuoteStatusBadge, STATUS_LABELS } from '../components/QuoteStatusBadge';
 import type { QuoteStatus } from '@/types/quote.types';
+import { QuoteStatusBadge, STATUS_LABELS } from '../components/QuoteStatusBadge';
 
 jest.mock('lucide-react', () => ({
   FileText: ({ className }: { className?: string }) => (

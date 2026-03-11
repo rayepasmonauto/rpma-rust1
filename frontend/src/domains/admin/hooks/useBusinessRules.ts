@@ -2,11 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useLogger } from '@/shared/hooks/useLogger';
-import { LogDomain } from '@/shared/utils';
-import { useAuth } from '@/domains/auth';
-import { settingsOperations } from '@/shared/utils';
-import type { JsonValue } from '@/shared/types';
 import {
   AlertTriangle,
   CheckCircle,
@@ -15,7 +10,12 @@ import {
   Target,
   Bell,
 } from 'lucide-react';
+import { useLogger } from '@/shared/hooks/useLogger';
+import { LogDomain } from '@/shared/utils';
+import { settingsOperations } from '@/shared/utils';
+import type { JsonValue } from '@/shared/types';
 import type { BusinessRule, RuleCondition, RuleAction, BusinessRuleCategory } from '@/shared/types';
+import { useAuth } from '@/domains/auth';
 
 export function useBusinessRules() {
   const [businessRules, setBusinessRules] = useState<BusinessRule[]>([]);
@@ -50,7 +50,7 @@ export function useBusinessRules() {
     const timer = logPerformance('Load business rules');
     try {
       setLoading(true);
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const data = await settingsOperations.getAppSettings();
       const appSettings = data as Record<string, JsonValue>;
       const rules = (appSettings?.business_rules || []) as unknown as BusinessRule[];
@@ -99,7 +99,7 @@ export function useBusinessRules() {
   const saveRule = async () => {
     setSaving(true);
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const newRule: BusinessRule = {
         id: editingRule?.id || crypto.randomUUID(),
         name: formData.name,
@@ -142,7 +142,7 @@ export function useBusinessRules() {
   const deleteRule = async () => {
     if (!ruleToDelete) return;
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const updatedRules = businessRules.filter((rule) => rule.id !== ruleToDelete.id);
       await settingsOperations.updateBusinessRules(
         updatedRules as unknown as JsonValue[]);
@@ -159,7 +159,7 @@ export function useBusinessRules() {
 
   const toggleRuleStatus = async (id: string, isActive: boolean) => {
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const updatedRules = businessRules.map((rule) =>
         rule.id === id ? { ...rule, is_active: !isActive, isActive: !isActive } : rule
       );

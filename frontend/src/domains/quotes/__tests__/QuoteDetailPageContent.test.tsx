@@ -1,8 +1,8 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { Quote } from '@/types/quote.types';
 import { QuoteDetailPageContent } from '../components/QuoteDetailPageContent';
 import { useQuoteDetailPage } from '../hooks/useQuoteDetailPage';
-import type { Quote } from '@/types/quote.types';
 
 jest.mock('../hooks/useQuoteDetailPage');
 jest.mock('../components/QuoteWorkflowPanel', () => ({

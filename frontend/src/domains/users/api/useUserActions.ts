@@ -1,20 +1,13 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useAuth } from '@/domains/auth';
 import { ipcClient } from '@/lib/ipc';
 import type { UpdateUserRequest, UserAccount } from '@/lib/backend';
+import { useAuth } from '@/domains/auth';
 import type { UseUserActionsResult } from './types';
 
 export function useUserActions(): UseUserActionsResult {
   const { user } = useAuth();
-
-  const withToken = useCallback(async <T>(fn: (token: string) => Promise<T>): Promise<T | null> => {
-    if (!user?.token) {
-      return null;
-    }
-    return fn(user.token);
-  }, [user?.token]);
 
   const createUser = useCallback(
     async (payload: {
@@ -24,43 +17,45 @@ export function useUserActions(): UseUserActionsResult {
       role: string;
       password: string;
     }) => {
-      const response = await withToken((token) => ipcClient.users.create(payload, token));
+      if (!user?.token) return false;
+      const response = await ipcClient.users.create(payload);
       return response !== null;
     },
-    [withToken]
+    [user?.token]
   );
 
   const updateUser = useCallback(
     async (id: string, updates: Partial<UserAccount>) => {
-      const response = await withToken((token) =>
-        ipcClient.users.update(id, updates as unknown as UpdateUserRequest, token)
-      );
+      if (!user?.token) return false;
+      const response = await ipcClient.users.update(id, updates as unknown as UpdateUserRequest);
       return response !== null;
     },
-    [withToken]
+    [user?.token]
   );
 
   const deleteUser = useCallback(async (id: string) => {
-    const response = await withToken((token) => ipcClient.users.delete(id, token));
+    if (!user?.token) return false;
+    const response = await ipcClient.users.delete(id);
     return response !== null;
-  }, [withToken]);
+  }, [user?.token]);
 
   const banUser = useCallback(async (id: string) => {
-    const response = await withToken((token) => ipcClient.users.banUser(id, token));
+    if (!user?.token) return false;
+    const response = await ipcClient.users.unbanUser(id);
     return response !== null;
-  }, [withToken]);
+  }, [user?.token]);
 
   const unbanUser = useCallback(async (id: string) => {
-    const response = await withToken((token) => ipcClient.users.unbanUser(id, token));
+    if (!user?.token) return false;
+    const response = await ipcClient.users.unbanUser(id);
     return response !== null;
-  }, [withToken]);
+  }, [user?.token]);
 
   const changeRole = useCallback(async (id: string, role: string) => {
-    const response = await withToken((token) =>
-      ipcClient.users.changeRole(id, role, token)
-    );
+    if (!user?.token) return false;
+    const response = await ipcClient.users.changeRole(id, role);
     return response !== null;
-  }, [withToken]);
+  }, [user?.token]);
 
   return {
     createUser,

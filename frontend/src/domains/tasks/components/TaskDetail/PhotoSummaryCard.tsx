@@ -1,9 +1,9 @@
 ﻿import React, { useState } from 'react';
+import { Camera, Eye, ImageIcon, X } from 'lucide-react';
+import { TaskPhoto, Photo } from '@/lib/backend';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Camera, Eye, ImageIcon, X } from 'lucide-react';
-import { TaskPhoto, Photo } from '@/lib/backend';
 import { resolveLocalImageUrl } from '@/shared/utils/media';
 
 type PhotoLike = TaskPhoto | Photo | { photo_type?: string };

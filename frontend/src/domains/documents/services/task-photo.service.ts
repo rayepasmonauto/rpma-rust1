@@ -86,8 +86,8 @@ export class TaskPhotoService {
         return { data: [], error: null };
       }
 
-      const token = await this.getSessionToken();
-      const photos = await ipcClient.photos.list(params.task_id, token);
+      const _token = await this.getSessionToken();
+      const photos = await ipcClient.photos.list(params.task_id);
 
       const mapped = (photos as unknown as Array<Record<string, unknown>>).map(p =>
         this.mapPhotoResponse(p)
@@ -107,9 +107,9 @@ export class TaskPhotoService {
 
   static async createTaskPhoto(data: CreateTaskPhotoData): Promise<{ data: TaskPhoto; error: null } | { data: null; error: Error }> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const uploadFile = await this.buildUploadFile(data.file);
-      const result = await ipcClient.photos.upload(data.task_id, uploadFile, data.photo_type, token);
+      const result = await ipcClient.photos.upload(data.task_id, uploadFile, data.photo_type);
 
       const raw = result as unknown as Record<string, unknown>;
       const photo = this.mapPhotoResponse({ ...raw, task_id: data.task_id, step_id: data.step_id, description: data.description });

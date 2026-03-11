@@ -1,7 +1,7 @@
 import React from 'react';
-import { useEntitySyncStatus } from '..';
 import { EntityType } from '@/lib/backend';
 import { cn } from '@/lib/utils';
+import { useEntitySyncStatus } from '..';
 
 interface EntitySyncIndicatorProps {
   entityId: string;

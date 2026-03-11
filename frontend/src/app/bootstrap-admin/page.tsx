@@ -1,9 +1,9 @@
 ﻿'use client';
 
-import { useBootstrapAdminPage } from '@/domains/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useBootstrapAdminPage } from '@/domains/auth';
 
 export default function BootstrapAdminPage() {
   const { t, user, hasAdmins, checkingAdmins, bootstrapMutation, handleSubmit, handleGoToLogin } =

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Camera, AlertCircle } from 'lucide-react';
-import { TaskPhotos } from './TaskPhotos';
-import { useAuth } from '@/domains/auth';
-import { ipcClient } from '@/lib/ipc';
 import { useQuery } from '@tanstack/react-query';
+import { ipcClient } from '@/lib/ipc';
+import { useAuth } from '@/domains/auth';
+import { TaskPhotos } from './TaskPhotos';
 
 interface TaskAttachmentsProps {
   taskId: string;
@@ -17,7 +17,7 @@ export function TaskAttachments({ taskId }: TaskAttachmentsProps) {
     queryFn: async () => {
       if (!session?.token) return null;
       try {
-        const result = await ipcClient.interventions.getActiveByTask(taskId, session.token);
+        const result = await ipcClient.interventions.getActiveByTask(taskId);
         return result;
       } catch {
         return null;

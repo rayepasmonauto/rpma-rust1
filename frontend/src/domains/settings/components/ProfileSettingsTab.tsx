@@ -1,6 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { ZodError } from 'zod';
+import { User, Camera, Save, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { LogDomain } from '@/lib/logging/types';
+import { ipcClient } from '@/lib/ipc';
+import { UserSession, UserSettings } from '@/lib/backend';
+import {
+  updateProfileRequestSchema,
+  UpdateProfileRequestValidation
+} from '@/lib/validation/settings-schemas';
+import { SettingsErrorHandler } from '@/lib/utils/settings-error-handler';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,22 +20,10 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { ZodError } from 'zod';
-import { User, Camera, Save, X, AlertCircle, CheckCircle } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLogger } from '@/shared/hooks/useLogger';
-import { LogDomain } from '@/lib/logging/types';
-import { ipcClient } from '@/lib/ipc';
-import { UserSession, UserSettings } from '@/lib/backend';
 import { UserAccount } from '@/types';
-import {
-  updateProfileRequestSchema,
-  UpdateProfileRequestValidation
-} from '@/lib/validation/settings-schemas';
-import { SettingsErrorHandler } from '@/lib/utils/settings-error-handler';
 
 type ProfileFormData = UpdateProfileRequestValidation;
 

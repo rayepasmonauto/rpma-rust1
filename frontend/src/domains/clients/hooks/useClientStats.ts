@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import { LogDomain } from '@/lib/logging/types';
+import { useLogger } from '@/shared/hooks/useLogger';
+import { normalizeError } from '@/types/utility.types';
 import { useAuth } from '@/domains/auth';
 import { clientService, type ClientStats } from '../services';
-import { useLogger } from '@/shared/hooks/useLogger';
-import { LogDomain } from '@/lib/logging/types';
-import { normalizeError } from '@/types/utility.types';
 
 export interface UseClientStatsOptions {
   autoFetch?: boolean;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { WorkflowProgressCard } from '../WorkflowProgressCard';
 import { ipcClient } from '@/lib/ipc/client';
+import { WorkflowProgressCard } from '../WorkflowProgressCard';
 
 // Mock dependencies
 const mockPush = jest.fn();

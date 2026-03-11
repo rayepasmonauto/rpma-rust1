@@ -1,5 +1,5 @@
-import { ClientService } from './client.service';
 import { Client } from '@/lib/backend';
+import { ClientService } from './client.service';
 
 export class ClientCreationService {
   static async findOrCreateClient(

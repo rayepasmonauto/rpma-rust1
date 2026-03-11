@@ -12,8 +12,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/shared/ui/facade';
-import type { SystemStats } from '@/domains/admin';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import type { SystemStats } from '@/domains/admin';
 
 interface AdminSystemTabProps {
   stats: SystemStats;

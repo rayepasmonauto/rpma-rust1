@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useAuth } from '@/domains/auth';
-import { clientService } from '../server';
-import type { CreateClientDTO } from '@/shared/types';
-import { useTranslation } from '@/shared/hooks/useTranslation';
 import { logger } from '@/lib/logging';
 import { LogDomain } from '@/lib/logging/types';
+import type { CreateClientDTO } from '@/shared/types';
+import { useTranslation } from '@/shared/hooks/useTranslation';
+import { useAuth } from '@/domains/auth';
+import { clientService } from '../server';
 
 export function useNewClientPage() {
   const router = useRouter();

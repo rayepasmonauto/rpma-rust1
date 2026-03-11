@@ -1,6 +1,7 @@
 //! System information commands
 
 use crate::commands::{AppState, UserRole};
+use crate::resolve_context;
 use crate::shared::ipc::AppError;
 use serde::Serialize;
 use std::process::Command;
@@ -21,8 +22,7 @@ pub async fn get_device_info(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<DeviceInfo, String> {
-    let _ctx = crate::shared::ipc::AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id)
-        .map_err(String::from)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
     use tokio::time::{timeout, Duration};
 
     // Add 3 second timeout
@@ -187,8 +187,7 @@ pub async fn diagnose_database(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<serde_json::Value, String> {
-    let _ctx = crate::shared::ipc::AuthGuard::require_role(&state, UserRole::Admin, &correlation_id)
-        .map_err(String::from)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
     let pool = state.db.pool().clone();
 
     tokio::task::spawn_blocking(move || {
@@ -205,8 +204,7 @@ pub async fn force_wal_checkpoint(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<String, String> {
-    let _ctx = crate::shared::ipc::AuthGuard::require_role(&state, UserRole::Admin, &correlation_id)
-        .map_err(String::from)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
     let pool = state.db.pool().clone();
 
     tokio::task::spawn_blocking(move || {
@@ -224,8 +222,7 @@ pub async fn health_check(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<String, String> {
-    let _ctx = crate::shared::ipc::AuthGuard::require_role(&state, UserRole::Viewer, &correlation_id)
-        .map_err(String::from)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
     let pool = state.db.pool().clone();
 
     tokio::task::spawn_blocking(move || {
@@ -242,12 +239,7 @@ pub async fn get_database_stats(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<serde_json::Value, String> {
-    let _ctx = crate::shared::ipc::AuthGuard::require_role(
-        &state,
-        UserRole::Supervisor,
-        &correlation_id,
-    )
-    .map_err(String::from)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Supervisor);
     let pool = state.db.pool().clone();
 
     tokio::task::spawn_blocking(move || {

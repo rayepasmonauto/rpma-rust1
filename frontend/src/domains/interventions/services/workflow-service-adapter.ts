@@ -7,7 +7,11 @@
  */
 
 import { ipcClient } from '@/lib/ipc';
-import { AuthSecureStorage } from '@/lib/secureStorage';
+import type {
+  AdvanceStepRequest,
+  SaveStepProgressRequest,
+  JsonValue,
+} from '@/lib/backend';
 import type {
   WorkflowExecution,
   WorkflowExecutionStep,
@@ -15,17 +19,6 @@ import type {
   StartTimingDTO,
   SignatureDTO,
 } from '@/types/workflow.types';
-import type {
-  AdvanceStepRequest,
-  SaveStepProgressRequest,
-  JsonValue,
-} from '@/lib/backend';
-
-async function getSessionToken(): Promise<string> {
-  const session = await AuthSecureStorage.getSession();
-  if (!session.token) throw new Error('No session token available');
-  return session.token;
-}
 
 export class WorkflowServiceAdapter {
   private static instance: WorkflowServiceAdapter;
@@ -38,20 +31,17 @@ export class WorkflowServiceAdapter {
   }
 
   async getWorkflowByTaskId(taskId: string): Promise<WorkflowExecution | null> {
-    const sessionToken = await getSessionToken();
-    const result = await ipcClient.interventions.getActiveByTask(taskId, sessionToken);
+    const result = await ipcClient.interventions.getActiveByTask(taskId);
     if (!result) return null;
     return result as unknown as WorkflowExecution;
   }
 
   async getWorkflowSteps(workflowId: string): Promise<WorkflowExecutionStep[]> {
-    const sessionToken = await getSessionToken();
-    const result = await ipcClient.interventions.getProgress(workflowId, sessionToken);
+    const result = await ipcClient.interventions.getProgress(workflowId);
     return ((result as unknown as { steps?: WorkflowExecutionStep[] })?.steps || []);
   }
 
   async startWorkflowExecution(dto: CreateWorkflowExecutionDTO): Promise<WorkflowExecution> {
-    const sessionToken = await getSessionToken();
     const result = await ipcClient.interventions.start({
       task_id: dto.taskId,
       intervention_number: null,
@@ -74,12 +64,11 @@ export class WorkflowServiceAdapter {
       notes: null,
       customer_requirements: null,
       special_instructions: null,
-    }, sessionToken);
+    });
     return result as unknown as WorkflowExecution;
   }
 
   async startStep(stepId: string, workflowId: string, userId: string): Promise<void> {
-    const sessionToken = await getSessionToken();
     const stepData: AdvanceStepRequest = {
       intervention_id: workflowId,
       step_id: stepId,
@@ -89,11 +78,10 @@ export class WorkflowServiceAdapter {
       quality_check_passed: true,
       issues: null,
     };
-    await ipcClient.interventions.advanceStep(stepData, sessionToken);
+    await ipcClient.interventions.advanceStep(stepData);
   }
 
   async completeStep(stepId: string, data: Record<string, unknown>): Promise<void> {
-    const sessionToken = await getSessionToken();
     const interventionId = (data.workflowId || data.intervention_id || '') as string;
     const stepData: AdvanceStepRequest = {
       intervention_id: interventionId,
@@ -104,11 +92,10 @@ export class WorkflowServiceAdapter {
       quality_check_passed: true,
       issues: null,
     };
-    await ipcClient.interventions.advanceStep(stepData, sessionToken);
+    await ipcClient.interventions.advanceStep(stepData);
   }
 
   async skipStep(stepId: string, workflowId: string, userId: string, reason?: string): Promise<void> {
-    const sessionToken = await getSessionToken();
     const stepData: AdvanceStepRequest = {
       intervention_id: workflowId,
       step_id: stepId,
@@ -118,12 +105,11 @@ export class WorkflowServiceAdapter {
       quality_check_passed: true,
       issues: null,
     };
-    await ipcClient.interventions.advanceStep(stepData, sessionToken);
+    await ipcClient.interventions.advanceStep(stepData);
   }
 
   async updateWorkflowExecution(workflowId: string, data: Record<string, unknown>): Promise<void> {
-    const sessionToken = await getSessionToken();
-    await ipcClient.interventions.updateWorkflow(workflowId, data as Record<string, JsonValue | undefined>, sessionToken);
+    await ipcClient.interventions.updateWorkflow(workflowId, data as Record<string, JsonValue | undefined>);
   }
 
   async startStepTiming(_dto: StartTimingDTO): Promise<void> {
@@ -139,18 +125,16 @@ export class WorkflowServiceAdapter {
   }
 
   async updateStepData(stepId: string, _workflowId: string, data: Record<string, unknown>, _userId?: string): Promise<void> {
-    const sessionToken = await getSessionToken();
     const stepData: SaveStepProgressRequest = {
       step_id: stepId,
       collected_data: data as JsonValue,
       notes: null,
       photos: null,
     };
-    await ipcClient.interventions.saveStepProgress(stepData, sessionToken);
+    await ipcClient.interventions.saveStepProgress(stepData);
   }
 
   async addSignature(dto: SignatureDTO): Promise<void> {
-    const sessionToken = await getSessionToken();
     const stepData: SaveStepProgressRequest = {
       step_id: dto.stepId || '',
       collected_data: {
@@ -160,11 +144,10 @@ export class WorkflowServiceAdapter {
       notes: null,
       photos: null,
     };
-    await ipcClient.interventions.saveStepProgress(stepData, sessionToken);
+    await ipcClient.interventions.saveStepProgress(stepData);
   }
 
   async uploadStepPhotos(_stepId: string, workflowId: string, files: File[], _userId?: string): Promise<{ urls: string[] }> {
-    const sessionToken = await getSessionToken();
     const urls: string[] = [];
     for (const file of files) {
       const buffer = await file.arrayBuffer();
@@ -175,8 +158,7 @@ export class WorkflowServiceAdapter {
           mimeType: file.type || 'application/octet-stream',
           bytes: new Uint8Array(buffer),
         },
-        'during',
-        sessionToken
+        'during'
       );
       const resultObj = result as unknown as Record<string, unknown>;
       if (resultObj && 'file_path' in resultObj) {

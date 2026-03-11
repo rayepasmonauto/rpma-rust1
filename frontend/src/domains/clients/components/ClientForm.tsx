@@ -4,6 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Building, 
+  FileText,
+  Save,
+  X
+} from 'lucide-react';
+import { Client } from '@/lib/backend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -24,17 +35,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Building, 
-  FileText,
-  Save,
-  X
-} from 'lucide-react';
-import { Client } from '@/lib/backend';
 
 interface ClientFormProps {
   client?: Client;

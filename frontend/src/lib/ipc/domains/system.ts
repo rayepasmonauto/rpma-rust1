@@ -1,6 +1,6 @@
+import type { JsonValue } from '@/types/json';
 import { safeInvoke } from '../core';
 import { IPC_COMMANDS } from '../commands';
-import type { JsonValue } from '@/types/json';
 
 /**
  * System health and diagnostic operations
@@ -12,14 +12,14 @@ export const systemOperations = {
   getApplicationMetrics: () =>
     safeInvoke<JsonValue>(IPC_COMMANDS.GET_PERFORMANCE_STATS),
 
-  getDatabaseStatus: (sessionToken: string) =>
-    safeInvoke<JsonValue>(IPC_COMMANDS.DIAGNOSE_DATABASE, { session_token: sessionToken }),
+  getDatabaseStatus: () =>
+    safeInvoke<JsonValue>(IPC_COMMANDS.DIAGNOSE_DATABASE, {}),
 
-  getDatabaseStats: (sessionToken: string) =>
-    safeInvoke<JsonValue>(IPC_COMMANDS.GET_DATABASE_STATS, { session_token: sessionToken }),
+  getDatabaseStats: () =>
+    safeInvoke<JsonValue>(IPC_COMMANDS.GET_DATABASE_STATS, {}),
 
-  getDatabasePoolHealth: (sessionToken: string) =>
-    safeInvoke<JsonValue>(IPC_COMMANDS.GET_DATABASE_POOL_HEALTH, { session_token: sessionToken }),
+  getDatabasePoolHealth: () =>
+    safeInvoke<JsonValue>(IPC_COMMANDS.GET_DATABASE_POOL_HEALTH, {}),
 
   getAppInfo: () =>
     safeInvoke<JsonValue>(IPC_COMMANDS.GET_APP_INFO),

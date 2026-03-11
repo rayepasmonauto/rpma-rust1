@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '@/domains/auth';
 import { canAccessInventory } from '@/types/auth.types';
+import type { JsonValue } from '@/types/json';
+import { useAuth } from '@/domains/auth';
 import { inventoryIpc } from '../ipc/inventory.ipc';
 import type {
   Material,
@@ -14,7 +15,6 @@ import type {
   MaterialType,
   UnitOfMeasure,
 } from '../api/types';
-import type { JsonValue } from '@/types/json';
 
 export interface CreateMaterialRequest {
   sku: string;

@@ -1,17 +1,17 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { BarChart3, AlertTriangle, Package } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart3, AlertTriangle, Package } from 'lucide-react';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 import { ErrorState } from '@/shared/ui/layout/ErrorState';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import type { LowStockMaterial, InventoryMovementSummary } from '@/shared/types';
 import { useAuth } from '@/domains/auth';
 import { inventoryIpc } from '../ipc/inventory.ipc';
-import type { LowStockMaterial, InventoryMovementSummary } from '@/shared/types';
 
 export function InventoryReports() {
   const { t } = useTranslation();

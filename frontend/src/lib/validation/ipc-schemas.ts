@@ -117,7 +117,6 @@ export const TaskActionSchema = z.discriminatedUnion('action', [
  */
 export const TaskCrudRequestSchema = z.object({
   action: TaskActionSchema,
-  session_token: z.string().min(1, 'Session token is required'),
 });
 
 /**
@@ -239,7 +238,6 @@ export const ClientActionSchema = z.union([
  */
 export const ClientCrudRequestSchema = z.object({
   action: ClientActionSchema,
-  session_token: z.string().min(1, 'Session token is required'),
 });
 
 /**

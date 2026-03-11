@@ -1,12 +1,9 @@
 import React, { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Car, Calendar, User, Shield, Eye, Edit, Trash2 } from 'lucide-react';
+import { ipcClient } from '@/lib/ipc';
+import { taskKeys } from '@/lib/query-keys';
 import type { TaskWithDetails, TaskStatus } from '@/types/task.types';
-import { getTaskDisplayTitle, getTaskDisplayStatus } from '@/domains/tasks/utils/display';
-import {
-  getStatusVariant,
-  formatDateShort,
-} from '@/domains/tasks/utils/task-presentation';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,9 +20,12 @@ import {
   CardContent,
 } from '@/shared/ui/facade';
 import { getUserFullName } from '@/shared/utils';
+import { getTaskDisplayTitle, getTaskDisplayStatus } from '@/domains/tasks/utils/display';
+import {
+  getStatusVariant,
+  formatDateShort,
+} from '@/domains/tasks/utils/task-presentation';
 import { useAuth } from '@/domains/auth';
-import { ipcClient } from '@/lib/ipc';
-import { taskKeys } from '@/lib/query-keys';
 
 interface TaskListCardProps {
   task: TaskWithDetails;
@@ -55,7 +55,7 @@ export const TaskListCard = React.memo(({
     if (!user?.token) return;
     queryClient.prefetchQuery({
       queryKey: taskKeys.byId(task.id),
-      queryFn: () => ipcClient.tasks.get(task.id, user.token),
+      queryFn: () => ipcClient.tasks.get(task.id),
       staleTime: 5 * 60 * 1000,
     });
   }, [queryClient, task.id, user?.token]);

@@ -1,20 +1,6 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { VirtualizedTable } from '@/components/ui/virtualized-table';
-import { StockLevelIndicator } from './StockLevelIndicator';
-import { MaterialForm } from './MaterialForm';
-import { useInventory } from '../hooks/useInventory';
-import { useTranslation } from '@/shared/hooks/useTranslation';
-import { Material, MaterialType } from '@/shared/types';
 import {
   Plus, 
   Search, 
@@ -29,6 +15,20 @@ import {
   Download,
   Upload
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { VirtualizedTable } from '@/components/ui/virtualized-table';
+import { useTranslation } from '@/shared/hooks/useTranslation';
+import { Material, MaterialType } from '@/shared/types';
+import { useInventory } from '../hooks/useInventory';
+import { StockLevelIndicator } from './StockLevelIndicator';
+import { MaterialForm } from './MaterialForm';
 
 interface InventoryManagerProps {
   className?: string;

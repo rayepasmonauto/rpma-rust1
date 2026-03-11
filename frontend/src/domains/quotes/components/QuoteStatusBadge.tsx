@@ -1,9 +1,9 @@
 'use client';
 
 import { FileText, Send, CheckCircle, XCircle, Clock, CheckCheck, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { QuoteStatus } from '@/types/quote.types';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 const STATUS_COLORS: Record<QuoteStatus, string> = {
   draft: 'bg-gray-100 text-gray-800',

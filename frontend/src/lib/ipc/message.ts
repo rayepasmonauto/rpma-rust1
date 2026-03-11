@@ -1,4 +1,3 @@
-import { safeInvoke } from './utils';
 import type {
   SendMessageRequest,
   Message,
@@ -9,6 +8,7 @@ import type {
   UpdateNotificationPreferencesRequest
 } from '@/lib/backend';
 import type { JsonObject } from '@/types/json';
+import { safeInvoke } from './utils';
 
 export const messageApi = {
   /**

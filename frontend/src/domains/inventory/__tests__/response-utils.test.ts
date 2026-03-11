@@ -1,6 +1,6 @@
-import { unwrapApiResponse, validateLowStockPayload, validateMaterialListPayload } from '../server/response-utils';
 import { safeInvoke } from '@/lib/ipc/core';
 import { IPC_COMMANDS } from '@/lib/ipc/commands';
+import { unwrapApiResponse, validateLowStockPayload, validateMaterialListPayload } from '../server/response-utils';
 
 jest.mock('@/lib/ipc/core', () => ({
   safeInvoke: jest.fn(),

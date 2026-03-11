@@ -1,3 +1,4 @@
+import { safeInvoke } from '@/lib/ipc/core';
 import {
   materialOperations,
   stockOperations,
@@ -5,7 +6,6 @@ import {
   transactionOperations,
   reportingOperations,
 } from '@/domains/inventory/server';
-import { safeInvoke } from '@/lib/ipc/core';
 
 jest.mock('@/lib/ipc/core', () => ({
   safeInvoke: jest.fn(),

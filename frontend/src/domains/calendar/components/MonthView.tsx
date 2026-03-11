@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { format } from 'date-fns';
-import { TaskCard } from './TaskCard';
 import type { CalendarTask } from '@/lib/backend';
+import { TaskCard } from './TaskCard';
 
 interface MonthViewProps {
   tasks: CalendarTask[];

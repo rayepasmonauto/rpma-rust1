@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { FormFeedback } from '@/components/ui/form-feedback';
 import { FadeIn } from '@/shared/ui/animations/FadeIn';
 import { UILoader } from '@/shared/ui/animations/UILoader';
+import { ROUTES } from '@/constants';
 import { PasswordStrengthMeter } from '@/domains/auth';
 import { useSignupForm } from '@/domains/auth';
-import { ROUTES } from '@/constants';
 
 export default function SignupPage() {
   const {

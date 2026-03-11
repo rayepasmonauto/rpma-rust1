@@ -1,5 +1,5 @@
-import { computeQuoteStats } from '../utils/quote-stats';
 import type { Quote } from '@/shared/types';
+import { computeQuoteStats } from '../utils/quote-stats';
 
 describe('computeQuoteStats', () => {
   it('returns correct counts', () => {

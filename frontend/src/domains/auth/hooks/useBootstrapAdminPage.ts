@@ -4,10 +4,10 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { authBootstrap } from '../api/bootstrapAdmin';
-import { useAuth } from '../api/useAuth';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { structuredLogger as logger, LogDomain } from '@/shared/utils';
+import { authBootstrap } from '../api/bootstrapAdmin';
+import { useAuth } from '../api/useAuth';
 
 export function useBootstrapAdminPage() {
   const { t } = useTranslation();

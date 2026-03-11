@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Bell, Mail, MessageSquare, Save } from 'lucide-react';
+import type { UpdateNotificationPreferencesRequest } from '@/lib/backend';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -9,8 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useNotificationPreferences } from '../api/useMessages';
-import type { UpdateNotificationPreferencesRequest } from '@/lib/backend';
-import { Bell, Mail, MessageSquare, Save } from 'lucide-react';
 
 interface NotificationPreferencesProps {
   userId: string;

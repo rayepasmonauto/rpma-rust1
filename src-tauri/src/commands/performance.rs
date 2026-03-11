@@ -1,8 +1,8 @@
 //! Performance monitoring commands for admin interface
 
 use crate::commands::{ApiResponse, AppError, AppState};
+use crate::resolve_context;
 use crate::shared::contracts::auth::UserRole;
-use crate::shared::ipc::AuthGuard;
 use crate::shared::services::cache::{CacheManager, CacheType};
 use serde::{Deserialize, Serialize};
 use tracing::{info, instrument};
@@ -74,7 +74,7 @@ pub async fn get_performance_stats(
     correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<PerformanceStatsResponse>, AppError> {
-    let ctx = AuthGuard::require_role(&state, UserRole::Admin, &correlation_id)?;
+    let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
     let correlation_id = ctx.correlation_id.clone();
     // Start performance tracking
     let _timer = state
@@ -108,7 +108,7 @@ pub async fn get_performance_metrics(
     correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<Vec<PerformanceMetricResponse>>, AppError> {
-    let ctx = AuthGuard::require_role(&state, UserRole::Admin, &correlation_id)?;
+    let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
     let correlation_id = ctx.correlation_id.clone();
     // Start performance tracking
     let _timer = state
@@ -141,7 +141,7 @@ pub async fn cleanup_performance_metrics(
     correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<String>, AppError> {
-    let ctx = AuthGuard::require_role(&state, UserRole::Admin, &correlation_id)?;
+    let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
     let correlation_id = ctx.correlation_id.clone();
 
     // NOTE: Implement performance metrics cleanup
@@ -161,7 +161,7 @@ pub async fn get_cache_statistics(
     correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<CacheStatsResponse>, AppError> {
-    let ctx = AuthGuard::require_role(&state, UserRole::Admin, &correlation_id)?;
+    let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
     let correlation_id = ctx.correlation_id.clone();
 
     // Get cache stats from the cache manager
@@ -199,7 +199,7 @@ pub async fn clear_application_cache(
     request: CacheClearRequest,
     state: AppState<'_>,
 ) -> Result<ApiResponse<String>, AppError> {
-    let ctx = AuthGuard::require_role(&state, UserRole::Admin, &request.correlation_id)?;
+    let ctx = resolve_context!(&state, &request.correlation_id, UserRole::Admin);
     let correlation_id = ctx.correlation_id.clone();
 
     let cache_manager = CacheManager::default()?;
@@ -232,7 +232,7 @@ pub async fn configure_cache_settings(
     request: CacheConfigRequest,
     state: AppState<'_>,
 ) -> Result<ApiResponse<String>, AppError> {
-    let ctx = AuthGuard::require_role(&state, UserRole::Admin, &request.correlation_id)?;
+    let ctx = resolve_context!(&state, &request.correlation_id, UserRole::Admin);
     let correlation_id = ctx.correlation_id.clone();
 
     // Note: In a real implementation, this would update the cache manager configuration

@@ -2,8 +2,6 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   FileText,
   Image as ImageIcon,
@@ -12,8 +10,10 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { useQuoteAttachments, useQuoteAttachmentActions } from '@/domains/quotes/hooks/useQuotes';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { QuoteAttachment } from '@/types/quote.types';
+import { useQuoteAttachments, useQuoteAttachmentActions } from '@/domains/quotes/hooks/useQuotes';
 import { formatFileSize } from '@/domains/quotes/utils/image-compression';
 
 interface QuoteDocumentsManagerProps {

@@ -4,7 +4,7 @@
 //! and real-time updates from the frontend.
 
 use crate::commands::{websocket::*, AppResult, AppState, UserRole};
-use crate::shared::ipc::AuthGuard;
+use crate::resolve_context;
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 
@@ -43,7 +43,7 @@ pub async fn init_websocket_server(
     request: InitWebSocketServerRequest,
     correlation_id: Option<String>,
 ) -> AppResult<InitWebSocketServerResponse> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Admin, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
 
     let port = request.port.unwrap_or(8080);
 
@@ -69,7 +69,7 @@ pub async fn broadcast_websocket_message(
     request: BroadcastWSMessageRequest,
     correlation_id: Option<String>,
 ) -> AppResult<()> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Supervisor, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Supervisor);
 
     broadcast_ws_message(request.message).await
 }
@@ -82,7 +82,7 @@ pub async fn send_websocket_message_to_client(
     request: SendWSMessageRequest,
     correlation_id: Option<String>,
 ) -> AppResult<()> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Supervisor, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Supervisor);
 
     send_ws_message_to_client(&request.client_id, request.message).await
 }
@@ -94,7 +94,7 @@ pub async fn get_websocket_stats(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> AppResult<serde_json::Value> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Admin, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
 
     Ok(get_ws_stats().await)
 }
@@ -106,7 +106,7 @@ pub async fn shutdown_websocket_server(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> AppResult<()> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Admin, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
 
     shutdown_ws_server().await
 }
@@ -121,7 +121,7 @@ pub async fn broadcast_task_update(
     data: serde_json::Value,
     correlation_id: Option<String>,
 ) -> AppResult<()> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Supervisor, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Supervisor);
 
     let message = match update_type.as_str() {
         "created" => WSMessage::TaskCreated { task: data },
@@ -166,7 +166,7 @@ pub async fn broadcast_intervention_update(
     data: serde_json::Value,
     correlation_id: Option<String>,
 ) -> AppResult<()> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Supervisor, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Supervisor);
 
     let message = match update_type.as_str() {
         "started" => {
@@ -219,7 +219,7 @@ pub async fn broadcast_client_update(
     data: serde_json::Value,
     correlation_id: Option<String>,
 ) -> AppResult<()> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Supervisor, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Supervisor);
 
     let message = match update_type.as_str() {
         "created" => WSMessage::ClientCreated { client: data },
@@ -249,7 +249,7 @@ pub async fn broadcast_system_notification(
     level: String,
     correlation_id: Option<String>,
 ) -> AppResult<()> {
-    let _ctx = AuthGuard::require_role(&state, UserRole::Supervisor, &correlation_id)?;
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Supervisor);
 
     let ws_message = WSMessage::Notification {
         title,

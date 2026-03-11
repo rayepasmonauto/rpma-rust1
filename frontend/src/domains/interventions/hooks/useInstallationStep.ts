@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { StepType } from '@/lib/backend';
 import { usePpfWorkflow } from '@/domains/interventions/api/client';
 import { getNextPPFStepId, getPPFStepPath } from '../utils/ppf-workflow';
 import { buildStepExportPayload, downloadJsonFile, getEffectiveStepData } from '../utils/step-export';
-import type { StepType } from '@/lib/backend';
 
 const ZONE_CHECKLIST = [
   { id: 'surface_ready', title: 'Surface dégraissée et sèche', required: true },

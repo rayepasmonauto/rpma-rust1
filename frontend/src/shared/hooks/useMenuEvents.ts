@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { listen } from '@tauri-apps/api/event';
 import { useRouter } from 'next/navigation';
+import { listen } from '@tauri-apps/api/event';
 
 export function useMenuEvents() {
   const router = useRouter();

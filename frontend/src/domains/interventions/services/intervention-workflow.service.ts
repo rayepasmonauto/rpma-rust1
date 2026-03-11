@@ -1,17 +1,13 @@
 ﻿// PPF Intervention Workflow Service
+import type { AdvanceStepRequest, FinalizeInterventionRequest, JsonValue, StartInterventionRequest } from '@/lib/backend';
 import type { ApiResponse } from '@/types/api';
 import { ApiError } from '@/types/api';
-import { interventionsIpc } from '../ipc/interventions.ipc';
-import type { AdvanceStepRequest, FinalizeInterventionRequest, JsonValue, StartInterventionRequest } from '@/lib/backend';
-import type { PPFIntervention } from './ppf';
 import type { ListResponse } from '@/types/api';
-import type { PPFInterventionStep } from '@/types/ppf-intervention';
+import type { PPFInterventionStep, AdvanceStepDTO } from '@/types/ppf-intervention';
+import { interventionsIpc } from '../ipc/interventions.ipc';
+import type { PPFIntervention } from './ppf';
 
-export interface AdvanceStepDTO {
-  interventionId: string;
-  stepNumber: number;
-  collected_data?: Record<string, unknown>;
-}
+export type { AdvanceStepDTO };
 
 export class InterventionWorkflowService {
   private static notImplemented<T>(message: string): ApiResponse<T> {

@@ -1,8 +1,4 @@
 ﻿import type { UpdateTaskRequest, TaskQuery, CreateTaskRequest, PaginationInfo, JsonValue } from '@/lib/backend';
-import type { TaskWithDetails } from '@/types/task.types';
-import type { ServiceResponse } from '@/types/unified.types';
-import { taskIpc } from '../ipc/task.ipc';
-import { interventionsIpc } from '@/domains/interventions';
 import { AuthSecureStorage } from '@/lib/secureStorage';
 import {
   CreateTaskSchema,
@@ -13,6 +9,10 @@ import {
   type UpdateTaskInput,
   type TaskQueryInput,
 } from '@/lib/validation/api-schemas';
+import type { TaskWithDetails } from '@/types/task.types';
+import type { ServiceResponse } from '@/types/unified.types';
+import { interventionsIpc } from '@/domains/interventions';
+import { taskIpc } from '../ipc/task.ipc';
 import {
   generateUniqueTaskNumber,
   isValidTaskNumberFormat,

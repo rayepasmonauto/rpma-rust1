@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { statusApi } from '@/lib/ipc/status';
-import { taskIpc } from '../ipc/task.ipc';
-import type { StatusDistribution, Task, TaskQuery } from '@/lib/backend';
 import { toast } from 'sonner';
+import { statusApi } from '@/lib/ipc/status';
+import type { StatusDistribution, Task, TaskQuery } from '@/lib/backend';
+import { taskIpc } from '../ipc/task.ipc';
 
 export function useTaskStatus() {
   const [tasks, setTasks] = useState<Task[]>([]);

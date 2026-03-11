@@ -2,16 +2,12 @@
 
 import { useCallback } from 'react';
 import { Plus, Trash2, Wrench } from 'lucide-react';
+import { formatCents, getCurrencySymbol } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { formatCents, getCurrencySymbol } from '@/lib/format';
+import type { QuoteLaborInput } from '@/types/quote.types';
 
-export interface QuoteLaborInput {
-  description: string;
-  hours: number;
-  rate: number;
-  total: number;
-}
+export type { QuoteLaborInput };
 
 interface QuoteLaborSectionProps {
   laborItems: QuoteLaborInput[];

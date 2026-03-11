@@ -1,12 +1,12 @@
 import { useEffect, useCallback } from 'react';
-import { useWebSocket } from '@/lib/websocket';
-import { useTasks } from '@/domains/tasks';
 import { toast } from 'sonner';
+import { useWebSocket } from '@/lib/websocket';
 import { logger, LogDomain } from '@/lib/logging';
 import { safeInvoke } from '@/lib/ipc/utils';
 import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import type { TaskStatus } from '@/lib/backend';
 import type { JsonObject } from '@/types/json';
+import { useTasks } from '@/domains/tasks';
 import { useAuth } from '@/domains/auth';
 
 interface UseRealTimeUpdatesOptions {

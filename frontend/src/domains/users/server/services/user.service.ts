@@ -1,6 +1,6 @@
-import { ServiceResponse } from '@/types/unified.types';
 import { ipcClient } from '@/lib/ipc';
 import type { CreateUserRequest, UpdateUserRequest } from '@/lib/backend';
+import { ServiceResponse } from '@/types/unified.types';
 
 export interface User {
   id: string;
@@ -38,10 +38,10 @@ export class UserService {
     sortOrder?: string;
   }, sessionToken?: string): Promise<ServiceResponse<User[]>> {
     try {
-      const token = this.requireSessionToken(sessionToken);
+      const _token = this.requireSessionToken(sessionToken);
       const limit = params?.pageSize ?? 50;
       const offset = params?.page ? (params.page - 1) * limit : 0;
-      const result = await ipcClient.users.list(limit, offset, token);
+      const result = await ipcClient.users.list(limit, offset);
 
       const users = result?.data?.map(u => ({
         id: u.id,
@@ -69,8 +69,8 @@ export class UserService {
 
   static async getUser(id: string, sessionToken?: string): Promise<ServiceResponse<User | null>> {
     try {
-      const token = this.requireSessionToken(sessionToken);
-      const result = await ipcClient.users.get(id, token);
+      const _token = this.requireSessionToken(sessionToken);
+      const result = await ipcClient.users.get(id);
       return {
         success: true,
         data: result as User | null,
@@ -107,7 +107,7 @@ export class UserService {
       };
 
       if (sessionToken) {
-        const result = await ipcClient.users.create(createRequest, sessionToken);
+        const result = await ipcClient.users.create(createRequest);
         return {
           success: true,
           data: result as unknown as User,
@@ -146,7 +146,7 @@ export class UserService {
 
   static async updateUser(id: string, updates: Partial<User>, sessionToken?: string): Promise<User> {
     try {
-      const token = this.requireSessionToken(sessionToken);
+      const _token = this.requireSessionToken(sessionToken);
       const updateRequest: UpdateUserRequest = {
         email: updates.email ?? null,
         first_name: updates.firstName ?? null,
@@ -154,7 +154,7 @@ export class UserService {
         role: updates.role ?? null,
         is_active: updates.isActive ?? null,
       };
-      const result = await ipcClient.users.update(id, updateRequest, token);
+      const result = await ipcClient.users.update(id, updateRequest);
       return result as unknown as User;
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to update user');
@@ -163,8 +163,8 @@ export class UserService {
 
   static async deleteUser(id: string, sessionToken?: string): Promise<void> {
     try {
-      const token = this.requireSessionToken(sessionToken);
-      await ipcClient.users.delete(id, token);
+      const _token = this.requireSessionToken(sessionToken);
+      await ipcClient.users.delete(id);
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to delete user');
     }

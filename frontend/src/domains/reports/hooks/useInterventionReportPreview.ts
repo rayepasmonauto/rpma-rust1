@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+import { reportKeys } from '@/lib/query-keys';
 import { useAuth } from '@/domains/auth';
 import { interventionsIpc } from '@/domains/interventions';
 import { reportsIpc } from '../ipc/reports.ipc';
 import { buildInterventionReportViewModel } from '../services/buildInterventionReportViewModel';
-import { reportKeys } from '@/lib/query-keys';
 import type { InterventionReportViewModel } from '../services/report-view-model.types';
 
 interface UseInterventionReportPreviewOptions {

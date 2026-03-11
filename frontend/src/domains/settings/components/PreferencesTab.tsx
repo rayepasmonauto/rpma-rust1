@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import { Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { UserSession } from '@/lib/backend';
+import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UserSession } from '@/lib/backend';
 import { UserAccount } from '@/types';
 import { usePreferencesForm } from '../hooks/usePreferencesForm';
 import { NotificationsSection } from './preferences/NotificationsSection';

@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
 import { 
   User, 
   Calendar, 
@@ -12,6 +10,8 @@ import {
   Cpu,
   ClipboardList
 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { TaskWithDetails } from '@/types/task.types';
 
 interface TechnicalDetailsCardProps {

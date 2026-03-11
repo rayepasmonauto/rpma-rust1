@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/domains/auth';
-import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
 import type { JsonObject } from '@/types/json';
 import type {
   QuoteAttachment,
@@ -8,6 +6,8 @@ import type {
   UpdateQuoteAttachmentRequest,
 } from '@/types/quote.types';
 import { normalizeError } from '@/types/utility.types';
+import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
+import { useAuth } from '@/domains/auth';
 
 // --- useQuoteAttachments ---
 

@@ -13,11 +13,11 @@ import {
   Plus,
   Search,
 } from "lucide-react";
+import { Client } from "@/lib/backend";
 import { FormStepProps } from "../types";
 import { ClientSelectorModal } from "./ClientSelectorModal";
 import { CustomerInfoSummary } from "./CustomerInfoSummary";
 
-import { Client } from "@/lib/backend";
 // Legacy service imports removed - now using API routes
 
 export const CustomerStep: React.FC<FormStepProps> = ({
@@ -42,7 +42,7 @@ export const CustomerStep: React.FC<FormStepProps> = ({
         limit: 100,
         sort_by: 'name',
         sort_order: 'asc'
-      }, sessionToken!);
+      });
       return clientListResponse.data || [];
     },
     enabled: !!sessionToken,
@@ -55,7 +55,7 @@ export const CustomerStep: React.FC<FormStepProps> = ({
     queryKey: ['client', formData.client_id, sessionToken],
     queryFn: async () => {
       const { ipcClient } = await import('@/lib/ipc');
-      return await ipcClient.clients.get(formData.client_id!, sessionToken!);
+      return await ipcClient.clients.get(formData.client_id!);
     },
     enabled: !!formData.client_id && !!sessionToken && !clientsData.find((c: Client) => c.id === formData.client_id),
     retry: 1,

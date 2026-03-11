@@ -1,6 +1,6 @@
+import type { JsonObject, JsonValue } from '@/types/json';
 import { delayNextCommand, failNextCommand, resetDb, seedDb, handleInvoke } from './mock-db';
 import { defaultFixtures, type MockFixtures } from './fixtures';
-import type { JsonObject, JsonValue } from '@/types/json';
 
 export interface E2eMockControls {
   reset: () => void;

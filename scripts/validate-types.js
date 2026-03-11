@@ -1,237 +1,235 @@
 #!/usr/bin/env node
-
 /**
- * Type Validation Script
+ * validate-types.js
  *
- * This script validates that TypeScript types in frontend/src/lib/backend.ts
- * are in sync with Rust types. It performs several checks:
- *
- * 1. Checks that all expected types are present
- * 2. Validates type structure consistency
- * 3. Ensures no obvious drift has occurred
- *
- * Usage: node scripts/validate-types.js
+ * Checks that no type definitions in frontend/src/domains/** manually duplicate
+ * types that are already exported from frontend/src/types/*.  Reports any
+ * remaining drift and exits with a non-zero code on failure.
  */
 
 const fs = require('fs');
 const path = require('path');
 
-const BACKEND_TS_PATH = path.join(__dirname, '..', 'frontend', 'src', 'lib', 'backend.ts');
-const BACKEND_TS_DIR = path.join(__dirname, '..', 'frontend', 'src', 'lib', 'backend');
+const ROOT = path.resolve(__dirname, '..');
+const FRONTEND = path.join(ROOT, 'frontend', 'src');
+const TYPES_DIR = path.join(FRONTEND, 'types');
+const DOMAINS_DIR = path.join(FRONTEND, 'domains');
 
-// Expected types that should be present
-const EXPECTED_TYPES = {
-  // Client types
-  Client: 'interface',
-  CustomerType: 'enum',
+// ---------------------------------------------------------------------------
+// Known structural conflicts: same type name but intentionally different
+// shapes (e.g. snake_case vs camelCase, different use-case, enum vs interface).
+// These are NOT considered duplicates.
+// ---------------------------------------------------------------------------
+const KNOWN_STRUCTURAL_CONFLICTS = new Set([
+  // TaskHistoryEntry in task-history.service.ts tracks generic audit events
+  // (id, taskId, action, userId, timestamp) whereas the canonical one in
+  // @/types/task.types tracks IPC-returned status changes.
+  'TaskHistoryEntry|frontend/src/domains/tasks/services/task-history.service.ts',
 
-  // Task types
-  Task: 'interface',
-  TaskStatus: 'enum',
-  TaskPriority: 'enum',
-  SortOrder: 'enum',
-  CreateTaskRequest: 'interface',
-  UpdateTaskRequest: 'interface',
-  DeleteTaskRequest: 'interface',
-  TaskQuery: 'interface',
-  TaskListResponse: 'interface',
-  PaginationInfo: 'interface',
-  TaskStatistics: 'interface',
+  // VehicleInfo in QuoteConvertDialog is a quote-specific form type with
+  // required fields (plate, make, model, year, vin, ppfZones) whereas the
+  // canonical one in ppf-intervention.ts uses optional fields and number year.
+  'VehicleInfo|frontend/src/domains/quotes/components/QuoteConvertDialog.tsx',
 
-  // User types
-  UserAccount: 'interface',
-  UserSession: 'interface',
-  UserRole: 'enum',
+  // TaskPhoto in task-photo.service.ts uses snake_case (task_id, photo_type,
+  // file_path, taken_at) whereas unified.ts TaskPhoto uses camelCase DTOs.
+  'TaskPhoto|frontend/src/domains/documents/services/task-photo.service.ts',
 
-  // Settings types
-  GeneralSettings: 'interface',
-  SecuritySettings: 'interface',
-  NotificationSettings: 'interface',
-  AppearanceSettings: 'interface',
-  DataManagementSettings: 'interface',
-  DatabaseSettings: 'interface',
-  IntegrationSettings: 'interface',
-  PerformanceSettings: 'interface',
-  BackupSettings: 'interface',
-  DiagnosticSettings: 'interface',
-  AppSettings: 'interface',
-  SystemConfiguration: 'interface',
+  // PPFPhoto in photo.service.ts has interventionId/stepId/uploadedAt whereas
+  // the ppf-intervention.ts PPFPhoto has url/angle/category/timestamp.
+  'PPFPhoto|frontend/src/domains/interventions/services/photo.service.ts',
 
-  // Intervention types
-  Intervention: 'interface',
-  InterventionStatus: 'enum',
-  InterventionType: 'enum',
-  WeatherCondition: 'enum',
-  LightingCondition: 'enum',
-  WorkLocation: 'enum',
-  FilmType: 'enum',
-  GpsLocation: 'interface',
+  // BusinessRule in configuration.service.ts uses condition/action/sort_order
+  // whereas configuration.types.ts BusinessRule uses conditions[]/actions[].
+  'BusinessRule|frontend/src/domains/settings/services/configuration.service.ts',
 
-  // Photo types
-  Photo: 'interface',
-  PhotoType: 'enum',
-  PhotoCategory: 'enum',
+  // ClientFilters in useClients.ts is optimised for the hook's IPC query
+  // (CustomerType, limit, sort_by) whereas client.types.ts ClientFilters
+  // adds has_tasks, created_after/before, page_size.
+  'ClientFilters|frontend/src/domains/clients/hooks/useClients.ts',
 
-  // Sync types
-  SyncOperation: 'interface',
-  SyncStatus: 'enum',
-  OperationType: 'enum',
-  EntityType: 'enum',
-  SyncQueueMetrics: 'interface',
-};
+  // BusinessRuleFiltersData / ConfigurationFiltersData / ServiceResponse in
+  // admin/server/index.ts have different optional fields than their counterparts
+  // in configuration.types.ts / unified.types.ts.
+  'BusinessRuleFiltersData|frontend/src/domains/admin/server/index.ts',
+  'ConfigurationFiltersData|frontend/src/domains/admin/server/index.ts',
+  'ServiceResponse|frontend/src/domains/admin/server/index.ts',
 
-function validateTypes() {
-  console.log('🔍 Validating TypeScript types in backend.ts...\n');
+  // OperationStatus in useOfflineQueue.ts is an enum with PROCESSING/RETRYING
+  // values whereas unified.types.ts OperationStatus is a string literal union.
+  'OperationStatus|frontend/src/domains/sync/hooks/useOfflineQueue.ts',
 
-  // Check if file exists
-  if (!fs.existsSync(BACKEND_TS_PATH)) {
-    console.error('❌ backend.ts file not found!');
-    process.exit(1);
+  // PPFZone in TaskForm/types.ts is an interface {id, name, category?} used
+  // for UI zone selection, whereas enums.ts PPFZone is an enum of zone keys.
+  'PPFZone|frontend/src/domains/tasks/components/TaskForm/types.ts',
+
+  // Technician in technician.service.ts has specialization/isActive/workload
+  // whereas unified.ts Technician has role/skills/availability/performance.
+  'Technician|frontend/src/domains/users/services/technician.service.ts',
+
+  // SignupCredentials in auth.service.ts uses camelCase (firstName, lastName)
+  // for the UI layer, whereas auth.types.ts uses snake_case (first_name, last_name).
+  'SignupCredentials|frontend/src/domains/users/server/services/auth.service.ts',
+
+  // QuotePageStats in quote-stats.ts is a minimal subset with only 4 fields
+  // whereas quote.types.ts QuotePageStats has 8 fields; the domain's
+  // computeQuoteStats function signature also differs.
+  'QuotePageStats|frontend/src/domains/quotes/utils/quote-stats.ts',
+]);
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function readFileSafe(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch {
+    return '';
   }
+}
 
-  // Read file content
-  const content = loadGeneratedTypeContent();
-
-  let errors = [];
-  let warnings = [];
-
-  // Check for expected types
-  for (const [typeName, expectedKind] of Object.entries(EXPECTED_TYPES)) {
-    const typeRegex = new RegExp(`(?:export )?(?:interface|type|enum) ${typeName}\\b`);
-    const match = content.match(typeRegex);
-
-    if (!match) {
-      errors.push(`Missing ${expectedKind} ${typeName}`);
-    } else {
-      // Check if it's exported
-      if (!match[0].includes('export')) {
-        warnings.push(`${typeName} is not exported`);
-      }
+/**
+ * Walk a directory recursively, yielding .ts and .tsx files.
+ * @param {string} dir
+ * @returns {string[]}
+ */
+function walkTs(dir) {
+  const results = [];
+  if (!fs.existsSync(dir)) return results;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...walkTs(full));
+    } else if (/\.(ts|tsx)$/.test(entry.name) && !entry.name.endsWith('.d.ts') && !entry.name.includes('.test.') && !entry.name.includes('.spec.')) {
+      results.push(full);
     }
   }
-
-  // Check for common issues
-  const lines = content.split('\n');
-
-  // Check for any type definitions
-  const typeDefinitionCount = (content.match(/(?:export )?(?:interface|type|enum)\s+\w+/g) || []).length;
-  if (typeDefinitionCount < Object.keys(EXPECTED_TYPES).length * 0.8) {
-    warnings.push(`Low type definition count: ${typeDefinitionCount} (expected ~${Object.keys(EXPECTED_TYPES).length})`);
-  }
-
-  // Check for null vs undefined issues (common drift indicator)
-  const nullChecks = content.match(/\bnull\b/g) || [];
-  const undefinedChecks = content.match(/\bundefined\b/g) || [];
-  if (nullChecks.length > undefinedChecks.length * 2) {
-    warnings.push('High ratio of null to undefined - possible serialization mismatch');
-  }
-
-  // Check for timestamp fields (should be strings)
-  const timestampFields = content.match(/^\s*\w+:\s*string\s*;/gm) || [];
-  if (timestampFields.length < 10) {
-    warnings.push('Few string fields found - timestamp serialization may be inconsistent');
-  }
-
-  // Report results
-  if (errors.length > 0) {
-    console.log('❌ Validation Errors:');
-    errors.forEach(error => console.log(`  - ${error}`));
-    console.log('');
-  }
-
-  if (warnings.length > 0) {
-    console.log('⚠️  Validation Warnings:');
-    warnings.forEach(warning => console.log(`  - ${warning}`));
-    console.log('');
-  }
-
-  if (errors.length === 0 && warnings.length === 0) {
-    console.log('✅ All type validations passed!');
-  } else if (errors.length === 0) {
-    console.log('✅ No critical errors found, but some warnings to review.');
-  } else {
-    console.log('❌ Critical validation errors found. Please fix before committing.');
-    process.exit(1);
-  }
-
-  // Summary
-  const foundTypes = Object.keys(EXPECTED_TYPES).filter(typeName => {
-    const regex = new RegExp(`(?:export )?(?:interface|type|enum) ${typeName}\\b`);
-    return content.match(regex);
-  });
-
-  console.log(`\n📊 Summary:`);
-  console.log(`  - Expected types: ${Object.keys(EXPECTED_TYPES).length}`);
-  console.log(`  - Found types: ${foundTypes.length}`);
-  console.log(`  - Missing types: ${Object.keys(EXPECTED_TYPES).length - foundTypes.length}`);
-  console.log(`  - Errors: ${errors.length}`);
-  console.log(`  - Warnings: ${warnings.length}`);
+  return results;
 }
 
-function checkTypeDrift() {
-  console.log('\n🔄 Checking for potential type drift indicators...\n');
+/**
+ * Extract all *locally defined* type/interface/enum names from a file.
+ * "Locally defined" means lines that start with `export interface`, `export type =`,
+ * or `export enum` — i.e. NOT re-export (`export type { … } from`).
+ * @param {string} source
+ * @returns {string[]}
+ */
+function extractLocalDefinitions(source) {
+  const names = [];
+  // Match: export interface Foo  |  export type Foo =  |  export enum Foo
+  const defRe = /^export\s+(?:interface|enum)\s+(\w+)/gm;
+  const typeDefRe = /^export\s+type\s+(\w+)\s*=/gm;
+  let m;
+  while ((m = defRe.exec(source)) !== null) names.push(m[1]);
+  while ((m = typeDefRe.exec(source)) !== null) names.push(m[1]);
+  return names;
+}
 
-  const content = loadGeneratedTypeContent();
-  let driftIndicators = [];
-
-  // Check for inconsistent enum values
-  const enumMatches = content.match(/=\s*["'](\w+)["']/g) || [];
-  const enumValues = enumMatches.map(match => match.match(/["'](\w+)["']/)[1]);
-
-  // Look for potential mismatches
-  if (enumValues.includes('lowercase') || enumValues.includes('UPPERCASE')) {
-    driftIndicators.push('Found serde rename indicators in TypeScript - possible enum mismatch');
+/**
+ * Extract all exported names from a file (including re-exports).
+ * @param {string} source
+ * @returns {string[]}
+ */
+function extractAllExports(source) {
+  const names = new Set();
+  // Local definitions
+  extractLocalDefinitions(source).forEach(n => names.add(n));
+  // Re-export named: export type { Foo, Bar } from '...'
+  const reExportRe = /export\s+(?:type\s+)?\{([^}]+)\}\s+from\s+['"][^'"]+['"]/g;
+  let m;
+  while ((m = reExportRe.exec(source)) !== null) {
+    const items = m[1].split(',').map(s => {
+      const parts = s.trim().split(/\s+as\s+/);
+      return (parts[1] || parts[0]).trim();
+    });
+    items.forEach(n => { if (n) names.add(n); });
   }
+  return [...names];
+}
 
-  // Check for Option<T> patterns that might indicate manual conversion issues
-  const optionPatterns = content.match(/\w+\?:\s*\w+/g) || [];
-  if (optionPatterns.length > 20) {
-    driftIndicators.push('High number of optional fields - verify null/undefined handling');
-  }
+// ---------------------------------------------------------------------------
+// Build the set of names exported from frontend/src/types/
+// ---------------------------------------------------------------------------
 
-  // Check for timestamp field consistency
-  const timestampFields = content.match(/:\s*string\s*;\s*\/\/.*(?:time|date|at)/gi) || [];
-  if (timestampFields.length < 5) {
-    driftIndicators.push('Few timestamp fields found - check date serialization');
-  }
+const centralTypeNames = new Set();
+for (const file of walkTs(TYPES_DIR)) {
+  const source = readFileSafe(file);
+  extractAllExports(source).forEach(n => centralTypeNames.add(n));
+}
 
-  if (driftIndicators.length > 0) {
-    console.log('⚠️  Potential type drift indicators:');
-    driftIndicators.forEach(indicator => console.log(`  - ${indicator}`));
-  } else {
-    console.log('✅ No obvious type drift indicators found.');
+// ---------------------------------------------------------------------------
+// Scan domain files for local definitions that duplicate central types
+// ---------------------------------------------------------------------------
+
+const errors = [];
+const warnings = [];
+
+for (const file of walkTs(DOMAINS_DIR)) {
+  const source = readFileSafe(file);
+  const localDefs = extractLocalDefinitions(source);
+  const rel = path.relative(ROOT, file).replace(/\\/g, '/');
+
+  for (const name of localDefs) {
+    if (centralTypeNames.has(name)) {
+      const conflictKey = `${name}|${rel}`;
+      if (KNOWN_STRUCTURAL_CONFLICTS.has(conflictKey)) {
+        // Intentional structural conflict — skip
+        continue;
+      }
+      errors.push(`DUPLICATE: "${name}" is defined locally in ${rel} but already exported from frontend/src/types/`);
+    }
   }
 }
 
+// ---------------------------------------------------------------------------
+// Check that the auto-generated lib/backend types are not re-defined in domains
+// ---------------------------------------------------------------------------
 
-function loadGeneratedTypeContent() {
-  const monolith = fs.readFileSync(BACKEND_TS_PATH, 'utf8');
-
-  // Legacy monolithic output
-  if (!monolith.includes("export * from './backend/index'")) {
-    return monolith;
-  }
-
-  // Domain-split output: aggregate generated domain files
-  if (!fs.existsSync(BACKEND_TS_DIR)) {
-    return monolith;
-  }
-
-  const files = fs
-    .readdirSync(BACKEND_TS_DIR)
-    .filter((file) => file.endsWith('.ts') && file !== 'index.ts')
-    .sort();
-
-  return files
-    .map((file) => fs.readFileSync(path.join(BACKEND_TS_DIR, file), 'utf8'))
-    .join('\n');
+const BACKEND_DIR = path.join(FRONTEND, 'lib', 'backend');
+const backendTypeNames = new Set();
+for (const file of walkTs(BACKEND_DIR)) {
+  const source = readFileSafe(file);
+  extractAllExports(source).forEach(n => backendTypeNames.add(n));
 }
-// Main execution
-try {
-  validateTypes();
-  checkTypeDrift();
-  console.log('\n🎉 Type validation complete!');
-} catch (error) {
-  console.error('❌ Validation failed with error:', error.message);
-  process.exit(1);
+
+for (const file of walkTs(DOMAINS_DIR)) {
+  const source = readFileSafe(file);
+  const localDefs = extractLocalDefinitions(source);
+  const rel = path.relative(ROOT, file).replace(/\\/g, '/');
+
+  for (const name of localDefs) {
+    if (backendTypeNames.has(name) && !centralTypeNames.has(name)) {
+      warnings.push(`WARN: "${name}" is defined locally in ${rel} and also auto-generated in lib/backend (consider moving to frontend/src/types/)`);
+    }
+  }
 }
+
+// ---------------------------------------------------------------------------
+// Report
+// ---------------------------------------------------------------------------
+
+let exitCode = 0;
+
+if (errors.length > 0) {
+  console.error('\n❌  Type duplication errors found:\n');
+  for (const e of errors) {
+    console.error('  ' + e);
+  }
+  exitCode = 1;
+}
+
+if (warnings.length > 0) {
+  console.warn('\n⚠️   Type duplication warnings:\n');
+  for (const w of warnings) {
+    console.warn('  ' + w);
+  }
+}
+
+if (exitCode === 0 && warnings.length === 0) {
+  console.log('✅  No duplicate type definitions found between domains and frontend/src/types/.');
+} else if (exitCode === 0) {
+  console.log(`\n✅  No blocking duplicates. ${warnings.length} warning(s) above.`);
+}
+
+process.exit(exitCode);

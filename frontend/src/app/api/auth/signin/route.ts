@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { createLogger, LogContext } from '@/lib/logger';
 import { z } from 'zod';
+import { createLogger, LogContext } from '@/lib/logger';
 import { addAuthDelay } from '@/lib/auth/timing-safe';
 
 const logger = createLogger('AuthSignin');

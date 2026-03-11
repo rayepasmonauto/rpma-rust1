@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../api/useAuth';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { useAuth } from '../api/useAuth';
 
 export function useDashboardPage() {
   const router = useRouter();

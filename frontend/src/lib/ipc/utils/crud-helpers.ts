@@ -1,5 +1,5 @@
-import { safeInvoke, cachedInvoke, invalidatePattern, ResponseHandlers } from '../core';
 import type { JsonObject, JsonValue } from '@/types/json';
+import { safeInvoke, cachedInvoke, invalidatePattern, ResponseHandlers } from '../core';
 
 export { ResponseHandlers } from '../core';
 
@@ -21,11 +21,10 @@ export function createCrudOperations<
     /**
      * Create a new entity
      */
-    create: async (data: CreateData, sessionToken: string): Promise<T> => {
+    create: async (data: CreateData): Promise<T> => {
       const result = await safeInvoke<T>(commandBase, {
         request: {
-          action: { action: 'Create', data },
-          session_token: sessionToken
+          action: { action: 'Create', data }
         }
       } as unknown as JsonObject, ResponseHandlers.discriminatedUnion('Created', validator));
       invalidatePattern(`${cachePrefix}:`);
@@ -35,22 +34,20 @@ export function createCrudOperations<
     /**
      * Get an entity by ID
      */
-    get: (id: string, sessionToken: string): Promise<T | null> =>
+    get: (id: string): Promise<T | null> =>
       cachedInvoke(`${cachePrefix}:${id}`, commandBase, {
         request: {
-          action: { action: 'Get', id },
-          session_token: sessionToken
+          action: { action: 'Get', id }
         }
       }, ResponseHandlers.discriminatedUnionNullable('Found', validator)) as Promise<T | null>,
 
     /**
      * Update an existing entity
      */
-    update: async (id: string, data: UpdateData, sessionToken: string): Promise<T> => {
+    update: async (id: string, data: UpdateData): Promise<T> => {
       const result = await safeInvoke<T>(commandBase, {
         request: {
-          action: { action: 'Update', id, data },
-          session_token: sessionToken
+          action: { action: 'Update', id, data }
         }
       } as unknown as JsonObject, ResponseHandlers.discriminatedUnion('Updated', validator));
       invalidatePattern(`${cachePrefix}:`);
@@ -60,11 +57,10 @@ export function createCrudOperations<
     /**
      * Delete an entity by ID
      */
-    delete: async (id: string, sessionToken: string): Promise<void> => {
+    delete: async (id: string): Promise<void> => {
       await safeInvoke<void>(commandBase, {
         request: {
-          action: { action: 'Delete', id },
-          session_token: sessionToken
+          action: { action: 'Delete', id }
         }
       });
       invalidatePattern(`${cachePrefix}:`);
@@ -73,22 +69,20 @@ export function createCrudOperations<
     /**
      * List entities with filters
      */
-    list: (filters: Partial<ListFilters>, sessionToken: string): Promise<ListResponse> =>
+    list: (filters: Partial<ListFilters>): Promise<ListResponse> =>
       safeInvoke<ListResponse>(commandBase, {
         request: {
-          action: { action: 'List', filters },
-          session_token: sessionToken
+          action: { action: 'List', filters }
         }
       } as unknown as JsonObject, ResponseHandlers.list((data: JsonValue) => data as ListResponse)),
 
     /**
      * Get statistics for the entity type
      */
-    statistics: (sessionToken: string): Promise<JsonValue> =>
+    statistics: (): Promise<JsonValue> =>
       safeInvoke(commandBase, {
         request: {
-          action: { action: 'GetStatistics' },
-          session_token: sessionToken
+          action: { action: 'GetStatistics' }
         }
       }, ResponseHandlers.statistics()),
   };

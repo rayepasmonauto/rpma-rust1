@@ -1,8 +1,8 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import TaskManager from '../TaskManager';
 import { ipcClient } from '@/lib/ipc';
+import TaskManager from '../TaskManager';
 
 jest.mock('@/domains/auth', () => ({
   useAuth: () => ({

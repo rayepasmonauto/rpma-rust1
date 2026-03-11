@@ -1,5 +1,5 @@
-import { toast } from 'sonner';
 import React from 'react';
+import { toast } from 'sonner';
 import { CheckCircle, XCircle, AlertCircle, Info, Loader2, Zap } from 'lucide-react';
 
 // Enhanced toast system with better animations and styling

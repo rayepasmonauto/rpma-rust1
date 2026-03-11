@@ -1,11 +1,11 @@
-﻿import { settingsService } from '@/domains/settings/server';
+﻿import { withAuth, NextRequestWithUser } from '@/lib/middleware/auth.middleware';
+import { settingsService } from '@/domains/settings/server';
 import type {
   UpdateAccessibilityRequest,
   UpdateNotificationsRequest,
   UpdatePerformanceRequest,
   UpdatePreferencesRequest,
 } from '@/domains/settings/server';
-import { withAuth, NextRequestWithUser } from '@/lib/middleware/auth.middleware';
 import { settingsError, settingsSuccess } from './_shared';
 
 export const dynamic = 'force-dynamic';

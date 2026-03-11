@@ -1,11 +1,11 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Package, TrendingUp, DollarSign } from 'lucide-react';
-import { useInventoryStats } from '../hooks/useInventoryStats';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 import { ErrorState } from '@/shared/ui/layout/ErrorState';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { useInventoryStats } from '../hooks/useInventoryStats';
 
 export function InventoryDashboard() {
   const { t } = useTranslation();

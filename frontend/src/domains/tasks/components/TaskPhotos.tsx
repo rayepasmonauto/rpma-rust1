@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { addKeyboardNavigation } from '@/lib/accessibility.ts';
+import Image from 'next/image';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Camera, Trash2, Upload, ImageIcon } from 'lucide-react';
+import { addKeyboardNavigation } from '@/lib/accessibility.ts';
+import { ipcClient } from '@/lib/ipc';
+import { interventionKeys } from '@/lib/query-keys';
+import { Photo } from '@/lib/backend';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
-import Image from 'next/image';
-import { ipcClient } from '@/lib/ipc';
-import { useAuth } from '@/domains/auth';
 import { resolveLocalImageUrl, shouldUseUnoptimizedImage } from '@/shared/utils';
-import { interventionKeys } from '@/lib/query-keys';
+import { useAuth } from '@/domains/auth';
 
-import { Camera, Trash2, Upload, ImageIcon } from 'lucide-react';
-import { Photo } from '@/lib/backend';
 
 interface TaskPhotosProps {
   taskId: string;
@@ -40,7 +40,7 @@ export function TaskPhotos({ taskId, interventionId }: TaskPhotosProps) {
       if (!interventionId) {
         return [];
       }
-      return await ipcClient.photos.list(interventionId, user.token);
+      return await ipcClient.photos.list(interventionId);
     },
     enabled: !!user?.token && !!interventionId,
     staleTime: 2 * 60 * 1000,
@@ -78,8 +78,7 @@ export function TaskPhotos({ taskId, interventionId }: TaskPhotosProps) {
           mimeType: file.type || 'application/octet-stream',
           bytes: new Uint8Array(buffer),
         },
-        type.toLowerCase(),
-        user.token
+        type.toLowerCase()
       );
 
       toast({
@@ -120,7 +119,7 @@ export function TaskPhotos({ taskId, interventionId }: TaskPhotosProps) {
       if (!user?.token) {
         throw new Error('User not authenticated');
       }
-      return await ipcClient.photos.delete(photoId, user.token);
+      return await ipcClient.photos.delete(photoId);
     },
     onMutate: async (photoId: string) => {
       const queryKey = interventionId ? interventionKeys.photos(interventionId) : ['interventions', 'photos', taskId];

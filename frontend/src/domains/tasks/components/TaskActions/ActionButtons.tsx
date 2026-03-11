@@ -2,10 +2,6 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Play, 
   CheckCircle, 
@@ -19,10 +15,14 @@ import {
   Printer
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import enhancedToast from '@/lib/enhanced-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TaskWithDetails } from '@/types/task.types';
 import { useAuth } from '@/domains/auth';
 import { documentReportOperations } from '@/domains/documents';
-import enhancedToast from '@/lib/enhanced-toast';
 
 interface ActionButtonsProps {
   task: TaskWithDetails;

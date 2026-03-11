@@ -1,14 +1,14 @@
 ﻿'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { Shield, AlertTriangle, Users, CheckCircle, XCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { ipcClient } from '@/lib/ipc';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, AlertTriangle, Users, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '@/domains/auth';
-import { ipcClient } from '@/lib/ipc';
-import { toast } from 'sonner';
 
 interface SecurityMetrics {
   total_events_today: number;
@@ -62,8 +62,8 @@ export function SecurityDashboard({ onRefresh: _onRefresh }: SecurityDashboardPr
       setError(null);
 
       const [metricsData, alertsData, sessionsData] = await Promise.all([
-        ipcClient.audit.getMetrics(user.token),
-        ipcClient.audit.getAlerts(user.token),
+        ipcClient.audit.getMetrics(),
+        ipcClient.audit.getAlerts(),
         ipcClient.settings.getActiveSessions(),
       ]);
 
@@ -87,7 +87,7 @@ export function SecurityDashboard({ onRefresh: _onRefresh }: SecurityDashboardPr
     if (!user?.token) return;
 
     try {
-      await ipcClient.audit.acknowledgeAlert(alertId, user.token);
+      await ipcClient.audit.acknowledgeAlert(alertId);
       toast.success('Alerte acquittée');
       loadSecurityData(); // Refresh data
     } catch (err) {

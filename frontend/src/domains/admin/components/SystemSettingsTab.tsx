@@ -1,19 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert } from '@/components/ui/alert';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import { useLogger, useFormLogger } from '@/shared/hooks/useLogger';
-import { LogDomain } from '@/shared/utils';
 import { motion } from 'framer-motion';
 import {
   Settings,
@@ -33,10 +21,22 @@ import {
   Timer,
   Languages,
 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useLogger, useFormLogger } from '@/shared/hooks/useLogger';
+import { LogDomain } from '@/shared/utils';
 import { SystemConfiguration, BusinessHoursConfig } from '@/shared/types';
-import { useAuth } from '@/domains/auth';
 import { settingsOperations } from '@/shared/utils';
 import type { JsonValue, JsonObject } from '@/shared/types';
+import { useAuth } from '@/domains/auth';
 
 const ConfigurationSkeleton = () => (
   <div className="space-y-4">
@@ -103,7 +103,7 @@ export function SystemSettingsTab() {
       setLoading(true);
       logInfoRef.current('Loading system configurations');
 
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const data = await settingsOperations.getAppSettings();
       const appSettings = data as Record<string, JsonValue>;
       const generalSettings = (appSettings?.general || {}) as Record<string, JsonValue>;
@@ -159,7 +159,7 @@ export function SystemSettingsTab() {
     const timer = logPerformanceRef.current('Load business hours');
     try {
       logInfoRef.current('Loading business hours configuration');
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const data = await settingsOperations.getAppSettings();
       const appSettings = data as Record<string, JsonValue>;
       const stored = appSettings?.business_hours as unknown as BusinessHoursConfig | undefined;
@@ -212,7 +212,7 @@ export function SystemSettingsTab() {
     logFormEvent('Save configurations initiated', { configurationsCount: configurations.length });
 
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       logInfoRef.current('Saving configurations via IPC', { count: configurations.length });
 
       const updateRequest: Record<string, string | number | boolean | undefined> = {};

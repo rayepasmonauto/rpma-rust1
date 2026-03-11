@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '@/domains/auth';
 import { canAccessInventory } from '@/types/auth.types';
+import { useAuth } from '@/domains/auth';
 import { inventoryIpc } from '../ipc/inventory.ipc';
 import type { InventoryStats } from '../api/types';
 

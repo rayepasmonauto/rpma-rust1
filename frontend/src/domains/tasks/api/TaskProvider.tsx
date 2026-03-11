@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useCallback, useMemo } from 'react';
 import { TaskStatus, TaskPriority, UpdateTaskRequest } from '@/lib/backend';
-import type { TaskWithDetails } from './types';
 import { useTasks } from '../hooks/useTasks';
 import { TaskService } from '../services/task.service';
+import type { TaskWithDetails } from './types';
 
 interface TaskContextType extends ReturnType<typeof useTasks> {
   // Additional context-specific methods can be added here

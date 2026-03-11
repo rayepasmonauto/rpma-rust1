@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { WorkflowProgressCard } from '../WorkflowProgressCard';
 import { ipcClient } from '@/lib/ipc/client';
+import { WorkflowProgressCard } from '../WorkflowProgressCard';
 
 const mockUseAuth = jest.fn(() => ({
   session: { id: 'user-123', token: 'mock-token' },

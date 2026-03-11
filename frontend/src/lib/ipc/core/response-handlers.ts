@@ -1,5 +1,5 @@
-import type { BackendResponse } from './types';
 import type { JsonValue } from '@/types/json';
+import type { BackendResponse } from './types';
 
 /**
  * Type-safe response extraction for IPC calls

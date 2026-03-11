@@ -1,9 +1,9 @@
-import { safeInvoke } from './utils';
-import { IPC_COMMANDS } from './commands';
 import type {
   StatusTransitionRequest,
   StatusDistribution
 } from '@/lib/backend';
+import { safeInvoke } from './utils';
+import { IPC_COMMANDS } from './commands';
 
 export const statusApi = {
   /**

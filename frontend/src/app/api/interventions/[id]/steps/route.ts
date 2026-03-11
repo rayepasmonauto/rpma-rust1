@@ -7,8 +7,9 @@
 
  import { NextRequest, NextResponse } from 'next/server';
 
- export const dynamic = 'force-dynamic';
 import { interventionWorkflowService } from '@/domains/interventions/server';
+
+ export const dynamic = 'force-dynamic';
 
 
 
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const authHeader = request.headers.get('authorization');
     console.info('[API] interventions/[id]/steps - Auth check:', { hasAuthHeader: !!authHeader });
 
-    const sessionToken = authHeader ? authHeader.replace('Bearer ', '') : '';
+    const _sessionToken = authHeader ? authHeader.replace('Bearer ', '') : '';
 
     // 3. Appel du service mï¿½tier pour rï¿½cupï¿½rer les ï¿½tapes
     const result = await interventionWorkflowService.getInterventionSteps(interventionId);

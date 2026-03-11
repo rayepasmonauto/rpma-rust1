@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { cn } from '@/lib/utils';
 import { CheckCircle2, Clock } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type StepItem = {
   id: string;

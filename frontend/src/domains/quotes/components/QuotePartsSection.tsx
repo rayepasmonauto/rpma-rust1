@@ -2,17 +2,12 @@
 
 import { useCallback } from 'react';
 import { Plus, Trash2, Package } from 'lucide-react';
+import { formatCents } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { formatCents } from '@/lib/format';
+import type { QuotePartInput } from '@/types/quote.types';
 
-export interface QuotePartInput {
-  part_number: string | null;
-  name: string;
-  quantity: number;
-  unit_price: number;
-  total: number;
-}
+export type { QuotePartInput };
 
 interface QuotePartsSectionProps {
   parts: QuotePartInput[];

@@ -5,12 +5,13 @@
  * @date 2025-01-20
  */
 
- import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
- export const dynamic = 'force-dynamic';
+import { PPFInterventionData } from '@/types/ppf-intervention';
 import { interventionWorkflowService, PPFPhotoService } from '@/domains/interventions/server';
 import type { PPFPhoto } from '@/domains/interventions/server';
-import { PPFInterventionData } from '@/types/ppf-intervention';
+
+ export const dynamic = 'force-dynamic';
 
 interface ValidationResult {
   isValid: boolean;
@@ -64,7 +65,7 @@ export async function POST(
       );
     }
 
-    const sessionToken = authHeader.replace('Bearer ', '');
+    const _sessionToken = authHeader.replace('Bearer ', '');
 
     // 3. Parsing du corps de la requï¿½te
     let validationOptions: ValidationRequest = {};

@@ -1,9 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Bell,
   AlertTriangle,
@@ -11,8 +8,11 @@ import {
   Save,
   TestTube,
 } from 'lucide-react';
-import { Form } from '@/components/ui/form';
 import { UserSession } from '@/lib/backend';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Form } from '@/components/ui/form';
 import { UserAccount } from '@/types';
 import { useNotificationSettings, sendTestNotification } from './useNotificationSettings';
 import {

@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { settingsOperations } from '@/shared/utils';
 import { SystemSettingsTab } from '../SystemSettingsTab';
 import { MonitoringTab } from '../MonitoringTab';
 import { BusinessRulesTab } from '../BusinessRulesTab';
-import { settingsOperations } from '@/shared/utils';
 
 jest.mock('@/domains/auth', () => ({
   useAuth: () => ({ session: { token: 'test-token' } }),

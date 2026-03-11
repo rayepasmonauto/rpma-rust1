@@ -4,9 +4,9 @@
  * Concrete implementation using Tauri's invoke and safeInvoke
  */
 
+import type { JsonObject } from '@/types/json';
 import { safeInvoke, NOT_IMPLEMENTED_COMMANDS, PUBLIC_COMMANDS } from './utils';
 import type { IpcAdapter, IpcInvokeOptions } from './adapter';
-import type { JsonObject } from '@/types/json';
 
 /**
  * Real adapter implementation for production use

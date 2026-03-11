@@ -2,9 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
+import { useAuth } from '@/domains/auth';
 import { useNotificationStore } from '../stores/notificationStore';
 import { getNotifications } from '../services/notificationActions';
-import { useAuth } from '@/domains/auth';
 
 export function useNotificationUpdates() {
   const { user } = useAuth();

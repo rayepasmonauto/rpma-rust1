@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { PerformanceConfig, PerformanceCategory, CreatePerformanceConfigDTO } from '@/shared/types';
-import { useAuth } from '@/domains/auth';
 import { settingsOperations } from '@/shared/utils';
 import type { JsonValue } from '@/shared/types';
+import { useAuth } from '@/domains/auth';
 
 const DEFAULT_FORM_DATA: CreatePerformanceConfigDTO = {
   category: 'caching' as PerformanceCategory,
@@ -69,7 +69,7 @@ export function usePerformanceConfig() {
   const loadPerformanceConfigs = useCallback(async () => {
     try {
       setLoading(true);
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const data = await settingsOperations.getAppSettings();
       const appSettings = data as Record<string, JsonValue>;
       const configs = (appSettings?.performance_configs || []) as unknown as PerformanceConfig[];
@@ -90,7 +90,7 @@ export function usePerformanceConfig() {
   const savePerformanceConfig = async () => {
     setSaving(true);
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const newConfig: PerformanceConfig = {
         id: editingConfig?.id || crypto.randomUUID(),
         category: formData.category,
@@ -131,7 +131,7 @@ export function usePerformanceConfig() {
   const deletePerformanceConfig = async () => {
     if (!configToDelete) return;
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const updatedConfigs = performanceConfigs.filter((config) => config.id !== configToDelete.id);
       await settingsOperations.updatePerformanceConfigs(
         updatedConfigs as unknown as JsonValue[]);
@@ -153,7 +153,7 @@ export function usePerformanceConfig() {
 
   const toggleConfigStatus = async (config: PerformanceConfig) => {
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const updatedConfigs = performanceConfigs.map(c =>
         c.id === config.id ? { ...c, isActive: !c.isActive } : c
       );

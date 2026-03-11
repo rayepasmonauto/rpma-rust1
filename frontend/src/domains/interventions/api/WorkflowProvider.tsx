@@ -1,7 +1,6 @@
 ﻿'use client';
 
 import { createContext, useContext, ReactNode, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useAuth } from '@/domains/auth';
 import {
   WorkflowExecution,
   WorkflowExecutionStep,
@@ -24,6 +23,7 @@ import {
   safeString,
   isNonNullObject
 } from '@/types/type-utils';
+import { useAuth } from '@/domains/auth';
 import { getWorkflowServiceInstance } from '../services/workflow-service-adapter';
 
 // Interface for step data updates

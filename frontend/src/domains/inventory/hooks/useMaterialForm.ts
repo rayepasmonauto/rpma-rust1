@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import type { JsonValue } from '@/types/json';
 import { useAuth } from '@/domains/auth';
 import { inventoryIpc } from '../ipc/inventory.ipc';
-import type { JsonValue } from '@/types/json';
 import type { MaterialType, UnitOfMeasure } from '../api/types';
 import type { CreateMaterialRequest } from '../server';
 

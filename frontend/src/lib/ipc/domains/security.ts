@@ -1,6 +1,6 @@
+import type { JsonValue } from '@/types/json';
 import { safeInvoke } from '../core';
 import { IPC_COMMANDS } from '../commands';
-import type { JsonValue } from '@/types/json';
 
 /**
  * Security session management operations

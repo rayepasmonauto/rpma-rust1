@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useAuth } from '@/domains/auth';
-import { useQuotesList } from './useQuotes';
 import { computeQuoteStats } from '@/shared/types';
-import { fetchClientMap } from '../services/quote-client-enrichment.service';
 import type { QuoteStatus } from '@/shared/types';
 import type { Quote } from '@/types/quote.types';
 import type { Client } from '@/types/client.types';
+import { useAuth } from '@/domains/auth';
+import { fetchClientMap } from '../services/quote-client-enrichment.service';
+import { useQuotesList } from './useQuotes';
 
 export type ActiveTab = 'all' | QuoteStatus;
 

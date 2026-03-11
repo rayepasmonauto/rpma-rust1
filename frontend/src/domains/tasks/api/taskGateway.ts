@@ -1,8 +1,8 @@
+import { statusApi } from '@/lib/ipc/status';
+import type { StatusTransitionRequest } from '@/lib/backend';
+import type { JsonObject } from '@/types/json';
 import { TaskService } from '../services/task.service';
 import { taskIpc } from '../ipc/task.ipc';
-import { statusApi } from '@/lib/ipc/status';
-import type { JsonObject } from '@/types/json';
-import type { StatusTransitionRequest } from '@/lib/backend';
 import type {
   TaskAssignmentCheckResponse,
   TaskAvailabilityCheckResponse,

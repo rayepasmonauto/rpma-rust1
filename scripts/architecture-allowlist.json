@@ -1,6 +1,0 @@
-{
-  "version": 1,
-  "description": "Known cross-domain boundary violations tracked for progressive refactoring. New violations not in this list will cause architecture:check to fail, preventing regressions.",
-  "last_updated": "2026-03-01T00:00:00Z",
-  "allowed": []
-}

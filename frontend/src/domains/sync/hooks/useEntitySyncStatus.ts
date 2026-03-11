@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { useSyncStatus } from './useSyncStatus';
 import { SyncOperation, EntityType } from '@/lib/backend';
 import { syncService } from '../services';
+import { useSyncStatus } from './useSyncStatus';
 
 export interface EntitySyncStatus {
   entityId: string;

@@ -2,12 +2,6 @@ import { safeInvoke, extractAndValidate, cachedInvoke, invalidatePattern } from 
 import { signalMutation } from '@/lib/data-freshness';
 import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import { validateTask, validateTaskListResponse } from '@/lib/validation/backend-type-guards';
-import type { JsonObject, JsonValue } from '@/types/json';
-import type {
-  TaskAssignmentCheckResponse,
-  TaskAvailabilityCheckResponse,
-  TaskHistoryEntry,
-} from '../api/types';
 import type {
   Task,
   CreateTaskRequest,
@@ -16,6 +10,12 @@ import type {
   TaskStatistics,
   TaskQuery
 } from '@/lib/backend';
+import type { JsonObject, JsonValue } from '@/types/json';
+import type {
+  TaskAssignmentCheckResponse,
+  TaskAvailabilityCheckResponse,
+  TaskHistoryEntry,
+} from '../api/types';
 
 export const taskIpc = {
   create: async (data: CreateTaskRequest): Promise<Task> => {

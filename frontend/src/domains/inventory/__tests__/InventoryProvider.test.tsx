@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { InventoryProvider, useInventoryContext } from '../api/InventoryProvider';
 import { useAuth } from '@/domains/auth';
+import { InventoryProvider, useInventoryContext } from '../api/InventoryProvider';
 import { inventoryIpc } from '../ipc/inventory.ipc';
 import type { Material, InventoryStats, InventoryTransaction } from '../api/types';
 

@@ -9,8 +9,8 @@ declare global {
     gtag?: (command: string, targetId: string, config?: Record<string, unknown>) => void;
   }
 }
-import { Button } from '@/components/ui/button';
 import { Bug, Home, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ErrorPageProps {
   error: Error & { digest?: string };

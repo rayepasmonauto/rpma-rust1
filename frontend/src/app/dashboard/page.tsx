@@ -2,10 +2,10 @@
 
 import React from 'react';
 import dynamic from 'next/dynamic';
-import { useDashboardPage } from '@/domains/auth';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { PageShell } from '@/shared/ui/layout/PageShell';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
+import { useDashboardPage } from '@/domains/auth';
 
 const CalendarDashboard = dynamic(
   () => import('@/domains/calendar').then((mod) => mod.CalendarDashboard),

@@ -1,8 +1,8 @@
 // Task Workflow Sync Service
 import { ipcClient } from '@/lib/ipc/client';
 import type { Intervention } from '@/lib/backend';
-import type { TaskWithDetails } from '@/types/task.types';
 import { AuthSecureStorage } from '@/lib/secureStorage';
+import type { TaskWithDetails } from '@/types/task.types';
 
 interface ActiveInterventionResponse {
   type: string;
@@ -36,15 +36,15 @@ export class TaskWorkflowSyncService {
    */
   static async syncTaskWithWorkflow(taskId: string): Promise<TaskWithWorkflowProgress> {
     try {
-      const sessionToken = await this.getSessionToken();
+      const _sessionToken = await this.getSessionToken();
       // Get the task details
-      const task = (await ipcClient.tasks.get(taskId, sessionToken)) as TaskWithDetails | null;
+      const task = (await ipcClient.tasks.get(taskId)) as TaskWithDetails | null;
       if (!task) {
         throw new Error(`Failed to get task ${taskId}: not found`);
       }
 
       // Get the active intervention for this task
-      const interventionResponse = await ipcClient.interventions.getActiveByTask(taskId, sessionToken) as ActiveInterventionResponse;
+      const interventionResponse = await ipcClient.interventions.getActiveByTask(taskId) as ActiveInterventionResponse;
       if (!interventionResponse || interventionResponse.type !== 'ActiveRetrieved' || !interventionResponse.intervention) {
         // No active intervention, return task with sync status
         return {
@@ -57,7 +57,7 @@ export class TaskWorkflowSyncService {
       const intervention = interventionResponse.intervention;
 
       // Get workflow progress
-      const progressResponse = await ipcClient.interventions.getProgress(intervention.id, sessionToken);
+      const progressResponse = await ipcClient.interventions.getProgress(intervention.id);
       if (!progressResponse || !progressResponse.steps) {
         throw new Error(`Failed to get progress for intervention ${intervention.id}`);
       }
@@ -91,9 +91,9 @@ export class TaskWorkflowSyncService {
    */
   static async syncAllTasksWithWorkflows(): Promise<TaskWithWorkflowProgress[]> {
     try {
-      const sessionToken = await this.getSessionToken();
+      const _sessionToken = await this.getSessionToken();
       // Get all tasks (you might want to add pagination/filtering)
-      const tasksResponse = await ipcClient.tasks.list({}, sessionToken);
+      const tasksResponse = await ipcClient.tasks.list({});
       if (!tasksResponse || !tasksResponse.data) {
         throw new Error('Failed to get tasks');
       }

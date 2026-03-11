@@ -1,8 +1,7 @@
 "use client";
-import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AuthSecureStorage } from '@/lib/secureStorage';
-import { interventionWorkflowService } from '../services';
 import { interventionKeys } from '@/lib/query-keys';
 import { logger } from '@/lib/logging';
 import { LogDomain } from '@/lib/logging/types';
@@ -10,6 +9,7 @@ import type {
   PPFInterventionData,
   PPFInterventionStep,
 } from '@/types/ppf-intervention';
+import { interventionWorkflowService } from '../services';
 
 interface UseInterventionSyncProps {
   taskId?: string;
@@ -121,7 +121,7 @@ export function useInterventionSync({
       try {
         console.info('Fetching intervention steps for intervention:', interventionId);
         const session = await AuthSecureStorage.getSession();
-        const sessionToken = session.token || '';
+        const _sessionToken = session.token || '';
         const result = await interventionWorkflowService.getInterventionSteps(interventionId);
         console.info('IPC result for intervention steps:', result);
 

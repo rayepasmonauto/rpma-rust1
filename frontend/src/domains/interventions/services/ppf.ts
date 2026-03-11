@@ -1,9 +1,9 @@
 // PPF (Paint Protection Film) service
-import type { PPFInterventionStep } from '@/types/ppf-intervention';
-import { ApiError } from '@/types/api';
 import { ipcClient } from '@/lib/ipc';
 import { AuthSecureStorage } from '@/lib/secureStorage';
 import type { JsonValue } from '@/lib/backend';
+import { ApiError } from '@/types/api';
+import type { PPFInterventionStep } from '@/types/ppf-intervention';
 
 export interface PPFStep {
   id: string;
@@ -53,8 +53,8 @@ export class PPFService {
 
   static async getIntervention(id: string): Promise<PPFIntervention | null> {
     try {
-      const token = await this.getSessionToken();
-      const intervention = await ipcClient.interventions.get(id, token);
+      const _token = await this.getSessionToken();
+      const intervention = await ipcClient.interventions.get(id);
 
       if (!intervention) return null;
 
@@ -91,10 +91,10 @@ export class PPFService {
     issues?: string[] | null;
   }): Promise<PPFIntervention> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
 
       // Get current progress to find the next step to advance
-      const progressData = await ipcClient.interventions.getProgress(id, token);
+      const progressData = await ipcClient.interventions.getProgress(id);
       const steps = (progressData.steps || []) as Array<Record<string, unknown>>;
 
       const nextStep = steps.find(s => s.step_status !== 'completed');
@@ -110,7 +110,7 @@ export class PPFService {
         notes: options?.notes ?? null,
         quality_check_passed: options?.quality_check_passed ?? true,
         issues: options?.issues ?? null,
-      }, token);
+      });
 
       const intervention = await this.getIntervention(id);
       if (!intervention) throw new ApiError('Intervention not found after advancing');
@@ -131,7 +131,7 @@ export class PPFService {
     customer_comments?: string | null;
   }): Promise<PPFIntervention> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
 
       await ipcClient.interventions.finalize({
         intervention_id: id,
@@ -142,7 +142,7 @@ export class PPFService {
         final_observations: options?.final_observations ?? null,
         customer_signature: options?.customer_signature ?? null,
         customer_comments: options?.customer_comments ?? null,
-      }, token);
+      });
 
       const intervention = await this.getIntervention(id);
       if (!intervention) throw new ApiError('Intervention not found after finalizing');
@@ -155,8 +155,8 @@ export class PPFService {
 
   static async getProgress(id: string): Promise<{ progress: number; currentStep: string }> {
     try {
-      const token = await this.getSessionToken();
-      const progressData = await ipcClient.interventions.getProgress(id, token);
+      const _token = await this.getSessionToken();
+      const progressData = await ipcClient.interventions.getProgress(id);
 
       const steps = (progressData.steps || []) as Array<Record<string, unknown>>;
       const currentStep = steps.find(s => s.step_status !== 'completed');
@@ -172,8 +172,8 @@ export class PPFService {
 
   static async getSteps(id: string): Promise<PPFStep[]> {
     try {
-      const token = await this.getSessionToken();
-      const progressData = await ipcClient.interventions.getProgress(id, token);
+      const _token = await this.getSessionToken();
+      const progressData = await ipcClient.interventions.getProgress(id);
 
       return ((progressData.steps || []) as Array<Record<string, unknown>>).map(step => ({
         id: String(step.id || ''),

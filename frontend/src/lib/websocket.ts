@@ -3,9 +3,9 @@
 //! This module provides a WebSocket client that connects to the backend
 //! WebSocket server and handles real-time updates.
 
+import React from 'react';
 import { logger } from './logging';
 import { LogDomain } from './logging/types';
-import React from 'react';
 
 export interface WSMessage {
   type: string;

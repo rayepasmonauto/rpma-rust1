@@ -1,9 +1,9 @@
+import type { TaskStatus, TaskPriority } from '@/lib/backend';
 import { useAuth } from '@/domains/auth';
 import { useTaskState } from './useTaskState';
 import { useTaskActions } from './useTaskActions';
 import { useTaskSync } from './useTaskSync';
 import { useTaskFilters } from './useTaskFilters';
-import type { TaskStatus, TaskPriority } from '@/lib/backend';
 
 interface UseTasksOptions {
   status?: TaskStatus | 'all';

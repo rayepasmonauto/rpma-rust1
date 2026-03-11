@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { Send, FileText, Users, Mail, MessageSquare } from 'lucide-react';
+import type { SendMessageRequest, MessageTemplate } from '@/lib/backend';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,11 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useMessages, useMessageTemplates } from '../api/useMessages';
 import { useTranslation } from '@/shared/hooks/useTranslation';
-import type { SendMessageRequest, MessageTemplate } from '@/lib/backend';
-import { toast } from 'sonner';
-import { Send, FileText, Users, Mail, MessageSquare } from 'lucide-react';
+import { useMessages, useMessageTemplates } from '../api/useMessages';
 
 interface MessageComposerProps {
   onMessageSent?: () => void;

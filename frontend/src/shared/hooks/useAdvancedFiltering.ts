@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { Task } from '@/lib/backend';
 import {
   executeFilterSearch,
   getAvailableOperatorsForField,
@@ -13,7 +14,6 @@ import type {
   FilterConfig,
 } from '@/shared/utils/filter-engine';
 
-import { Task } from '@/lib/backend';
 import { UnknownRecord } from '@/types/utility.types';
 
 export type { FilterField, FilterValue, SortField, SearchQuery, SearchResult, FilterConfig };

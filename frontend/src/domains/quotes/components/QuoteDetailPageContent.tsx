@@ -19,14 +19,7 @@ import {
   History,
   ArrowRight,
 } from 'lucide-react';
-import {
-  QuoteConvertDialog,
-} from './QuoteConvertDialog';
-import { QuoteStatusBadge } from './QuoteStatusBadge';
-import { QuoteWorkflowPanel } from './QuoteWorkflowPanel';
-import { formatCents } from '../utils/formatting';
-import { useQuoteDetailPage } from '../hooks/useQuoteDetailPage';
-import type { ActiveTab } from '../hooks/useQuoteDetailPage';
+import { toast } from 'sonner';
 import { PageShell } from '@/shared/ui/layout/PageShell';
 import { PageHeader } from '@/shared/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -53,10 +46,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
 import { ErrorState, LoadingState } from '@/shared/ui/facade';
 import type { QuoteItemKind } from '@/shared/types';
 import { FadeIn } from '@/shared/ui/animations/FadeIn';
+import type { ActiveTab } from '../hooks/useQuoteDetailPage';
+import { useQuoteDetailPage } from '../hooks/useQuoteDetailPage';
+import { formatCents } from '../utils/formatting';
+import { QuoteWorkflowPanel } from './QuoteWorkflowPanel';
+import { QuoteStatusBadge } from './QuoteStatusBadge';
+import {
+  QuoteConvertDialog,
+} from './QuoteConvertDialog';
 
 export function QuoteDetailPageContent() {
   const params = useParams();

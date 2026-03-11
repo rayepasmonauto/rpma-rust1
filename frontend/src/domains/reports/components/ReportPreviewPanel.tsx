@@ -2,6 +2,7 @@
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
+import type { InterventionReportViewModel } from '../services/report-view-model.types';
 import { ReportPreviewMeta } from './preview/ReportPreviewMeta';
 import { ReportPreviewClientVehicle } from './preview/ReportPreviewClientVehicle';
 import { ReportPreviewWorkConditions } from './preview/ReportPreviewWorkConditions';
@@ -9,7 +10,6 @@ import { ReportPreviewStepsList } from './preview/ReportPreviewStepsList';
 import { ReportPreviewQuality } from './preview/ReportPreviewQuality';
 import { ReportPreviewCustomerValidation } from './preview/ReportPreviewCustomerValidation';
 import { ReportDownloadActions } from './preview/ReportDownloadActions';
-import type { InterventionReportViewModel } from '../services/report-view-model.types';
 
 interface ReportPreviewPanelProps {
   viewModel: InterventionReportViewModel | null;

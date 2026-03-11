@@ -3,9 +3,6 @@
 import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
   User,
   Bell,
@@ -16,14 +13,17 @@ import {
   Menu,
   Settings
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useLogger } from '@/shared/hooks/useLogger';
 import { LogDomain } from '@/shared/utils';
-import { useAuth } from '@/domains/auth';
 import { PageShell } from '@/shared/ui/layout/PageShell';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 import { PageHeader } from '@/components/ui/page-header';
 import { useTranslation } from '@/shared/hooks/useTranslation';
-import { cn } from '@/lib/utils';
+import { useAuth } from '@/domains/auth';
 
 const getTabConfig = (t: (key: string, params?: Record<string, string | number>) => string) => [
   {

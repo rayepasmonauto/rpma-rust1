@@ -2,10 +2,6 @@
 
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { 
   Settings, 
   Workflow, 
@@ -19,6 +15,10 @@ import {
    AlertTriangle,
    Menu
 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useLogger } from '@/shared/hooks/useLogger';
 import { LogDomain } from '@/shared/utils';
 import { PageShell } from '@/shared/ui/layout/PageShell';

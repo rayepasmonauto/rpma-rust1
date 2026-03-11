@@ -2,14 +2,14 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/domains/auth';
-import { clientService } from '../server';
-import { useClients } from './useClients';
-import { computeClientStats } from '../utils/client-stats';
-import type { Client, ClientWithTasks } from '@/shared/types';
-import { useTranslation } from '@/shared/hooks/useTranslation';
 import { logger } from '@/lib/logging';
 import { LogDomain } from '@/lib/logging/types';
+import type { Client, ClientWithTasks } from '@/shared/types';
+import { useTranslation } from '@/shared/hooks/useTranslation';
+import { useAuth } from '@/domains/auth';
+import { clientService } from '../server';
+import { computeClientStats } from '../utils/client-stats';
+import { useClients } from './useClients';
 
 const INITIAL_SORT_FILTERS = { sort_by: 'name', sort_order: 'asc' as const };
 

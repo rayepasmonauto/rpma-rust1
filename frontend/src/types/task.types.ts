@@ -4,11 +4,30 @@
  * Types that match the Rust backend task models
  */
 
+import type { Task, TaskStatus, TaskPriority, TaskPhoto, AssignmentStatus, AvailabilityStatus, AssignmentCheckResponse, AvailabilityCheckResponse } from '@/lib/backend';
 import type { Photo } from './photo.types';
-import type { Task, TaskStatus, TaskPriority, TaskPhoto } from '@/lib/backend';
 
 // Re-export for backward compatibility
 export type { Task, TaskStatus, TaskPriority };
+
+// Re-export auto-generated assignment/availability types with domain-friendly names
+export type TaskAssignmentStatus = AssignmentStatus;
+export type TaskAvailabilityStatus = AvailabilityStatus;
+export type TaskAssignmentCheckResponse = AssignmentCheckResponse;
+export type TaskAvailabilityCheckResponse = AvailabilityCheckResponse;
+
+/**
+ * Task status change history entry - matches Rust TaskHistory model
+ */
+export interface TaskHistoryEntry {
+  id: string;
+  task_id: string;
+  old_status?: string | null;
+  new_status: string;
+  reason?: string | null;
+  changed_at: number | string;
+  changed_by?: string | null;
+}
 
 
 

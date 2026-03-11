@@ -2,7 +2,7 @@
 //!
 //! This module contains commands for window management and system integration.
 
-use crate::shared::ipc::AuthGuard;
+use crate::resolve_context;
 use crate::shared::policies::phone_policy::normalize_dialable_phone_number;
 use crate::shared::policies::url_policy::validate_https_url;
 use tauri::{command, Window};
@@ -84,7 +84,7 @@ pub async fn dashboard_get_stats(
     _time_range: Option<String>,
     correlation_id: Option<String>,
 ) -> Result<super::ApiResponse<serde_json::Value>, super::AppError> {
-    let ctx = AuthGuard::require_role(&state, super::UserRole::Viewer, &correlation_id)?;
+    let ctx = resolve_context!(&state, &correlation_id, super::UserRole::Viewer);
 
     let payload = serde_json::json!({
         "tasks": { "total": 0, "completed": 0, "pending": 0, "active": 0 },
@@ -102,7 +102,7 @@ pub async fn get_entity_counts(
     state: super::AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<super::ApiResponse<serde_json::Value>, super::AppError> {
-    let ctx = AuthGuard::require_role(&state, super::UserRole::Viewer, &correlation_id)?;
+    let ctx = resolve_context!(&state, &correlation_id, super::UserRole::Viewer);
 
     let pool = state.db.pool().clone();
     let counts = tokio::task::spawn_blocking(move || {
@@ -129,8 +129,7 @@ pub async fn get_recent_activities(
 ) -> Result<Vec<serde_json::Value>, String> {
     use tracing::debug;
 
-    let ctx = AuthGuard::require_role(&state, super::UserRole::Admin, &correlation_id)
-        .map_err(|e| e.to_string())?;
+    let ctx = resolve_context!(&state, &correlation_id, super::UserRole::Admin);
 
     debug!(
         "Retrieving recent activities for admin: {}",

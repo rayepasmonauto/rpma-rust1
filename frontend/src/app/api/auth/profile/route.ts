@@ -1,9 +1,9 @@
 ﻿import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
-import { userService } from '@/domains/users/server';
 import { createLogger, LogContext } from '@/lib/logger';
-import { getErrorMessage } from '@/types/utility.types';
 import type { NextRequestWithUser } from '@/lib/middleware/auth.middleware';
+import { getErrorMessage } from '@/types/utility.types';
+import { userService } from '@/domains/users/server';
 
 const logger = createLogger('AuthProfileAPI');
 

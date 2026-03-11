@@ -4,7 +4,6 @@
  */
 
 import { ipcClient } from '@/lib/ipc';
-import { ApiResponse } from '@/types';
 import type {
   AdvanceStepRequest,
   Intervention,
@@ -15,58 +14,22 @@ import type {
   StartInterventionRequest,
   Task,
 } from '@/lib/backend';
-import { AuthSecureStorage } from '@/lib/secureStorage';
+import { ApiResponse } from '@/types';
+import type {
+  WorkflowExecution,
+  WorkflowExecutionStep,
+  CreateWorkflowExecutionDTO,
+  StartTimingDTO,
+  SignatureDTO,
+} from '@/types/workflow.types';
 
-export interface WorkflowExecution {
-  id: string;
-  workflowId: string;
-  taskId: string;
-  templateId: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  currentStepId: string | null;
-  steps: WorkflowExecutionStep[];
-  startedAt?: string;
-  completedAt?: string;
-  createdBy: string;
-  updatedBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface WorkflowExecutionStep {
-  id: string;
-  workflowExecutionId: string;
-  stepId: string;
-  stepOrder: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  startedAt?: string | null;
-  completedAt?: string | null;
-  durationSeconds: number;
-  data?: Record<string, unknown>;
-  checklistCompletion: Record<string, unknown>;
-  startedBy?: string | null;
-  completedBy?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  notes?: string;
-  photos?: string[];
-}
-
-export interface CreateWorkflowExecutionDTO {
-  taskId: string;
-  templateId: string;
-}
-
-export interface StartTimingDTO {
-  workflowExecutionId: string;
-  stepId: string;
-}
-
-export interface SignatureDTO {
-  workflowExecutionId: string;
-  stepId: string;
-  signature: string;
-}
+export type {
+  WorkflowExecution,
+  WorkflowExecutionStep,
+  CreateWorkflowExecutionDTO,
+  StartTimingDTO,
+  SignatureDTO,
+};
 
 const DEFAULT_TEMPLATE_ID = 'ppf-workflow-template';
 
@@ -174,14 +137,6 @@ function parseInterventionCandidate(payload: unknown): Intervention | null {
   return null;
 }
 
-async function requireSessionToken(): Promise<string> {
-  const session = await AuthSecureStorage.getSession();
-  if (!session?.token) {
-    throw new Error('Authentication required');
-  }
-  return session.token;
-}
-
 function buildStartRequest(task: Task): StartInterventionRequest {
   const filmType: StartInterventionRequest['film_type'] =
     task.lot_film === 'premium' ||
@@ -230,20 +185,17 @@ export class WorkflowService {
   }
 
   async getWorkflowExecution(id: string): Promise<WorkflowExecution | null> {
-    const sessionToken = await requireSessionToken();
-    const intervention = await ipcClient.interventions.get(id, sessionToken);
+    const intervention = await ipcClient.interventions.get(id);
     if (!intervention) return null;
     return mapInterventionToWorkflow(intervention);
   }
 
   async startStepTiming(dto: StartTimingDTO): Promise<void> {
-    const sessionToken = await requireSessionToken();
-    await ipcClient.interventions.getStep(dto.stepId, sessionToken);
+    await ipcClient.interventions.getStep(dto.stepId);
   }
 
   async completeStep(stepId: string, data?: unknown): Promise<void> {
-    const sessionToken = await requireSessionToken();
-    const step = await ipcClient.interventions.getStep(stepId, sessionToken);
+    const step = await ipcClient.interventions.getStep(stepId);
     if (!step) {
       throw new Error('Workflow step not found');
     }
@@ -254,7 +206,7 @@ export class WorkflowService {
       notes: null,
       photos: null,
     };
-    await ipcClient.interventions.saveStepProgress(saveRequest, sessionToken);
+    await ipcClient.interventions.saveStepProgress(saveRequest);
 
     const advanceRequest: AdvanceStepRequest = {
       intervention_id: step.intervention_id,
@@ -265,11 +217,13 @@ export class WorkflowService {
       quality_check_passed: true,
       issues: null,
     };
-    await ipcClient.interventions.advanceStep(advanceRequest, sessionToken);
+    await ipcClient.interventions.advanceStep(advanceRequest);
   }
 
   async addSignature(dto: SignatureDTO): Promise<void> {
-    const sessionToken = await requireSessionToken();
+    if (!dto.stepId) {
+      throw new Error('stepId is required to save a signature');
+    }
     const payload: SaveStepProgressRequest = {
       step_id: dto.stepId,
       collected_data: {
@@ -279,18 +233,17 @@ export class WorkflowService {
       notes: null,
       photos: null,
     };
-    await ipcClient.interventions.saveStepProgress(payload, sessionToken);
+    await ipcClient.interventions.saveStepProgress(payload);
   }
 
   async getWorkflowByTaskId(taskId: string): Promise<WorkflowExecution | null> {
-    const sessionToken = await requireSessionToken();
-    const active = await ipcClient.interventions.getActiveByTask(taskId, sessionToken);
+    const active = await ipcClient.interventions.getActiveByTask(taskId);
     const activeIntervention = parseInterventionCandidate(active);
     if (activeIntervention) {
       return mapInterventionToWorkflow(activeIntervention);
     }
 
-    const latest = await ipcClient.interventions.getLatestByTask(taskId, sessionToken);
+    const latest = await ipcClient.interventions.getLatestByTask(taskId);
     const latestIntervention = parseInterventionCandidate(latest);
     if (latestIntervention) {
       return mapInterventionToWorkflow(latestIntervention);
@@ -300,25 +253,22 @@ export class WorkflowService {
   }
 
   async getWorkflowSteps(workflowId: string): Promise<WorkflowExecutionStep[]> {
-    const sessionToken = await requireSessionToken();
-    const progress = await ipcClient.interventions.getProgress(workflowId, sessionToken);
+    const progress = await ipcClient.interventions.getProgress(workflowId);
     const steps = progress?.steps ?? [];
     return steps.map(mapInterventionStep);
   }
 
   async startWorkflowExecution(dto: CreateWorkflowExecutionDTO): Promise<WorkflowExecution> {
-    const sessionToken = await requireSessionToken();
-
     const existing = await this.getWorkflowByTaskId(dto.taskId);
     if (existing) return existing;
 
-    const task = await ipcClient.tasks.get(dto.taskId, sessionToken);
+    const task = await ipcClient.tasks.get(dto.taskId);
     if (!task) {
       throw new Error(`Task ${dto.taskId} not found`);
     }
 
     const request = buildStartRequest(task);
-    const started = await ipcClient.interventions.start(request, sessionToken);
+    const started = await ipcClient.interventions.start(request);
     return mapInterventionToWorkflow(
       started.intervention as unknown as Partial<Intervention> & Record<string, unknown>
     );
@@ -333,8 +283,7 @@ export class WorkflowService {
   }
 
   async updateWorkflowExecution(id: string, updates: Partial<WorkflowExecution>): Promise<WorkflowExecution> {
-    const sessionToken = await requireSessionToken();
-    await ipcClient.interventions.updateWorkflow(id, updates as unknown as JsonObject, sessionToken);
+    await ipcClient.interventions.updateWorkflow(id, updates as unknown as JsonObject);
     const updated = await this.getWorkflowExecution(id);
     if (!updated) {
       throw new Error(`Workflow ${id} not found after update`);
@@ -343,14 +292,13 @@ export class WorkflowService {
   }
 
   async updateStepData(stepId: string, _workflowId: string, data: unknown, _userId: string): Promise<void> {
-    const sessionToken = await requireSessionToken();
     const request: SaveStepProgressRequest = {
       step_id: stepId,
       collected_data: (data ?? {}) as JsonValue,
       notes: null,
       photos: null,
     };
-    await ipcClient.interventions.saveStepProgress(request, sessionToken);
+    await ipcClient.interventions.saveStepProgress(request);
   }
 
   async pauseStepTiming(stepId: string, workflowId: string, userId: string): Promise<void> {
@@ -361,9 +309,9 @@ export class WorkflowService {
     await this.updateStepData(stepId, workflowId, { timing_paused: false }, userId);
   }
 
-  async getWorkflowStep(id: string, sessionToken: string): Promise<ApiResponse<WorkflowExecutionStep>> {
+  async getWorkflowStep(id: string): Promise<ApiResponse<WorkflowExecutionStep>> {
     try {
-      const response = await ipcClient.interventions.getStep(id, sessionToken);
+      const response = await ipcClient.interventions.getStep(id);
       return { success: true, data: mapInterventionStep(response) };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -371,9 +319,9 @@ export class WorkflowService {
     }
   }
 
-  async pauseWorkflow(id: string, sessionToken: string): Promise<ApiResponse<WorkflowExecution>> {
+  async pauseWorkflow(id: string): Promise<ApiResponse<WorkflowExecution>> {
     try {
-      await ipcClient.interventions.updateWorkflow(id, { status: 'paused' }, sessionToken);
+      await ipcClient.interventions.updateWorkflow(id, { status: 'paused' });
       const data = await this.getWorkflowExecution(id);
       if (!data) {
         return { success: false, error: `Workflow ${id} not found` };
@@ -385,9 +333,9 @@ export class WorkflowService {
     }
   }
 
-  async resumeWorkflow(id: string, sessionToken: string): Promise<ApiResponse<WorkflowExecution>> {
+  async resumeWorkflow(id: string): Promise<ApiResponse<WorkflowExecution>> {
     try {
-      await ipcClient.interventions.updateWorkflow(id, { status: 'in_progress' }, sessionToken);
+      await ipcClient.interventions.updateWorkflow(id, { status: 'in_progress' });
       const data = await this.getWorkflowExecution(id);
       if (!data) {
         return { success: false, error: `Workflow ${id} not found` };
@@ -400,7 +348,6 @@ export class WorkflowService {
   }
 
   async uploadStepPhotos(stepId: string, workflowId: string, photos: File[], _userId: string): Promise<{ urls: string[] }> {
-    const sessionToken = await requireSessionToken();
     const urls = photos.map((photo) => `local://${workflowId}/${stepId}/${encodeURIComponent(photo.name)}`);
     const request: SaveStepProgressRequest = {
       step_id: stepId,
@@ -411,7 +358,7 @@ export class WorkflowService {
       notes: null,
       photos: urls,
     };
-    await ipcClient.interventions.saveStepProgress(request, sessionToken);
+    await ipcClient.interventions.saveStepProgress(request);
     return { urls };
   }
 }

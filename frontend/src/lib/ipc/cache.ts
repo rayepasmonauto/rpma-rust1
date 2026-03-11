@@ -1,5 +1,5 @@
-﻿import { safeInvoke } from './utils';
-import type { JsonObject, JsonValue } from '@/types/json';
+﻿import type { JsonObject, JsonValue } from '@/types/json';
+import { safeInvoke } from './utils';
 
 interface CacheEntry<T> {
   data: T;
