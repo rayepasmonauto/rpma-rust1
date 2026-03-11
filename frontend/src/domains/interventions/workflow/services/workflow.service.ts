@@ -221,8 +221,11 @@ export class WorkflowService {
   }
 
   async addSignature(dto: SignatureDTO): Promise<void> {
+    if (!dto.stepId) {
+      throw new Error('stepId is required to save a signature');
+    }
     const payload: SaveStepProgressRequest = {
-      step_id: dto.stepId ?? '',
+      step_id: dto.stepId,
       collected_data: {
         customer_signature: dto.signature,
         signed_at: new Date().toISOString(),

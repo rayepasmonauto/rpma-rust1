@@ -101,7 +101,7 @@ function walkTs(dir) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       results.push(...walkTs(full));
-    } else if (/\.(ts|tsx)$/.test(entry.name) && !entry.name.includes('.test.') && !entry.name.includes('.spec.')) {
+    } else if (/\.(ts|tsx)$/.test(entry.name) && !entry.name.endsWith('.d.ts') && !entry.name.includes('.test.') && !entry.name.includes('.spec.')) {
       results.push(full);
     }
   }
