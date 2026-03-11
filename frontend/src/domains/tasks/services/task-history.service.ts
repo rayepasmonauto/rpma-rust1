@@ -53,7 +53,7 @@ export class TaskHistoryService {
     actionType?: string;
   } = {}): Promise<{ history: TaskHistoryEntry[]; totalCount: number; hasMore: boolean }> {
     try {
-      const token = await TaskHistoryService.getSessionToken();
+      const _token = await TaskHistoryService.getSessionToken();
 
       // Use security events as audit trail for task history
       const events = await ipcClient.audit.getEvents(100);

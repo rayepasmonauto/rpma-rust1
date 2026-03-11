@@ -1,5 +1,6 @@
 'use client';
 
+import { Calculator, Percent, Tag, Receipt } from 'lucide-react';
 import { formatCents } from '@/lib/format';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +12,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { computeTotalsFromSubtotals } from '@/domains/quotes/utils/quote-calculations';
-import { Calculator, Percent, Tag, Receipt } from 'lucide-react';
 
 type DiscountType = 'none' | 'percentage' | 'fixed';
 

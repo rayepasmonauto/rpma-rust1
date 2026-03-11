@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useLogger } from '@/shared/hooks/useLogger';
 import { LogDomain } from '@/lib/logging/types';
 import { ipcClient } from '@/lib/ipc';
 import {
@@ -12,6 +11,7 @@ import {
   UserAccessibilitySettings,
 } from '@/lib/backend';
 import { SettingsErrorHandler } from '@/lib/utils/settings-error-handler';
+import { useLogger } from '@/shared/hooks/useLogger';
 
 // Combined form data type for all preference sections
 export type PreferencesFormData = {

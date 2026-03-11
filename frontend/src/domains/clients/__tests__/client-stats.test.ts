@@ -1,5 +1,5 @@
-import { computeClientStats } from '../utils/client-stats';
 import type { ClientWithTasks } from '@/shared/types';
+import { computeClientStats } from '../utils/client-stats';
 
 describe('computeClientStats', () => {
   it('returns zeros for empty array', () => {

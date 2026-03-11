@@ -1,7 +1,7 @@
 ﻿import { useState, useCallback, useEffect } from 'react';
+import { PhotoUploadProps as PhotoUploadOptions, UploadItem as PhotoUploadProgress } from '@/types/photo.types';
 import { taskPhotoService } from '../server';
 
-import { PhotoUploadProps as PhotoUploadOptions, UploadItem as PhotoUploadProgress } from '@/types/photo.types';
 
 const DEFAULT_OPTIONS: Partial<PhotoUploadOptions> = {
   maxFileSize: 5 * 1024 * 1024, // 5MB

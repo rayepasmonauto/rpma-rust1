@@ -2,9 +2,9 @@
 
 import { useCallback } from 'react';
 import { Plus, Trash2, Package } from 'lucide-react';
+import { formatCents } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { formatCents } from '@/lib/format';
 import type { QuotePartInput } from '@/types/quote.types';
 
 export type { QuotePartInput };

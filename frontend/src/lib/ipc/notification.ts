@@ -1,6 +1,6 @@
-import { safeInvoke } from './utils';
 import type { Notification } from '@/lib/backend/notifications';
 import type { JsonObject } from '@/types/json';
+import { safeInvoke } from './utils';
 
 export interface GetNotificationsResponse {
   notifications: Notification[];

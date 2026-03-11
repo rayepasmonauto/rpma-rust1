@@ -1,9 +1,9 @@
 // PPF (Paint Protection Film) service
-import type { PPFInterventionStep } from '@/types/ppf-intervention';
-import { ApiError } from '@/types/api';
 import { ipcClient } from '@/lib/ipc';
 import { AuthSecureStorage } from '@/lib/secureStorage';
 import type { JsonValue } from '@/lib/backend';
+import { ApiError } from '@/types/api';
+import type { PPFInterventionStep } from '@/types/ppf-intervention';
 
 export interface PPFStep {
   id: string;
@@ -53,7 +53,7 @@ export class PPFService {
 
   static async getIntervention(id: string): Promise<PPFIntervention | null> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const intervention = await ipcClient.interventions.get(id);
 
       if (!intervention) return null;
@@ -91,7 +91,7 @@ export class PPFService {
     issues?: string[] | null;
   }): Promise<PPFIntervention> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
 
       // Get current progress to find the next step to advance
       const progressData = await ipcClient.interventions.getProgress(id);
@@ -131,7 +131,7 @@ export class PPFService {
     customer_comments?: string | null;
   }): Promise<PPFIntervention> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
 
       await ipcClient.interventions.finalize({
         intervention_id: id,
@@ -155,7 +155,7 @@ export class PPFService {
 
   static async getProgress(id: string): Promise<{ progress: number; currentStep: string }> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const progressData = await ipcClient.interventions.getProgress(id);
 
       const steps = (progressData.steps || []) as Array<Record<string, unknown>>;
@@ -172,7 +172,7 @@ export class PPFService {
 
   static async getSteps(id: string): Promise<PPFStep[]> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const progressData = await ipcClient.interventions.getProgress(id);
 
       return ((progressData.steps || []) as Array<Record<string, unknown>>).map(step => ({

@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Home, Search, AlertTriangle } from 'lucide-react';
-
-import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { Home, Search, AlertTriangle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+
 
 export default function NotFound() {
   const router = useRouter();

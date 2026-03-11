@@ -1,3 +1,6 @@
+import { safeInvoke } from '@/lib/ipc/core';
+import { IPC_COMMANDS } from '@/lib/ipc/commands';
+import type { JsonObject } from '@/types/json';
 import {
   materialOperations,
   stockOperations,
@@ -6,9 +9,6 @@ import {
   supplierOperations,
   categoryOperations,
 } from '../server';
-import { safeInvoke } from '@/lib/ipc/core';
-import { IPC_COMMANDS } from '@/lib/ipc/commands';
-import type { JsonObject } from '@/types/json';
 import type {
   InventoryStats,
   InterventionMaterialSummary,

@@ -1,9 +1,6 @@
 import './mock/init';
-import { safeInvoke } from './utils';
-import { cachedInvoke, invalidatePattern } from './cache';
 import { signalMutation } from '@/lib/data-freshness';
-import type { ApiError } from '@/lib/backend';
-import type { JsonObject, JsonValue } from '@/types/json';
+import type { ApiError as _ApiError } from '@/lib/backend';
 import type {
   UserSession,
   UserSettings,
@@ -31,6 +28,20 @@ import type {
   UserListResponse,
 } from '@/lib/backend';
 import type { SignupRequest, CreateClientRequest, UpdateClientRequest } from '@/lib/validation/ipc-schemas';
+import {
+  validateUserSession,
+  validateTask,
+  validateClient,
+  // Add more validators as needed
+  validateIntervention,
+  validateInterventionStep,
+  validateStartInterventionResponse,
+  validateTaskListResponse,
+} from '@/lib/validation/backend-type-guards';
+import type { CreateEventInput, UpdateEventInput } from '@/types/calendar';
+import type { JsonObject, JsonValue } from '@/types/json';
+import { cachedInvoke, invalidatePattern } from './cache';
+import { safeInvoke } from './utils';
 
 // Typed response interfaces for IPC workflow responses (replacing inline `any` casts)
 interface InterventionWorkflowStartedResponse {
@@ -175,56 +186,8 @@ interface TransactionHistoryQuery {
   page?: number;
   limit?: number;
 }
-import type { CreateEventInput, UpdateEventInput } from '@/types/calendar';
-import {
-  validateUserSession,
-  validateTask,
-  validateClient,
-  // Add more validators as needed
-  validateIntervention,
-  validateInterventionStep,
-  validateStartInterventionResponse,
-  validateTaskListResponse,
-} from '@/lib/validation/backend-type-guards';
 
-interface BackendResponse<T = JsonValue> {
-  type: string;
-  success?: boolean;
-  message?: string;
-  error_code?: string;
-  data?: T;
-  error?: string | ApiError;
-  correlation_id?: string;
-}
-
-/**
- * Helper function to extract and validate data from IPC response wrapper
- */
-function extractAndValidate<T>(
-  result: JsonValue,
-  validator?: (data: JsonValue) => T,
-  handleNotFound: boolean = false
-): T | null {
-  // Handle NotFound case
-  if (handleNotFound && result && typeof result === 'object' && 'type' in result) {
-    const response = result as unknown as BackendResponse;
-    if (response.type === 'NotFound') {
-      return null;
-    }
-  }
-
-  // Extract data from response wrapper
-  if (result && typeof result === 'object' && 'data' in result) {
-    const response = result as unknown as BackendResponse;
-    const data = response.data as JsonValue;
-    return validator ? validator(data) : data as T;
-  }
-
-  // Fallback for direct data
-  return validator ? validator(result) : result as T;
-}
-
-const getUserSettingsCacheKey = (): string => `user-settings`;
+const _getUserSettingsCacheKey = (): string => `user-settings`;
 const invalidateUserSettingsCache = (): void => {
   invalidatePattern('user-settings');
 };

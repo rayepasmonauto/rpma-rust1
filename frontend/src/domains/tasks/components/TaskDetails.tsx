@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, Tabs, TabsContent, TabsList, TabsTrigger, Badge } from '@/shared/ui';
 import { Loader2, UserPlus, Edit3, Trash, Play, XCircle, CheckCircle } from 'lucide-react';
-import { TaskStatus, TaskWithDetails } from '@/shared/types';
 import type { UpdateTaskRequest } from '@/lib/backend';
+import { taskKeys } from '@/lib/query-keys';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, Tabs, TabsContent, TabsList, TabsTrigger, Badge } from '@/shared/ui';
+import { TaskStatus, TaskWithDetails } from '@/shared/types';
 import { getUserFullName } from '@/shared/utils';
+import { useTranslation } from '@/shared/hooks/useTranslation';
+import { useAuth } from '@/domains/auth';
+import { useTasks } from '../hooks/useTasks';
+import { taskService } from '../services/task.service';
 import { TaskChecklist } from './TaskChecklist';
 import { TaskPhotos } from './TaskPhotos';
-import { taskKeys } from '@/lib/query-keys';
 import { TaskHistory } from './TaskHistory';
-import { useTasks } from '../hooks/useTasks';
-import { useAuth } from '@/domains/auth';
-import { taskService } from '../services/task.service';
-import { useTranslation } from '@/shared/hooks/useTranslation';
 
 interface TaskDetailsProps {
   task: TaskWithDetails | null;

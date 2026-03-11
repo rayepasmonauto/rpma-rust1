@@ -1,14 +1,14 @@
 import React from 'react';
 import { toast } from 'sonner';
 import { DragDropContext } from '@hello-pangea/dnd';
+import type { CalendarTask } from '@/lib/backend';
+import { useTranslation } from '@/shared/hooks/useTranslation';
+import { useCalendar } from '../hooks/useCalendar';
 import { CalendarHeader } from './CalendarHeader';
 import { MonthView } from './MonthView';
 import { WeekView } from './WeekView';
 import { DayView } from './DayView';
 import { AgendaView } from './AgendaView';
-import { useCalendar } from '../hooks/useCalendar';
-import type { CalendarTask } from '@/lib/backend';
-import { useTranslation } from '@/shared/hooks/useTranslation';
 
 interface CalendarViewProps {
   initialDate?: Date;

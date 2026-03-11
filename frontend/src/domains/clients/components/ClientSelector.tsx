@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useState, useEffect, useId, useCallback, useRef, useMemo } from 'react';
-import { KeyboardNavigation } from '@/lib/accessibility.ts';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Check, ChevronsUpDown, Plus, User, AlertCircle } from 'lucide-react';
+import { KeyboardNavigation } from '@/lib/accessibility.ts';
 import { cn } from '@/lib/utils';
 import { Client } from '@/lib/backend';
 import { AuthSecureStorage } from '@/lib/secureStorage';
 import { ipcClient } from '@/lib/ipc';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 interface ClientSelectorProps {
   value?: string;

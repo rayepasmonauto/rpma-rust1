@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { DesktopForm } from '@/shared/ui';
 import { z } from 'zod';
 import { UserPlus, Eye, EyeOff } from 'lucide-react';
 
 import { FieldValues } from 'react-hook-form';
-import { useAuth } from '../api/useAuth';
+import { DesktopForm } from '@/shared/ui';
 import { UserRoleValues } from '@/shared/utils';
+import { useAuth } from '../api/useAuth';
 
 const signupSchema = z.object({
   email: z.string().email('Email invalide'),

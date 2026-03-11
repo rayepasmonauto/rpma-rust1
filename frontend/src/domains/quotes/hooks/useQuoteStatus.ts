@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/domains/auth';
-import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
 import type {
   Quote,
   QuoteAcceptResponse,
 } from '@/types/quote.types';
+import { useAuth } from '@/domains/auth';
+import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
 
 export function useQuoteStatus() {
   const { user } = useAuth();

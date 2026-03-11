@@ -1,8 +1,8 @@
 ﻿import { useQuery } from '@tanstack/react-query';
 import { interventionKeys } from '@/lib/query-keys';
-import { useAuth } from '@/domains/auth';
 import { logger } from '@/lib/logging';
 import { LogDomain } from '@/lib/logging/types';
+import { useAuth } from '@/domains/auth';
 import { interventionsIpc } from '../ipc/interventions.ipc';
 
 interface InterventionStep {

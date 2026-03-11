@@ -3,11 +3,6 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import { Plus, Shield, AlertCircle, Download, Filter, RefreshCw, ChevronRight, SearchX } from 'lucide-react';
-import { getTaskDisplayTitle, getTaskDisplayStatus } from '@/domains/tasks/utils/display';
-import {
-  getStatusBadgeClass,
-  formatTaskDateTime,
-} from '@/domains/tasks/utils/task-presentation';
 import {
   Badge,
   Button,
@@ -18,6 +13,11 @@ import {
   TaskCardSkeleton,
 } from '@/shared/ui/facade';
 import { cn } from '@/shared/utils';
+import { getTaskDisplayTitle, getTaskDisplayStatus } from '@/domains/tasks/utils/display';
+import {
+  getStatusBadgeClass,
+  formatTaskDateTime,
+} from '@/domains/tasks/utils/task-presentation';
 import { useTasksPage } from '@/domains/tasks/hooks/useTasksPage';
 import { TaskListCard } from './TaskListCard';
 import { TaskListFilters } from './TaskListFilters';

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2, Building2, User, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useOnboardingStatus, useCompleteOnboarding } from '@/domains/organizations';
 import type { CreateOrganizationRequest, OnboardingData } from '@/domains/organizations';
-import { Loader2, Building2, User, CheckCircle2 } from 'lucide-react';
 
 const STEPS = [
   { id: 1, title: 'Organization', description: 'Configure your organization' },

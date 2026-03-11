@@ -1,15 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { Package, Truck, BarChart3, Settings, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package, Truck, BarChart3, Settings, Menu } from 'lucide-react';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { MaterialCatalog } from './MaterialCatalog';
 import { SupplierManagement } from './SupplierManagement';
 import { InventoryReports } from './InventoryReports';
 import { InventorySettings } from './InventorySettings';
-import { useTranslation } from '@/shared/hooks/useTranslation';
 
 export function InventoryTabs() {
   const { t } = useTranslation();

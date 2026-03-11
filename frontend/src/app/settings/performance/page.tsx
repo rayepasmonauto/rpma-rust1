@@ -2,8 +2,8 @@
 
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { useAuth } from '@/domains/auth';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
+import { useAuth } from '@/domains/auth';
 
 const PerformanceTab = dynamic(
   () => import('@/domains/settings').then(mod => ({ default: mod.PerformanceTab })),

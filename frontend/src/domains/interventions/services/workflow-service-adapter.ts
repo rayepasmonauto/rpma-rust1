@@ -8,17 +8,17 @@
 
 import { ipcClient } from '@/lib/ipc';
 import type {
+  AdvanceStepRequest,
+  SaveStepProgressRequest,
+  JsonValue,
+} from '@/lib/backend';
+import type {
   WorkflowExecution,
   WorkflowExecutionStep,
   CreateWorkflowExecutionDTO,
   StartTimingDTO,
   SignatureDTO,
 } from '@/types/workflow.types';
-import type {
-  AdvanceStepRequest,
-  SaveStepProgressRequest,
-  JsonValue,
-} from '@/lib/backend';
 
 export class WorkflowServiceAdapter {
   private static instance: WorkflowServiceAdapter;

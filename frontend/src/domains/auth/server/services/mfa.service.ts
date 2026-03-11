@@ -52,7 +52,7 @@ export class MFAService {
     return MFAService.instance;
   }
 
-  async setupMFA(sessionToken: string): Promise<MFASetupResponse> {
+  async setupMFA(_sessionToken: string): Promise<MFASetupResponse> {
     try {
       const result = await ipcClient.auth.enable2FA();
       const payload = extractMFASetupPayload(result);
@@ -66,7 +66,7 @@ export class MFAService {
     }
   }
 
-  async verifyMFA(request: MFAVerificationRequest, sessionToken: string): Promise<boolean> {
+  async verifyMFA(request: MFAVerificationRequest, _sessionToken: string): Promise<boolean> {
     try {
       await ipcClient.auth.verify2FASetup(request.code, []);
       return true;
@@ -75,7 +75,7 @@ export class MFAService {
     }
   }
 
-  async disableMFA(sessionToken: string, password: string): Promise<void> {
+  async disableMFA(_sessionToken: string, password: string): Promise<void> {
     try {
       await ipcClient.auth.disable2FA(password);
     } catch (error) {
@@ -83,7 +83,7 @@ export class MFAService {
     }
   }
 
-  async regenerateBackupCodes(sessionToken: string): Promise<string[]> {
+  async regenerateBackupCodes(_sessionToken: string): Promise<string[]> {
     try {
       const result = await ipcClient.auth.regenerateBackupCodes();
       const payload = extractMFASetupPayload(result);
@@ -93,7 +93,7 @@ export class MFAService {
     }
   }
 
-  async setupTOTP(sessionToken: string): Promise<TOTPSetupResponse> {
+  async setupTOTP(_sessionToken: string): Promise<TOTPSetupResponse> {
     try {
       const result = await ipcClient.auth.enable2FA();
       const payload = extractMFASetupPayload(result);
@@ -111,9 +111,9 @@ export class MFAService {
     }
   }
 
-  async verifyTOTP(_factorId: string, code: string, sessionToken: string): Promise<TOTPVerifyResponse> {
+  async verifyTOTP(_factorId: string, code: string, _sessionToken: string): Promise<TOTPVerifyResponse> {
     try {
-      const result = await this.verifyMFA({ code }, sessionToken);
+      const result = await this.verifyMFA({ code }, _sessionToken);
       return { success: result };
     } catch (error) {
       return {
@@ -123,8 +123,8 @@ export class MFAService {
     }
   }
 
-  async generateRecoveryCodes(sessionToken: string): Promise<string[]> {
-    return this.regenerateBackupCodes(sessionToken);
+  async generateRecoveryCodes(_sessionToken: string): Promise<string[]> {
+    return this.regenerateBackupCodes(_sessionToken);
   }
 }
 

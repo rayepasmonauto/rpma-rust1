@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { Client } from '@/lib/backend';
+import { LogDomain } from '@/lib/logging/types';
+import { useLogger } from '@/shared/hooks/useLogger';
+import { normalizeError } from '@/types/utility.types';
 import { useAuth } from '@/domains/auth';
 import { clientService } from '../services';
-import type { Client } from '@/lib/backend';
-import { useLogger } from '@/shared/hooks/useLogger';
-import { LogDomain } from '@/lib/logging/types';
-import { normalizeError } from '@/types/utility.types';
 
 export interface UseClientOptions {
   clientId?: string;

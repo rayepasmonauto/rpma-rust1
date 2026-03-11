@@ -40,7 +40,7 @@ export class ConfigurationService {
 
   static async getConfiguration(key: string): Promise<Configuration | null> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const settings = await ipcClient.settings.getAppSettings();
 
       if (!settings || typeof settings !== 'object') return null;
@@ -63,7 +63,7 @@ export class ConfigurationService {
 
   static async setConfiguration(key: string, value: unknown, category: string = 'general'): Promise<Configuration> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       await ipcClient.settings.updateUserPreferences({ [key]: value as JsonValue });
 
       return {
@@ -79,7 +79,7 @@ export class ConfigurationService {
 
   static async getConfigurationsByCategory(category: string): Promise<Configuration[]> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const settings = await ipcClient.settings.getAppSettings();
 
       if (!settings || typeof settings !== 'object') return [];
@@ -105,7 +105,7 @@ export class ConfigurationService {
 
   static async updateBusinessRule(id: string, updates: Partial<BusinessRule>): Promise<ServiceResponse<BusinessRule>> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       await ipcClient.settings.updateUserPreferences(
         { [`${BUSINESS_RULE_PREFIX}${id}`]: { ...updates, updated_at: new Date().toISOString() } }
       );
@@ -139,7 +139,7 @@ export class ConfigurationService {
 
   static async deleteBusinessRule(id: string): Promise<ServiceResponse<void>> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       await ipcClient.settings.updateUserPreferences(
         { [`${BUSINESS_RULE_PREFIX}${id}`]: null }
       );
@@ -161,7 +161,7 @@ export class ConfigurationService {
   static async updateConfiguration(id: string, updates: Partial<Configuration>): Promise<ServiceResponse<Configuration>> {
     try {
       const key = updates.key || id;
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       await ipcClient.settings.updateUserPreferences({ [key]: updates.value as JsonValue });
 
       const updatedConfig: Configuration = {
@@ -186,7 +186,7 @@ export class ConfigurationService {
 
   static async deleteConfiguration(id: string): Promise<ServiceResponse<void>> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       await ipcClient.settings.updateUserPreferences({ [id]: null });
 
       return {
@@ -205,7 +205,7 @@ export class ConfigurationService {
 
   static async getBusinessRules(_filters?: unknown): Promise<ServiceResponse<BusinessRule[]>> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const settings = await ipcClient.settings.getAppSettings();
 
       if (!settings || typeof settings !== 'object') {
@@ -258,7 +258,7 @@ export class ConfigurationService {
         ...rule
       };
 
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       await ipcClient.settings.updateUserPreferences(
         { [`${BUSINESS_RULE_PREFIX}${id}`]: newRule as unknown as JsonValue }
       );
@@ -279,7 +279,7 @@ export class ConfigurationService {
 
   static async getSystemConfigurations(_filters?: unknown): Promise<ServiceResponse<Configuration[]>> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const settings = await ipcClient.settings.getAppSettings();
 
       if (!settings || typeof settings !== 'object') {
@@ -312,7 +312,7 @@ export class ConfigurationService {
 
   static async createSystemConfiguration(config: Omit<Configuration, 'id'>): Promise<ServiceResponse<Configuration>> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       await ipcClient.settings.updateUserPreferences({ [config.key]: config.value as JsonValue });
 
       const newConfig: Configuration = {
@@ -377,7 +377,7 @@ export class ConfigurationService {
 
   static async updateBusinessHoursConfig(config: Partial<Configuration>): Promise<ServiceResponse<Configuration>> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       await ipcClient.settings.updateUserPreferences({ business_hours: config.value as JsonValue });
 
       const updatedConfig: Configuration = {
@@ -402,7 +402,7 @@ export class ConfigurationService {
 
   static async getConfigurationHistory(_configurationType?: string, _configurationId?: string, _limit?: number): Promise<ServiceResponse<Configuration[]>> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const events = await ipcClient.audit.getEvents(_limit || 50);
 
       const allEvents = (Array.isArray(events) ? events : []) as Array<Record<string, unknown>>;

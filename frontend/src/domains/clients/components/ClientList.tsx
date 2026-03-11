@@ -1,8 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
+import {
+  Search,
+  Grid,
+  List,
+  RefreshCw
+} from 'lucide-react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Client } from '@/lib/backend';
-import { ClientCard } from './ClientCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,13 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Search,
-  Grid,
-  List,
-  RefreshCw
-} from 'lucide-react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { ClientCard } from './ClientCard';
 
 interface ClientListProps {
   clients: Client[];

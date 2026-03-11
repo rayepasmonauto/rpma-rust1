@@ -1,15 +1,15 @@
 'use client';
 
 import { memo } from 'react';
-import { useClientsPage, ClientWithTasks } from '@/domains/clients';
-import { Plus, Search, SearchX, User, Building, ChevronDown, ArrowUpDown, AlertCircle, Users, FileText } from 'lucide-react';
 import Link from 'next/link';
-import { ClientCard } from '@/domains/clients';
+import { Plus, Search, SearchX, User, Building, ChevronDown, ArrowUpDown, AlertCircle, Users, FileText } from 'lucide-react';
 import { ClientCardSkeleton } from '@/components/ui/skeleton';
 import { PullToRefresh, FloatingActionButton } from '@/components/ui/mobile-components';
 import { EmptyState } from '@/components/ui';
 import { PageHeader, StatCard } from '@/components/ui/page-header';
 import { PageShell } from '@/shared/ui/layout/PageShell';
+import { ClientCard } from '@/domains/clients';
+import { useClientsPage, ClientWithTasks } from '@/domains/clients';
 
 const MemoizedClientCard = memo(ClientCard);
 

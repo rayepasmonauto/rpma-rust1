@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { configurationService } from '@/domains/admin/server';
-import { SystemConfiguration } from '@/types/configuration.types';
 import { getAuthenticatedUser } from '@/lib/api-auth';
+import { SystemConfiguration } from '@/types/configuration.types';
+import { configurationService } from '@/domains/admin/server';
 
 /**
  * POST /api/admin/configuration/validate

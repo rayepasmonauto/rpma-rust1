@@ -5,6 +5,8 @@
  * in React components and services.
  */
 
+import type { Task, Client } from '@/lib/backend';
+import type { UserAccount } from '@/lib/types';
 import {
   ValidationResult,
   validateTaskDetailed,
@@ -18,8 +20,6 @@ import {
   isClient,
   isUserAccount
 } from './backend-type-guards';
-import type { Task, Client } from '@/lib/backend';
-import type { UserAccount } from '@/lib/types';
 
 /**
  * React hook for type-safe IPC responses

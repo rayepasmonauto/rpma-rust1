@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useUserList } from '../hooks/useUserList';
-import { useAuth } from '@/domains/auth';
 import type { UserAccount } from '@/shared/types';
+import { useAuth } from '@/domains/auth';
+import { useUserList } from '../hooks/useUserList';
 
 export function useUsersPage() {
   const { user, loading: authLoading } = useAuth();

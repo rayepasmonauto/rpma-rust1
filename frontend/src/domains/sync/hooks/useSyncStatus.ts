@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { syncService } from '../services';
 import type { SyncStatus } from '../services';
 

@@ -1,17 +1,17 @@
 ﻿'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { Upload, CheckCircle2, AlertCircle, Clock, WifiOff, Camera, X, Eye, Trash2 } from 'lucide-react';
+import { useDropzone } from 'react-dropzone';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { cn } from '@/lib/utils';
-import Image from 'next/image';
-import { useDropzone } from 'react-dropzone';
-import { usePhotoUpload } from '../hooks/usePhotoUpload';
 import { resolveLocalImageUrl, shouldUseUnoptimizedImage, LOCAL_IMAGE_FALLBACK_SRC } from '@/shared/utils';
-
 import { PhotoUploadProps, UploadItem, Photo } from '@/types/photo.types';
+import { usePhotoUpload } from '../hooks/usePhotoUpload';
+
 
 export function PhotoUpload({
   // Core props

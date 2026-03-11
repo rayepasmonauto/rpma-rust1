@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { SecurityTab } from '../SecurityTab';
 import type { UserSession } from '@/lib/backend';
+import { SecurityTab } from '../SecurityTab';
 
 const loggerMock = {
   logInfo: jest.fn(),

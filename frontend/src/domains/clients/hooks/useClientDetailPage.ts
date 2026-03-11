@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/domains/auth';
-import { clientService } from '../server';
+import { logger } from '@/lib/logging';
+import { LogDomain } from '@/lib/logging/types';
 import { ClientWithTasks, Task } from '@/shared/types';
 import { convertTimestamps } from '@/shared/utils';
 import { useTranslation } from '@/shared/hooks/useTranslation';
-import { logger } from '@/lib/logging';
-import { LogDomain } from '@/lib/logging/types';
+import { useAuth } from '@/domains/auth';
+import { clientService } from '../server';
 
 interface UseClientDetailPageOptions {
   params: { id: string };

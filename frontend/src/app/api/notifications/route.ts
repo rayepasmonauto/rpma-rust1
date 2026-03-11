@@ -1,6 +1,6 @@
 ﻿import { NextResponse } from 'next/server';
-import { notificationService, SendNotificationRequest, NotificationConfig } from '@/domains/notifications/server';
 import { withAuth, NextRequestWithUser } from '@/lib/middleware/auth.middleware';
+import { notificationService, SendNotificationRequest, NotificationConfig } from '@/domains/notifications/server';
 
 export const POST = withAuth(async (request: NextRequestWithUser) => {
   const { token } = request;

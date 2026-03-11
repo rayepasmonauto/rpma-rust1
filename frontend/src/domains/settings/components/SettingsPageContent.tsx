@@ -2,10 +2,6 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import {
   User,
   Bell,
@@ -16,13 +12,17 @@ import {
   Menu,
   Settings
 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useLogger } from '@/shared/hooks/useLogger';
 import { LogDomain } from '@/shared/utils';
-import { useAuth } from '@/domains/auth';
 import { PageShell } from '@/shared/ui/layout/PageShell';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 import { PageHeader } from '@/components/ui/page-header';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { useAuth } from '@/domains/auth';
 
 // Lazy load tab components to reduce initial bundle size
 const ProfileSettingsTab = dynamic(() => import('./ProfileSettingsTab').then(mod => ({ default: mod.ProfileSettingsTab })), {

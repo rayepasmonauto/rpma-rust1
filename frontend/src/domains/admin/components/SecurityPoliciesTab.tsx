@@ -1,17 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import {
   Shield,
@@ -27,10 +16,21 @@ import {
   Globe,
   Key,
 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SecurityPolicy, SecurityPolicyType } from '@/shared/types';
-import { useAuth } from '@/domains/auth';
 import { settingsOperations } from '@/shared/utils';
 import type { JsonValue } from '@/shared/types';
+import { useAuth } from '@/domains/auth';
 
 export function SecurityPoliciesTab() {
   const [securityPolicies, setSecurityPolicies] = useState<SecurityPolicy[]>([]);
@@ -79,7 +79,7 @@ export function SecurityPoliciesTab() {
   const loadSecurityPolicies = async () => {
     try {
       setLoading(true);
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const data = await settingsOperations.getAppSettings();
       const appSettings = data as Record<string, JsonValue>;
       const policies = (appSettings?.security_policies || []) as unknown as SecurityPolicy[];
@@ -96,7 +96,7 @@ export function SecurityPoliciesTab() {
   const saveSecurityPolicy = async () => {
     setSaving(true);
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const newPolicy: SecurityPolicy = {
         id: editingPolicy?.id || crypto.randomUUID(),
         name: formData.name,
@@ -141,7 +141,7 @@ export function SecurityPoliciesTab() {
   const deleteSecurityPolicy = async () => {
     if (!policyToDelete) return;
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const updatedPolicies = securityPolicies.filter((policy) => policy.id !== policyToDelete.id);
       await settingsOperations.updateGeneralSettings(
         { security_policies: updatedPolicies as unknown as JsonValue } as Record<string, JsonValue>);
@@ -163,7 +163,7 @@ export function SecurityPoliciesTab() {
 
   const togglePolicyStatus = async (policy: SecurityPolicy) => {
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const updatedPolicies = securityPolicies.map(p =>
         p.id === policy.id ? { ...p, is_active: !p.is_active, isActive: !p.is_active } : p
       );

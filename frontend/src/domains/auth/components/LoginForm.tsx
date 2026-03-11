@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { DesktopForm } from '@/shared/ui';
 import { z } from 'zod';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
-import type { LoginCredentials } from '../api/types';
 import { FieldValues } from 'react-hook-form';
+import { DesktopForm } from '@/shared/ui';
+import type { LoginCredentials } from '../api/types';
 import { useAuth } from '../api/useAuth';
 
 const loginSchema = z.object({

@@ -4,8 +4,8 @@
  * Types that match the Rust backend task models
  */
 
-import type { Photo } from './photo.types';
 import type { Task, TaskStatus, TaskPriority, TaskPhoto, AssignmentStatus, AvailabilityStatus, AssignmentCheckResponse, AvailabilityCheckResponse } from '@/lib/backend';
+import type { Photo } from './photo.types';
 
 // Re-export for backward compatibility
 export type { Task, TaskStatus, TaskPriority };

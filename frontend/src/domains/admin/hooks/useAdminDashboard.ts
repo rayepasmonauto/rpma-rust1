@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/domains/auth';
 import { ipcClient } from '@/shared/utils';
+import { useAuth } from '@/domains/auth';
 
 export interface SystemStats {
   totalUsers: number;

@@ -1,9 +1,9 @@
 'use client';
 
+import { Activity, RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
-import { Activity, RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { useSystemHealth } from '../hooks/useSystemHealth';
 
 export function MonitoringTab() {

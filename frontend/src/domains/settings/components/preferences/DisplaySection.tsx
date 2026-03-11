@@ -2,9 +2,9 @@
 
 import React from 'react';
 import type { Control } from 'react-hook-form';
+import { Monitor, Moon, Sun, Languages } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Monitor, Moon, Sun, Languages } from 'lucide-react';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import type { PreferencesFormData } from '../../hooks/usePreferencesForm';
 

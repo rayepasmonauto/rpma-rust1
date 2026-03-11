@@ -1,11 +1,11 @@
 ﻿'use client';
 
 import React from 'react';
-import { BaseErrorBoundary } from './BaseErrorBoundary';
 import { Workflow, AlertTriangle, RefreshCw, SkipForward, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { BaseErrorBoundary } from './BaseErrorBoundary';
 
 interface WorkflowErrorBoundaryProps {
   children: React.ReactNode;

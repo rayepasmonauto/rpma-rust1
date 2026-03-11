@@ -1,11 +1,11 @@
 'use client';
 
 import React, { createContext, useEffect, useState, useCallback, useMemo } from 'react';
+import { toast } from 'sonner';
 import { AuthSecureStorage, SecureStorage } from '@/lib/secureStorage';
 import { clearCache } from '@/lib/ipc/cache';
 import { convertTimestamps } from '@/lib/types';
 import { logger, LogContext } from '@/lib/logger';
-import { toast } from 'sonner';
 import { authIpc } from '../ipc/auth.ipc';
 import type { AuthContextType, AuthState, AuthResponse, UserAccount, UserSession } from './types';
 

@@ -6,9 +6,10 @@
  */
 
 import { NextResponse, NextRequest } from 'next/server';
-import { interventionWorkflowService } from '@/domains/interventions/server';
+
 import { validateApiAuth } from '@/lib/api-auth';
 import { PPFInterventionData, PPFInterventionStep } from '@/types/ppf-intervention';
+import { interventionWorkflowService } from '@/domains/interventions/server';
 
 interface ProgressData {
   overall_progress: number;
@@ -73,7 +74,7 @@ export async function GET(
 
     // Get session token from Authorization header
     const authHeader = req.headers.get('authorization') || '';
-    const sessionToken = authHeader.replace('Bearer ', '');
+    const _sessionToken = authHeader.replace('Bearer ', '');
 
     // 3. Rï¿½cupï¿½ration de l'intervention
     const workflowService = interventionWorkflowService;
@@ -190,7 +191,7 @@ export async function PUT(
 
     // Get session token from Authorization header
     const authHeader = req.headers.get('authorization') || '';
-    const sessionToken = authHeader.replace('Bearer ', '');
+    const _sessionToken = authHeader.replace('Bearer ', '');
 
     // 3. Parsing du corps de la requï¿½te
     const updateData: ProgressUpdateRequest = await req.json();

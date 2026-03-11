@@ -13,11 +13,11 @@ import {
   Plus,
   Search,
 } from "lucide-react";
+import { Client } from "@/lib/backend";
 import { FormStepProps } from "../types";
 import { ClientSelectorModal } from "./ClientSelectorModal";
 import { CustomerInfoSummary } from "./CustomerInfoSummary";
 
-import { Client } from "@/lib/backend";
 // Legacy service imports removed - now using API routes
 
 export const CustomerStep: React.FC<FormStepProps> = ({

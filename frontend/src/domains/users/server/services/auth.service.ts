@@ -1,6 +1,6 @@
 import { ipcClient } from '@/lib/ipc';
-import type { AuthResponse } from '@/types';
 import type { UserSession } from '@/lib/backend';
+import type { AuthResponse } from '@/types';
 import type { LoginCredentials } from '@/types/auth.types';
 
 export type { LoginCredentials };
@@ -44,7 +44,7 @@ export class AuthService {
     }
   }
 
-  static async logout(token: string): Promise<AuthResponse<void>> {
+  static async logout(_token: string): Promise<AuthResponse<void>> {
     try {
       await ipcClient.auth.logout();
       return { success: true };
@@ -56,7 +56,7 @@ export class AuthService {
     }
   }
 
-  static async validateSession(token: string): Promise<AuthResponse<UserSession>> {
+  static async validateSession(_token: string): Promise<AuthResponse<UserSession>> {
     try {
       const data = await ipcClient.auth.validateSession();
       return { success: true, data };

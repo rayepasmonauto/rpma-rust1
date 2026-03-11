@@ -6,11 +6,12 @@
  */
 
 import { NextResponse } from 'next/server';
-
- export const dynamic = 'force-dynamic';
 import { z } from 'zod';
-import { interventionWorkflowService } from '@/domains/interventions/server';
+
 import type { FinalizeInterventionRequest } from '@/lib/backend';
+import { interventionWorkflowService } from '@/domains/interventions/server';
+
+export const dynamic = 'force-dynamic';
 
 // Schï¿½ma de validation pour finaliser une intervention
 const FinalizeInterventionSchema = z.object({
@@ -216,7 +217,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
  */
 async function validateFinalizationRequirements(
   interventionId: string,
-  sessionToken: string
+  _sessionToken: string
 ): Promise<{ valid: boolean; errors?: string[] }> {
   const errors: string[] = [];
   type StepSummary = {

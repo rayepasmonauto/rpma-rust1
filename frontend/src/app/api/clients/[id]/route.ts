@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { clientService } from '@/domains/clients/server';
 import { handleApiError, ApiError } from '@/lib/api-error';
 import { HttpStatus } from '@/lib/http-status';
 import { validateApiAuth } from '@/lib/api-auth';
+import { clientService } from '@/domains/clients/server';
 
 /**
  * GET /api/clients/[id]

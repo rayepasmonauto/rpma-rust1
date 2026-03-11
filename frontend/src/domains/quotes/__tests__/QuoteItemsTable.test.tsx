@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { QuoteItemsTable } from '../components/QuoteItemsTable';
 import type { QuoteItem } from '@/types/quote.types';
+import { QuoteItemsTable } from '../components/QuoteItemsTable';
 
 jest.mock('lucide-react', () => ({
   Trash2: ({ className }: { className?: string }) => (

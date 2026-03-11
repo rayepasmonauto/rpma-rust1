@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import type { UserSettings } from '@/lib/backend';
 import { useAuth } from '@/domains/auth';
 import { settingsService } from '../server';
-import type { UserSettings } from '@/lib/backend';
 import type { UseSettingsResult } from './types';
 
 const CACHE_KEY = 'rpma:settings_cache';

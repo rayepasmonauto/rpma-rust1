@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import type { InterventionStep, StepType } from '@/lib/backend';
+import { interventionKeys } from '@/lib/query-keys';
+import type { MaterialConsumption } from '@/shared/types/inventory.types';
+import type { Intervention } from '@/shared/types';
 import { useTranslation } from '@/shared/hooks';
+import type { TaskWithDetails } from '@/types/task.types';
 import {
   PPF_STEP_CONFIG,
   buildStepExportPayload,
@@ -11,17 +16,12 @@ import {
   useInterventionData,
   useWorkflowStepData,
 } from '@/domains/interventions';
-import type { Intervention } from '@/shared/types';
-import type { InterventionStep, StepType } from '@/lib/backend';
-import type { MaterialConsumption } from '@/shared/types/inventory.types';
-import { interventionKeys } from '@/lib/query-keys';
-import { printCompletedInterventionReport, saveCompletedInterventionReport } from '../services/completed-task-report.service';
 import { downloadJsonFile } from '@/domains/interventions';
-import type { TaskWithDetails } from '@/types/task.types';
-import { useCustomerDisplayName, useCustomerInfo } from './useNormalizedTask';
-import { taskGateway } from '../api/taskGateway';
 import { inventoryIpc } from '@/domains/inventory';
 import { useAuth } from '@/domains/auth';
+import { printCompletedInterventionReport, saveCompletedInterventionReport } from '../services/completed-task-report.service';
+import { taskGateway } from '../api/taskGateway';
+import { useCustomerDisplayName, useCustomerInfo } from './useNormalizedTask';
 
 export function useCompletedTaskPage() {
   const router = useRouter();

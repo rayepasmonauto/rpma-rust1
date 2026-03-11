@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Settings, Plus, Tag } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,14 +11,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Settings, Plus, Tag } from 'lucide-react';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 import { ErrorState } from '@/shared/ui/layout/ErrorState';
 import { EmptyState } from '@/components/ui/empty-state';
-import { toast } from 'sonner';
 import { useTranslation } from '@/shared/hooks/useTranslation';
-import { useAuth } from '@/domains/auth';
 import type { MaterialCategory } from '@/shared/types';
+import { useAuth } from '@/domains/auth';
 import { inventoryIpc } from '../ipc/inventory.ipc';
 
 export function InventorySettings() {

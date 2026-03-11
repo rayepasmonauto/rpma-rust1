@@ -5,11 +5,12 @@
  * @date 2025-01-20
  */
 
- import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+
+import { PPFInterventionData } from '@/types/ppf-intervention';
+import { interventionWorkflowService } from '@/domains/interventions/server';
 
  export const dynamic = 'force-dynamic';
-import { interventionWorkflowService } from '@/domains/interventions/server';
-import { PPFInterventionData } from '@/types/ppf-intervention';
 
 interface PPFPhoto {
   id: string;
@@ -66,7 +67,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       );
     }
 
-    const sessionToken = authHeader.replace('Bearer ', '');
+    const _sessionToken = authHeader.replace('Bearer ', '');
 
     // 3. Rï¿½cupï¿½ration des paramï¿½tres de requï¿½te
     const url = new URL(request.url);

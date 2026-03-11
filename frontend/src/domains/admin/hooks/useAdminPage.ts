@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/shared/hooks/useTranslation';
 import { useAuth } from '@/domains/auth';
 import { useAdminDashboard } from './useAdminDashboard';
 import { useAdminUserManagement } from './useAdminUserManagement';
-import { useTranslation } from '@/shared/hooks/useTranslation';
 
 export function useAdminPage() {
   const { t } = useTranslation();

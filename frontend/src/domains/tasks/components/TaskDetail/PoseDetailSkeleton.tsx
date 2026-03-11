@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PoseDetailSkeletonProps {
   variant?: 'default' | 'compact' | 'detailed';

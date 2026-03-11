@@ -1,14 +1,14 @@
 ﻿'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { Shield, AlertTriangle, Users, CheckCircle, XCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { ipcClient } from '@/lib/ipc';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, AlertTriangle, Users, CheckCircle, XCircle } from 'lucide-react';
 import { useAuth } from '@/domains/auth';
-import { ipcClient } from '@/lib/ipc';
-import { toast } from 'sonner';
 
 interface SecurityMetrics {
   total_events_today: number;

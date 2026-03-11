@@ -1,6 +1,6 @@
+import type { Intervention, InterventionStep } from '@/domains/interventions';
 import { buildInterventionReportViewModel } from '../buildInterventionReportViewModel';
 import { PLACEHOLDERS } from '../report-view-model.types';
-import type { Intervention, InterventionStep } from '@/domains/interventions';
 import type { InterventionReport } from '../../ipc/reports.ipc';
 
 // ─── Factories ───────────────────────────────────────────────────────────────

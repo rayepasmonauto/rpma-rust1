@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { Home, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function GlobalError({
   error,

@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { useAuth } from '@/domains/auth';
 import { ipcClient, convertTimestamps } from '@/shared/utils';
 import type { CreateUserRequest, UserAccount } from '@/shared/types';
+import { useAuth } from '@/domains/auth';
 
 export interface UseAdminUserManagementReturn {
   users: UserAccount[];

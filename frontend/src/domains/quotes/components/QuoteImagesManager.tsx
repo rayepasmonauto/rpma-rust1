@@ -2,14 +2,14 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
+import { Camera, Image as ImageIcon, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Camera, Image as ImageIcon, Loader2, X } from 'lucide-react';
+import type { QuoteAttachment } from '@/types/quote.types';
 import { compressImage } from '@/domains/quotes/utils/image-compression';
 import { useQuoteAttachments, useQuoteAttachmentActions } from '@/domains/quotes/hooks/useQuotes';
 
-import type { QuoteAttachment } from '@/types/quote.types';
 
 interface QuoteImagesManagerProps {
   quoteId: string;

@@ -39,7 +39,7 @@ export class TechnicianService {
 
   static async getTechnicians(): Promise<Technician[]> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const result = await ipcClient.users.list(100, 0);
 
       const users = (result.data || []) as Array<Record<string, unknown>>;
@@ -53,7 +53,7 @@ export class TechnicianService {
 
   static async getTechnician(id: string): Promise<Technician | null> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const user = await ipcClient.users.get(id);
 
       if (!user) return null;

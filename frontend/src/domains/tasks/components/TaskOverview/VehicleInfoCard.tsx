@@ -1,7 +1,7 @@
 import React from 'react';
+import { Car, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Car, Info } from 'lucide-react';
 import { TaskWithDetails } from '@/types/task.types';
 
 interface VehicleInfoCardProps {

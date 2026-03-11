@@ -1,5 +1,5 @@
-import { createApiError } from './api-types';
 import type { ApiError } from '@/lib/backend';
+import { createApiError } from './api-types';
 
 // Type validation error
 export class TypeValidationError extends Error {

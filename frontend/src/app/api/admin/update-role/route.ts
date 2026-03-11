@@ -1,6 +1,6 @@
 ﻿import { NextResponse } from 'next/server';
-import { withAuth, NextRequestWithUser } from '@/lib/middleware/auth.middleware';
 import { z } from 'zod';
+import { withAuth, NextRequestWithUser } from '@/lib/middleware/auth.middleware';
 import { userService } from '@/domains/users/server';
 
 // Zod schema for the request body

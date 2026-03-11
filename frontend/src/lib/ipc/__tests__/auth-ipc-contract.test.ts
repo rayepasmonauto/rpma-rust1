@@ -1,5 +1,5 @@
-import { ipcClient } from '../client';
 import { SignupRequestSchema } from '@/lib/validation/ipc-schemas';
+import { ipcClient } from '../client';
 
 jest.mock('../utils', () => ({
   safeInvoke: jest.fn(),

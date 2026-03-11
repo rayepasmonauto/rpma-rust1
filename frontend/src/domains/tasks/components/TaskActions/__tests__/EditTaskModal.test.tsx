@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import EditTaskModal from '../EditTaskModal';
 import type { TaskWithDetails } from '@/lib/backend';
+import EditTaskModal from '../EditTaskModal';
 
 const mockMutate = jest.fn();
 

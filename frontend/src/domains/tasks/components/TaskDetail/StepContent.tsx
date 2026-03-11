@@ -1,11 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { 
   Camera, 
   CheckSquare,
@@ -14,9 +9,14 @@ import {
   AlertCircle,
   CheckCircle
 } from 'lucide-react';
+import { Photo, PhotoType, TaskPhoto } from '@/lib/backend';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { TaskWithDetails, ChecklistItem } from '@/types/task.types';
 import { PhotoUploadZone } from '../PhotoUploadZone';
-import { Photo, PhotoType, TaskPhoto } from '@/lib/backend';
 import { ChecklistView } from '../TaskInfo/ChecklistView';
 
 // Helper function to convert TaskPhoto to Photo

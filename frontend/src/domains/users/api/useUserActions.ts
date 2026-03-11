@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useAuth } from '@/domains/auth';
 import { ipcClient } from '@/lib/ipc';
 import type { UpdateUserRequest, UserAccount } from '@/lib/backend';
+import { useAuth } from '@/domains/auth';
 import type { UseUserActionsResult } from './types';
 
 export function useUserActions(): UseUserActionsResult {

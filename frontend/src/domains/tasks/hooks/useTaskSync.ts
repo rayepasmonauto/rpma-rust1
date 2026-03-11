@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { TaskStatus, TaskPriority } from '@/lib/backend';
-import { taskService } from '../services/task.service';
 import { useMutationCounter } from '@/lib/data-freshness';
 import { ApiError } from '@/lib/api-error';
 import { logger } from '@/lib/logger';
 import type { TaskWithDetails } from '@/types/task.types';
+import { taskService } from '../services/task.service';
 
 interface TaskFilters {
   status: TaskStatus | 'all';

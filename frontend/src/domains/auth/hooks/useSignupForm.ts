@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../api/useAuth';
-import { PasswordValidationResult } from '../api/types';
 import { UserRoleValues } from '@/shared/utils';
 import { createLogger } from '@/shared/utils';
 import { ROUTES } from '@/constants';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { PasswordValidationResult } from '../api/types';
+import { useAuth } from '../api/useAuth';
 
 const logger = createLogger('useSignupForm');
 

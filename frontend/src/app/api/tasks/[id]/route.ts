@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withMethod } from '@/lib/api-route-wrapper';
 import { validateApiAuth } from '@/lib/api-auth';
 import { validateCSRFRequest } from '@/lib/auth/csrf';
-import { taskIpc } from '@/domains/tasks/server';
 import type { UpdateTaskRequest } from '@/lib/backend';
+import { taskIpc } from '@/domains/tasks/server';
 
-async function handleGet(request: NextRequest, context?: unknown) {
+async function handleGet(request: NextRequest, _context?: unknown) {
   try {
-    const params = context as { params: Promise<{ id: string }> };
+    const params = _context as { params: Promise<{ id: string }> };
     const { id } = await params.params;
 
     if (!id) {
@@ -20,9 +20,9 @@ async function handleGet(request: NextRequest, context?: unknown) {
     // For GET requests, try to get token from Authorization header, but don't require it
     // since IPC handles authentication
     const authHeader = request.headers.get('Authorization');
-    let sessionToken = '';
+    let _sessionToken = '';
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      sessionToken = authHeader.substring(7);
+      _sessionToken = authHeader.substring(7);
     }
 
     // Use IPC to get task
@@ -48,7 +48,7 @@ async function handleGet(request: NextRequest, context?: unknown) {
   }
 }
 
-async function handlePut(request: NextRequest, context?: unknown) {
+async function handlePut(request: NextRequest, _context?: unknown) {
   try {
     // Validate CSRF token first
     const isValidCSRF = await validateCSRFRequest(request);
@@ -56,7 +56,7 @@ async function handlePut(request: NextRequest, context?: unknown) {
       return NextResponse.json({ error: 'Invalid CSRF token' }, { status: 403 });
     }
 
-    const params = context as { params: Promise<{ id: string }> };
+    const params = _context as { params: Promise<{ id: string }> };
     const { id } = await params.params;
     const _body = await request.json();
 
@@ -94,9 +94,9 @@ async function handlePut(request: NextRequest, context?: unknown) {
 
     // Get session token for IPC
     const authHeader = request.headers.get('Authorization');
-    let sessionToken = '';
+    let _sessionToken = '';
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      sessionToken = authHeader.substring(7);
+      _sessionToken = authHeader.substring(7);
     }
 
     // Use IPC to update task
@@ -115,9 +115,9 @@ async function handlePut(request: NextRequest, context?: unknown) {
   }
 }
 
-async function handlePatch(request: NextRequest, context?: unknown) {
+async function handlePatch(request: NextRequest, _context?: unknown) {
   try {
-    const params = context as { params: Promise<{ id: string }> };
+    const params = _context as { params: Promise<{ id: string }> };
     const { id: _id } = await params.params;
     const _body = await request.json();
 
@@ -137,9 +137,9 @@ async function handlePatch(request: NextRequest, context?: unknown) {
   }
 }
 
-async function handleDelete(request: NextRequest, context?: unknown) {
+async function handleDelete(request: NextRequest, _context?: unknown) {
   try {
-    const params = context as { params: Promise<{ id: string }> };
+    const params = _context as { params: Promise<{ id: string }> };
     const { id: _id } = await params.params;
 
     // TaskService needs refactoring - return 501 for now

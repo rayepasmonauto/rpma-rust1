@@ -1,6 +1,6 @@
  import { NextResponse } from 'next/server';
- import { clientService } from '@/domains/clients/server';
  import { getErrorMessage } from '@/types/api';
+ import { clientService } from '@/domains/clients/server';
 
 /**
  * GET /api/clients/stats

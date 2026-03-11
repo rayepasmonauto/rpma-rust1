@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useAuth } from '@/domains/auth';
-import { clientService } from '../server';
-import { useTranslation } from '@/shared/hooks/useTranslation';
-import type { Client, UpdateClientDTO } from '@/shared/types';
 import { logger } from '@/lib/logging';
 import { LogDomain } from '@/lib/logging/types';
+import { useTranslation } from '@/shared/hooks/useTranslation';
+import type { Client, UpdateClientDTO } from '@/shared/types';
+import { useAuth } from '@/domains/auth';
+import { clientService } from '../server';
 
 interface UseEditClientPageOptions {
   params: { id: string };

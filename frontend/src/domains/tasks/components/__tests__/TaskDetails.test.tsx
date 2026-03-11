@@ -2,10 +2,10 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { TaskWithDetails } from '@/shared/types';
 import { taskService } from '../../services/task.service';
 import { TaskDetails } from '../TaskDetails';
-import { TaskWithDetails } from '@/shared/types';
-import { format } from 'date-fns';
 
 // Mock dependencies
 jest.mock('../../services/task.service', () => {

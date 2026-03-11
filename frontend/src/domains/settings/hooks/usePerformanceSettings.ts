@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useLogger } from '@/shared/hooks/useLogger';
 import { LogDomain } from '@/lib/logging/types';
-import { settingsIpc } from '../ipc/settings.ipc';
 import { ipcClient } from '@/lib/ipc';
 import type { UserSession, UserPerformanceSettings } from '@/lib/backend';
+import { useLogger } from '@/shared/hooks/useLogger';
+import { settingsIpc } from '../ipc/settings.ipc';
 
 // Performance settings form schema
 const performanceSchema = z.object({

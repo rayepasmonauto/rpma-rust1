@@ -1,7 +1,7 @@
 'use client';
 
-import { InventoryTabs } from './InventoryTabs';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { InventoryTabs } from './InventoryTabs';
 
 export function InventoryLayout() {
   const { t } = useTranslation();

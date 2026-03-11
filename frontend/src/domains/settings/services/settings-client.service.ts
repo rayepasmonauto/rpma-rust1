@@ -1,3 +1,4 @@
+import type { UserSettings } from '@/lib/backend';
 import {
   settingsService,
   type SettingsServiceResponse,
@@ -8,7 +9,6 @@ import {
   type UpdatePreferencesRequest,
   type UpdateProfileRequest,
 } from './settings.service';
-import type { UserSettings } from '@/lib/backend';
 
 /**
  * @deprecated Use `settingsService` from `settings.service.ts`.

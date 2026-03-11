@@ -63,7 +63,7 @@ export class PPFPhotoService {
 
   static async uploadPhoto(interventionId: string, _stepNumber: number, file: File): Promise<PPFPhoto> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const buffer = await file.arrayBuffer();
       const result = await ipcClient.photos.upload(
         interventionId,
@@ -84,7 +84,7 @@ export class PPFPhotoService {
 
   static async getPhotos(interventionId: string, _stepNumber?: number): Promise<PPFPhoto[]> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       const photos = await ipcClient.photos.list(interventionId);
 
       return (photos as unknown as Array<Record<string, unknown>>).map(photo =>
@@ -97,7 +97,7 @@ export class PPFPhotoService {
 
   static async deletePhoto(photoId: string): Promise<void> {
     try {
-      const token = await this.getSessionToken();
+      const _token = await this.getSessionToken();
       await ipcClient.photos.delete(photoId);
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to delete photo');

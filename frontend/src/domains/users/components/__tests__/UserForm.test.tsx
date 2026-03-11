@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ipcClient } from '@/lib/ipc';
-import { UserForm } from '../UserForm';
 import { UserAccount } from '@/types';
+import { UserForm } from '../UserForm';
 
 // Mock dependencies
 jest.mock('@/lib/ipc', () => ({

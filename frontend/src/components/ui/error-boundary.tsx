@@ -2,8 +2,8 @@
 
 import React, { Component, ErrorInfo } from 'react';
 import { AlertCircle, RefreshCw, Home, Bug, WifiOff, Shield, Zap, ChevronDown } from 'lucide-react';
-import { Button } from './button';
 import { motion } from 'framer-motion';
+import { Button } from './button';
 
 interface ErrorBoundaryState {
   hasError: boolean;

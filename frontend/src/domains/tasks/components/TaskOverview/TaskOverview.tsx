@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
 import {
   AlertTriangle,
   Building,
@@ -13,8 +12,9 @@ import {
   User
 } from 'lucide-react';
 import { getUserFullName } from '@/lib/types';
-import { TaskWithDetails } from '@/types/task.types';
 import { Task } from '@/lib/backend';
+import { TaskWithDetails } from '@/types/task.types';
+import { Badge } from '@/components/ui/badge';
 
 interface TaskOverviewProps {
   task: TaskWithDetails;

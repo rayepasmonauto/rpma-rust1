@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { CheckCircle, Circle, Clock, ArrowRight } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import type { StepType } from '@/lib/StepType';
 import { usePPFWorkflow } from '../../../api/PPFWorkflowProvider';
 import { getPPFStepPath } from '../../../utils/ppf-workflow';
-import type { StepType } from '@/lib/StepType';
 
 type Step = {
   id: string;

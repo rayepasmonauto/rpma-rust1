@@ -1,8 +1,8 @@
 // Task Workflow Sync Service
 import { ipcClient } from '@/lib/ipc/client';
 import type { Intervention } from '@/lib/backend';
-import type { TaskWithDetails } from '@/types/task.types';
 import { AuthSecureStorage } from '@/lib/secureStorage';
+import type { TaskWithDetails } from '@/types/task.types';
 
 interface ActiveInterventionResponse {
   type: string;
@@ -36,7 +36,7 @@ export class TaskWorkflowSyncService {
    */
   static async syncTaskWithWorkflow(taskId: string): Promise<TaskWithWorkflowProgress> {
     try {
-      const sessionToken = await this.getSessionToken();
+      const _sessionToken = await this.getSessionToken();
       // Get the task details
       const task = (await ipcClient.tasks.get(taskId)) as TaskWithDetails | null;
       if (!task) {
@@ -91,7 +91,7 @@ export class TaskWorkflowSyncService {
    */
   static async syncAllTasksWithWorkflows(): Promise<TaskWithWorkflowProgress[]> {
     try {
-      const sessionToken = await this.getSessionToken();
+      const _sessionToken = await this.getSessionToken();
       // Get all tasks (you might want to add pagination/filtering)
       const tasksResponse = await ipcClient.tasks.list({});
       if (!tasksResponse || !tasksResponse.data) {

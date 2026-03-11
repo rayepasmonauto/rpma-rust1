@@ -1,14 +1,14 @@
 ﻿'use client';
 
 import React from 'react';
-import { BaseErrorBoundary } from './BaseErrorBoundary';
 import { AlertTriangle, RefreshCw, Home, Mail } from 'lucide-react';
+import { logger } from '@/lib/logging';
+import { LogDomain } from '@/lib/logging/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { JsonRecord, JsonValue as _JsonValue } from '@/types/utility.types';
 import { safeGet, normalizeError, tryToJsonValue } from '@/types/type-utils';
-import { logger } from '@/lib/logging';
-import { LogDomain } from '@/lib/logging/types';
+import { BaseErrorBoundary } from './BaseErrorBoundary';
 
 // Type definition for Performance API with memory info
 interface PerformanceWithMemory extends Performance {

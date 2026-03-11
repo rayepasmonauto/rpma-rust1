@@ -2,10 +2,10 @@
 
 import React, { useRef, useState } from 'react';
 import { Camera, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { usePhotoUpload } from '@/domains/documents';
 import { toast } from 'sonner';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { cn } from '@/lib/utils';
+import { usePhotoUpload } from '@/domains/documents';
 
 /**
  * Converts a local filesystem path to a Tauri asset:// URL.

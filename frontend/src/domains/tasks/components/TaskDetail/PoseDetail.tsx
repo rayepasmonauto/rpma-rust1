@@ -1,33 +1,33 @@
 ﻿import React, { useMemo, useCallback, memo, useState, useEffect } from 'react';
 // Removed pose dependency - now works independently
-import { TaskWithDetails, TaskDisplay, ChecklistItem, TaskStatus, JsonValue } from '@/shared/types';
-import type { UpdateTaskRequest } from '@/lib/backend';
-import { useInterventionData } from '@/domains/interventions';
-import { InterventionWorkflowService } from '@/domains/interventions';
 
-import { convertTimestamps, cn, convertNullsToUndefined } from '@/shared/utils';
 import { Suspense } from 'react';
 
-import { Skeleton, Button, ErrorFallback } from '@/shared/ui';
 
 import { AlertCircle } from 'lucide-react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { useIntersectionObserver } from '@/shared/hooks/useIntersectionObserver';
 // import { useVirtualizer } from '@tanstack/react-virtual'; // Uncomment when needed for virtual scrolling
-import { useDebounce } from '@/shared/hooks/useDebounce';
-import { taskService } from '../../services/task.service';
 import { toast } from 'sonner';
+import type { UpdateTaskRequest } from '@/lib/backend';
+import { useDebounce } from '@/shared/hooks/useDebounce';
+import { useIntersectionObserver } from '@/shared/hooks/useIntersectionObserver';
+import { Skeleton, Button, ErrorFallback } from '@/shared/ui';
+import { convertTimestamps, cn, convertNullsToUndefined } from '@/shared/utils';
+import { TaskWithDetails, TaskDisplay, ChecklistItem, TaskStatus, JsonValue } from '@/shared/types';
+import { InterventionWorkflowService } from '@/domains/interventions';
+import { useInterventionData } from '@/domains/interventions';
 import { useAuth } from '@/domains/auth';
+import { taskService } from '../../services/task.service';
 import { taskIpc } from '../../ipc/task.ipc';
 import { ChecklistProgress } from '../TaskInfo/ChecklistProgress';
 
 // Subcomponents
-import { WorkflowStatusCard } from './WorkflowStatusCard';
-import { PhotoSummaryCard } from './PhotoSummaryCard';
 import TaskHeader from '../TaskOverview/TaskHeader';
 import { VehicleInfoCard } from '../TaskOverview/VehicleInfoCard';
 import ScheduleCard from '../TaskInfo/ScheduleCard';
 import ActionsCard from '../TaskActions/ActionsCard';
+import { PhotoSummaryCard } from './PhotoSummaryCard';
+import { WorkflowStatusCard } from './WorkflowStatusCard';
 // import TaskStatusBadge from './TaskStatusBadge'; // Uncomment when needed
 
 interface PoseDetailProps {

@@ -3,8 +3,8 @@
  */
 
 import React, { useRef, useState, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { Pen, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface SignatureCaptureProps {
   onSignatureCapture: (signatureData: string) => void;

@@ -1,8 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import {
   User,
   Mail,
@@ -18,14 +16,16 @@ import {
   Clock,
   XCircle
 } from 'lucide-react';
+import { Client, ClientWithTasks, Task } from '@/lib/backend';
+import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Client, ClientWithTasks, Task } from '@/lib/backend';
-import { cn } from '@/lib/utils';
 
 interface ClientCardProps {
   client: Client | ClientWithTasks;

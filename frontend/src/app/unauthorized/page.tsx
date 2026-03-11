@@ -1,9 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { Shield, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, ArrowLeft, Home } from 'lucide-react';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 
 export default function UnauthorizedPage() {

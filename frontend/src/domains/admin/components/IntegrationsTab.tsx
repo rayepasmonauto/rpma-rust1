@@ -1,6 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import { 
+  Globe, 
+  Plus, 
+  Save,
+  RefreshCw,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,18 +17,11 @@ import { Switch } from '@/components/ui/switch';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { toast } from 'sonner';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
-import { 
-  Globe, 
-  Plus, 
-  Save,
-  RefreshCw,
-} from 'lucide-react';
 import { IntegrationConfig, IntegrationType, IntegrationStatus } from '@/shared/types';
-import { useAuth } from '@/domains/auth';
 import { settingsOperations } from '@/shared/utils';
 import type { JsonValue } from '@/shared/types';
+import { useAuth } from '@/domains/auth';
 import { IntegrationCard } from './IntegrationCard';
 
 export function IntegrationsTab() {
@@ -73,7 +73,7 @@ export function IntegrationsTab() {
   const loadIntegrations = async () => {
     try {
       setLoading(true);
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const data = await settingsOperations.getAppSettings();
       const appSettings = data as Record<string, JsonValue>;
       const configs = (appSettings?.integrations || []) as unknown as IntegrationConfig[];
@@ -90,7 +90,7 @@ export function IntegrationsTab() {
   const saveIntegration = async () => {
     setSaving(true);
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const newIntegration: IntegrationConfig = {
         id: editingIntegration?.id || crypto.randomUUID(),
         name: formData.name,
@@ -134,7 +134,7 @@ export function IntegrationsTab() {
   const deleteIntegration = async () => {
     if (!integrationToDelete) return;
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const updatedIntegrations = integrations.filter((integration) => integration.id !== integrationToDelete.id);
       await settingsOperations.updateGeneralSettings(
         { integrations: updatedIntegrations as unknown as JsonValue } as Record<string, JsonValue>);
@@ -180,7 +180,7 @@ export function IntegrationsTab() {
 
   const toggleIntegrationStatus = async (integration: IntegrationConfig) => {
     try {
-      const sessionToken = session?.token || '';
+      const _sessionToken = session?.token || '';
       const newActive = !integration.isActive;
       const updatedIntegrations = integrations.map(i =>
         i.id === integration.id

@@ -1,9 +1,9 @@
 import { invoke as tauriInvoke } from '@tauri-apps/api/core';
-import { recordMetric } from './metrics';
-import { logger } from '../logging';
-import { LogDomain, CorrelationContext } from '../logging/types';
 import type { ApiResponse } from '@/types/api';
 import type { JsonObject, JsonValue } from '@/types/json';
+import { logger } from '../logging';
+import { LogDomain, CorrelationContext } from '../logging/types';
+import { recordMetric } from './metrics';
 
 /**
  * IPC commands that have no backend handler registered in main.rs.

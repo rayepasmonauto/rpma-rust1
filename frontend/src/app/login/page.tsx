@@ -1,12 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useLoginForm } from '@/domains/auth';
 import { ROUTES } from '@/constants';
 import { Button } from '@/components/ui/button';
 import { FormFeedback } from '@/components/ui/form-feedback';
 import { FadeIn } from '@/shared/ui/animations/FadeIn';
 import { UILoader } from '@/shared/ui/animations/UILoader';
+import { useLoginForm } from '@/domains/auth';
 
 export default function LoginPage() {
   const { formData, error, loading, isSubmitting, handleChange, handleSubmit } = useLoginForm();

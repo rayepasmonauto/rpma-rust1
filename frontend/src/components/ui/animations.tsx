@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { ReactNode } from "react"
 import { motion, HTMLMotionProps, Variants, MotionProps } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { ReactNode } from "react"
 
 // Enhanced animation variants from old-react
 export const fadeInUp: Variants = {

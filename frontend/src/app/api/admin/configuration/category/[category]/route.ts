@@ -1,9 +1,9 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 
+import { getAuthenticatedUser } from '@/lib/api-auth';
+import { SystemConfiguration } from '@/types/configuration.types';
 import { configurationService } from '@/domains/admin/server';
 import { ServiceResponse } from '@/domains/admin/server';
-import { SystemConfiguration } from '@/types/configuration.types';
-import { getAuthenticatedUser } from '@/lib/api-auth';
 
 /**
  * GET /api/admin/configuration/category/[category]

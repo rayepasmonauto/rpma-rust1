@@ -1,7 +1,4 @@
- import { NextRequest, NextResponse } from 'next/server';
-
- export const dynamic = 'force-dynamic';
-
+import { NextRequest, NextResponse } from 'next/server';
 import { withMethod } from '@/lib/api-route-wrapper';
 import { handleApiError } from '@/lib/api-error';
 import { validateApiAuth } from '@/lib/api-auth';
@@ -9,13 +6,15 @@ import { TaskQuerySchema, CreateTaskSchema } from '@/lib/validation/api-schemas'
 import { CreateTaskRequest } from '@/lib/backend';
 import { taskIpc } from '@/domains/tasks/server';
 
+export const dynamic = 'force-dynamic';
+
 
 /**
  * GET /api/tasks
  * Get tasks with filtering, sorting, and pagination
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function handleGet(request: NextRequest, context?: unknown) {
+async function handleGet(request: NextRequest, _context?: unknown) {
   try {
     // Validate authentication and authorization
     const authResult = await validateApiAuth(request, {
@@ -62,7 +61,7 @@ async function handleGet(request: NextRequest, context?: unknown) {
         { status: 401 }
       );
     }
-    const sessionToken = authHeader.substring(7);
+    const _sessionToken = authHeader.substring(7);
 
     // Map API query to TaskQuery format
     const taskQuery = {
@@ -96,7 +95,7 @@ async function handleGet(request: NextRequest, context?: unknown) {
  * Create a new task using centralized service
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function handlePost(request: NextRequest, context?: unknown) {
+async function handlePost(request: NextRequest, _context?: unknown) {
   try {
     // Validate authentication, authorization, and input
     const authResult = await validateApiAuth(request, {
@@ -138,7 +137,7 @@ async function handlePost(request: NextRequest, context?: unknown) {
         { status: 401 }
       );
     }
-    const sessionToken = authHeader.substring(7);
+    const _sessionToken = authHeader.substring(7);
 
     // Map API data to CreateTaskRequest format
     const createTaskData: CreateTaskRequest = {

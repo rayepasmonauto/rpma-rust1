@@ -1,5 +1,6 @@
 'use client';
 
+import { RefreshCw, Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -7,7 +8,6 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RefreshCw, Save } from 'lucide-react';
 import { PerformanceCategory, CreatePerformanceConfigDTO, PerformanceConfig } from '@/shared/types';
 
 interface PerformanceConfigFormProps {

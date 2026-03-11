@@ -1,5 +1,5 @@
-import { clientIpc } from '@/domains/clients';
 import type { Client } from '@/types/client.types';
+import { clientIpc } from '@/domains/clients';
 
 /**
  * Fetches all clients and returns them as a lookup map.

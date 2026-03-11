@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Check, History, AlertCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/domains/auth';
 import { taskGateway } from '../api/taskGateway';
 import type { TaskHistoryEntry } from '../api/types';

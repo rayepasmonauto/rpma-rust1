@@ -1,9 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Zap,
   Plus,
@@ -17,6 +14,9 @@ import {
   TrendingUp,
   Settings,
 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { PerformanceConfig, PerformanceCategory, PerformanceThreshold } from '@/shared/types';
 
 function getCategoryLabel(category: PerformanceCategory) {

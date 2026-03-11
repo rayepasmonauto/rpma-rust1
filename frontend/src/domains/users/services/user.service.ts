@@ -1,8 +1,8 @@
 // User service
 
-import { ServiceResponse } from '@/types/unified.types';
 import { ipcClient } from '@/lib/ipc';
 import type { CreateUserRequest, UpdateUserRequest } from '@/lib/backend';
+import { ServiceResponse } from '@/types/unified.types';
 import { requireSessionToken } from '@/shared/contracts/session';
 
 export interface User {
@@ -23,7 +23,7 @@ export class UserService {
     try {
       const limit = params?.pageSize ?? 50;
       const offset = params?.page ? (params.page - 1) * limit : 0;
-      const sessionToken = await this.getSessionToken();
+      const _sessionToken = await this.getSessionToken();
       const result = await ipcClient.users.list(limit, offset);
       
       const users = result?.data?.map(u => ({
@@ -52,7 +52,7 @@ export class UserService {
 
   static async getUser(id: string): Promise<ServiceResponse<User | null>> {
     try {
-      const sessionToken = await this.getSessionToken();
+      const _sessionToken = await this.getSessionToken();
       const result = await ipcClient.users.get(id);
       return {
         success: true,
@@ -75,7 +75,7 @@ export class UserService {
 
   static async createUser(userData: { email: string; password: string; first_name: string; last_name: string; role: string }): Promise<ServiceResponse<User>> {
     try {
-      const sessionToken = await this.getSessionToken();
+      const _sessionToken = await this.getSessionToken();
       const createRequest: CreateUserRequest = {
         email: userData.email,
         first_name: userData.first_name,
@@ -102,7 +102,7 @@ export class UserService {
 
   static async updateUser(id: string, updates: Partial<User>): Promise<User> {
     try {
-      const sessionToken = await this.getSessionToken();
+      const _sessionToken = await this.getSessionToken();
       const updateRequest: UpdateUserRequest = {
         email: updates.email ?? null,
         first_name: updates.firstName ?? null,
@@ -119,7 +119,7 @@ export class UserService {
 
   static async deleteUser(id: string): Promise<void> {
     try {
-      const sessionToken = await this.getSessionToken();
+      const _sessionToken = await this.getSessionToken();
       await ipcClient.users.delete(id);
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to delete user');

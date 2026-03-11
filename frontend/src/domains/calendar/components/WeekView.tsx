@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { format } from 'date-fns';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
-import { TaskCard } from './TaskCard';
 import type { CalendarTask } from '@/lib/backend';
 import { designTokens } from '@/lib/design-tokens';
+import { TaskCard } from './TaskCard';
 
 interface WeekViewProps {
   tasks: CalendarTask[];

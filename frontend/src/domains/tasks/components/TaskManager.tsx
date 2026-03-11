@@ -4,14 +4,14 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { z } from 'zod';
 import { Plus, Calendar, User } from 'lucide-react';
 import { toast } from 'sonner';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { DesktopForm, DesktopTable, type Column, EntitySyncIndicator } from '@/shared/ui';
-import { Task, Client } from '@/types';
 import { convertTimestamps } from '@/lib/types';
 import { UpdateTaskRequest } from '@/lib/backend';
 import { ipcClient } from '@/lib/ipc';
 import { handleError } from '@/lib/utils/error-handler';
 import { LogDomain } from '@/lib/logging/types';
+import { Task, Client } from '@/types';
+import { DesktopForm, DesktopTable, type Column, EntitySyncIndicator } from '@/shared/ui';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useAuth } from '@/domains/auth';
 
 // Validation schema for task creation/editing
@@ -210,7 +210,7 @@ export default function TaskManager() {
     } finally {
       setTaskToDelete(null);
     }
-  }, [loadData, taskToDelete, user?.token]);
+  }, [loadData, taskToDelete, user?.token, user?.user_id]);
 
   const handleEditTask = useCallback((task: Task) => {
     setEditingTask(task);

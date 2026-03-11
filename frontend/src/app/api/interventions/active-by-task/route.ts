@@ -1,9 +1,9 @@
  import { NextRequest, NextResponse } from 'next/server';
   import { z } from 'zod';
-  import { taskIpc } from '@/domains/tasks/server';
-  import { interventionsIpc } from '@/domains/interventions/server';
   import { validateApiAuth } from '@/lib/api-auth';
   import type { Intervention } from '@/lib/backend';
+  import { taskIpc } from '@/domains/tasks/server';
+  import { interventionsIpc } from '@/domains/interventions/server';
 
  export const dynamic = 'force-dynamic';
 

@@ -2,9 +2,9 @@
 
 import React from 'react';
 import type { Control } from 'react-hook-form';
+import { Accessibility } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Accessibility } from 'lucide-react';
 import { FormControl, FormDescription, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import type { PreferencesFormData } from '../../hooks/usePreferencesForm';
 

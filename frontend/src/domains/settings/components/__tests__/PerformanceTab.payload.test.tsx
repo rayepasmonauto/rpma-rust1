@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { PerformanceTab } from '../PerformanceTab';
 import type { UserSession } from '@/lib/backend';
+import { PerformanceTab } from '../PerformanceTab';
 
 const loggerMock = {
   logInfo: jest.fn(),

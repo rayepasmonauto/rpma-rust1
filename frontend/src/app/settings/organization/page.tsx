@@ -2,8 +2,8 @@
 
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { useAuth } from '@/domains/auth';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
+import { useAuth } from '@/domains/auth';
 
 const OrganizationSettingsTab = dynamic(
   () => import('@/domains/organizations').then(mod => ({ default: mod.OrganizationSettingsTab })),
@@ -11,7 +11,7 @@ const OrganizationSettingsTab = dynamic(
 );
 
 export default function OrganizationSettingsPage() {
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   
   return (
     <Suspense fallback={<LoadingState message="Chargement des paramètres de l'organisation..." />}>

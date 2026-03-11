@@ -1,15 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useCalendarStore } from '../stores/calendarStore';
-import { useAuth } from '@/domains/auth';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   ChevronDown, 
   Calendar, 
@@ -20,6 +11,15 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TaskStatus, TaskPriority } from '@/lib/backend';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useAuth } from '@/domains/auth';
+import { useCalendarStore } from '../stores/calendarStore';
 
 interface CalendarFiltersProps {
   className?: string;

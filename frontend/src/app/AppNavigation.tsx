@@ -1,8 +1,8 @@
 'use client';
 
-import { useAuth } from '@/domains/auth';
 import { usePathname } from 'next/navigation';
 import { RPMALayout } from '@/components/RPMALayout';
+import { useAuth } from '@/domains/auth';
 
 export default function AppNavigation({
   children,

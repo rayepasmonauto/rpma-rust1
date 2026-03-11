@@ -2,29 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { resolveLocalImageUrl } from '@/shared/utils/media';
-import {
-  Alert,
-  AlertDescription,
-  PageShell,
-  Skeleton,
-} from '@/shared/ui/facade';
 import { AlertTriangle } from 'lucide-react';
-import {
-  CompletedActionBar,
-} from './CompletedActionBar';
-import { CompletedHero } from './CompletedHero';
-import { CompletedSidebar } from './CompletedSidebar';
-import { SummaryStats } from './SummaryStats';
-import { WorkflowCompletionTimeline } from './WorkflowCompletionTimeline';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import {
   Camera,
   CheckCircle,
@@ -37,9 +15,31 @@ import {
   TrendingUp,
   X,
 } from 'lucide-react';
+import { resolveLocalImageUrl } from '@/shared/utils/media';
+import {
+  Alert,
+  AlertDescription,
+  PageShell,
+  Skeleton,
+} from '@/shared/ui/facade';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { useTranslation } from '@/shared/hooks';
-import { useCompletedTaskPage } from '../../hooks/useCompletedTaskPage';
 import type { MaterialConsumption } from '@/shared/types/inventory.types';
+import { useCompletedTaskPage } from '../../hooks/useCompletedTaskPage';
+import {
+  CompletedActionBar,
+} from './CompletedActionBar';
+import { CompletedHero } from './CompletedHero';
+import { CompletedSidebar } from './CompletedSidebar';
+import { SummaryStats } from './SummaryStats';
+import { WorkflowCompletionTimeline } from './WorkflowCompletionTimeline';
 
 export function CompletedTaskPageContent() {
   const router = useRouter();

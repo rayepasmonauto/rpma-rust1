@@ -2,15 +2,15 @@
 
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Plus, FileText, Search, TrendingUp, TrendingDown } from 'lucide-react';
 import Link from 'next/link';
+import { Plus, FileText, Search, TrendingUp, TrendingDown } from 'lucide-react';
 import { PageShell } from '@/shared/ui/layout/PageShell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { QuotesListTable, QuotesStatusTabs } from '@/domains/quotes';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PageHeader } from '@/components/ui/page-header';
 import { FadeIn } from '@/shared/ui/animations/FadeIn';
+import { QuotesListTable, QuotesStatusTabs } from '@/domains/quotes';
 import { useQuotesPage } from '@/domains/quotes';
 
 const QuoteCharts = dynamic(

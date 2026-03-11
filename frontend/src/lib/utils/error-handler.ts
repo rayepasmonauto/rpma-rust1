@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
-import { logger } from './logger';
 import { CorrelationIdGenerator } from '../logging/types';
+import { logger } from './logger';
 import { LogContext } from './logger';
 
 export interface ErrorHandlerOptions {

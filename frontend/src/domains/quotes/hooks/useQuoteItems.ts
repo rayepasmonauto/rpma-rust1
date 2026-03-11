@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/domains/auth';
-import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
 import type { JsonObject } from '@/types/json';
 import type {
   Quote,
   CreateQuoteItemRequest,
   UpdateQuoteItemRequest,
 } from '@/types/quote.types';
+import { useAuth } from '@/domains/auth';
+import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
 
 export function useQuoteItems() {
   const { user } = useAuth();

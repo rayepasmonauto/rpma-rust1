@@ -1,9 +1,9 @@
 // src/domains/sync/components/SyncIndicator.tsx
 import React from 'react';
-import { useSyncStatus } from '..';
 import { cn } from '@/lib/utils';
 import { ipcClient } from '@/lib/ipc';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { useSyncStatus } from '..';
 
 export function SyncIndicator({ className }: { className?: string }) {
   const { status, isLoading } = useSyncStatus();

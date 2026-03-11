@@ -1,5 +1,5 @@
-import type { StepType } from '@/lib/backend';
 import { Search, Wrench, Layers, BadgeCheck } from 'lucide-react';
+import type { StepType } from '@/lib/backend';
 
 export const PPF_STEP_CONFIG: Record<
   StepType,

@@ -1,12 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AuthSecureStorage } from '@/lib/secureStorage';
-import { InterventionWorkflowService } from '../services/intervention-workflow.service';
-import {
-  mapBackendStepToFrontend,
-  mapBackendStepPartialUpdate,
-  mapBackendInterventionToFrontend,
-} from '../services/intervention-mappers';
-import type { BackendStep, BackendIntervention } from '../services/intervention-mappers';
 import { interventionKeys } from '@/lib/query-keys';
 import { logger } from '@/lib/logging';
 import { LogDomain } from '@/lib/logging/types';
@@ -20,6 +13,13 @@ import type {
   StepProgressResponse,
   InterventionFinalizationResponse
 } from '@/types/ppf-intervention';
+import type { BackendStep, BackendIntervention } from '../services/intervention-mappers';
+import {
+  mapBackendStepToFrontend,
+  mapBackendStepPartialUpdate,
+  mapBackendInterventionToFrontend,
+} from '../services/intervention-mappers';
+import { InterventionWorkflowService } from '../services/intervention-workflow.service';
 
 interface UseInterventionActionsProps {
   taskId?: string;

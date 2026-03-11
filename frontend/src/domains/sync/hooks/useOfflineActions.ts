@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
+import { TaskWithDetails } from '@/types/task.types';
 import { taskApiService } from '@/domains/tasks';
 import { taskPhotoService } from '@/domains/tasks';
 
 import { UpdateTaskData } from '@/domains/tasks';
-import { TaskWithDetails } from '@/types/task.types';
 
 type UpdateTaskPayload = {
   taskId: string;

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/domains/auth';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { useAuth } from '@/domains/auth';
 
 export function useMessagesPage() {
   const { t } = useTranslation();

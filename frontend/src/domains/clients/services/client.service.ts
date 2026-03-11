@@ -7,11 +7,11 @@ import type {
   UpdateClientRequest,
   PaginationInfo,
 } from '@/lib/backend';
+import { ipcClient } from '@/lib/ipc';
+import { CreateClientRequestSchema, UpdateClientRequestSchema } from '@/lib/validation/ipc-schemas';
 import type { CreateClientDTO, ClientStats } from '@/types/client.types';
 import type { ServiceResponse, ApiResponse } from '@/types/unified.types';
 import { ApiError } from '@/types/unified.types';
-import { ipcClient } from '@/lib/ipc';
-import { CreateClientRequestSchema, UpdateClientRequestSchema } from '@/lib/validation/ipc-schemas';
 
 interface LegacyStatisticsResponse<T> {
   type: 'Statistics';

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Camera, AlertCircle } from 'lucide-react';
-import { TaskPhotos } from './TaskPhotos';
-import { useAuth } from '@/domains/auth';
-import { ipcClient } from '@/lib/ipc';
 import { useQuery } from '@tanstack/react-query';
+import { ipcClient } from '@/lib/ipc';
+import { useAuth } from '@/domains/auth';
+import { TaskPhotos } from './TaskPhotos';
 
 interface TaskAttachmentsProps {
   taskId: string;

@@ -55,12 +55,12 @@ export default function StaffPage() {
     loading: usersLoading,
     error: usersError,
     refetch,
-    showForm,
-    editingUser,
-    handleCreateUser,
-    handleEditUser,
-    handleFormClose,
-    handleFormSuccess,
+    showForm: _showForm,
+    editingUser: _editingUser,
+    handleCreateUser: _handleCreateUser,
+    handleEditUser: _handleEditUser,
+    handleFormClose: _handleFormClose,
+    handleFormSuccess: _handleFormSuccess,
   } = useUsersPage();
 
   const {

@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useLogger } from '@/shared/hooks/useLogger';
 import { LogDomain } from '@/lib/logging/types';
 import { ipcClient } from '@/lib/ipc';
 import type { UserSession } from '@/lib/backend';
+import { useLogger } from '@/shared/hooks/useLogger';
 
 export async function sendTestNotification(
   recipient: string,
-  sessionToken: string
+  _sessionToken: string
 ): Promise<string> {
   return ipcClient.notifications.testConfig(recipient, 'Email');
 }

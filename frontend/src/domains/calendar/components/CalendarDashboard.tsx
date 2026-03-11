@@ -4,16 +4,16 @@ import React, { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DragDropContext } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
+import { Plus, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { useCalendarStore } from '../stores/calendarStore';
+import { useCalendar } from '../hooks/useCalendar';
 import { CalendarHeader } from './CalendarHeader';
 import { MonthView } from './MonthView';
 import { WeekView } from './WeekView';
 import { DayView } from './DayView';
 import { AgendaView } from './AgendaView';
-import { useCalendarStore } from '../stores/calendarStore';
-import { useCalendar } from '../hooks/useCalendar';
-import { Button } from '@/components/ui/button';
-import { Plus, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
 
 export function CalendarDashboard() {
   const router = useRouter();

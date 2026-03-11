@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
-import { useAuth } from '@/domains/auth';
 import { CreateTaskRequest } from '@/lib/backend';
 import { ipcClient } from '@/lib/ipc';
 import { handleError } from '@/lib/utils/error-handler';
 import { LogDomain } from '@/lib/logging/types';
+import { useAuth } from '@/domains/auth';
 import { ClientCreationService } from '@/domains/clients';
 import { generateTaskTitle } from '../../utils/display';
 

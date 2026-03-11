@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import type { TaskWithDetails } from '@/types/task.types';
 import { TaskProvider, useTaskContext } from '../api/TaskProvider';
 import { taskService } from '../services/task.service';
-import type { TaskWithDetails } from '@/types/task.types';
 
 jest.mock('@/domains/auth', () => ({
   useAuth: () => ({

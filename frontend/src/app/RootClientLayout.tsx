@@ -1,20 +1,19 @@
 'use client';
 
-import { Providers } from '@/app/providers';
+import { useEffect } from 'react';
 import localFont from "next/font/local";
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { Providers } from '@/app/providers';
 import "./globals.css";
 import AppNavigation from '@/app/AppNavigation';
 import { GlobalErrorBoundary, SkipLink } from '@/shared/ui';
-import { useAuth } from '@/domains/auth';
-import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
 import { structuredLogger as logger, CorrelationContext, LogDomain } from '@/shared/utils';
 import { useMenuEvents } from '@/shared/hooks/useMenuEvents';
-import { useAuthRedirect, useAdminBootstrapCheck } from '@/domains/auth';
-import { useOnboardingCheck } from '@/domains/organizations';
 import { ThemeProvider } from '@/shared/ui/theme-provider';
 import { Skeleton, SkeletonList } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { useAuth, useAuthRedirect, useAdminBootstrapCheck } from '@/domains/auth';
+import { useOnboardingCheck } from '@/domains/organizations';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",

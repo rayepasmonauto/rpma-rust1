@@ -4,7 +4,6 @@
  */
 
 import { ipcClient } from '@/lib/ipc';
-import { ApiResponse } from '@/types';
 import type {
   AdvanceStepRequest,
   Intervention,
@@ -15,6 +14,7 @@ import type {
   StartInterventionRequest,
   Task,
 } from '@/lib/backend';
+import { ApiResponse } from '@/types';
 import type {
   WorkflowExecution,
   WorkflowExecutionStep,

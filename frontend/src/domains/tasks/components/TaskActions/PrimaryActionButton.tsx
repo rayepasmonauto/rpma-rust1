@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle, Play, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface PrimaryActionButtonProps {
   isCompleted: boolean;

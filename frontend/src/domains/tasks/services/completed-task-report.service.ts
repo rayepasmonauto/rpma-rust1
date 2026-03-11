@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { documentReportOperations } from '@/domains/documents';
 import { interventionKeys } from '@/lib/query-keys';
+import { documentReportOperations } from '@/domains/documents';
 
 export type TranslateFn = (key: string, params?: Record<string, string | number>) => string;
 

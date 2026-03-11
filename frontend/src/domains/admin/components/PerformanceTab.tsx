@@ -1,9 +1,9 @@
 'use client';
 
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
-import { Plus } from 'lucide-react';
 import { usePerformanceConfig } from '@/domains/admin/hooks/usePerformanceConfig';
 import { PerformanceConfigForm } from './PerformanceConfigForm';
 import { PerformanceConfigCard, PerformanceConfigEmptyState } from './PerformanceConfigCard';

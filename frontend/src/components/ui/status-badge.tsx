@@ -1,7 +1,7 @@
 import React from 'react';
+import { CheckCircle2, Clock, Clock3, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from './badge';
-import { CheckCircle2, Clock, Clock3, AlertCircle } from 'lucide-react';
 
 export const STATUS_CONFIG = {
   pending: {

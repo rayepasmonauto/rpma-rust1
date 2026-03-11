@@ -5,8 +5,8 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useUserActions } from '../api/useUserActions';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { useUserActions } from '../api/useUserActions';
 
 interface ChangeRoleDialogProps {
   userId: string;

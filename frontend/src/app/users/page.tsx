@@ -1,13 +1,13 @@
 'use client';
 
-import { UserList, UserForm } from '@/domains/users';
-import { useUsersPage } from '@/domains/users';
+import { Users, UserPlus } from 'lucide-react';
 import { PageHeader, HeaderActionButton } from '@/components/ui/page-header';
 import { PageShell } from '@/shared/ui/layout/PageShell';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 import { ErrorState } from '@/shared/ui/layout/ErrorState';
-import { Users, UserPlus } from 'lucide-react';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { useUsersPage } from '@/domains/users';
+import { UserList, UserForm } from '@/domains/users';
 
 export default function UsersPage() {
   const { t } = useTranslation();

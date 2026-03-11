@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { TaskFormData, FormStep } from './types';
 // Legacy service imports removed - now using API routes
 import { createLogger } from '@/lib/logger';
 import {
@@ -16,6 +15,7 @@ import {
   validateYear,
   createValidationResult
 } from '@/lib/utils/validation-utils';
+import { TaskFormData, FormStep } from './types';
 
 const logger = createLogger('useTaskForm');
 

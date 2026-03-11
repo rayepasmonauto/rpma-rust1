@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/domains/auth';
-import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
 import type {
   Quote,
   QuoteExportResponse,
   ConvertQuoteToTaskResponse,
 } from '@/types/quote.types';
+import { useAuth } from '@/domains/auth';
+import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
 
 // --- useDuplicateQuote ---
 

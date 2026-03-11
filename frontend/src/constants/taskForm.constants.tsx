@@ -1,5 +1,5 @@
-import { Car, MapPin, Calendar } from 'lucide-react';
 import { ReactElement } from 'react';
+import { Car, MapPin, Calendar } from 'lucide-react';
 
 interface StepConfig {
   id: string;

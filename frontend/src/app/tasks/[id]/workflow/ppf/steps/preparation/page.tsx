@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { StepType } from '@/lib/backend';
 import {
   PpfChecklist,
   PpfPhotoGrid,
@@ -11,7 +12,6 @@ import {
   getPPFStepPath,
   usePpfWorkflow,
 } from '@/domains/interventions';
-import type { StepType } from '@/lib/backend';
 import { buildStepExportPayload, downloadJsonFile, getEffectiveStepData } from '@/domains/interventions';
 
 const SURFACE_CHECKLIST = [

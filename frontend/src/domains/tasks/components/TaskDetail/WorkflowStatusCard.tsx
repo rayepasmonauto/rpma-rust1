@@ -1,8 +1,8 @@
 import React from 'react';
+import { Workflow, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Workflow, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface WorkflowStatusCardProps {
   taskId: string;

@@ -1,8 +1,3 @@
-import { safeInvoke } from '../utils';
-import { cachedInvoke, invalidatePattern } from '../cache';
-import { extractAndValidate } from '../core';
-import { ResponseHandlers } from '../utils/crud-helpers';
-import { IPC_COMMANDS } from '../commands';
 import { signalMutation } from '@/lib/data-freshness';
 import {
   validateClient,
@@ -11,6 +6,11 @@ import {
   parseClientStatistics,
 } from '@/lib/validation/backend-type-guards';
 import type { JsonValue } from '@/types/json';
+import { safeInvoke } from '../utils';
+import { cachedInvoke, invalidatePattern } from '../cache';
+import { extractAndValidate } from '../core';
+import { ResponseHandlers } from '../utils/crud-helpers';
+import { IPC_COMMANDS } from '../commands';
 
 /**
  * Client CRUD and query operations using safeInvoke for IPC discipline

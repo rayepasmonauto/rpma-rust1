@@ -4,12 +4,12 @@ import React from 'react';
 import { MessageSquare, Inbox, Settings, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageComposer } from '@/domains/notifications';
-import { MessageInbox } from '@/domains/notifications';
-import { NotificationPreferences } from '@/domains/notifications';
 import { PageShell } from '@/shared/ui/layout/PageShell';
 import { PageHeader } from '@/components/ui/page-header';
 import { ErrorState } from '@/shared/ui/layout/ErrorState';
+import { MessageComposer } from '@/domains/notifications';
+import { MessageInbox } from '@/domains/notifications';
+import { NotificationPreferences } from '@/domains/notifications';
 import { useMessagesPage } from '@/domains/notifications';
 
 export default function MessagesPage() {

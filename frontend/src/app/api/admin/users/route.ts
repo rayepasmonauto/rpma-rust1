@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { userService } from '@/domains/users/server';
-import { withAuth, type NextRequestWithUser } from '@/lib/middleware/auth.middleware';
 import { z } from 'zod';
+import { withAuth, type NextRequestWithUser } from '@/lib/middleware/auth.middleware';
+import { userService } from '@/domains/users/server';
 
 export const dynamic = 'force-dynamic';
 

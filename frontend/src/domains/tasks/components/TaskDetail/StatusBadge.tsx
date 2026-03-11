@@ -1,6 +1,4 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import {
   CheckCircle,
   Clock,
@@ -14,6 +12,8 @@ import {
   Flag,
   Zap
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 export type TaskStatusType =
   | 'completed'

@@ -6,7 +6,6 @@ import {
   validateInterventionStep,
   validateStartInterventionResponse
 } from '@/lib/validation/backend-type-guards';
-import type { JsonObject, JsonValue } from '@/types/json';
 import type {
   Intervention,
   InterventionStep,
@@ -19,6 +18,7 @@ import type {
 } from '@/lib/backend';
 import { logger } from '@/lib/logging';
 import { LogDomain } from '@/lib/logging/types';
+import type { JsonObject, JsonValue } from '@/types/json';
 
 // Re-export so domain-internal files (services, reports) can import these
 // backend types through this IPC layer instead of referencing @/lib/backend directly.

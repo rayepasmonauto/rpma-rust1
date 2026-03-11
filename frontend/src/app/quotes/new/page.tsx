@@ -1,9 +1,11 @@
 'use client';
 
-import { ArrowLeft, Save, Loader2, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { ArrowLeft, Save, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNewQuotePage } from '@/domains/quotes';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FadeIn } from '@/shared/ui/animations/FadeIn';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   QuotePartsSection,
   QuoteLaborSection,
@@ -12,9 +14,7 @@ import {
   QuoteDetailsCard,
   QuoteTotalsCard,
 } from '@/domains/quotes';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FadeIn } from '@/shared/ui/animations/FadeIn';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useNewQuotePage } from '@/domains/quotes';
 
 export default function NewQuotePage() {
   const {

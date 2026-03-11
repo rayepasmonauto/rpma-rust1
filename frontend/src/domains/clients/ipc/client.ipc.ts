@@ -2,7 +2,6 @@ import { safeInvoke, extractAndValidate, cachedInvoke, invalidatePattern } from 
 import { signalMutation } from '@/lib/data-freshness';
 import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import { validateClient, validateClientListResponse } from '@/lib/validation/backend-type-guards';
-import type { JsonValue } from '@/types/json';
 import type {
   Client,
   CreateClientRequest,
@@ -12,6 +11,7 @@ import type {
   ClientWithTasks,
   ClientQuery
 } from '@/lib/backend';
+import type { JsonValue } from '@/types/json';
 
 export const clientIpc = {
   create: async (data: CreateClientRequest): Promise<Client> => {
