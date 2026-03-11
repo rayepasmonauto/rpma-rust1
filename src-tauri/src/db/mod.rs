@@ -258,7 +258,6 @@ impl Database {
         })
     }
 
-    #[cfg(test)]
     pub async fn new_in_memory() -> DbResult<Self> {
         // Use a shared in-memory database so multiple pooled connections see the same schema/data.
         let db_name = format!(

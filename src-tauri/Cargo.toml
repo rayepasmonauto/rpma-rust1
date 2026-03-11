@@ -71,6 +71,18 @@ path = "tests/commands/quote_commands_test.rs"
 name = "inventory_commands_test"
 path = "tests/commands/inventory_commands_test.rs"
 
+[[test]]
+name = "intervention_lifecycle_e2e_test"
+path = "tests/intervention_lifecycle_e2e_test.rs"
+
+[[test]]
+name = "quote_task_inventory_e2e_test"
+path = "tests/quote_task_inventory_e2e_test.rs"
+
+[[test]]
+name = "session_rbac_expiry_e2e_test"
+path = "tests/session_rbac_expiry_e2e_test.rs"
+
 [build-dependencies]
 tauri-build = { version = "2.0", features = [] }
 
@@ -191,4 +203,3 @@ criterion = "0.5"         # Performance testing
 proptest = "1.4"         # Property-based testing
 pretty_assertions = "1.4" # Better error messages in tests
 cargo-tarpaulin = "0.27"  # Coverage reporting
-
