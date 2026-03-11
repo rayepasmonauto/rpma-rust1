@@ -15,57 +15,21 @@ import type {
   StartInterventionRequest,
   Task,
 } from '@/lib/backend';
+import type {
+  WorkflowExecution,
+  WorkflowExecutionStep,
+  CreateWorkflowExecutionDTO,
+  StartTimingDTO,
+  SignatureDTO,
+} from '@/types/workflow.types';
 
-export interface WorkflowExecution {
-  id: string;
-  workflowId: string;
-  taskId: string;
-  templateId: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  currentStepId: string | null;
-  steps: WorkflowExecutionStep[];
-  startedAt?: string;
-  completedAt?: string;
-  createdBy: string;
-  updatedBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface WorkflowExecutionStep {
-  id: string;
-  workflowExecutionId: string;
-  stepId: string;
-  stepOrder: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  startedAt?: string | null;
-  completedAt?: string | null;
-  durationSeconds: number;
-  data?: Record<string, unknown>;
-  checklistCompletion: Record<string, unknown>;
-  startedBy?: string | null;
-  completedBy?: string | null;
-  createdAt: string;
-  updatedAt: string;
-  notes?: string;
-  photos?: string[];
-}
-
-export interface CreateWorkflowExecutionDTO {
-  taskId: string;
-  templateId: string;
-}
-
-export interface StartTimingDTO {
-  workflowExecutionId: string;
-  stepId: string;
-}
-
-export interface SignatureDTO {
-  workflowExecutionId: string;
-  stepId: string;
-  signature: string;
-}
+export type {
+  WorkflowExecution,
+  WorkflowExecutionStep,
+  CreateWorkflowExecutionDTO,
+  StartTimingDTO,
+  SignatureDTO,
+};
 
 const DEFAULT_TEMPLATE_ID = 'ppf-workflow-template';
 
@@ -257,6 +221,9 @@ export class WorkflowService {
   }
 
   async addSignature(dto: SignatureDTO): Promise<void> {
+    if (!dto.stepId) {
+      throw new Error('stepId is required to save a signature');
+    }
     const payload: SaveStepProgressRequest = {
       step_id: dto.stepId,
       collected_data: {
