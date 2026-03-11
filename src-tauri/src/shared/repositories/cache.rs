@@ -27,7 +27,11 @@ impl<T: Clone> CacheEntry<T> {
     }
 }
 
-/// Simple in-memory cache with LRU eviction
+/// Simple in-memory TTL cache.
+///
+/// **Eviction policy**: when the cache reaches `max_size`, ALL entries are
+/// cleared (full flush). This is NOT true LRU — entries are evicted by TTL
+/// expiry or a bulk clear when the capacity limit is hit.
 #[derive(Debug)]
 pub struct Cache {
     entries: Arc<Mutex<HashMap<String, Box<dyn std::any::Any + Send + Sync>>>>,
@@ -69,13 +73,9 @@ impl Cache {
     {
         let mut entries = self.entries.lock().unwrap();
 
-        // Evict oldest entries if at capacity
+        // Evict all entries if at capacity (simple TTL-cache flush)
         if entries.len() >= self.max_size {
-            // Simple eviction: clear all entries if at capacity
-            // In production, implement proper LRU
-            if entries.len() >= self.max_size {
-                entries.clear();
-            }
+            entries.clear();
         }
 
         entries.insert(key.to_string(), Box::new(CacheEntry::new(value, ttl)));
