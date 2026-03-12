@@ -4,15 +4,12 @@
 use ts_rs::TS;
 
 // Import models from canonical domain paths
-use rpma_ppf_intervention::domains::calendar::domain::models::calendar::{
+use rpma_ppf_intervention::domains::calendar::models::{
     CalendarDateRange, CalendarFilter, CalendarTask, CalendarTaskPriority, CalendarTaskStatus,
-    ConflictDetection,
-};
-use rpma_ppf_intervention::domains::calendar::domain::models::calendar_event::{
     CalendarEvent, CreateEventInput, EventParticipant, EventStatus, EventType, ParticipantStatus,
-    UpdateEventInput,
+    UpdateEventInput, ConflictDetection,
 };
-use rpma_ppf_intervention::domains::clients::domain::models::client::{
+use rpma_ppf_intervention::domains::clients::client_handler::{
     Client, ClientListResponse, ClientQuery, ClientStatistics, ClientWithTasks,
     CreateClientRequest, CustomerType, UpdateClientRequest,
 };
@@ -42,9 +39,9 @@ use rpma_ppf_intervention::domains::notifications::domain::models::message::{
     UpdateNotificationPreferencesRequest,
 };
 use rpma_ppf_intervention::domains::notifications::domain::models::notification::{
-    Notification, NotificationChannel, NotificationConfig,
-    NotificationMessage, NotificationPriority, NotificationStatus, NotificationTemplate,
-    NotificationType, TemplateVariables,
+    Notification, NotificationChannel, NotificationConfig, NotificationMessage,
+    NotificationPriority, NotificationStatus, NotificationTemplate, NotificationType,
+    TemplateVariables,
 };
 use rpma_ppf_intervention::domains::quotes::domain::models::quote::{
     AttachmentType, ConvertQuoteToTaskResponse, CreateQuoteAttachmentRequest,
@@ -80,8 +77,8 @@ use rpma_ppf_intervention::shared::contracts::common::{
 use rpma_ppf_intervention::shared::contracts::prediction::CompletionTimePrediction;
 
 use rpma_ppf_intervention::domains::settings::domain::models::organization::{
-    CreateOrganizationRequest, OnboardingData, OnboardingStatus, Organization,
-    UpdateOrganizationRequest, OrganizationSetting, UpdateOrganizationSettingsRequest,
+    CreateOrganizationRequest, OnboardingData, OnboardingStatus, Organization, OrganizationSetting,
+    UpdateOrganizationRequest, UpdateOrganizationSettingsRequest,
 };
 
 use rpma_ppf_intervention::shared::repositories::{base::PaginatedResult, cache::CacheStats};
@@ -98,7 +95,7 @@ use rpma_ppf_intervention::domains::interventions::{
 };
 
 // Import command request types
-use rpma_ppf_intervention::commands::{CompressedApiResponse, UserAction};
+use rpma_ppf_intervention::commands::UserAction;
 use rpma_ppf_intervention::domains::notifications::SendNotificationRequest;
 use rpma_ppf_intervention::domains::notifications::UpdateNotificationConfigRequest;
 use rpma_ppf_intervention::domains::users::CreateUserRequest;
@@ -136,10 +133,6 @@ fn main() {
     type_definitions
         .push_str(&ApiError::export_to_string().expect("Failed to export ApiError type"));
     type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &CompressedApiResponse::export_to_string()
-            .expect("Failed to export CompressedApiResponse type"),
-    );
     type_definitions.push_str("\n\n");
 
     // Domain: auth
@@ -935,7 +928,6 @@ fn main() {
     // List of all types we're exporting to filter out invalid imports
     let exported_types = vec![
         "ApiError",
-        "CompressedApiResponse",
         "UserAccount",
         "UserRole",
         "UserSession",

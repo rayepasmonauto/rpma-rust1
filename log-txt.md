@@ -1,172 +1,644 @@
+app-index.tsx:25  12/03/2026, 05:08:41 [CORR:req-mmmy788t-0002-v5psw3] [FRONTEND] [API] [ERROR] IPC call error: auth_validate_session | error: Error: {"Authentication":"Not authenticated"} Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  12/03/2026, 05:08:41 [CORR:req-mmmy78fo-0003-hv6mpm] [FRONTEND] [API] [ERROR] IPC call error: auth_validate_session | error: Error: {"Authentication":"Not authenticated"} Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  12/03/2026, 05:09:20 [CORR:req-mmmy81xd-000k-ghspu5] [FRONTEND] [SYSTEM] [ERROR] Uncaught error | user_id: b8a053fb-f278-4a14-a3c4-fc28120a8801 | data: {"message":"Uncaught TypeError: clients.find is not a function","filename":"webpack-internal:///(app-pages-browser)/./node_modules/next/dist/compiled/react-dom/cjs/react-dom.development.js","lineno":20769,"colno":7,"error":{}} Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+react-dom.development.js:20769  Uncaught TypeError: clients.find is not a function
+    at eval (CustomerStep.tsx:83:47)
+    at commitHookEffectListMount (react-dom.development.js:21102:1)
+    at commitHookPassiveMountEffects (react-dom.development.js:23154:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23259:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23334:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+app-index.tsx:25  12/03/2026, 05:09:20 [CORR:req-mmmy81xd-000k-ghspu5] [FRONTEND] [SYSTEM] [ERROR] Uncaught error | user_id: b8a053fb-f278-4a14-a3c4-fc28120a8801 | data: {"message":"Uncaught TypeError: clients.find is not a function","filename":"webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js","lineno":57,"colno":9,"error":{}} Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+redirect-boundary.tsx:59  Uncaught TypeError: clients.find is not a function
+    at eval (CustomerStep.tsx:83:47)
+    at commitHookEffectListMount (react-dom.development.js:21102:1)
+    at commitHookPassiveMountEffects (react-dom.development.js:23154:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23259:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23334:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+app-index.tsx:25  12/03/2026, 05:09:20 [CORR:req-mmmy81xd-000k-ghspu5] [FRONTEND] [SYSTEM] [ERROR] Uncaught error | user_id: b8a053fb-f278-4a14-a3c4-fc28120a8801 | data: {"message":"Uncaught TypeError: clients.find is not a function","filename":"webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js","lineno":57,"colno":9,"error":{}} Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+redirect-boundary.tsx:59  Uncaught TypeError: clients.find is not a function
+    at eval (CustomerStep.tsx:83:47)
+    at commitHookEffectListMount (react-dom.development.js:21102:1)
+    at commitHookPassiveMountEffects (react-dom.development.js:23154:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23259:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23334:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+app-index.tsx:25  12/03/2026, 05:09:20 [CORR:req-mmmy81xd-000k-ghspu5] [FRONTEND] [SYSTEM] [ERROR] Uncaught error | user_id: b8a053fb-f278-4a14-a3c4-fc28120a8801 | data: {"message":"Uncaught TypeError: clients.find is not a function","filename":"webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js","lineno":57,"colno":9,"error":{}} Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+redirect-boundary.tsx:59  Uncaught TypeError: clients.find is not a function
+    at eval (CustomerStep.tsx:83:47)
+    at commitHookEffectListMount (react-dom.development.js:21102:1)
+    at commitHookPassiveMountEffects (react-dom.development.js:23154:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23259:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23334:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+app-index.tsx:25  12/03/2026, 05:09:20 [CORR:req-mmmy81xd-000k-ghspu5] [FRONTEND] [SYSTEM] [ERROR] Uncaught error | user_id: b8a053fb-f278-4a14-a3c4-fc28120a8801 | data: {"message":"Uncaught TypeError: clients.find is not a function","filename":"webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js","lineno":37,"colno":9,"error":{}} Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+not-found-boundary.tsx:69  Uncaught TypeError: clients.find is not a function
+    at eval (CustomerStep.tsx:83:47)
+    at commitHookEffectListMount (react-dom.development.js:21102:1)
+    at commitHookPassiveMountEffects (react-dom.development.js:23154:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23259:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23334:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+app-index.tsx:25  12/03/2026, 05:09:20 [CORR:req-mmmy81xd-000k-ghspu5] [FRONTEND] [SYSTEM] [ERROR] Uncaught error | user_id: b8a053fb-f278-4a14-a3c4-fc28120a8801 | data: {"message":"Uncaught TypeError: clients.find is not a function","filename":"webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js","lineno":57,"colno":9,"error":{}} Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+redirect-boundary.tsx:59  Uncaught TypeError: clients.find is not a function
+    at eval (CustomerStep.tsx:83:47)
+    at commitHookEffectListMount (react-dom.development.js:21102:1)
+    at commitHookPassiveMountEffects (react-dom.development.js:23154:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23259:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23334:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+app-index.tsx:25  12/03/2026, 05:09:20 [CORR:req-mmmy81xd-000k-ghspu5] [FRONTEND] [SYSTEM] [ERROR] Uncaught error | user_id: b8a053fb-f278-4a14-a3c4-fc28120a8801 | data: {"message":"Uncaught TypeError: clients.find is not a function","filename":"webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js","lineno":57,"colno":9,"error":{}} Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+redirect-boundary.tsx:59  Uncaught TypeError: clients.find is not a function
+    at eval (CustomerStep.tsx:83:47)
+    at commitHookEffectListMount (react-dom.development.js:21102:1)
+    at commitHookPassiveMountEffects (react-dom.development.js:23154:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23259:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23334:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+app-index.tsx:25  12/03/2026, 05:09:20 [CORR:req-mmmy81xd-000k-ghspu5] [FRONTEND] [SYSTEM] [ERROR] Uncaught error | user_id: b8a053fb-f278-4a14-a3c4-fc28120a8801 | data: {"message":"Uncaught TypeError: clients.find is not a function","filename":"webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js","lineno":57,"colno":9,"error":{}} Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+redirect-boundary.tsx:59  Uncaught TypeError: clients.find is not a function
+    at eval (CustomerStep.tsx:83:47)
+    at commitHookEffectListMount (react-dom.development.js:21102:1)
+    at commitHookPassiveMountEffects (react-dom.development.js:23154:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23259:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23334:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+app-index.tsx:25  12/03/2026, 05:09:20 [CORR:req-mmmy81xd-000k-ghspu5] [FRONTEND] [SYSTEM] [ERROR] Uncaught error | user_id: b8a053fb-f278-4a14-a3c4-fc28120a8801 | data: {"message":"Uncaught TypeError: clients.find is not a function","filename":"webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js","lineno":37,"colno":9,"error":{}} Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  [12/03/2026, 05:09:20] ERROR [system] system | Data: "Uncaught error" Object
+window.console.error @ app-index.tsx:25
+not-found-boundary.tsx:69  Uncaught TypeError: clients.find is not a function
+    at eval (CustomerStep.tsx:83:47)
+    at commitHookEffectListMount (react-dom.development.js:21102:1)
+    at commitHookPassiveMountEffects (react-dom.development.js:23154:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23259:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23334:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23370:1)
+    at recursivelyTraversePassiveMountEffects (react-dom.development.js:23237:1)
+    at commitPassiveMountOnFiber (react-dom.development.js:23256:1)
+app-index.tsx:25  The above error occurred in the <NotFoundErrorBoundary> component:
 
-emaMA@LAPTOP-76DN517M MINGW64 /d/rpma-rust (feat-mainv-1)
-$ npm run frontend:type-check
+    at CustomerStep (webpack-internal:///(app-pages-browser)/./src/domains/tasks/components/TaskForm/steps/CustomerStep.tsx:29:11)
+    at div
+    at form
+    at div
+    at eval (webpack-internal:///(app-pages-browser)/./src/domains/tasks/components/TaskForm/TaskFormWizard.tsx:29:11)
+    at BailoutToCSR (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/shared/lib/lazy-dynamic/dynamic-bailout-to-csr.js:13:11)
+    at Suspense
+    at LoadableComponent
+    at div
+    at div
+    at div
+    at NewTaskPage (webpack-internal:///(app-pages-browser)/./src/app/tasks/new/page.tsx:66:110)
+    at ClientPageRoot (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/client-page.js:14:11)
+    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:243:11)
+    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)
+    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)
+    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)
+    at LoadingBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:349:11)
+    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)
+    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:153:9)
+    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:228:11)
+    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/render-from-template-context.js:16:44)
+    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:370:11)
+    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:243:11)
+    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)
+    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)
+    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)
+    at Suspense
+    at LoadingBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:349:11)
+    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)
+    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:153:9)
+    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:228:11)
+    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/render-from-template-context.js:16:44)
+    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:370:11)
+    at InnerLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:243:11)
+    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)
+    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)
+    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:76:9)
+    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)
+    at Suspense
+    at LoadingBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:349:11)
+    at ErrorBoundaryHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:113:9)
+    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)
+    at InnerScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:153:9)
+    at ScrollAndFocusHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:228:11)
+    at RenderFromTemplateContext (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/render-from-template-context.js:16:44)
+    at OuterLayoutRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/layout-router.js:370:11)
+    at div
+    at main
+    at div
+    at div
+    at AppShell (webpack-internal:///(app-pages-browser)/./src/components/layout/AppShell.tsx:16:11)
+    at RPMALayout (webpack-internal:///(app-pages-browser)/./src/components/RPMALayout.tsx:10:11)
+    at AppNavigation (webpack-internal:///(app-pages-browser)/./src/app/AppNavigation.tsx:15:11)
+    at AppLayout (webpack-internal:///(app-pages-browser)/./src/app/RootClientLayout.tsx:108:11)
+    at V (webpack-internal:///(app-pages-browser)/./node_modules/next-themes/dist/index.mjs:54:24)
+    at J (webpack-internal:///(app-pages-browser)/./node_modules/next-themes/dist/index.mjs:47:47)
+    at ThemeProvider (webpack-internal:///(app-pages-browser)/./src/shared/ui/theme-provider.tsx:13:11)
+    at AuthProvider (webpack-internal:///(app-pages-browser)/./src/domains/auth/api/AuthProvider.tsx:35:11)
+    at QueryClientProvider (webpack-internal:///(app-pages-browser)/./node_modules/@tanstack/react-query/build/modern/QueryClientProvider.js:27:11)
+    at Providers (webpack-internal:///(app-pages-browser)/./src/app/providers.tsx:21:11)
+    at GlobalErrorWrapper (webpack-internal:///(app-pages-browser)/./src/error-boundaries/GlobalErrorBoundary.tsx:623:9)
+    at BaseErrorBoundary (webpack-internal:///(app-pages-browser)/./src/error-boundaries/BaseErrorBoundary.tsx:402:9)
+    at GlobalErrorBoundary (webpack-internal:///(app-pages-browser)/./src/error-boundaries/GlobalErrorBoundary.tsx:497:11)
+    at div
+    at RootClientLayout (webpack-internal:///(app-pages-browser)/./src/app/RootClientLayout.tsx:191:11)
+    at body
+    at html
+    at RootLayout (Server)
+    at RedirectErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:74:9)
+    at RedirectBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/redirect-boundary.js:82:11)
+    at NotFoundErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:76:9)
+    at NotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/not-found-boundary.js:84:11)
+    at DevRootNotFoundBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/dev-root-not-found-boundary.js:33:11)
+    at ReactDevOverlay (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/app/ReactDevOverlay.js:87:9)
+    at HotReload (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/react-dev-overlay/app/hot-reloader-client.js:321:11)
+    at Router (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/app-router.js:207:11)
+    at ErrorBoundaryHandler (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:113:9)
+    at ErrorBoundary (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/error-boundary.js:160:11)
+    at AppRouter (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/components/app-router.js:585:13)
+    at ServerRoot (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:112:27)
+    at Root (webpack-internal:///(app-pages-browser)/./node_modules/next/dist/client/app-index.js:117:11)
 
-> rpma-rust@0.1.0 frontend:type-check
-> cd frontend && npm run type-check
-
-
-> rpma-frontend@0.1.0 type-check
-> tsc --noEmit
-
-src/lib/ipc/index.ts:2:72 - error TS2305: Module '"./mock/mock-client"' has no exported member 'initMockIpc'.
-
-2 import { ipcClient as mockIpcClient, useIpcClient as mockUseIpcClient, initMockIpc } from './mock/mock-client';
-                                                                         ~~~~~~~~~~~
-
-src/lib/ipc/mock/mock-client.ts:123:43 - error TS2304: Cannot find name 'UserSettings'.
-
-123     getUserSettings: () => mockSafeInvoke<UserSettings>('get_user_settings', {}),
-                                              ~~~~~~~~~~~~
-
-src/lib/ipc/mock/mock-client.ts:179:52 - error TS2552: Cannot find name 'UserListResponse'. Did you mean 'TaskListResponse'?
-
-179     list: (limit: number, offset: number): Promise<UserListResponse> =>
-                                                       ~~~~~~~~~~~~~~~~
-
-src/lib/ipc/mock/mock-client.ts:228:229 - error TS2322: Type '(JsonValue | undefined)[]' is not assignable to type 'JsonValue | undefined'.
-  Type '(JsonValue | undefined)[]' is not assignable to type 'JsonArray'.
-    Type 'JsonValue | undefined' is not assignable to type 'JsonValue'.
-      Type 'undefined' is not assignable to type 'JsonValue'.
-
-228     upload: (interventionId: string, file: any, photoType: string) => mockSafeInvoke('document_store_photo', { request: { intervention_id: interventionId, file_name: file.name, mime_type: file.mimeType, pho
-to_type: photoType }, image_data: Array.from(file.bytes) }),
-
-                      ~~~~~~~~~~
-
-
-Found 4 errors in 2 files.
-
-Errors  Files
-     1  src/lib/ipc/index.ts:2
-     3  src/lib/ipc/mock/mock-client.ts:123
-
-emaMA@LAPTOP-76DN517M MINGW64 /d/rpma-rust (feat-mainv-1)
-$ npm run frontend:lint
-
-> rpma-rust@0.1.0 frontend:lint
-> cd frontend && npm run lint
-
-
-> rpma-frontend@0.1.0 lint
-> eslint . --ext .ts,.tsx --max-warnings 10000
-
-
-D:\rpma-rust\frontend\src\app\onboarding\page.tsx
-  12:1  warning  `@/shared/hooks` import should occur before import of `@/domains/settings`        import/order
-  13:1  warning  `@/lib/backend` type import should occur before import of `@/components/ui/card`  import/order
-
-D:\rpma-rust\frontend\src\app\staff\__tests__\page.test.tsx
-   3:1  warning  `react` import should occur before import of `@testing-library/react`                                                import/order
-  62:5  error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
-
-D:\rpma-rust\frontend\src\domains\performance\api\performanceProvider.tsx
-  16:17  warning  'setStats' is assigned a value but never used. Allowed unused elements of array destructuring must match /^_/u         @typescript-eslint/no-unused-vars
-  17:22  warning  'setCacheStats' is assigned a value but never used. Allowed unused elements of array destructuring must match /^_/u    @typescript-eslint/no-unused-vars
-  18:24  warning  'setSystemHealth' is assigned a value but never used. Allowed unused elements of array destructuring must match /^_/u  @typescript-eslint/no-unused-vars
-  19:19  warning  'setLoading' is assigned a value but never used. Allowed unused elements of array destructuring must match /^_/u       @typescript-eslint/no-unused-vars
-  20:17  warning  'setError' is assigned a value but never used. Allowed unused elements of array destructuring must match /^_/u         @typescript-eslint/no-unused-vars
-
-D:\rpma-rust\frontend\src\domains\settings\__tests__\useSettings.test.tsx
-   4:1   warning  `@tanstack/react-query` import should occur before import of `../api/useSettings`  import/order
-   5:1   warning  `react` import should occur before import of `@testing-library/react`              import/order
-  31:10  error    Component definition is missing display name                                       react/display-name
-
-D:\rpma-rust\frontend\src\domains\settings\api\configurationService.ts
-    3:10   warning  'AuthSecureStorage' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
-    4:26   warning  'JsonObject' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
-   78:43   warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
-   87:55   warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
-   96:35   warning  'id' is defined but never used. Allowed unused args must match /^_/u                 @typescript-eslint/no-unused-vars
-  105:105  warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
-  109:59   warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
-  112:30   warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
-  118:42   warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
-  118:72   warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
-  127:52   warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
-  131:40   warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
-  131:70   warning  Unexpected any. Specify a different type                                             @typescript-eslint/no-explicit-any
-  162:28   warning  'id' is defined but never used. Allowed unused args must match /^_/u                 @typescript-eslint/no-unused-vars
-
-D:\rpma-rust\frontend\src\domains\settings\api\useSettings.ts
-  6:1  warning  `@/lib/backend` type import should occur before import of `@/domains/auth`  import/order
-
-D:\rpma-rust\frontend\src\domains\settings\api\useSettingsActions.ts
-  4:1  warning  `@/domains/auth` import should occur after type import of `@/types/json`  import/order
-
-D:\rpma-rust\frontend\src\domains\settings\components\OrganizationSettingsTab.tsx
-  13:1  warning  `@/lib/backend` type import should occur before import of `@/components/ui/card`  import/order
-
-D:\rpma-rust\frontend\src\domains\settings\components\__tests__\PerformanceTab.payload.test.tsx
-  4:1  warning  `react` import should occur before import of `@testing-library/react`  import/order
-
-D:\rpma-rust\frontend\src\domains\settings\components\__tests__\SecurityTab.contract.test.tsx
-  1:18  warning  'screen' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
-  4:1   warning  `react` import should occur before import of `@testing-library/react`     import/order
-
-D:\rpma-rust\frontend\src\domains\settings\components\__tests__\SecurityTab.error.test.tsx
-  1:18  warning  'screen' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
-  4:1   warning  `react` import should occur before import of `@testing-library/react`     import/order
-
-D:\rpma-rust\frontend\src\domains\settings\hooks\usePerformanceSettings.ts
-   10:1   warning  `@/lib/ipc/client` import should occur before import of `@/shared/hooks/useLogger`                                       import/order
-   78:22  warning  'setCacheStats' is assigned a value but never used. Allowed unused elements of array destructuring must match /^_/u      @typescript-eslint/no-unused-vars
-   79:21  warning  'setSyncStats' is assigned a value but never used. Allowed unused elements of array destructuring must match /^_/u       @typescript-eslint/no-unused-vars
-  135:6   warning  React Hook useEffect has a missing dependency: 'ipcClient.settings'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
-  166:6   warning  React Hook useCallback has a missing dependency: 'ipcClient.settings'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-
-D:\rpma-rust\frontend\src\domains\settings\hooks\useSecuritySettings.ts
-   10:1  warning  `@/lib/ipc/client` import should occur before import of `@/shared/hooks/useLogger`                                       import/order
-  125:6  warning  React Hook useEffect has a missing dependency: 'ipcClient.settings'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
-  157:6  warning  React Hook useCallback has a missing dependency: 'ipcClient.settings'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  175:6  warning  React Hook useCallback has a missing dependency: 'ipcClient.settings'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-  190:6  warning  React Hook useCallback has a missing dependency: 'ipcClient.settings'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
-
-D:\rpma-rust\frontend\src\domains\tasks\components\TaskActions\ActionButtons.tsx
-  25:1  warning  `@/shared/features/documents/report-export` import should occur before import of `@/domains/auth`  import/order
-
-D:\rpma-rust\frontend\src\lib\ipc\mock\mock-client.ts
-   15:15   warning  'Material' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
-   15:25   warning  'MaterialStats' is defined but never used. Allowed unused vars must match /^_/u    @typescript-eslint/no-unused-vars
-   19:10   warning  'defaultFixtures' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
-   77:31   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-   78:32   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-   99:29   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  105:34   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  109:22   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  111:21   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  115:26   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  116:21   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  175:20   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  180:121  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  181:32   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  220:30   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  221:42   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  228:44   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  232:19   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  233:20   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  234:32   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  237:25   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  238:25   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  239:31   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  240:56   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  241:40   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  242:56   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  243:28   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-  245:28   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
-
-D:\rpma-rust\frontend\src\lib\ipc\real-adapter.ts
-  39:17  warning  'command' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
-
-D:\rpma-rust\frontend\src\lib\ipc\test-adapter.ts
-  100:10  warning  'ipcError' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
-
-D:\rpma-rust\frontend\src\lib\ipc\utils.ts
-  7:1  warning  `@/shared/contracts/session` import should occur before import of `../logging`  import/order
-
-✖ 76 problems (2 errors, 74 warnings)
-  0 errors and 15 warnings potentially fixable with the `--fix` option.
-
-
-emaMA@LAPTOP-76DN517M MINGW64 /d/rpma-rust (feat-mainv-1)
-$
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundaryHandler.
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  Error boundary caught: Object
+window.console.error @ app-index.tsx:25
+app-index.tsx:25  Error boundary caught: Object
+window.console.error @ app-index.tsx:25

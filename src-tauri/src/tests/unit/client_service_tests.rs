@@ -3,7 +3,7 @@
 //! This module tests client CRUD operations, validation, and business rules.
 
 use crate::commands::AppResult;
-use crate::domains::clients::infrastructure::client::ClientService;
+use crate::domains::clients::client_handler::ClientService;
 use crate::test_utils::{TestDataFactory, TestDatabase};
 use crate::{test_client, test_db, test_intervention, test_task};
 
@@ -138,7 +138,7 @@ mod tests {
             .await?;
 
         // Update client
-        let update_request = crate::domains::clients::domain::models::client::UpdateClientRequest {
+        let update_request = crate::domains::clients::client_handler::UpdateClientRequest {
             id: created_client.id,
             name: Some("Updated Client".to_string()),
             email: Some("updated@company.com".to_string()),
@@ -173,7 +173,7 @@ mod tests {
         let test_db = test_db!();
         let service = ClientService::new(test_db.db());
 
-        let update_request = crate::domains::clients::domain::models::client::UpdateClientRequest {
+        let update_request = crate::domains::clients::client_handler::UpdateClientRequest {
             id: "nonexistent-id".to_string(),
             name: Some("Updated".to_string()),
             ..Default::default()
@@ -198,7 +198,7 @@ mod tests {
             .await?;
 
         // Deactivate client
-        let update_request = crate::domains::clients::domain::models::client::UpdateClientRequest {
+        let update_request = crate::domains::clients::client_handler::UpdateClientRequest {
             id: created_client.id,
             is_active: Some(false),
             ..Default::default()
@@ -352,7 +352,7 @@ mod tests {
 
         // Deactivate one client
         let deactivate_request =
-            crate::domains::clients::domain::models::client::UpdateClientRequest {
+            crate::domains::clients::client_handler::UpdateClientRequest {
                 id: client_ids[1].clone(),
                 is_active: Some(false),
                 ..Default::default()
@@ -562,7 +562,7 @@ mod tests {
 
         // Deactivate second client
         let deactivate_request =
-            crate::domains::clients::domain::models::client::UpdateClientRequest {
+            crate::domains::clients::client_handler::UpdateClientRequest {
                 id: client2.id,
                 is_active: Some(false),
                 ..Default::default()

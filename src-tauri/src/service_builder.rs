@@ -172,7 +172,7 @@ impl ServiceBuilder {
             crate::domains::tasks::infrastructure::task::TaskService::new(self.db.clone()),
         );
         let client_service = Arc::new(
-            crate::domains::clients::infrastructure::client::ClientService::new(
+            crate::domains::clients::client_handler::ClientService::new(
                 self.repositories.client.clone(),
             ),
         );
@@ -186,10 +186,11 @@ impl ServiceBuilder {
                 self.db.clone(),
             ),
         );
-        let settings_service = Arc::new(
-            crate::domains::settings::infrastructure::settings::SettingsService::new(
-                self.db.clone(),
-            ),
+        let settings_repository = Arc::new(
+            crate::domains::settings::SettingsRepository::new(self.db.clone()),
+        );
+        let user_settings_repository = Arc::new(
+            crate::domains::settings::UserSettingsRepository::new(self.db.clone()),
         );
         let task_import_service = Arc::new(
             crate::domains::tasks::infrastructure::task_import::TaskImportService::new(
@@ -207,7 +208,7 @@ impl ServiceBuilder {
         let user_service = Arc::new(UserService::new(self.repositories.user.clone()));
 
         // Initialize Cache Service (self-contained)
-        let cache_service = Arc::new(crate::shared::services::cache::CacheService::default()?);
+        let cache_service = Arc::new(crate::shared::services::cache::CacheService::default());
 
         // Initialize Session Service (depends on DB)
         let session_service = Arc::new(
@@ -223,7 +224,7 @@ impl ServiceBuilder {
         // Force local photo storage under the app data directory to avoid writing
         // uploads into the repo root during `tauri dev` (which can trigger backend rebuilds).
         let mut default_storage_settings =
-            crate::domains::documents::infrastructure::photo::PhotoStorageSettings::default();
+            crate::domains::documents::PhotoStorageSettings::default();
         let photo_storage_path = self.app_data_dir.join("photos");
         default_storage_settings.photo_storage_type = "local".to_string();
         default_storage_settings.local_storage_path =
@@ -234,7 +235,7 @@ impl ServiceBuilder {
             "Configured photo storage path"
         );
         let photo_service = Arc::new(
-            crate::domains::documents::infrastructure::photo::PhotoService::new(
+            crate::domains::documents::PhotoService::new(
                 db_instance.clone(),
                 &default_storage_settings,
             )?,
@@ -272,7 +273,7 @@ impl ServiceBuilder {
 
         // Initialize Message Service (depends on MessageRepository and DB)
         let message_service = Arc::new(
-            crate::domains::notifications::infrastructure::message::MessageService::new(
+            crate::domains::notifications::MessageService::new(
                 self.repositories.message.clone(),
                 self.db.clone(),
             ),
@@ -324,7 +325,8 @@ impl ServiceBuilder {
             auth_service,
             session_service,
             session_store,
-            settings_service,
+            settings_repository,
+            user_settings_repository,
             user_service,
             cache_service,
             event_bus,

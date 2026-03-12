@@ -9,6 +9,5 @@ pub mod cross_domain;
 pub mod document_storage;
 pub mod domain_event;
 pub mod event_bus;
-pub mod security_monitor;
 pub mod system;
 pub mod validation;

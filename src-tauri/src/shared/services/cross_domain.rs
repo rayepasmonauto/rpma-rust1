@@ -14,15 +14,14 @@
 pub use crate::domains::interventions::infrastructure::intervention::InterventionService;
 
 // Client domain
-pub use crate::domains::clients::infrastructure::client::ClientService;
-pub use crate::domains::clients::infrastructure::client::ClientStat;
-pub use crate::domains::clients::domain::models::client::{CreateClientRequest, CustomerType};
+pub use crate::domains::clients::client_handler::ClientService;
+pub use crate::domains::clients::client_handler::ClientStat;
+pub use crate::domains::clients::client_handler::{CreateClientRequest, CustomerType};
 
 // Settings domain
-pub use crate::domains::settings::infrastructure::settings::SettingsService;
 
 // Calendar domain
-pub use crate::domains::calendar::infrastructure::calendar::CalendarService;
+pub use crate::domains::calendar::calendar_handler::CalendarService;
 
 // Tasks domain
 pub use crate::domains::tasks::infrastructure::task::TaskService;
@@ -36,10 +35,10 @@ pub use crate::shared::logging::audit_service::{
 
 // --- Cross-domain shared types ---
 // Client types
-pub use crate::domains::clients::domain::models::client::Client;
+pub use crate::domains::clients::client_handler::Client;
 
 // Document types
-pub use crate::domains::documents::domain::models::photo::Photo;
+pub use crate::domains::documents::Photo;
 
 // Intervention types
 pub use crate::domains::interventions::domain::models::intervention::{

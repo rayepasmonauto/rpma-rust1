@@ -58,7 +58,7 @@ pub async fn check_task_assignment(
         .ok_or_else(|| AppError::NotFound(format!("Task not found: {}", request.task_id)))?;
 
     let max_tasks_per_user = state
-        .settings_service
+        .settings_repository
         .get_max_tasks_per_user()
         .map_err(|e| AppError::db_sanitized("get_settings", &e))?
         as usize;
@@ -130,7 +130,7 @@ pub async fn validate_task_assignment_change(
         .ok_or_else(|| AppError::NotFound(format!("Task not found: {}", request.task_id)))?;
 
     let max_tasks_per_user = state
-        .settings_service
+        .settings_repository
         .get_max_tasks_per_user()
         .map_err(|e| AppError::db_sanitized("get_settings", &e))?
         as usize;

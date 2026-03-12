@@ -8,8 +8,7 @@
 
 use crate::commands::AppResult;
 use crate::shared::logging::audit_service::AuditService;
-use crate::domains::clients::domain::models::client::{Client, CustomerType};
-use crate::domains::clients::infrastructure::client::ClientService;
+use crate::domains::clients::client_handler::{Client, CustomerType, ClientService};
 use crate::domains::interventions::domain::models::intervention::Intervention;
 use crate::domains::interventions::infrastructure::intervention_types::{
     AdvanceStepRequest, FinalizeInterventionRequest, StartInterventionRequest,

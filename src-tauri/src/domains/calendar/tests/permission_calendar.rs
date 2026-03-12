@@ -1,6 +1,5 @@
 use crate::db::Database;
-use crate::domains::calendar::infrastructure::calendar::CalendarService;
-use crate::domains::calendar::CalendarFacade;
+use crate::domains::calendar::calendar_handler::{CalendarFacade, CalendarService};
 use crate::shared::ipc::errors::AppError;
 use std::sync::Arc;
 

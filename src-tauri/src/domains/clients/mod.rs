@@ -1,11 +1,6 @@
-mod facade;
-pub(crate) use facade::ClientsFacade;
-pub(crate) mod application;
-#[cfg(feature = "export-types")]
-pub mod domain;
-#[cfg(not(feature = "export-types"))]
-pub(crate) mod domain;
-pub(crate) mod infrastructure;
-pub(crate) mod ipc;
+pub mod client_handler;
+
+pub(crate) use client_handler::ClientsFacade;
+
 #[cfg(test)]
 pub(crate) mod tests;

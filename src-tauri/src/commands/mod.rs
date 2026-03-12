@@ -16,8 +16,8 @@ pub mod user {
     };
 }
 pub mod client {
-    pub use crate::domains::clients::application::ClientCrudRequest;
-    pub use crate::domains::clients::ipc::client::client_crud;
+    pub use crate::domains::clients::client_handler::ClientCrudRequest;
+    pub use crate::domains::clients::client_handler::client_crud;
 }
 pub mod auth {
     use crate::shared::app_state::AppState;
@@ -68,7 +68,7 @@ pub mod quote {
 
 pub use crate::shared::app_state::{AppState, AppStateType};
 pub use crate::shared::contracts::auth::UserRole;
-pub use crate::shared::ipc::response::{ApiResponse, CompressedApiResponse};
+pub use crate::shared::ipc::response::ApiResponse;
 pub use correlation_helpers::*;
 pub use errors::{AppError, AppResult};
 use crate::resolve_context;
@@ -80,19 +80,16 @@ pub use system::{
     health_check,
 };
 
-use crate::domains::clients::domain::models::client::ClientWithTasks;
+use crate::domains::clients::client_handler::{Client, ClientWithTasks};
 use crate::domains::tasks::domain::models::task::*;
-
-use crate::domains::clients::domain::models::client::Client;
 pub use crate::domains::users::application::{UserAction, UserResponse};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument, warn};
 
 // Import client types from models
-use crate::domains::clients::domain::models::client::{
-    ClientListResponse, ClientQuery, CreateClientRequest, UpdateClientRequest,
+use crate::domains::clients::client_handler::{
+    ClientListResponse, ClientQuery, ClientStats, CreateClientRequest, UpdateClientRequest,
 };
-use crate::domains::clients::infrastructure::client::ClientStats;
 
 /// Task action types for CRUD operations
 #[derive(Deserialize, Debug)]
@@ -248,37 +245,6 @@ pub async fn get_database_pool_health(
 
     debug!("Database pool health retrieved successfully");
     Ok(ApiResponse::success(health).with_correlation_id(Some(ctx.correlation_id)))
-}
-
-/// Test command for compressed responses (returns large dataset)
-#[tauri::command]
-#[instrument(skip(state))]
-pub async fn get_large_test_data(
-    state: AppState<'_>,
-    correlation_id: Option<String>,
-) -> Result<CompressedApiResponse, AppError> {
-    let ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
-    debug!("Large test data requested");
-
-    // Generate a large dataset to test compression
-    let large_data: Vec<TestItem> = (0..1000).map(|i| TestItem {
-        id: i,
-        name: format!("Test Item {}", i),
-        description: format!("This is a description for test item {} with some additional text to make it larger", i),
-        data: vec![i as u8; 100], // 100 bytes per item
-    }).collect();
-
-    let response = ApiResponse::success(large_data).with_correlation_id(Some(ctx.correlation_id));
-    response.to_compressed_if_large()
-}
-
-/// Test data structure for compression testing
-#[derive(Serialize, Deserialize, Debug)]
-pub struct TestItem {
-    pub id: i32,
-    pub name: String,
-    pub description: String,
-    pub data: Vec<u8>,
 }
 
 /// Vacuum database

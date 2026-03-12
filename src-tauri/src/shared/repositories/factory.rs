@@ -12,17 +12,18 @@ pub use cache::Cache;
 
 // Import existing repositories
 pub use crate::domains::auth::infrastructure::session_repository::SessionRepository;
-pub use crate::domains::calendar::infrastructure::calendar_event_repository::CalendarEventRepository;
+pub use crate::domains::calendar::calendar_handler::CalendarEventRepository;
 pub use crate::domains::interventions::infrastructure::intervention_repository::InterventionRepository;
 pub use crate::domains::tasks::infrastructure::task_repository::TaskRepository;
 
 // Import new repositories
-pub use crate::domains::clients::infrastructure::client_repository::ClientRepository;
-pub use crate::domains::documents::infrastructure::photo_repository::PhotoRepository;
+pub use crate::domains::clients::client_handler::ClientRepository;
+pub use crate::domains::documents::PhotoRepository;
 pub use crate::domains::inventory::infrastructure::material_repository::MaterialRepository;
-pub use crate::domains::notifications::infrastructure::message_repository::MessageRepository;
-pub use crate::domains::notifications::infrastructure::notification_preferences_repository::NotificationPreferencesRepository;
-pub use crate::domains::notifications::infrastructure::notification_repository::NotificationTemplateRepository;
+pub use crate::domains::notifications::{
+    MessageRepository, NotificationPreferencesRepository, NotificationRepository,
+    NotificationTemplateRepository,
+};
 pub use crate::domains::quotes::infrastructure::quote_repository::QuoteRepository;
 pub use crate::domains::tasks::infrastructure::task_history_repository::TaskHistoryRepository;
 pub use crate::domains::users::infrastructure::user_repository::UserRepository;

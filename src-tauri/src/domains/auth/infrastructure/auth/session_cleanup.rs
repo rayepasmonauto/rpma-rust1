@@ -11,17 +11,6 @@ impl super::AuthService {
             .cleanup_expired(now_ms)
             .map_err(|e| format!("Failed to cleanup expired sessions: {}", e))?;
 
-        if deleted_count > 0 {
-            let mut details = std::collections::HashMap::new();
-            details.insert(
-                "sessions_cleaned".to_string(),
-                serde_json::json!(deleted_count),
-            );
-            let _ = self
-                .security_monitor
-                .log_suspicious_activity(None, "session_cleanup", details);
-        }
-
         Ok(deleted_count)
     }
 }

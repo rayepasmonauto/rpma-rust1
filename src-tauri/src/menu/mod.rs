@@ -196,7 +196,6 @@ fn create_intervention_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Sub
 fn create_tools_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Submenu<R>> {
     let submenu = Submenu::new(app, "Tools", true)?;
 
-    let sync_now = MenuItem::with_id(app, "sync_now", "Sync Now", true, Some("Ctrl+Shift+S"))?;
     let sync_status = MenuItem::with_id(app, "sync_status", "Sync Status", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
     let db_status = MenuItem::with_id(app, "db_status", "Database Status", true, None::<&str>)?;
@@ -204,7 +203,6 @@ fn create_tools_menu<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<Submenu<R>
     let separator2 = PredefinedMenuItem::separator(app)?;
     let dev_tools = MenuItem::with_id(app, "dev_tools", "Developer Tools", true, Some("F12"))?;
 
-    submenu.append(&sync_now)?;
     submenu.append(&sync_status)?;
     submenu.append(&separator)?;
     submenu.append(&db_status)?;

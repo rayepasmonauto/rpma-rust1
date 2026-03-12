@@ -5,8 +5,7 @@
 
 use crate::db::Database;
 use crate::shared::logging::audit_service::AuditService;
-use crate::domains::clients::domain::models::client::Client;
-use crate::domains::clients::infrastructure::client_repository::ClientRepository;
+use crate::domains::clients::client_handler::{Client, ClientRepository};
 use crate::domains::interventions::domain::models::intervention::{
     Intervention, InterventionStatus, InterventionType,
 };

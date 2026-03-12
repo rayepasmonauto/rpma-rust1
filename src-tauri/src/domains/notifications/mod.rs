@@ -1,11 +1,8 @@
-#[cfg(feature = "export-types")]
-pub mod domain;
-#[cfg(not(feature = "export-types"))]
-pub(crate) mod domain;
-pub(crate) mod infrastructure;
-pub mod ipc;
+pub mod models;
+pub mod notification_handler;
+
+pub use models::*;
+pub use notification_handler::*;
+
 #[cfg(test)]
 pub(crate) mod tests;
-
-#[cfg(feature = "export-types")]
-pub use ipc::notification_handler::{UpdateNotificationConfigRequest};

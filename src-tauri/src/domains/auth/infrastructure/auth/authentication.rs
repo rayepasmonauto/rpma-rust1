@@ -108,11 +108,6 @@ impl super::AuthService {
                 self.rate_limiter.record_failed_attempt(ip)?;
             }
 
-            // Log security event
-            let _ =
-                self.security_monitor
-                    .log_auth_failure(Some(&account.id), None, "invalid_password");
-
             warn!("Invalid password for user {}", validated_email);
             return Err("Invalid email or password".to_string());
         }
@@ -122,9 +117,6 @@ impl super::AuthService {
         if let Some(ip) = ip_address {
             self.rate_limiter.clear_failed_attempts(ip)?;
         }
-
-        // Log successful authentication
-        let _ = self.security_monitor.log_auth_success(&account.id, None);
 
         // Update last login
         conn.execute(
