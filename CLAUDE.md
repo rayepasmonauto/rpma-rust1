@@ -229,5 +229,5 @@ If a requirement is ambiguous or conflicts with architecture rules, choose the m
 
 when unsure check docs:
 
-* `docs/agent-pack/README.md`
+* `docs/README.md`
 * `docs/adr/`
