@@ -5,7 +5,7 @@
  */
 
 import type { JsonObject } from '@/types/json';
-import { safeInvoke, NOT_IMPLEMENTED_COMMANDS, PUBLIC_COMMANDS } from './utils';
+import { safeInvoke, PUBLIC_COMMANDS } from './utils';
 import type { IpcAdapter, IpcInvokeOptions } from './adapter';
 
 /**
@@ -15,8 +15,8 @@ export class TauriAdapter implements IpcAdapter {
   /**
    * Invoke an IPC command using safeInvoke wrapper
    */
-  async invoke<T = unknown>(
-    command: string,
+  async invoke<T>(
+    _command: string,
     args?: JsonObject,
     options?: IpcInvokeOptions
   ): Promise<T> {
@@ -26,7 +26,7 @@ export class TauriAdapter implements IpcAdapter {
     };
 
     return safeInvoke<T>(
-      command,
+      _command,
       argsWithCorrelation,
       options?.validator as (data: unknown) => T,
       options?.timeoutMs
@@ -34,17 +34,17 @@ export class TauriAdapter implements IpcAdapter {
   }
 
   /**
-   * Check if command is implemented (not in NOT_IMPLEMENTED_COMMANDS)
+   * Check if command is implemented (always true now)
    */
-  isImplemented(command: string): boolean {
-    return !NOT_IMPLEMENTED_COMMANDS.has(command);
+  isImplemented(_command: string): boolean {
+    return true;
   }
 
   /**
    * Check if command requires auth (not in PUBLIC_COMMANDS)
    */
-  requiresAuth(command: string): boolean {
-    return !PUBLIC_COMMANDS.has(command);
+  requiresAuth(_command: string): boolean {
+    return !PUBLIC_COMMANDS.has(_command);
   }
 }
 

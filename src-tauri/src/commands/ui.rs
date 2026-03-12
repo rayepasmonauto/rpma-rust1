@@ -141,43 +141,6 @@ pub async fn get_recent_activities(
     Ok(activities)
 }
 
-/// Get sync status (simplified synchronous version)
-fn get_sync_status_simple(
-    state: &super::AppState<'_>,
-) -> Result<serde_json::Value, super::AppError> {
-    let mut stats = serde_json::Map::new();
-
-    // Get sync queue metrics
-    let sync_queue = &state.sync_queue;
-    let metrics = sync_queue
-        .get_metrics()
-        .map_err(|e| super::AppError::Internal(format!("Failed to get sync metrics: {}", e)))?;
-
-    stats.insert(
-        "status".to_string(),
-        serde_json::Value::String("online".to_string()),
-    );
-    stats.insert(
-        "pending_operations".to_string(),
-        serde_json::Value::Number(metrics.pending_operations.into()),
-    );
-    stats.insert(
-        "completed_operations".to_string(),
-        serde_json::Value::Number(metrics.completed_operations.into()),
-    );
-    stats.insert(
-        "failed_operations".to_string(),
-        serde_json::Value::Number(metrics.failed_operations.into()),
-    );
-
-    // Get last sync time (mock for now)
-    stats.insert(
-        "last_sync".to_string(),
-        serde_json::Value::String(chrono::Utc::now().to_rfc3339()),
-    );
-
-    Ok(serde_json::Value::Object(stats))
-}
 
 #[cfg(test)]
 mod tests {

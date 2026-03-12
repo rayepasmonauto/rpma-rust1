@@ -7,7 +7,7 @@ use crate::domains::settings::infrastructure::settings::SettingsService;
 use crate::domains::tasks::infrastructure::task::TaskService;
 use crate::domains::users::infrastructure::user::UserService;
 use crate::infrastructure::auth::session_store::SessionStore;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tauri::State;
 
 /// App state containing database and long-lived services.
@@ -33,13 +33,6 @@ pub struct AppStateType {
     pub settings_service: Arc<SettingsService>,
     pub user_service: Arc<UserService>,
     pub cache_service: Arc<crate::shared::services::cache::CacheService>,
-    pub performance_monitor_service:
-        Arc<crate::shared::services::performance_monitor::PerformanceMonitorService>,
-    pub command_performance_tracker:
-        Arc<crate::shared::services::performance_monitor::CommandPerformanceTracker>,
-    pub sync_queue: Arc<crate::domains::sync::infrastructure::sync::SyncQueue>,
-    pub background_sync:
-        Arc<Mutex<crate::domains::sync::infrastructure::sync::BackgroundSyncService>>,
     pub event_bus: Arc<crate::shared::services::event_bus::InMemoryEventBus>,
     pub app_data_dir: std::path::PathBuf,
 }

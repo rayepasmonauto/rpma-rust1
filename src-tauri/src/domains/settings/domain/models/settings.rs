@@ -14,9 +14,10 @@ pub struct GeneralSettings {
     pub currency: String,
 }
 
-/// TODO: document
+/// Security configuration.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct SecuritySettings {
+    /// NOT IMPLEMENTED — planned for v3, has no effect.
     pub two_factor_enabled: bool,
     pub session_timeout: u32, // minutes
     pub password_min_length: u8,
@@ -25,11 +26,18 @@ pub struct SecuritySettings {
     pub login_attempts_max: u8,
 }
 
-/// TODO: document
+/// Notification preferences within user settings.
+///
+/// `push_notifications`, `email_notifications`, and `sms_notifications`
+/// have no delivery implementation — they are stored but never acted upon.
+/// Only in-app notification preferences are functional.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct NotificationSettings {
+    /// NOT IMPLEMENTED — no push delivery exists. Stored for future use.
     pub push_notifications: bool,
+    /// NOT IMPLEMENTED — no email delivery exists. Stored for future use.
     pub email_notifications: bool,
+    /// NOT IMPLEMENTED — no SMS delivery exists. Stored for future use.
     pub sms_notifications: bool,
     pub task_assignments: bool,
     pub task_completions: bool,
@@ -357,6 +365,7 @@ pub struct UserPreferences {
 /// TODO: document
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct UserSecuritySettings {
+    /// NOT IMPLEMENTED — planned for v3, has no effect.
     pub two_factor_enabled: bool,
     pub session_timeout: u32, // minutes
 }

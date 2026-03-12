@@ -5,10 +5,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { LogDomain } from '@/lib/logging/types';
-import { ipcClient } from '@/lib/ipc';
 import type { UserSession, UserPerformanceSettings } from '@/lib/backend';
+import { useIpcClient } from '@/lib/ipc/client';
 import { useLogger } from '@/shared/hooks/useLogger';
-import { settingsIpc } from '../ipc/settings.ipc';
 
 // Performance settings form schema
 const performanceSchema = z.object({
@@ -47,10 +46,6 @@ export interface SyncStats {
   syncStatus: 'idle' | 'syncing' | 'error';
 }
 
-interface SyncStatusResponse {
-  status?: string;
-}
-
 /**
  * Safely formats a number to a fixed number of decimal places.
  * Returns a zero-value string when `v` is null, undefined, or NaN.
@@ -75,12 +70,13 @@ const DEFAULT_SYNC_STATS: SyncStats = {
 };
 
 export function usePerformanceSettings(user?: UserSession) {
+  const ipcClient = useIpcClient();
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [cacheStats, setCacheStats] = useState<CacheStats>(DEFAULT_CACHE_STATS);
-  const [syncStats, setSyncStats] = useState<SyncStats>(DEFAULT_SYNC_STATS);
+  const [_cacheStats, _setCacheStats] = useState<CacheStats>(DEFAULT_CACHE_STATS);
+  const [_syncStats, _setSyncStats] = useState<SyncStats>(DEFAULT_SYNC_STATS);
   const [isOnline, setIsOnline] = useState(true);
 
   const { logInfo, logError, logUserAction } = useLogger({
@@ -108,30 +104,11 @@ export function usePerformanceSettings(user?: UserSession) {
 
       setIsLoading(true);
       try {
-        const [userSettings, cacheStatsResponse] = await Promise.all([
-          settingsIpc.getUserSettings(),
-          ipcClient.performance.getCacheStatistics().catch((error) => {
-            logError('Failed to load cache statistics', { error: error instanceof Error ? error.message : error });
-            return null;
-          }),
-        ]);
+        const userSettings = await ipcClient.settings.getUserSettings();
 
         if (userSettings?.performance) {
           form.reset(userSettings.performance as UserPerformanceSettings);
         }
-
-        if (cacheStatsResponse) {
-          setCacheStats(cacheStatsResponse as unknown as CacheStats);
-        } else {
-          setCacheStats(DEFAULT_CACHE_STATS);
-        }
-
-        setSyncStats({
-          lastSync: new Date(Date.now() - 1800000).toISOString(),
-          pendingUploads: 3,
-          pendingDownloads: 0,
-          syncStatus: 'idle',
-        });
 
         setIsOnline(navigator.onLine);
 
@@ -155,7 +132,7 @@ export function usePerformanceSettings(user?: UserSession) {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [logInfo, logError, form, user?.token]);
+  }, [logInfo, logError, form, user?.token, ipcClient.settings]);
 
   const onSubmit = useCallback(async (data: PerformanceFormData) => {
     if (!user?.token) {
@@ -173,7 +150,7 @@ export function usePerformanceSettings(user?: UserSession) {
     });
 
     try {
-      await settingsIpc.updateUserPerformance(data);
+      await ipcClient.settings.updateUserPerformance(data);
 
       setSaveSuccess(true);
       logInfo('Performance settings updated successfully', { userId: user.user_id });
@@ -186,59 +163,23 @@ export function usePerformanceSettings(user?: UserSession) {
     } finally {
       setIsSaving(false);
     }
-  }, [user?.token, user?.user_id, form.formState.dirtyFields, logUserAction, logInfo, logError]);
+  }, [user?.token, user?.user_id, form.formState.dirtyFields, logUserAction, logInfo, logError, ipcClient.settings]);
 
   const handleClearCache = useCallback(async () => {
-    if (!user?.token) return;
-
-    logUserAction('Cache clear initiated');
-
-    try {
-      await ipcClient.performance.clearApplicationCache({});
-
-      const cacheStatsResponse = await ipcClient.performance.getCacheStatistics() as unknown as CacheStats;
-      setCacheStats(cacheStatsResponse);
-
-      logInfo('Cache cleared successfully');
-    } catch (error) {
-      logError('Cache clear failed', { error: error instanceof Error ? error.message : error });
-    }
-  }, [user?.token, logUserAction, logInfo, logError]);
+    // Cache management removed (performance monitoring infrastructure deleted)
+  }, []);
 
   const handleForceSync = useCallback(async () => {
-    if (!user?.token) return;
-
-    logUserAction('Manual sync initiated');
-
-    try {
-      setSyncStats(prev => ({ ...prev, syncStatus: 'syncing' }));
-
-      await ipcClient.sync.syncNow();
-
-      const syncStatus = await ipcClient.sync.getStatus() as SyncStatusResponse;
-
-      setSyncStats(prev => ({
-        ...prev,
-        lastSync: new Date().toISOString(),
-        pendingUploads: 0,
-        pendingDownloads: 0,
-        syncStatus: syncStatus?.status === 'running' ? 'syncing' : 'idle',
-      }));
-
-      logInfo('Manual sync completed successfully');
-    } catch (error) {
-      setSyncStats(prev => ({ ...prev, syncStatus: 'error' }));
-      logError('Manual sync failed', { error: error instanceof Error ? error.message : error });
-    }
-  }, [user?.token, logUserAction, logInfo, logError]);
+    // Sync domain removed (offline-first SQLite, no network sync needed)
+  }, []);
 
   return {
     isLoading,
     isSaving,
     saveSuccess,
     saveError,
-    cacheStats,
-    syncStats,
+    cacheStats: _cacheStats,
+    syncStats: _syncStats,
     isOnline,
     form,
     onSubmit,

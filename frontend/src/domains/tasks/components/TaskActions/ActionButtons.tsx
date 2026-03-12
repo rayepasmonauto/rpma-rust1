@@ -21,8 +21,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TaskWithDetails } from '@/types/task.types';
+import { documentReportOperations } from '@/shared/features/documents/report-export';
 import { useAuth } from '@/domains/auth';
-import { documentReportOperations } from '@/domains/documents';
 
 interface ActionButtonsProps {
   task: TaskWithDetails;

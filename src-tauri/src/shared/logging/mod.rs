@@ -3,6 +3,11 @@
 //! This module fences the legacy top-level `crate::logging` module behind a
 //! shared entry point so bounded contexts can depend on `shared::logging`.
 
+pub mod audit_log_handler;
+pub mod audit_repository;
+pub mod audit_service;
+pub mod audit_types;
+
 pub use crate::logging::correlation;
 pub use crate::logging::{LogDomain, RPMARequestLogger};
 

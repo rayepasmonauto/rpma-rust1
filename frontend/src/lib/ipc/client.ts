@@ -26,6 +26,11 @@ import type {
   CreateUserRequest,
   UpdateUserRequest,
   UserListResponse,
+  Organization,
+  OnboardingStatus,
+  OnboardingData,
+  UpdateOrganizationRequest,
+  UpdateOrganizationSettingsRequest,
 } from '@/lib/backend';
 import type { SignupRequest, CreateClientRequest, UpdateClientRequest } from '@/lib/validation/ipc-schemas';
 import {
@@ -38,10 +43,14 @@ import {
   validateStartInterventionResponse,
   validateTaskListResponse,
 } from '@/lib/validation/backend-type-guards';
+import {
+  safeInvoke,
+  cachedInvoke,
+  invalidatePattern,
+  extractAndValidate
+} from './core';
 import type { CreateEventInput, UpdateEventInput } from '@/types/calendar';
 import type { JsonObject, JsonValue } from '@/types/json';
-import { cachedInvoke, invalidatePattern } from './cache';
-import { safeInvoke } from './utils';
 
 // Typed response interfaces for IPC workflow responses (replacing inline `any` casts)
 interface InterventionWorkflowStartedResponse {
@@ -213,14 +222,6 @@ export const ipcClient = {
       safeInvoke<UserSession>('auth_create_account', { request }, validateUserSession),
 
     /**
-     * Refreshes an authentication token
-     * @param refreshToken - The refresh token
-     * @returns Promise resolving to new user session data
-     */
-    refreshToken: (refreshToken: string) =>
-      safeInvoke<UserSession>('auth_refresh_token', { refreshToken }, validateUserSession),
-
-    /**
      * Logs out the current user
      * @returns Promise resolving when logout is complete
      */
@@ -233,46 +234,6 @@ export const ipcClient = {
     validateSession: () =>
       safeInvoke<UserSession>('auth_validate_session', {}, validateUserSession),
 
-    /**
-     * Enables 2FA for the current user
-     * @returns Promise resolving to 2FA setup data
-     */
-    enable2FA: () =>
-      safeInvoke<JsonValue>('enable_2fa', {}),
-
-    /**
-     * Verifies 2FA setup with verification code
-     * @param verificationCode - TOTP verification code
-     * @param backupCodes - Backup codes for 2FA
-     * @returns Promise resolving when setup is verified
-     */
-    verify2FASetup: (verificationCode: string, backupCodes: string[]) =>
-      safeInvoke<void>('verify_2fa_setup', {
-        verification_code: verificationCode,
-        backup_codes: backupCodes
-      }),
-
-    /**
-     * Disables 2FA for the current user
-     * @param password - User's password
-     * @returns Promise resolving when 2FA is disabled
-     */
-    disable2FA: (password: string) =>
-      safeInvoke<void>('disable_2fa', { password }),
-
-    /**
-     * Regenerates backup codes for 2FA
-     * @returns Promise resolving to new backup codes
-     */
-    regenerateBackupCodes: () =>
-      safeInvoke<JsonValue>('regenerate_backup_codes', {}),
-
-    /**
-     * Checks if 2FA is enabled for current user
-     * @returns Promise resolving to 2FA status
-     */
-    is2FAEnabled: () =>
-      safeInvoke<boolean>('is_2fa_enabled', {}),
   },
 
   // Task operations
@@ -303,7 +264,7 @@ export const ipcClient = {
         request: {
           action: { action: 'Get', id },
         }
-      }, (data: JsonValue) => extractAndValidate(data, validateTask, true) as Task | null),
+      }, (data: JsonValue) => extractAndValidate(data, validateTask, { handleNotFound: true }) as Task | null),
 
     /**
      * Updates an existing task
@@ -556,21 +517,24 @@ export const ipcClient = {
         request: {
           action: { action: 'Get', id },
         }
-      }, (data: JsonValue) => extractAndValidate(data, validateClient, true) as Client | null),
+      }, (data: JsonValue) => extractAndValidate(data, validateClient, { handleNotFound: true }) as Client | null),
 
     getWithTasks: (id: string): Promise<Client | null> =>
       cachedInvoke(`client-with-tasks:${id}`, 'client_crud', {
         request: {
           action: { action: 'GetWithTasks', id },
         }
-      }, (data: JsonValue) => extractAndValidate(data, validateClient, true) as Client | null),
+      }, (data: JsonValue) => extractAndValidate(data, validateClient, { handleNotFound: true }) as Client | null),
 
     search: (query: string, limit: number): Promise<Client[]> =>
       safeInvoke<JsonValue>('client_crud', {
         request: {
           action: { action: 'Search', query, limit },
         }
-      }).then(result => extractAndValidate(result) as Client[]),
+      }).then(result => {
+        const extracted = extractAndValidate(result) as { data: Client[] };
+        return extracted.data;
+      }),
 
     list: async (filters: Partial<ClientQuery>): Promise<ClientListResponse> => {
       const result = await safeInvoke<JsonValue>('client_crud', {
@@ -608,7 +572,8 @@ export const ipcClient = {
           }
         }
       });
-      return extractAndValidate(result) as ClientWithTasks[];
+      const extracted = extractAndValidate(result) as { data: ClientWithTasks[] };
+      return extracted.data;
     },
 
     stats: (): Promise<ClientStatistics> =>
@@ -897,9 +862,6 @@ export const ipcClient = {
     send: (request: SendNotificationRequest) =>
       safeInvoke<void>('send_notification', { request }),
 
-    testConfig: (recipient: string, channel: 'Email' | 'Sms' | 'Push') =>
-      safeInvoke<string>('test_notification_config', { recipient, channel }),
-
     getStatus: () =>
       safeInvoke<JsonValue>('get_notification_status', {}),
 
@@ -957,6 +919,43 @@ export const ipcClient = {
       return result;
     },
 
+    updateGeneralSettings: async (request: JsonObject): Promise<JsonValue> => {
+      const result = await safeInvoke<JsonValue>('update_general_settings', {
+        request
+      });
+      return result;
+    },
+
+    updateBusinessRules: async (rules: JsonValue[]): Promise<JsonValue> => {
+      return safeInvoke<JsonValue>('update_business_rules', {
+        request: { rules }
+      });
+    },
+
+    updateSecurityPolicies: async (policies: JsonValue[]): Promise<JsonValue> => {
+      return safeInvoke<JsonValue>('update_security_policies', {
+        request: { policies }
+      });
+    },
+
+    updateIntegrations: async (integrations: JsonValue[]): Promise<JsonValue> => {
+      return safeInvoke<JsonValue>('update_integrations', {
+        request: { integrations }
+      });
+    },
+
+    updatePerformanceConfigs: async (configs: JsonValue[]): Promise<JsonValue> => {
+      return safeInvoke<JsonValue>('update_performance_configs', {
+        request: { configs }
+      });
+    },
+
+    updateBusinessHours: async (hours: JsonObject): Promise<JsonValue> => {
+      return safeInvoke<JsonValue>('update_business_hours', {
+        request: { hours }
+      });
+    },
+
     changeUserPassword: async (request: JsonObject) => {
       const result = await safeInvoke<string>('change_user_password', { request });
       invalidateUserSettingsCache();
@@ -1007,6 +1006,49 @@ export const ipcClient = {
       }),
   },
 
+  // Organization operations
+  organization: {
+    getOnboardingStatus: (): Promise<OnboardingStatus> =>
+      safeInvoke<OnboardingStatus>('get_onboarding_status', {}),
+
+    completeOnboarding: async (data: OnboardingData): Promise<Organization> => {
+      const result = await safeInvoke<Organization>('complete_onboarding', { data: data as unknown as JsonValue });
+      invalidatePattern('organization:');
+      signalMutation('organization');
+      return result;
+    },
+
+    get: (sessionToken: string): Promise<Organization> =>
+      safeInvoke<Organization>('get_organization', { session_token: sessionToken }),
+
+    update: async (sessionToken: string, data: UpdateOrganizationRequest): Promise<Organization> => {
+      const result = await safeInvoke<Organization>('update_organization', { session_token: sessionToken, data: data as unknown as JsonValue });
+      invalidatePattern('organization:');
+      signalMutation('organization');
+      return result;
+    },
+
+    uploadLogo: async (sessionToken: string, filePath?: string, base64Data?: string): Promise<Organization> => {
+      const result = await safeInvoke<Organization>('upload_logo', {
+        file_path: filePath,
+        base64_data: base64Data,
+        session_token: sessionToken,
+      });
+      invalidatePattern('organization:');
+      signalMutation('organization');
+      return result;
+    },
+
+    getSettings: (sessionToken: string): Promise<Record<string, string | number | boolean>> =>
+      safeInvoke<Record<string, string | number | boolean>>('get_organization_settings', { session_token: sessionToken }),
+
+    updateSettings: async (sessionToken: string, data: UpdateOrganizationSettingsRequest): Promise<Record<string, string | number | boolean>> => {
+      const result = await safeInvoke<Record<string, string | number | boolean>>('update_organization_settings', { session_token: sessionToken, data: data as unknown as JsonValue });
+      invalidatePattern('organization:settings');
+      return result;
+    },
+  },
+
   // Security session management operations
   security: {
     getActiveSessions: () =>
@@ -1045,7 +1087,7 @@ export const ipcClient = {
           request: {
             action: { action: 'Get', id }
           }
-        }, (data: JsonValue) => extractAndValidate(data, undefined, true)),
+        }, (data: JsonValue) => extractAndValidate(data, undefined, { handleNotFound: true })),
 
       list: (limit: number, offset: number): Promise<UserListResponse> =>
         safeInvoke<JsonValue>('user_crud', {
@@ -1112,49 +1154,6 @@ export const ipcClient = {
       safeInvoke<boolean>('has_admins'),
   },
 
-  // Sync operations
-  sync: {
-    start: () =>
-      safeInvoke<void>('sync_start_background_service'),
-
-    stop: () =>
-      safeInvoke<void>('sync_stop_background_service'),
-
-     getStatus: () =>
-       cachedInvoke('sync:status', 'sync_get_status', undefined, undefined, 5000),
-
-    syncNow: () =>
-      safeInvoke<void>('sync_now'),
-
-     getOperationsForEntity: (entityId: string, entityType: string) =>
-       safeInvoke<JsonValue>('sync_get_operations_for_entity', {
-         entity_id: entityId,
-         entity_type: entityType
-       }),
-  },
-
-  // Performance operations
-  performance: {
-    getStats: () =>
-      safeInvoke<JsonValue>('get_performance_stats', {}),
-
-    getMetrics: (limit: number) =>
-      safeInvoke<JsonValue>('get_performance_metrics', { limit }),
-
-    cleanupMetrics: () =>
-      safeInvoke<JsonValue>('cleanup_performance_metrics', {}),
-
-    // Cache management
-    getCacheStatistics: () =>
-      safeInvoke<JsonValue>('get_cache_statistics', {}),
-
-    clearApplicationCache: (request: { cache_types?: string[] }) =>
-      safeInvoke<JsonValue>('clear_application_cache', { request }),
-
-    configureCacheSettings: (request: { max_memory_mb?: number; default_ttl_seconds?: number; enable_disk_cache?: boolean }) =>
-      safeInvoke<JsonValue>('configure_cache_settings', { request }),
-  },
-
   // Admin operations
   admin: {
     healthCheck: () =>
@@ -1162,9 +1161,6 @@ export const ipcClient = {
 
     getHealthStatus: () =>
       safeInvoke<JsonValue>('health_check'),
-
-    getApplicationMetrics: () =>
-      safeInvoke<JsonValue>('get_performance_stats'),
 
     getDatabaseStatus: () =>
       safeInvoke<JsonValue>('diagnose_database', {}),
@@ -1478,4 +1474,3 @@ export const ipcClient = {
 export function useIpcClient() {
   return ipcClient;
 }
-

@@ -23,7 +23,6 @@ use std::sync::Arc;
 
 use crate::domains::auth::infrastructure::rate_limiter::RateLimiterService;
 use crate::domains::auth::infrastructure::session_repository::SessionRepository;
-use crate::shared::services::performance_monitor::PerformanceMonitorService;
 use crate::shared::services::security_monitor::SecurityMonitorService;
 use crate::shared::services::validation::ValidationService;
 use tracing::warn;
@@ -35,7 +34,6 @@ pub struct AuthService {
     session_repository: SessionRepository,
     rate_limiter: Arc<RateLimiterService>,
     security_monitor: Arc<SecurityMonitorService>,
-    performance_monitor: Arc<PerformanceMonitorService>,
     validator: ValidationService,
 }
 
@@ -51,14 +49,12 @@ impl AuthService {
         let session_repository = SessionRepository::new(db_arc);
         let rate_limiter = Arc::new(RateLimiterService::new(db.clone()));
         let security_monitor = Arc::new(SecurityMonitorService::new(db.clone()));
-        let performance_monitor = Arc::new(PerformanceMonitorService::new(db.clone()));
 
         Ok(Self {
             db,
             session_repository,
             rate_limiter,
             security_monitor,
-            performance_monitor,
             validator: ValidationService::new(),
         })
     }
@@ -72,9 +68,6 @@ impl AuthService {
 
         // Initialize security monitor
         self.security_monitor.init()?;
-
-        // Initialize performance monitor
-        self.performance_monitor.init()?;
 
         // Clean up expired sessions on startup
         if let Err(e) = self.cleanup_expired_sessions() {

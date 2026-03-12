@@ -42,9 +42,9 @@ use rpma_ppf_intervention::domains::notifications::domain::models::message::{
     UpdateNotificationPreferencesRequest,
 };
 use rpma_ppf_intervention::domains::notifications::domain::models::notification::{
-    EmailConfig, EmailProvider, Notification, NotificationChannel, NotificationConfig,
+    Notification, NotificationChannel, NotificationConfig,
     NotificationMessage, NotificationPriority, NotificationStatus, NotificationTemplate,
-    NotificationType, SmsConfig, SmsProvider, TemplateVariables,
+    NotificationType, TemplateVariables,
 };
 use rpma_ppf_intervention::domains::quotes::domain::models::quote::{
     AttachmentType, ConvertQuoteToTaskResponse, CreateQuoteAttachmentRequest,
@@ -79,12 +79,9 @@ use rpma_ppf_intervention::shared::contracts::common::{
 };
 use rpma_ppf_intervention::shared::contracts::prediction::CompletionTimePrediction;
 
-use rpma_ppf_intervention::domains::organizations::domain::models::organization::{
+use rpma_ppf_intervention::domains::settings::domain::models::organization::{
     CreateOrganizationRequest, OnboardingData, OnboardingStatus, Organization,
-    UpdateOrganizationRequest,
-};
-use rpma_ppf_intervention::domains::organizations::domain::models::settings::{
-    OrganizationSetting, UpdateOrganizationSettingsRequest,
+    UpdateOrganizationRequest, OrganizationSetting, UpdateOrganizationSettingsRequest,
 };
 
 use rpma_ppf_intervention::shared::repositories::{base::PaginatedResult, cache::CacheStats};
@@ -675,18 +672,6 @@ fn main() {
         &TemplateVariables::export_to_string().expect("Failed to export TemplateVariables type"),
     );
     type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&EmailProvider::export_to_string().expect("Failed to export EmailProvider type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&EmailConfig::export_to_string().expect("Failed to export EmailConfig type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&SmsProvider::export_to_string().expect("Failed to export SmsProvider type"));
-    type_definitions.push_str("\n");
-    type_definitions
-        .push_str(&SmsConfig::export_to_string().expect("Failed to export SmsConfig type"));
-    type_definitions.push_str("\n");
     type_definitions.push_str(
         &NotificationConfig::export_to_string().expect("Failed to export NotificationConfig type"),
     );
@@ -1028,10 +1013,6 @@ fn main() {
         "NotificationPriority",
         "NotificationStatus",
         "TemplateVariables",
-        "EmailProvider",
-        "EmailConfig",
-        "SmsProvider",
-        "SmsConfig",
         "NotificationConfig",
         "UpdateNotificationConfigRequest",
         "SendNotificationRequest",

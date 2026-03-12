@@ -97,7 +97,7 @@ export const TEST_TASK_STATISTICS = {
 /* ────────────────────────────────────────────────────────── */
 
 /** Create a rejected promise with a structured IPC error. */
-function ipcError(code: string, message: string): Promise<never> {
+function _ipcError(code: string, message: string): Promise<never> {
   const err = Object.assign(new Error(message), { code });
   return Promise.reject(err);
 }
@@ -124,11 +124,6 @@ export function createTestAdapter(overrides?: TestAdapterOverrides): IpcAdapter 
       refreshToken: () => Promise.resolve(TEST_SESSION as never),
       logout: () => Promise.resolve(undefined as never),
       validateSession: () => Promise.resolve(TEST_SESSION as never),
-      enable2FA: () => ipcError('NOT_IMPLEMENTED', '2FA not implemented'),
-      verify2FASetup: () => ipcError('NOT_IMPLEMENTED', '2FA not implemented'),
-      disable2FA: () => ipcError('NOT_IMPLEMENTED', '2FA not implemented'),
-      regenerateBackupCodes: () => ipcError('NOT_IMPLEMENTED', '2FA not implemented'),
-      is2FAEnabled: () => Promise.resolve(false as never),
     },
     tasks: {
       create: () => Promise.resolve(TEST_TASK as never),
@@ -181,7 +176,6 @@ export function createTestAdapter(overrides?: TestAdapterOverrides): IpcAdapter 
     notifications: {
       initialize: noop,
       send: noop,
-      testConfig: noop,
       getStatus: noop,
       getRecentActivities: noop,
     },
@@ -255,21 +249,6 @@ export function createTestAdapter(overrides?: TestAdapterOverrides): IpcAdapter 
     bootstrap: {
       firstAdmin: noop,
       hasAdmins: () => Promise.resolve(true as never),
-    },
-    sync: {
-      start: noop,
-      stop: noop,
-      getStatus: noop,
-      syncNow: noop,
-      getOperationsForEntity: noop,
-    },
-    performance: {
-      getStats: noop,
-      getMetrics: noop,
-      cleanupMetrics: noop,
-      getCacheStatistics: noop,
-      clearApplicationCache: noop,
-      configureCacheSettings: noop,
     },
     security: {
       getMetrics: noop,

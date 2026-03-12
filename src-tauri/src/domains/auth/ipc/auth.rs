@@ -154,13 +154,38 @@ pub async fn auth_logout(
 #[tauri::command]
 #[instrument(skip(state))]
 pub async fn auth_validate_session(
+    session_token: Option<String>,
     correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<crate::domains::auth::domain::models::auth::UserSession>, AppError> {
     debug!("Session validation request");
     let correlation_id = crate::commands::init_correlation_context(&correlation_id, None);
 
-    let session = state.session_store.get()?;
+    // Try to get session from in-memory store first
+    let session_res = state.session_store.get();
+
+    let session = match session_res {
+        Ok(s) => s,
+        Err(_) => {
+            // If not in memory, try to restore from database if token provided
+            if let Some(token) = session_token {
+                debug!("Session not in memory, attempting to restore from database");
+                match state.session_service.validate_session(&token).await? {
+                    Some(s) => {
+                        info!("Session restored from database for user: {}", s.username);
+                        state.session_store.set(s.clone());
+                        s
+                    }
+                    None => {
+                        warn!("Provided session token is invalid or expired");
+                        return Err(AppError::Authentication("Not authenticated".to_string()));
+                    }
+                }
+            } else {
+                return Err(AppError::Authentication("Not authenticated".to_string()));
+            }
+        }
+    };
 
     crate::commands::update_correlation_context_user(&session.user_id);
     debug!("Session validation successful");
