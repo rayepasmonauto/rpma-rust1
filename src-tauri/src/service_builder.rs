@@ -34,17 +34,12 @@
 //! 16. EventBus                       <- self-contained
 //! 17. QuoteService                   <- Repositories.quote + Database + QuoteEventBus
 //! 18. MessageService                 <- Repositories.message + Database
-//! 19. SyncQueue                      <- Database
-//! 20. BackgroundSyncService          <- SyncQueue
-//! 21. AsyncDatabase                  <- Database
-//! 22. PerformanceMonitorService      <- Database
-//! 23. CommandPerformanceTracker      <- PerformanceMonitorService
-//! 24. WebSocketEventHandler          <- EventBus registration
-//! 25. AuditService                   <- Database (plus init)
-//! 26. AuditLogHandler                <- AuditService + EventBus registration
-//! 27. InterventionFinalizedHandler   <- InventoryFacade + global EventBus registration
-//! 28. QuoteAcceptedHandler           <- InterventionWorkflowService + global EventBus registration
-//! 29. QuoteConvertedHandler          <- InterventionWorkflowService + global EventBus registration
+//! 19. AsyncDatabase                  <- Database
+//! 20. AuditService                   <- Database (plus init)
+//! 21. AuditLogHandler                <- AuditService + EventBus registration
+//! 22. InterventionFinalizedHandler   <- InventoryFacade + global EventBus registration
+//! 23. QuoteAcceptedHandler           <- InterventionWorkflowService + global EventBus registration
+//! 24. QuoteConvertedHandler          <- InterventionWorkflowService + global EventBus registration
 //!
 //! The graph is intentionally acyclic: every edge points from a root resource or an
 //! earlier-initialized service to a later-initialized one. If a future change needs a
@@ -61,10 +56,9 @@ use crate::shared::app_state::AppStateType;
 use crate::shared::event_bus::{register_handler, set_global_event_bus};
 use crate::shared::repositories::Repositories;
 use crate::shared::services::event_bus::InMemoryEventBus;
-use crate::shared::services::websocket_event_handler::WebSocketEventHandler;
 #[cfg(test)]
 use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 #[cfg(test)]
 const DOCUMENTED_SERVICE_INIT_ORDER: &[&str] = &[
@@ -86,12 +80,7 @@ const DOCUMENTED_SERVICE_INIT_ORDER: &[&str] = &[
     "EventBus",
     "QuoteService",
     "MessageService",
-    "SyncQueue",
-    "BackgroundSyncService",
     "AsyncDatabase",
-    "PerformanceMonitorService",
-    "CommandPerformanceTracker",
-    "WebSocketEventHandler",
     "AuditService",
     "AuditLogHandler",
     "InterventionFinalizedHandler",
@@ -122,12 +111,7 @@ const DOCUMENTED_SERVICE_DEPENDENCIES: &[(&str, &[&str])] = &[
         &["Repositories.quote", "Database", "QuoteEventBus"],
     ),
     ("MessageService", &["Repositories.message", "Database"]),
-    ("SyncQueue", &["Database"]),
-    ("BackgroundSyncService", &["SyncQueue"]),
     ("AsyncDatabase", &["Database"]),
-    ("PerformanceMonitorService", &["Database"]),
-    ("CommandPerformanceTracker", &["PerformanceMonitorService"]),
-    ("WebSocketEventHandler", &["EventBus"]),
     ("AuditService", &["Database"]),
     ("AuditLogHandler", &["AuditService", "EventBus"]),
     (
@@ -294,36 +278,8 @@ impl ServiceBuilder {
             ),
         );
 
-        // Initialize Sync Services
-        let sync_queue = Arc::new(crate::domains::sync::infrastructure::sync::SyncQueue::new(
-            db_instance.clone(),
-        ));
-        let background_sync = Arc::new(Mutex::new(
-            crate::domains::sync::infrastructure::sync::BackgroundSyncService::new(
-                sync_queue.clone(),
-            ),
-        ));
-
         // Create async database wrapper
         let async_db = Arc::new(self.db.as_async());
-
-        // Initialize Performance Monitor Service (depends on DB)
-        let performance_monitor_service = Arc::new(
-            crate::shared::services::performance_monitor::PerformanceMonitorService::new(
-                db_instance.clone(),
-            ),
-        );
-
-        // Initialize Command Performance Tracker (depends on PerformanceMonitorService)
-        let command_performance_tracker = Arc::new(
-            crate::shared::services::performance_monitor::CommandPerformanceTracker::new(
-                performance_monitor_service.clone(),
-            ),
-        );
-
-        // Register WebSocket Event Handler for real-time updates
-        let websocket_handler = WebSocketEventHandler::new();
-        event_bus.register_handler(websocket_handler);
 
         // Register Audit Log Handler for audit trail
         let audit_service = Arc::new(AuditService::new(self.db.clone()));
@@ -371,10 +327,6 @@ impl ServiceBuilder {
             settings_service,
             user_service,
             cache_service,
-            performance_monitor_service,
-            command_performance_tracker,
-            sync_queue,
-            background_sync,
             event_bus,
             app_data_dir: self.app_data_dir,
         })
@@ -438,23 +390,6 @@ mod tests {
         assert!(app_state.event_bus.has_handlers("TaskUpdated"));
         assert!(app_state.event_bus.has_handlers("InterventionStarted"));
         assert!(app_state.event_bus.has_handlers("AuthenticationSuccess"));
-    }
-
-    #[tokio::test]
-    async fn test_websocket_handler_registration() {
-        let db = Arc::new(Database::new_in_memory().await.expect("create db"));
-        let repositories = Arc::new(Repositories::new(db.clone(), 1000).await);
-        let app_data_dir = std::path::PathBuf::from("/tmp/test");
-
-        let builder = ServiceBuilder::new(db, repositories, app_data_dir);
-        let app_state = builder.build().expect("Failed to build app state");
-
-        // Verify WebSocket handler is registered for all event types it handles
-        let handler_count = app_state.event_bus.handler_count("TaskCreated");
-        assert!(
-            handler_count > 0,
-            "WebSocket handler should be registered for TaskCreated"
-        );
     }
 
     #[test]

@@ -8,11 +8,8 @@ pub mod error_utils;
 pub mod errors;
 pub mod log;
 pub mod navigation;
-pub mod performance;
 pub mod system;
 pub mod ui;
-pub mod websocket;
-pub mod websocket_commands;
 pub mod user {
     pub use crate::domains::users::ipc::user::{
         bootstrap_first_admin, has_admins, user_crud, BootstrapFirstAdminRequest, UserCrudRequest,
@@ -75,15 +72,6 @@ pub use crate::shared::ipc::response::{ApiResponse, CompressedApiResponse};
 pub use correlation_helpers::*;
 pub use errors::{AppError, AppResult};
 use crate::resolve_context;
-
-// Re-export performance commands
-#[allow(unused_imports)]
-pub use performance::{
-    cleanup_performance_metrics, clear_application_cache, configure_cache_settings,
-    get_cache_statistics, get_performance_metrics, get_performance_stats,
-};
-
-// Re-export task validation commands
 
 // Re-export system commands
 #[allow(unused_imports)]
@@ -179,24 +167,6 @@ pub enum ClientResponse {
     ListWithTasks(Vec<ClientWithTasks>),
     SearchResults(Vec<Client>),
     Stats(ClientStats),
-}
-
-/// Helper function to create a tracked command handler with automatic performance monitoring
-#[macro_export]
-macro_rules! tracked_command {
-    ($command_name:expr, $handler:expr) => {
-        |state: AppState, request: serde_json::Value| async move {
-            let user_id = state.session_store.get().ok().map(|s| s.user_id);
-
-            // Start performance tracking
-            let _timer = state
-                .command_performance_tracker
-                .start_tracking($command_name, user_id);
-
-            // Execute the actual handler
-            $handler(state, request).await
-        }
-    };
 }
 
 /// Internal user CRUD handler

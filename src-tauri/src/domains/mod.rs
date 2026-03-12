@@ -16,7 +16,6 @@
 //! - **calendar**: Calendar events, scheduling
 //! - **reports**: Report generation, analytics, exports
 //! - **settings**: User and system settings
-//! - **sync**: Offline sync, background operations
 //! - **documents**: Document management
 //!
 //! ## Architecture
@@ -36,10 +35,8 @@ pub mod documents;
 pub mod interventions;
 pub mod inventory;
 pub mod notifications;
-pub mod organizations;
 pub mod quotes;
 pub mod reports;
 pub mod settings;
-pub mod sync;
 pub mod tasks;
 pub mod users;

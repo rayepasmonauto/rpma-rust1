@@ -79,12 +79,9 @@ use rpma_ppf_intervention::shared::contracts::common::{
 };
 use rpma_ppf_intervention::shared::contracts::prediction::CompletionTimePrediction;
 
-use rpma_ppf_intervention::domains::organizations::domain::models::organization::{
+use rpma_ppf_intervention::domains::settings::domain::models::organization::{
     CreateOrganizationRequest, OnboardingData, OnboardingStatus, Organization,
-    UpdateOrganizationRequest,
-};
-use rpma_ppf_intervention::domains::organizations::domain::models::settings::{
-    OrganizationSetting, UpdateOrganizationSettingsRequest,
+    UpdateOrganizationRequest, OrganizationSetting, UpdateOrganizationSettingsRequest,
 };
 
 use rpma_ppf_intervention::shared::repositories::{base::PaginatedResult, cache::CacheStats};

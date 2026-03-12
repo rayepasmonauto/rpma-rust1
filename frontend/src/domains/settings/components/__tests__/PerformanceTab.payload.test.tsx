@@ -19,38 +19,10 @@ jest.mock('../../ipc/settings.ipc', () => ({
   },
 }));
 
-jest.mock('@/lib/ipc', () => ({
-  ipcClient: {
-    performance: {
-      getCacheStatistics: jest.fn(),
-      clearApplicationCache: jest.fn(),
-    },
-    sync: {
-      syncNow: jest.fn(),
-      getStatus: jest.fn(),
-      getOperationsForEntity: jest.fn(),
-    },
-  },
-}));
-
 const { settingsIpc: mockSettingsIpc } = jest.requireMock('../../ipc/settings.ipc') as {
   settingsIpc: {
     getUserSettings: jest.Mock;
     updateUserPerformance: jest.Mock;
-  };
-};
-
-const { ipcClient: mockIpcClient } = jest.requireMock('@/lib/ipc') as {
-  ipcClient: {
-    performance: {
-      getCacheStatistics: jest.Mock;
-      clearApplicationCache: jest.Mock;
-    };
-    sync: {
-      syncNow: jest.Mock;
-      getStatus: jest.Mock;
-      getOperationsForEntity: jest.Mock;
-    };
   };
 };
 
@@ -73,14 +45,6 @@ describe('PerformanceTab payload shape', () => {
         preload_data: false,
       },
     });
-    mockIpcClient.performance.getCacheStatistics.mockResolvedValue({
-      total_keys: 0,
-      used_memory_bytes: 0,
-      used_memory_mb: 0,
-      cache_types: [],
-    });
-    mockIpcClient.sync.getStatus.mockResolvedValue({ status: 'idle' });
-    mockIpcClient.sync.getOperationsForEntity.mockResolvedValue([]);
     mockSettingsIpc.updateUserPerformance.mockResolvedValue({});
   });
 

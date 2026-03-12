@@ -52,13 +52,6 @@ export const mockIpcClient = {
     update: jest.fn(),
     delete: jest.fn(),
   },
-  sync: {
-    start: jest.fn(),
-    stop: jest.fn(),
-    getStatus: jest.fn(),
-    syncNow: jest.fn(),
-    getOperationsForEntity: jest.fn(),
-  },
   system: {
     healthCheck: jest.fn(),
     getStats: jest.fn(),

@@ -251,27 +251,6 @@ export const ipcClient = {
     hasAdmins: () =>
       mockSafeInvoke('has_admins')
   },
-  sync: {
-    start: () => mockSafeInvoke('sync_start_background_service'),
-    stop: () => mockSafeInvoke('sync_stop_background_service'),
-    getStatus: () => mockSafeInvoke('sync_get_status'),
-    syncNow: () => mockSafeInvoke('sync_now'),
-    getOperationsForEntity: () => mockSafeInvoke('sync_get_operations_for_entity')
-  },
-  performance: {
-    getStats: (sessionToken: string) =>
-      mockSafeInvoke('get_performance_stats', { session_token: sessionToken }),
-    getMetrics: (limit: number, sessionToken: string) =>
-      mockSafeInvoke('get_performance_metrics', { limit, session_token: sessionToken }),
-    cleanupMetrics: (sessionToken: string) =>
-      mockSafeInvoke('cleanup_performance_metrics', { session_token: sessionToken }),
-    getCacheStatistics: (sessionToken: string) =>
-      mockSafeInvoke('get_cache_statistics', { session_token: sessionToken }),
-    clearApplicationCache: (request: JsonObject, sessionToken: string) =>
-      mockSafeInvoke('clear_application_cache', { request, session_token: sessionToken }),
-    configureCacheSettings: (request: JsonObject, sessionToken: string) =>
-      mockSafeInvoke('configure_cache_settings', { request, session_token: sessionToken })
-  },
   security: {
     getMetrics: (sessionToken: string) =>
       mockSafeInvoke('get_security_metrics', { session_token: sessionToken }),

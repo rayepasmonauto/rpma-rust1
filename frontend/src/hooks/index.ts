@@ -1,7 +1,6 @@
 export { useTaskFiltering } from '@/domains/tasks';
 export { useChangeTracking } from '@/domains/audit';
 export {
-  useSyncStatus,
   useEntitySyncStatus,
   useOfflineActions,
   useOfflineQueue,

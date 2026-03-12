@@ -1,1 +1,1 @@
-export { performanceIpc } from './performance.ipc';
+// Performance IPC removed — performance monitoring infrastructure deleted

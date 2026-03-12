@@ -255,21 +255,6 @@ export function createTestAdapter(overrides?: TestAdapterOverrides): IpcAdapter 
       firstAdmin: noop,
       hasAdmins: () => Promise.resolve(true as never),
     },
-    sync: {
-      start: noop,
-      stop: noop,
-      getStatus: noop,
-      syncNow: noop,
-      getOperationsForEntity: noop,
-    },
-    performance: {
-      getStats: noop,
-      getMetrics: noop,
-      cleanupMetrics: noop,
-      getCacheStatistics: noop,
-      clearApplicationCache: noop,
-      configureCacheSettings: noop,
-    },
     security: {
       getMetrics: noop,
       getEvents: noop,

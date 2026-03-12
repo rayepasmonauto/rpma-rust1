@@ -4,9 +4,9 @@ use std::sync::Arc;
 
 use crate::db::Database;
 use crate::db::FromSqlRow;
-use crate::domains::organizations::domain::models::{
+use crate::domains::settings::domain::models::organization::{
     BusinessSettings, CreateOrganizationRequest, InvoicingSettings, Organization,
-    OrganizationSetting, OrganizationSettings, RegionalSettings, SecuritySettings, SystemSettings,
+    OrganizationSetting, OrganizationSettings, RegionalSettings, OrgSecuritySettings, SystemSettings,
     TaskSettings, UpdateOrganizationRequest,
 };
 use crate::shared::ipc::errors::AppError;
@@ -319,7 +319,7 @@ impl OrganizationRepository {
                     .cloned()
                     .unwrap_or_else(|| "medium".to_string()),
             },
-            security: SecuritySettings {
+            security: OrgSecuritySettings {
                 default_session_timeout: settings_map
                     .get("default_session_timeout")
                     .and_then(|v| v.parse().ok())

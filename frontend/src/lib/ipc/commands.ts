@@ -172,28 +172,6 @@ export const IPC_COMMANDS = {
   BOOTSTRAP_FIRST_ADMIN: 'bootstrap_first_admin',
   HAS_ADMINS: 'has_admins',
 
-  // Sync commands
-  SYNC_START_BACKGROUND_SERVICE: 'sync_start_background_service',
-  SYNC_STOP_BACKGROUND_SERVICE: 'sync_stop_background_service',
-  SYNC_GET_STATUS: 'sync_get_status',
-  SYNC_NOW: 'sync_now',
-  SYNC_GET_OPERATIONS_FOR_ENTITY: 'sync_get_operations_for_entity',
-  SYNC_ENQUEUE: 'sync_enqueue',
-  SYNC_DEQUEUE_BATCH: 'sync_dequeue_batch',
-  SYNC_GET_METRICS: 'sync_get_metrics',
-  SYNC_MARK_COMPLETED: 'sync_mark_completed',
-  SYNC_MARK_FAILED: 'sync_mark_failed',
-  SYNC_GET_OPERATION: 'sync_get_operation',
-  SYNC_CLEANUP_OLD_OPERATIONS: 'sync_cleanup_old_operations',
-
-  // Performance commands
-  GET_PERFORMANCE_STATS: 'get_performance_stats',
-  GET_PERFORMANCE_METRICS: 'get_performance_metrics',
-  CLEANUP_PERFORMANCE_METRICS: 'cleanup_performance_metrics',
-  GET_CACHE_STATISTICS: 'get_cache_statistics',
-  CLEAR_APPLICATION_CACHE: 'clear_application_cache',
-  CONFIGURE_CACHE_SETTINGS: 'configure_cache_settings',
-
   // Security commands
   GET_SECURITY_METRICS: 'get_security_metrics',
   GET_SECURITY_EVENTS: 'get_security_events',
@@ -280,17 +258,6 @@ export const IPC_COMMANDS = {
   UPLOAD_LOGO: 'upload_logo',
   GET_ORGANIZATION_SETTINGS: 'get_organization_settings',
   UPDATE_ORGANIZATION_SETTINGS: 'update_organization_settings',
-
-  // WebSocket commands
-  INIT_WEBSOCKET_SERVER: 'init_websocket_server',
-  BROADCAST_WEBSOCKET_MESSAGE: 'broadcast_websocket_message',
-  SEND_WEBSOCKET_MESSAGE_TO_CLIENT: 'send_websocket_message_to_client',
-  GET_WEBSOCKET_STATS: 'get_websocket_stats',
-  SHUTDOWN_WEBSOCKET_SERVER: 'shutdown_websocket_server',
-  BROADCAST_TASK_UPDATE: 'broadcast_task_update',
-  BROADCAST_INTERVENTION_UPDATE: 'broadcast_intervention_update',
-  BROADCAST_CLIENT_UPDATE: 'broadcast_client_update',
-  BROADCAST_SYSTEM_NOTIFICATION: 'broadcast_system_notification',
 
   // IPC optimization commands
   COMPRESS_DATA_FOR_IPC: 'compress_data_for_ipc',

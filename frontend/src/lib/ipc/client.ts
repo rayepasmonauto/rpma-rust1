@@ -1109,49 +1109,6 @@ export const ipcClient = {
       safeInvoke<boolean>('has_admins'),
   },
 
-  // Sync operations
-  sync: {
-    start: () =>
-      safeInvoke<void>('sync_start_background_service'),
-
-    stop: () =>
-      safeInvoke<void>('sync_stop_background_service'),
-
-     getStatus: () =>
-       cachedInvoke('sync:status', 'sync_get_status', undefined, undefined, 5000),
-
-    syncNow: () =>
-      safeInvoke<void>('sync_now'),
-
-     getOperationsForEntity: (entityId: string, entityType: string) =>
-       safeInvoke<JsonValue>('sync_get_operations_for_entity', {
-         entity_id: entityId,
-         entity_type: entityType
-       }),
-  },
-
-  // Performance operations
-  performance: {
-    getStats: () =>
-      safeInvoke<JsonValue>('get_performance_stats', {}),
-
-    getMetrics: (limit: number) =>
-      safeInvoke<JsonValue>('get_performance_metrics', { limit }),
-
-    cleanupMetrics: () =>
-      safeInvoke<JsonValue>('cleanup_performance_metrics', {}),
-
-    // Cache management
-    getCacheStatistics: () =>
-      safeInvoke<JsonValue>('get_cache_statistics', {}),
-
-    clearApplicationCache: (request: { cache_types?: string[] }) =>
-      safeInvoke<JsonValue>('clear_application_cache', { request }),
-
-    configureCacheSettings: (request: { max_memory_mb?: number; default_ttl_seconds?: number; enable_disk_cache?: boolean }) =>
-      safeInvoke<JsonValue>('configure_cache_settings', { request }),
-  },
-
   // Admin operations
   admin: {
     healthCheck: () =>
@@ -1159,9 +1116,6 @@ export const ipcClient = {
 
     getHealthStatus: () =>
       safeInvoke<JsonValue>('health_check'),
-
-    getApplicationMetrics: () =>
-      safeInvoke<JsonValue>('get_performance_stats'),
 
     getDatabaseStatus: () =>
       safeInvoke<JsonValue>('diagnose_database', {}),
