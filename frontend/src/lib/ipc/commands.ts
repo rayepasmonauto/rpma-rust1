@@ -160,14 +160,6 @@ export const IPC_COMMANDS = {
   BOOTSTRAP_FIRST_ADMIN: 'bootstrap_first_admin',
   HAS_ADMINS: 'has_admins',
 
-  // Security commands
-  GET_SECURITY_METRICS: 'get_security_metrics',
-  GET_SECURITY_EVENTS: 'get_security_events',
-  GET_SECURITY_ALERTS: 'get_security_alerts',
-  ACKNOWLEDGE_SECURITY_ALERT: 'acknowledge_security_alert',
-  RESOLVE_SECURITY_ALERT: 'resolve_security_alert',
-  CLEANUP_SECURITY_EVENTS: 'cleanup_security_events',
-
   // System commands
   HEALTH_CHECK: 'health_check',
   DIAGNOSE_DATABASE: 'diagnose_database',
@@ -178,7 +170,6 @@ export const IPC_COMMANDS = {
   GET_APP_INFO: 'get_app_info',
   GET_DEVICE_INFO: 'get_device_info',
   VACUUM_DATABASE: 'vacuum_database',
-  GET_LARGE_TEST_DATA: 'get_large_test_data',
 
   // UI commands
   UI_WINDOW_MINIMIZE: 'ui_window_minimize',

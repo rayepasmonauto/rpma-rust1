@@ -14,9 +14,8 @@
 //! - **inventory**: Material and inventory tracking
 //! - **quotes**: Quotes and pricing
 //! - **calendar**: Calendar events, scheduling
-//! - **reports**: Report generation, analytics, exports
 //! - **settings**: User and system settings
-//! - **documents**: Document management
+//! - **documents**: Document management, report generation, exports
 //!
 //! ## Architecture
 //!
@@ -36,7 +35,6 @@ pub mod interventions;
 pub mod inventory;
 pub mod notifications;
 pub mod quotes;
-pub mod reports;
 pub mod settings;
 pub mod tasks;
 pub mod users;

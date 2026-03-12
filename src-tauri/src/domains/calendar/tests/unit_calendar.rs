@@ -1,6 +1,5 @@
 use crate::db::Database;
-use crate::domains::calendar::infrastructure::calendar::CalendarService;
-use crate::domains::calendar::CalendarFacade;
+use crate::domains::calendar::calendar_handler::{CalendarFacade, CalendarService};
 use std::sync::Arc;
 
 #[tokio::test]
@@ -25,7 +24,7 @@ async fn validate_date_range_accepts_valid_range() {
 /// are added without updating the calendar mirror.
 #[test]
 fn calendar_task_status_covers_all_task_status_variants() {
-    use crate::domains::calendar::domain::models::calendar::CalendarTaskStatus;
+    use crate::domains::calendar::models::CalendarTaskStatus;
     use std::str::FromStr;
 
     let task_status_values = [
@@ -56,7 +55,7 @@ fn calendar_task_status_covers_all_task_status_variants() {
 /// domain's TaskPriority uses.
 #[test]
 fn calendar_task_priority_covers_all_task_priority_variants() {
-    use crate::domains::calendar::domain::models::calendar::CalendarTaskPriority;
+    use crate::domains::calendar::models::CalendarTaskPriority;
     use std::str::FromStr;
 
     let task_priority_values = ["low", "medium", "high", "urgent"];

@@ -5,7 +5,7 @@
 
 use crate::commands::AppResult;
 use crate::db::Database;
-use crate::domains::clients::domain::models::client::*;
+use crate::domains::clients::client_handler::*;
 use crate::domains::interventions::domain::models::intervention::*;
 use crate::domains::interventions::domain::models::step::*;
 use crate::domains::tasks::domain::models::task::*;

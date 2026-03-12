@@ -6,9 +6,7 @@
 
 use crate::commands::AppResult;
 use crate::shared::logging::audit_service::{AuditEvent, AuditService};
-use crate::domains::clients::domain::models::client::{Client, CustomerType};
-use crate::domains::clients::infrastructure::client::ClientService;
-use crate::domains::clients::infrastructure::client_statistics::ClientStatisticsService;
+use crate::domains::clients::client_handler::{Client, CustomerType, ClientService, ClientStatisticsService};
 use crate::domains::interventions::infrastructure::intervention_types::{
     AdvanceStepRequest, FinalizeInterventionRequest, StartInterventionRequest,
 };
@@ -347,7 +345,7 @@ impl ClientTaskInterventionMaterialFlowTestFixture {
     pub fn get_client_statistics(
         &self,
         client_id: &str,
-    ) -> AppResult<crate::domains::clients::infrastructure::client_statistics::ClientActivityMetrics>
+    ) -> AppResult<crate::domains::clients::client_handler::ClientActivityMetrics>
     {
         self.client_stats_service
             .get_client_activity_metrics(client_id)

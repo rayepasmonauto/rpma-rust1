@@ -22,11 +22,6 @@ pub fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, event_id: &str) {
         "quality_check" => emit_action(app, "quality_check"),
 
         // Tool events
-        "sync_now" => {
-            if let Err(e) = trigger_sync(app) {
-                warn!("Failed to trigger sync: {}", e);
-            }
-        }
         "sync_status" => emit_action(app, "sync_status"),
         "db_status" => emit_action(app, "db_status"),
         "vacuum_db" => emit_action(app, "vacuum_db"),
@@ -69,12 +64,4 @@ fn emit_action<R: Runtime>(app: &AppHandle<R>, action: &str) {
     if let Err(e) = app.emit("menu-action", action) {
         warn!("Failed to emit action event: {}", e);
     }
-}
-
-fn trigger_sync<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
-    // Access sync service from app state
-    // This integrates with your existing sync system
-    // For now, just emit an action - sync logic should be handled by existing sync service
-    emit_action(app, "sync_now");
-    Ok(())
 }

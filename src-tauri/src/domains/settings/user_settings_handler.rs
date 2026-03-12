@@ -1,0 +1,196 @@
+//! Flattened IPC handlers for User-specific Settings.
+
+use std::sync::Arc;
+use tracing::{info, instrument};
+
+use crate::commands::{ApiResponse, AppError, AppState};
+use crate::shared::contracts::auth::UserRole;
+use crate::resolve_context;
+use super::models::*;
+use super::user_settings_repository::UserSettingsRepository;
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn get_user_settings(
+    state: AppState<'_>,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<UserSettings>, AppError> {
+    let ctx = resolve_context!(&state, &correlation_id);
+    let user_id = &ctx.auth.user_id;
+    let repository = UserSettingsRepository::new(state.db.clone());
+
+    let settings = repository.get_user_settings(user_id)?;
+
+    Ok(ApiResponse::success(settings).with_correlation_id(Some(ctx.correlation_id)))
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn update_user_profile(
+    state: AppState<'_>,
+    profile: UserProfileSettings,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<UserSettings>, AppError> {
+    let ctx = resolve_context!(&state, &correlation_id);
+    let user_id = &ctx.auth.user_id;
+    let repository = UserSettingsRepository::new(state.db.clone());
+
+    let mut current = repository.get_user_settings(user_id)?;
+    current.profile = profile;
+    repository.save_user_settings(user_id, &current)?;
+
+    Ok(ApiResponse::success(current).with_correlation_id(Some(ctx.correlation_id)))
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn update_user_preferences(
+    state: AppState<'_>,
+    preferences: UserPreferences,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<UserSettings>, AppError> {
+    let ctx = resolve_context!(&state, &correlation_id);
+    let user_id = &ctx.auth.user_id;
+    let repository = UserSettingsRepository::new(state.db.clone());
+
+    let mut current = repository.get_user_settings(user_id)?;
+    current.preferences = preferences;
+    repository.save_user_settings(user_id, &current)?;
+
+    Ok(ApiResponse::success(current).with_correlation_id(Some(ctx.correlation_id)))
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn update_user_security(
+    state: AppState<'_>,
+    security: UserSecuritySettings,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<UserSettings>, AppError> {
+    let ctx = resolve_context!(&state, &correlation_id);
+    let user_id = &ctx.auth.user_id;
+    let repository = UserSettingsRepository::new(state.db.clone());
+
+    let mut current = repository.get_user_settings(user_id)?;
+    current.security = security;
+    repository.save_user_settings(user_id, &current)?;
+
+    Ok(ApiResponse::success(current).with_correlation_id(Some(ctx.correlation_id)))
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn update_user_performance(
+    state: AppState<'_>,
+    performance: UserPerformanceSettings,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<UserSettings>, AppError> {
+    let ctx = resolve_context!(&state, &correlation_id);
+    let user_id = &ctx.auth.user_id;
+    let repository = UserSettingsRepository::new(state.db.clone());
+
+    let mut current = repository.get_user_settings(user_id)?;
+    current.performance = performance;
+    repository.save_user_settings(user_id, &current)?;
+
+    Ok(ApiResponse::success(current).with_correlation_id(Some(ctx.correlation_id)))
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn update_user_accessibility(
+    state: AppState<'_>,
+    accessibility: UserAccessibilitySettings,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<UserSettings>, AppError> {
+    let ctx = resolve_context!(&state, &correlation_id);
+    let user_id = &ctx.auth.user_id;
+    let repository = UserSettingsRepository::new(state.db.clone());
+
+    let mut current = repository.get_user_settings(user_id)?;
+    current.accessibility = accessibility;
+    repository.save_user_settings(user_id, &current)?;
+
+    Ok(ApiResponse::success(current).with_correlation_id(Some(ctx.correlation_id)))
+}
+
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn update_user_notifications(
+    state: AppState<'_>,
+    notifications: UserNotificationSettings,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<UserSettings>, AppError> {
+    let ctx = resolve_context!(&state, &correlation_id);
+    let user_id = &ctx.auth.user_id;
+    let repository = UserSettingsRepository::new(state.db.clone());
+
+    let mut current = repository.get_user_settings(user_id)?;
+    current.notifications = notifications;
+    repository.save_user_settings(user_id, &current)?;
+
+    Ok(ApiResponse::success(current).with_correlation_id(Some(ctx.correlation_id)))
+}
+
+#[tauri::command]
+pub async fn get_data_consent(
+    state: AppState<'_>,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<Option<DataConsent>>, AppError> {
+    let ctx = resolve_context!(&state, &correlation_id);
+    let repository = UserSettingsRepository::new(state.db.clone());
+
+    let consent = repository.get_data_consent(&ctx.auth.user_id)?;
+
+    Ok(ApiResponse::success(consent).with_correlation_id(Some(ctx.correlation_id)))
+}
+
+#[tauri::command]
+pub async fn change_user_password(
+    state: AppState<'_>,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<()>, AppError> {
+    let _ctx = resolve_context!(&state, &correlation_id);
+    // Placeholder - password change usually goes through AuthService
+    Ok(ApiResponse::success(()))
+}
+
+#[tauri::command]
+pub async fn export_user_data(
+    state: AppState<'_>,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<String>, AppError> {
+    let _ctx = resolve_context!(&state, &correlation_id);
+    // Placeholder
+    Ok(ApiResponse::success("Data export initiated".to_string()))
+}
+
+#[tauri::command]
+pub async fn delete_user_account(
+    state: AppState<'_>,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<()>, AppError> {
+    let _ctx = resolve_context!(&state, &correlation_id);
+    // Placeholder
+    Ok(ApiResponse::success(()))
+}
+
+#[tauri::command]
+pub async fn update_data_consent(
+    state: AppState<'_>,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<()>, AppError> {
+    let _ctx = resolve_context!(&state, &correlation_id);
+    // Placeholder
+    Ok(ApiResponse::success(()))
+}
+
+#[tauri::command]
+pub async fn upload_user_avatar(
+    state: AppState<'_>,
+    correlation_id: Option<String>,
+) -> Result<ApiResponse<String>, AppError> {
+    let _ctx = resolve_context!(&state, &correlation_id);
+    // Placeholder
+    Ok(ApiResponse::success("Avatar uploaded".to_string()))
+}

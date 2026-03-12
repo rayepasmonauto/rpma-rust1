@@ -3,8 +3,7 @@
 //! This module uses Proptest to verify client validation properties
 //! across a wide range of inputs to ensure robust validation logic.
 
-use crate::domains::clients::domain::models::client::CreateClientRequest;
-use crate::domains::clients::infrastructure::client_validation::ClientValidationService;
+use crate::domains::clients::client_handler::{CreateClientRequest, ClientValidationService};
 use crate::test_utils::TestDatabase;
 use crate::{test_client, test_db, test_intervention, test_task};
 use proptest::prelude::*;
@@ -231,7 +230,7 @@ proptest! {
     ) {
         let test_db = test_db!();
         let service = ClientValidationService::new(test_db.db());
-        let client_service = crate::domains::clients::infrastructure::client::ClientService::new(test_db.db());
+        let client_service = crate::domains::clients::client_handler::ClientService::new(test_db.db());
 
         // Create first client with unique email
         let email = format!("{}@example.com", base_email);

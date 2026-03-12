@@ -1,11 +1,5 @@
-mod facade;
-pub(crate) use facade::{CalendarCommand, CalendarFacade, CalendarResponse};
-pub(crate) mod application;
-#[cfg(feature = "export-types")]
-pub mod domain;
-#[cfg(not(feature = "export-types"))]
-pub(crate) mod domain;
-pub(crate) mod infrastructure;
-pub(crate) mod ipc;
+pub mod calendar_handler;
+pub mod models;
+pub(crate) use calendar_handler::{CalendarCommand, CalendarFacade, CalendarResponse};
 #[cfg(test)]
 pub(crate) mod tests;

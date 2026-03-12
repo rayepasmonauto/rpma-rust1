@@ -23,53 +23,34 @@ use std::sync::Arc;
 
 use crate::domains::auth::infrastructure::rate_limiter::RateLimiterService;
 use crate::domains::auth::infrastructure::session_repository::SessionRepository;
-use crate::shared::services::security_monitor::SecurityMonitorService;
 use crate::shared::services::validation::ValidationService;
 use tracing::warn;
 
-/// TODO: document
 #[derive(Clone, Debug)]
 pub struct AuthService {
     db: crate::db::Database,
     session_repository: SessionRepository,
     rate_limiter: Arc<RateLimiterService>,
-    security_monitor: Arc<SecurityMonitorService>,
     validator: ValidationService,
 }
 
 impl AuthService {
-    /// Get a reference to the security monitor service
-    pub fn security_monitor(&self) -> &Arc<SecurityMonitorService> {
-        &self.security_monitor
-    }
-
-    /// TODO: document
     pub fn new(db: crate::db::Database) -> Result<Self, String> {
         let db_arc = std::sync::Arc::new(db.clone());
         let session_repository = SessionRepository::new(db_arc);
         let rate_limiter = Arc::new(RateLimiterService::new(db.clone()));
-        let security_monitor = Arc::new(SecurityMonitorService::new(db.clone()));
 
         Ok(Self {
             db,
             session_repository,
             rate_limiter,
-            security_monitor,
             validator: ValidationService::new(),
         })
     }
 
-    /// Initialize auth services
     pub fn init(&self) -> Result<(), String> {
-        // Note: users and sessions tables are created by migrations
-
-        // Initialize rate limiter
         self.rate_limiter.init()?;
 
-        // Initialize security monitor
-        self.security_monitor.init()?;
-
-        // Clean up expired sessions on startup
         if let Err(e) = self.cleanup_expired_sessions() {
             warn!("Failed to cleanup expired sessions on startup: {}", e);
         }
@@ -77,7 +58,6 @@ impl AuthService {
         Ok(())
     }
 
-    /// Get access to the rate limiter service
     pub fn rate_limiter(&self) -> Arc<RateLimiterService> {
         self.rate_limiter.clone()
     }

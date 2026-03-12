@@ -110,17 +110,8 @@ open = "5.3"
 lazy_static = "1.5"
 include_dir = "0.7"
 
-# Compression
-flate2 = "1.0"
-
-# MessagePack serialization for faster IPC
-rmp-serde = "1.1"
-
 # Efficient locking primitives
 parking_lot = "0.12"
-
-# LRU cache implementation
-lru = "0.12"
 
 # System information for memory monitoring
 sysinfo = "0.30"
@@ -161,9 +152,6 @@ base64 = "0.22"
 
 # HTTP client for external APIs (email/SMS services)
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
-
-# Redis for caching
-redis = { version = "0.32", features = ["tokio-comp", "connection-manager"] }
 
 # Logging
 tracing = "0.1"

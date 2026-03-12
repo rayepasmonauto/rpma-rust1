@@ -1,9 +1,8 @@
 //! Shared Tauri application state used across IPC entrypoints.
 
 use crate::db::Database;
-use crate::domains::clients::infrastructure::client::ClientService;
+use crate::domains::clients::client_handler::ClientService;
 use crate::domains::inventory::InventoryFacade;
-use crate::domains::settings::infrastructure::settings::SettingsService;
 use crate::domains::tasks::infrastructure::task::TaskService;
 use crate::domains::users::infrastructure::user::UserService;
 use crate::infrastructure::auth::session_store::SessionStore;
@@ -23,14 +22,14 @@ pub struct AppStateType {
         Arc<crate::domains::interventions::infrastructure::intervention::InterventionService>,
     pub material_service: Arc<crate::domains::inventory::infrastructure::material::MaterialService>,
     pub inventory_service: Arc<InventoryFacade>,
-    pub message_service:
-        Arc<crate::domains::notifications::infrastructure::message::MessageService>,
-    pub photo_service: Arc<crate::domains::documents::infrastructure::photo::PhotoService>,
+    pub message_service: Arc<crate::domains::notifications::MessageService>,
+    pub photo_service: Arc<crate::domains::documents::PhotoService>,
     pub quote_service: Arc<crate::domains::quotes::infrastructure::quote::QuoteService>,
     pub auth_service: Arc<crate::domains::auth::infrastructure::auth::AuthService>,
     pub session_service: Arc<crate::domains::auth::infrastructure::session::SessionService>,
     pub session_store: Arc<SessionStore>,
-    pub settings_service: Arc<SettingsService>,
+    pub settings_repository: Arc<crate::domains::settings::SettingsRepository>,
+    pub user_settings_repository: Arc<crate::domains::settings::UserSettingsRepository>,
     pub user_service: Arc<UserService>,
     pub cache_service: Arc<crate::shared::services::cache::CacheService>,
     pub event_bus: Arc<crate::shared::services::event_bus::InMemoryEventBus>,

@@ -31,8 +31,8 @@ fn all_domain_facades_accessible_within_crate() {
 #[test]
 fn domain_models_accessible_within_crate() {
     use crate::domains::auth::domain::models::auth::UserRole;
-    use crate::domains::clients::domain::models::client::Client;
-    use crate::domains::documents::domain::models::photo::Photo;
+    use crate::domains::clients::client_handler::Client;
+    use crate::domains::documents::Photo;
     use crate::domains::interventions::domain::models::intervention::InterventionStatus;
     use crate::domains::tasks::domain::models::task::TaskStatus;
 
