@@ -164,8 +164,8 @@ pub enum ClientResponse {
     Deleted,
     NotFound,
     List(ClientListResponse),
-    ListWithTasks(Vec<ClientWithTasks>),
-    SearchResults(Vec<Client>),
+    ListWithTasks { data: Vec<ClientWithTasks> },
+    SearchResults { data: Vec<Client> },
     Stats(ClientStats),
 }
 

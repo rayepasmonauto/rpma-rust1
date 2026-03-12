@@ -43,14 +43,14 @@ import {
   validateStartInterventionResponse,
   validateTaskListResponse,
 } from '@/lib/validation/backend-type-guards';
-import type { CreateEventInput, UpdateEventInput } from '@/types/calendar';
-import type { JsonObject, JsonValue } from '@/types/json';
 import {
   safeInvoke,
   cachedInvoke,
   invalidatePattern,
   extractAndValidate
 } from './core';
+import type { CreateEventInput, UpdateEventInput } from '@/types/calendar';
+import type { JsonObject, JsonValue } from '@/types/json';
 
 // Typed response interfaces for IPC workflow responses (replacing inline `any` casts)
 interface InterventionWorkflowStartedResponse {
@@ -531,7 +531,10 @@ export const ipcClient = {
         request: {
           action: { action: 'Search', query, limit },
         }
-      }).then(result => extractAndValidate(result) as Client[]),
+      }).then(result => {
+        const extracted = extractAndValidate(result) as { data: Client[] };
+        return extracted.data;
+      }),
 
     list: async (filters: Partial<ClientQuery>): Promise<ClientListResponse> => {
       const result = await safeInvoke<JsonValue>('client_crud', {
@@ -569,7 +572,8 @@ export const ipcClient = {
           }
         }
       });
-      return extractAndValidate(result) as ClientWithTasks[];
+      const extracted = extractAndValidate(result) as { data: ClientWithTasks[] };
+      return extracted.data;
     },
 
     stats: (): Promise<ClientStatistics> =>

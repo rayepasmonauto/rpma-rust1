@@ -1,6 +1,6 @@
 //! Client CRUD commands for Tauri IPC
 
-use crate::commands::{ApiResponse, AppError, AppState, ClientAction};
+use crate::commands::{ApiResponse, AppError, AppState, ClientAction, ClientResponse};
 use crate::domains::clients::application::{
     required_permission, sanitize_client_action, ClientCrudRequest,
 };
@@ -16,7 +16,7 @@ use tracing::{debug, error, info, instrument, warn};
 pub async fn client_crud(
     request: ClientCrudRequest,
     state: AppState<'_>,
-) -> Result<ApiResponse<serde_json::Value>, AppError> {
+) -> Result<ApiResponse<ClientResponse>, AppError> {
     let ctx = resolve_context!(&state, &request.correlation_id);
     let correlation_id = ctx.correlation_id.clone();
 
@@ -159,7 +159,7 @@ async fn handle_client_creation(
     data: crate::domains::clients::domain::models::client::CreateClientRequest,
     user_id: &str,
     correlation_id: Option<String>,
-) -> Result<ApiResponse<serde_json::Value>, AppError> {
+) -> Result<ApiResponse<ClientResponse>, AppError> {
     info!("Creating new client");
 
     let client = clients_facade
@@ -172,11 +172,8 @@ async fn handle_client_creation(
         })?;
     info!("Client created successfully with ID: {}", client.id);
 
-    Ok(ApiResponse::success(serde_json::json!({
-        "type": "Created",
-        "data": client
-    }))
-    .with_correlation_id(correlation_id.clone()))
+    Ok(ApiResponse::success(ClientResponse::Created(client))
+        .with_correlation_id(correlation_id.clone()))
 }
 
 /// Handle client retrieval
@@ -184,7 +181,7 @@ async fn handle_client_retrieval(
     clients_facade: &ClientsFacade,
     id: &str,
     correlation_id: Option<String>,
-) -> Result<ApiResponse<serde_json::Value>, AppError> {
+) -> Result<ApiResponse<ClientResponse>, AppError> {
     clients_facade.validate_client_id(id)?;
     debug!("Retrieving client with ID: {}", id);
     let client = clients_facade
@@ -199,18 +196,13 @@ async fn handle_client_retrieval(
     match client {
         Some(client) => {
             debug!("Client {} found", id);
-            Ok(ApiResponse::success(serde_json::json!({
-                "type": "Found",
-                "data": client
-            }))
-            .with_correlation_id(correlation_id.clone()))
+            Ok(ApiResponse::success(ClientResponse::Found(client))
+                .with_correlation_id(correlation_id.clone()))
         }
         None => {
             warn!("Client {} not found", id);
-            Ok(ApiResponse::success(serde_json::json!({
-                "type": "NotFound"
-            }))
-            .with_correlation_id(correlation_id.clone()))
+            Ok(ApiResponse::success(ClientResponse::NotFound)
+                .with_correlation_id(correlation_id.clone()))
         }
     }
 }
@@ -221,7 +213,7 @@ async fn handle_client_with_tasks_retrieval(
     task_service: std::sync::Arc<crate::shared::services::cross_domain::TaskService>,
     id: &str,
     correlation_id: Option<String>,
-) -> Result<ApiResponse<serde_json::Value>, AppError> {
+) -> Result<ApiResponse<ClientResponse>, AppError> {
     clients_facade.validate_client_id(id)?;
     debug!("Retrieving client with tasks for ID: {}", id);
     let client = clients_facade
@@ -293,18 +285,13 @@ async fn handle_client_with_tasks_retrieval(
             };
 
             debug!("Client {} with {} tasks found", id, task_count);
-            Ok(ApiResponse::success(serde_json::json!({
-                "type": "FoundWithTasks",
-                "data": client_with_tasks
-            }))
-            .with_correlation_id(correlation_id.clone()))
+            Ok(ApiResponse::success(ClientResponse::FoundWithTasks(client_with_tasks))
+                .with_correlation_id(correlation_id.clone()))
         }
         None => {
             warn!("Client {} not found", id);
-            Ok(ApiResponse::success(serde_json::json!({
-                "type": "NotFound"
-            }))
-            .with_correlation_id(correlation_id.clone()))
+            Ok(ApiResponse::success(ClientResponse::NotFound)
+                .with_correlation_id(correlation_id.clone()))
         }
     }
 }
@@ -316,7 +303,7 @@ async fn handle_client_update(
     data: crate::domains::clients::domain::models::client::UpdateClientRequest,
     user_id: &str,
     correlation_id: Option<String>,
-) -> Result<ApiResponse<serde_json::Value>, AppError> {
+) -> Result<ApiResponse<ClientResponse>, AppError> {
     clients_facade.validate_client_id(id)?;
     info!("Updating client with ID: {}", id);
     let client = clients_facade
@@ -329,11 +316,8 @@ async fn handle_client_update(
         })?;
     info!("Client {} updated successfully", id);
 
-    Ok(ApiResponse::success(serde_json::json!({
-        "type": "Updated",
-        "data": client
-    }))
-    .with_correlation_id(correlation_id.clone()))
+    Ok(ApiResponse::success(ClientResponse::Updated(client))
+        .with_correlation_id(correlation_id.clone()))
 }
 
 /// Handle client deletion
@@ -342,7 +326,7 @@ async fn handle_client_deletion(
     id: &str,
     user_id: &str,
     correlation_id: Option<String>,
-) -> Result<ApiResponse<serde_json::Value>, AppError> {
+) -> Result<ApiResponse<ClientResponse>, AppError> {
     clients_facade.validate_client_id(id)?;
     info!("Deleting client with ID: {}", id);
     clients_facade
@@ -354,10 +338,8 @@ async fn handle_client_deletion(
             clients_facade.map_service_error("delete_client", &e)
         })?;
     info!("Client {} deleted successfully", id);
-    Ok(ApiResponse::success(serde_json::json!({
-        "type": "Deleted"
-    }))
-    .with_correlation_id(correlation_id.clone()))
+    Ok(ApiResponse::success(ClientResponse::Deleted)
+        .with_correlation_id(correlation_id.clone()))
 }
 
 /// Handle client listing
@@ -365,7 +347,7 @@ async fn handle_client_listing(
     clients_facade: &ClientsFacade,
     filters: crate::domains::clients::domain::models::client::ClientQuery,
     correlation_id: Option<String>,
-) -> Result<ApiResponse<serde_json::Value>, AppError> {
+) -> Result<ApiResponse<ClientResponse>, AppError> {
     debug!("Listing clients with filters: {:?}", filters);
     let clients = clients_facade
         .client_service()
@@ -376,11 +358,8 @@ async fn handle_client_listing(
             clients_facade.map_service_error("list_clients", &e)
         })?;
     debug!("Retrieved {} clients", clients.data.len());
-    Ok(ApiResponse::success(serde_json::json!({
-        "type": "List",
-        "data": clients
-    }))
-    .with_correlation_id(correlation_id.clone()))
+    Ok(ApiResponse::success(ClientResponse::List(clients))
+        .with_correlation_id(correlation_id.clone()))
 }
 
 /// Handle client listing with tasks
@@ -390,7 +369,7 @@ async fn handle_client_listing_with_tasks(
     filters: crate::domains::clients::domain::models::client::ClientQuery,
     limit_tasks: Option<i32>,
     correlation_id: Option<String>,
-) -> Result<ApiResponse<serde_json::Value>, AppError> {
+) -> Result<ApiResponse<ClientResponse>, AppError> {
     debug!(
         "Listing clients with tasks, filters: {:?}, limit_tasks: {:?}",
         filters, limit_tasks
@@ -468,11 +447,8 @@ async fn handle_client_listing_with_tasks(
     }
 
     debug!("Retrieved clients with tasks: {}", clients_with_tasks.len());
-    Ok(ApiResponse::success(serde_json::json!({
-        "type": "ListWithTasks",
-        "data": clients_with_tasks
-    }))
-    .with_correlation_id(correlation_id.clone()))
+    Ok(ApiResponse::success(ClientResponse::ListWithTasks { data: clients_with_tasks })
+        .with_correlation_id(correlation_id.clone()))
 }
 
 /// Handle client search
@@ -481,7 +457,7 @@ async fn handle_client_search(
     query: &str,
     limit: i32,
     correlation_id: Option<String>,
-) -> Result<ApiResponse<serde_json::Value>, AppError> {
+) -> Result<ApiResponse<ClientResponse>, AppError> {
     debug!("Searching clients with query: {}, limit: {}", query, limit);
     let clients = clients_facade
         .client_service()
@@ -492,18 +468,15 @@ async fn handle_client_search(
             clients_facade.map_service_error("search_clients", &e)
         })?;
     debug!("Found {} clients matching query", clients.len());
-    Ok(ApiResponse::success(serde_json::json!({
-        "type": "SearchResults",
-        "data": clients
-    }))
-    .with_correlation_id(correlation_id.clone()))
+    Ok(ApiResponse::success(ClientResponse::SearchResults { data: clients })
+        .with_correlation_id(correlation_id.clone()))
 }
 
 /// Handle client statistics
 async fn handle_client_statistics(
     clients_facade: &ClientsFacade,
     correlation_id: Option<String>,
-) -> Result<ApiResponse<serde_json::Value>, AppError> {
+) -> Result<ApiResponse<ClientResponse>, AppError> {
     debug!("Retrieving client statistics");
     let stats = clients_facade
         .client_service()
@@ -514,9 +487,6 @@ async fn handle_client_statistics(
             clients_facade.map_service_error("get_client_stats", &e)
         })?;
     debug!("Client statistics retrieved: {:?}", stats);
-    Ok(ApiResponse::success(serde_json::json!({
-        "type": "Statistics",
-        "data": stats
-    }))
-    .with_correlation_id(correlation_id.clone()))
+    Ok(ApiResponse::success(ClientResponse::Stats(stats))
+        .with_correlation_id(correlation_id.clone()))
 }
