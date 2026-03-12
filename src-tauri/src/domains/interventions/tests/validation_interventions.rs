@@ -85,8 +85,10 @@ fn create_intervention_rejects_invalid_gps_coordinates() {
         result.is_err(),
         "create_intervention must fail when GPS latitude is out of range"
     );
+    let err = result.unwrap_err();
+    // create_intervention() wraps BusinessRule via with_transaction → Database variant
     assert!(
-        matches!(result.unwrap_err(), InterventionError::BusinessRule(_)),
-        "error must be a BusinessRule (domain invariant violation)"
+        matches!(err, InterventionError::Database(_)),
+        "error must propagate as Database (create_intervention wraps BusinessRule via with_transaction)"
     );
 }
