@@ -47,7 +47,6 @@ pub enum InterventionWorkflowResponse {
 
 /// Request structure for starting an intervention
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
 pub struct StartInterventionRequest {
     pub task_id: String,
     pub intervention_type: String,
