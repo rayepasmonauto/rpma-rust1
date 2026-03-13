@@ -56,7 +56,7 @@ export const VehicleStep: React.FC<FormStepProps> = ({
         if (char === "Z") value = 9;
       }
 
-      sum += value * (weights[i] ?? 0);
+      sum += value * (weights[i]!); // weights has exactly 17 elements, loop runs 17 times
     }
 
     const checksum = sum % 11;
