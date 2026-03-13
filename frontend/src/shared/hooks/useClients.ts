@@ -4,9 +4,9 @@ import type { ClientWithTasks, CustomerType } from '@/lib/backend';
 import { useMutationCounter } from '@/lib/data-freshness';
 import { LogDomain } from '@/lib/logging/types';
 import { useLogger } from '@/shared/hooks/useLogger';
-import { normalizeError } from '@/types/utility.types';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { clientService, type ClientStats } from '../services';
+import { normalizeError } from '@/types/utility.types';
+import { clientService, type ClientStats } from '@/domains/clients/services';
 
 export interface ClientFilters {
   search?: string;

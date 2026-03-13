@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { CalendarTask, ConflictDetection } from '@/lib/backend';
-import { useAuth } from '@/domains/auth';
+import { useAuth } from '@/shared/hooks/useAuth';
 import { getCalendarTasks, checkCalendarConflicts, scheduleTask, createCalendarFilter } from '../ipc/calendar';
 
 export type CalendarViewMode = 'month' | 'week' | 'day' | 'agenda';

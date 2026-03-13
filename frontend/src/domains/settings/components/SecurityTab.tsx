@@ -1,14 +1,15 @@
 import React, { useEffect } from 'react';
 import type { UserSession } from '@/lib/backend';
-import { useLogger } from '@/shared/hooks/useLogger';
 import { useIpcClient } from '@/lib/ipc/client';
+import { useLogger } from '@/shared/hooks/useLogger';
+import { LogDomain } from '@/lib/logging/types';
 
 export interface SecurityTabProps {
   user: UserSession;
 }
 
 function useSecurityTabInit() {
-  const logger = useLogger();
+  const logger = useLogger({ context: LogDomain.SECURITY, component: 'SecurityTab' });
   const ipcClient = useIpcClient();
 
   useEffect(() => {

@@ -23,7 +23,7 @@ import {
   safeString,
   isNonNullObject
 } from '@/types/type-utils';
-import { useAuth } from '@/domains/auth';
+import { useAuth } from '@/shared/hooks/useAuth';
 import { getWorkflowServiceInstance } from '../services/workflow-service-adapter';
 
 // Interface for step data updates

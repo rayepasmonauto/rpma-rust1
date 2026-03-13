@@ -12,7 +12,7 @@ import { LogDomain } from '@/lib/logging/types';
 import { Task, Client } from '@/types';
 import { DesktopForm, DesktopTable, type Column, EntitySyncIndicator } from '@/shared/ui';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { useAuth } from '@/domains/auth';
+import { useAuth } from '@/shared/hooks/useAuth';
 
 // Validation schema for task creation/editing
 const taskSchema = z.object({
