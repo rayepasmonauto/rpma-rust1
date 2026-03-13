@@ -102,13 +102,13 @@ export const settingsIpc = {
     safeInvoke<JsonValue>('get_active_sessions', {}),
 
   revokeSession: (sessionId: string) =>
-    safeInvoke<void>('revoke_session', { sessionId }),
+    safeInvoke<void>('revoke_session', { session_id: sessionId }),
 
   revokeAllSessionsExceptCurrent: () =>
     safeInvoke<void>('revoke_all_sessions_except_current', {}),
 
   updateSessionTimeout: (timeoutMinutes: number) =>
-    safeInvoke<void>('update_session_timeout', { timeoutMinutes }),
+    safeInvoke<void>('update_session_timeout', { timeout_minutes: timeoutMinutes }),
 
   getSessionTimeoutConfig: () =>
     safeInvoke<JsonValue>('get_session_timeout_config', {}),
