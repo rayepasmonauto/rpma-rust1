@@ -47,6 +47,7 @@ pub enum InterventionWorkflowResponse {
 
 /// Request structure for starting an intervention
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct StartInterventionRequest {
     pub task_id: String,
     pub intervention_type: String,
@@ -59,6 +60,7 @@ pub struct StartInterventionRequest {
 
 /// Request structure for finalizing an intervention
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct FinalizeInterventionRequest {
     pub intervention_id: String,
     pub collected_data: Option<serde_json::Value>,
