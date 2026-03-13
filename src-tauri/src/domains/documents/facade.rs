@@ -23,13 +23,15 @@ use super::models::InterventionReport;
 #[derive(Debug)]
 pub struct DocumentsFacade {
     inner: PhotoFacade,
+    db: Arc<Database>,
 }
 
 impl DocumentsFacade {
-    /// Create a new facade with the given photo service.
-    pub fn new(photo_service: Arc<PhotoService>) -> Self {
+    /// Create a new facade with the given photo service and database.
+    pub fn new(photo_service: Arc<PhotoService>, db: Arc<Database>) -> Self {
         Self {
             inner: PhotoFacade::new(photo_service),
+            db,
         }
     }
 
@@ -59,49 +61,33 @@ impl DocumentsFacade {
     }
 
     // ── Report operations ─────────────────────────────────────────────────────
-    // Report records are plain DB rows; these methods accept `Arc<Database>`
-    // instead of a long-lived service, matching how the repository is used.
 
     /// Find a report record by its ID.
-    pub fn get_report(
-        &self,
-        db: Arc<Database>,
-        id: &str,
-    ) -> Result<Option<InterventionReport>, AppError> {
-        super::report_handler::ReportRepository::new(db).find_by_id(id)
+    pub fn get_report(&self, id: &str) -> Result<Option<InterventionReport>, AppError> {
+        super::report_handler::ReportRepository::new(self.db.clone()).find_by_id(id)
     }
 
     /// Find the most recent report for a given intervention.
     pub fn get_report_by_intervention(
         &self,
-        db: Arc<Database>,
         intervention_id: &str,
     ) -> Result<Option<InterventionReport>, AppError> {
-        super::report_handler::ReportRepository::new(db)
+        super::report_handler::ReportRepository::new(self.db.clone())
             .find_by_intervention_id(intervention_id)
     }
 
     /// List report records with pagination.
-    pub fn list_reports(
-        &self,
-        db: Arc<Database>,
-        limit: i32,
-        offset: i32,
-    ) -> Result<Vec<InterventionReport>, AppError> {
-        super::report_handler::ReportRepository::new(db).list(limit, offset)
+    pub fn list_reports(&self, limit: i32, offset: i32) -> Result<Vec<InterventionReport>, AppError> {
+        super::report_handler::ReportRepository::new(self.db.clone()).list(limit, offset)
     }
 
     /// Generate a unique report number.
-    pub fn generate_report_number(&self, db: Arc<Database>) -> Result<String, AppError> {
-        super::report_handler::ReportRepository::new(db).generate_report_number()
+    pub fn generate_report_number(&self) -> Result<String, AppError> {
+        super::report_handler::ReportRepository::new(self.db.clone()).generate_report_number()
     }
 
     /// Persist a new report record to the database.
-    pub fn save_report(
-        &self,
-        db: Arc<Database>,
-        report: &InterventionReport,
-    ) -> Result<(), AppError> {
-        super::report_handler::ReportRepository::new(db).save(report)
+    pub fn save_report(&self, report: &InterventionReport) -> Result<(), AppError> {
+        super::report_handler::ReportRepository::new(self.db.clone()).save(report)
     }
 }
