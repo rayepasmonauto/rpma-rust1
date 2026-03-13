@@ -54,7 +54,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     if (droppableId.startsWith('day-')) {
       const parts = droppableId.split('-');
       if (parts.length >= 3) {
-        newDate = parts[1];
+        newDate = parts[1] ?? '';
         if (parts.length >= 4 && parts[2] === 'slot') {
           newStartTime = parts[3];
         }
