@@ -13,23 +13,35 @@ mod scaffold {
         viewer: bool,
     }
 
+    // Domain-specific operation matrix inferred from discovered IPC command names.
     const MATRIX: &[(&str, PermissionExpectation)] = &[
-        ("create_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
-        ("read_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
-        ("update_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
-        ("delete_task", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
-        ("assign_task", PermissionExpectation { admin: true, supervisor: true, technician: false, viewer: false }),
-        ("create_user", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
-        ("read_user", PermissionExpectation { admin: true, supervisor: true, technician: false, viewer: false }),
-        ("update_user", PermissionExpectation { admin: true, supervisor: true, technician: false, viewer: false }),
-        ("delete_user", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
-        ("create_quote", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
-        ("finalize_intervention", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("quote_attachment_create", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("quote_attachment_delete", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
+        ("quote_attachment_open", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_attachment_update", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("quote_attachments_get", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_convert_to_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_create", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("quote_delete", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
+        ("quote_duplicate", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_export_pdf", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_get", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_item_add", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("quote_item_delete", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
+        ("quote_item_update", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("quote_list", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_mark_accepted", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_mark_changes_requested", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("quote_mark_expired", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_mark_rejected", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_mark_sent", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_reopen", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_update", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
     ];
 
     #[test]
-    fn test_permission_matrix_scaffold_is_non_empty() {
-        assert!(!MATRIX.is_empty());
+    fn test_permission_matrix_scaffold_entries_are_named() {
+        assert!(MATRIX.iter().all(|(operation, _)| !operation.trim().is_empty()));
     }
 
     const IPC_COMMANDS: &[&str] = &[
@@ -58,9 +70,8 @@ mod scaffold {
     ];
 
     #[test]
-    fn test_scaffold_contains_ipc_commands() {
-        // Some domains may expose no commands yet.
-        assert!(IPC_COMMANDS.len() <= IPC_COMMANDS.len());
+    fn test_scaffold_contains_named_ipc_commands() {
+        assert!(IPC_COMMANDS.iter().all(|command| !command.trim().is_empty()));
     }
 
     #[test]

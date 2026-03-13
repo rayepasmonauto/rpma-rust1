@@ -13,23 +13,22 @@ mod scaffold {
         viewer: bool,
     }
 
+    // Domain-specific operation matrix inferred from discovered IPC command names.
     const MATRIX: &[(&str, PermissionExpectation)] = &[
-        ("create_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
-        ("read_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
-        ("update_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
-        ("delete_task", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
-        ("assign_task", PermissionExpectation { admin: true, supervisor: true, technician: false, viewer: false }),
-        ("create_user", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
-        ("read_user", PermissionExpectation { admin: true, supervisor: true, technician: false, viewer: false }),
-        ("update_user", PermissionExpectation { admin: true, supervisor: true, technician: false, viewer: false }),
-        ("delete_user", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
-        ("create_quote", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
-        ("finalize_intervention", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("auth_create_account", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("auth_login", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("auth_logout", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("auth_validate_session", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("get_active_sessions", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("get_session_timeout_config", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("revoke_all_sessions_except_current", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("revoke_session", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("update_session_timeout", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
     ];
 
     #[test]
-    fn test_permission_matrix_scaffold_is_non_empty() {
-        assert!(!MATRIX.is_empty());
+    fn test_permission_matrix_scaffold_entries_are_named() {
+        assert!(MATRIX.iter().all(|(operation, _)| !operation.trim().is_empty()));
     }
 
     const IPC_COMMANDS: &[&str] = &[
@@ -45,9 +44,8 @@ mod scaffold {
     ];
 
     #[test]
-    fn test_scaffold_contains_ipc_commands() {
-        // Some domains may expose no commands yet.
-        assert!(IPC_COMMANDS.len() <= IPC_COMMANDS.len());
+    fn test_scaffold_contains_named_ipc_commands() {
+        assert!(IPC_COMMANDS.iter().all(|command| !command.trim().is_empty()));
     }
 
     #[test]

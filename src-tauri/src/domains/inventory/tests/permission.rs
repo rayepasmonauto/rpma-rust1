@@ -13,23 +13,37 @@ mod scaffold {
         viewer: bool,
     }
 
+    // Domain-specific operation matrix inferred from discovered IPC command names.
     const MATRIX: &[(&str, PermissionExpectation)] = &[
-        ("create_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
-        ("read_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
-        ("update_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
-        ("delete_task", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
-        ("assign_task", PermissionExpectation { admin: true, supervisor: true, technician: false, viewer: false }),
-        ("create_user", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
-        ("read_user", PermissionExpectation { admin: true, supervisor: true, technician: false, viewer: false }),
-        ("update_user", PermissionExpectation { admin: true, supervisor: true, technician: false, viewer: false }),
-        ("delete_user", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
-        ("create_quote", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
-        ("finalize_intervention", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("inventory_get_dashboard_data", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("inventory_get_stats", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_adjust_stock", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_create", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("material_create_category", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("material_create_inventory_transaction", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("material_create_supplier", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("material_delete", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
+        ("material_get", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_get_by_sku", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_get_consumption_history", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_get_expired_materials", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_get_intervention_consumption", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_get_intervention_summary", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_get_inventory_movement_summary", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_get_low_stock_materials", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_get_stats", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_get_transaction_history", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_list", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_list_categories", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_list_suppliers", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_record_consumption", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("material_update", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("material_update_stock", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
     ];
 
     #[test]
-    fn test_permission_matrix_scaffold_is_non_empty() {
-        assert!(!MATRIX.is_empty());
+    fn test_permission_matrix_scaffold_entries_are_named() {
+        assert!(MATRIX.iter().all(|(operation, _)| !operation.trim().is_empty()));
     }
 
     const IPC_COMMANDS: &[&str] = &[
@@ -60,9 +74,8 @@ mod scaffold {
     ];
 
     #[test]
-    fn test_scaffold_contains_ipc_commands() {
-        // Some domains may expose no commands yet.
-        assert!(IPC_COMMANDS.len() <= IPC_COMMANDS.len());
+    fn test_scaffold_contains_named_ipc_commands() {
+        assert!(IPC_COMMANDS.iter().all(|command| !command.trim().is_empty()));
     }
 
     #[test]

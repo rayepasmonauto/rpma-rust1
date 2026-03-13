@@ -13,23 +13,27 @@ mod scaffold {
         viewer: bool,
     }
 
+    // Domain-specific operation matrix inferred from discovered IPC command names.
     const MATRIX: &[(&str, PermissionExpectation)] = &[
-        ("create_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
-        ("read_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
-        ("update_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
-        ("delete_task", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
-        ("assign_task", PermissionExpectation { admin: true, supervisor: true, technician: false, viewer: false }),
-        ("create_user", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
-        ("read_user", PermissionExpectation { admin: true, supervisor: true, technician: false, viewer: false }),
-        ("update_user", PermissionExpectation { admin: true, supervisor: true, technician: false, viewer: false }),
-        ("delete_user", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
-        ("create_quote", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
-        ("finalize_intervention", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("intervention_advance_step", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("intervention_delete", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
+        ("intervention_finalize", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("intervention_get", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("intervention_get_active_by_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("intervention_get_latest_by_task", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("intervention_get_progress", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("intervention_get_step", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("intervention_management", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("intervention_progress", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("intervention_save_step_progress", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("intervention_start", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("intervention_update", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
+        ("intervention_workflow", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
     ];
 
     #[test]
-    fn test_permission_matrix_scaffold_is_non_empty() {
-        assert!(!MATRIX.is_empty());
+    fn test_permission_matrix_scaffold_entries_are_named() {
+        assert!(MATRIX.iter().all(|(operation, _)| !operation.trim().is_empty()));
     }
 
     const IPC_COMMANDS: &[&str] = &[
@@ -50,9 +54,8 @@ mod scaffold {
     ];
 
     #[test]
-    fn test_scaffold_contains_ipc_commands() {
-        // Some domains may expose no commands yet.
-        assert!(IPC_COMMANDS.len() <= IPC_COMMANDS.len());
+    fn test_scaffold_contains_named_ipc_commands() {
+        assert!(IPC_COMMANDS.iter().all(|command| !command.trim().is_empty()));
     }
 
     #[test]

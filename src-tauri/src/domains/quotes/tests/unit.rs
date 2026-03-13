@@ -39,14 +39,14 @@ mod scaffold {
 
     #[test]
     fn test_scaffold_contains_public_service_methods() {
-        assert!(SERVICE_METHODS.len() <= SERVICE_METHODS.len());
+        assert!(SERVICE_METHODS.iter().all(|method| !method.trim().is_empty()));
     }
 
     #[test]
     fn test_scaffold_contains_status_transition_guards() {
         // Some domains may not implement status machines yet; this assertion keeps
         // the scaffold visible without forcing false failures.
-        assert!(STATUS_GUARDS.len() <= STATUS_GUARDS.len());
+        assert!(STATUS_GUARDS.iter().all(|guard| !guard.trim().is_empty()));
     }
 
     #[test]
