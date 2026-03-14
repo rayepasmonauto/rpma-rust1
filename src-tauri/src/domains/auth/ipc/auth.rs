@@ -1,10 +1,15 @@
 //! Authentication commands for Tauri IPC
 
+use crate::domains::auth::application::auth_security_service::AuthSecurityService;
 use crate::domains::auth::AuthFacade;
 use crate::shared::app_state::AppState;
 use crate::shared::ipc::{ApiResponse, AppError};
 use serde::Deserialize;
 use tracing::{debug, error, info, instrument, warn};
+
+fn security_service(state: &AppState<'_>) -> AuthSecurityService {
+    AuthSecurityService::new(state.session_service.clone())
+}
 
 pub use crate::domains::auth::application::SignupRequest;
 
@@ -172,10 +177,7 @@ pub async fn auth_validate_session(
             })?;
 
             debug!("Session not in memory, attempting to restore from database");
-            let svc = crate::domains::auth::application::auth_security_service::AuthSecurityService::new(
-                state.session_service.clone(),
-            );
-            let restored = svc.restore_session(&token).await?;
+            let restored = security_service(&state).restore_session(&token).await?;
             state.session_store.set(restored.clone());
             restored
         }
