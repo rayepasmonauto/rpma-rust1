@@ -11,7 +11,7 @@ fn make_facade(db: Arc<Database>) -> QuotesFacade {
     let cache = Arc::new(Cache::new(100));
     let repo = Arc::new(QuoteRepository::new(db.clone(), cache));
     let event_bus = Arc::new(InMemoryEventBus::new());
-    let service = Arc::new(QuoteService::new(repo, db, event_bus));
+    let service = Arc::new(QuoteService::new(repo, event_bus));
     QuotesFacade::new(service)
 }
 

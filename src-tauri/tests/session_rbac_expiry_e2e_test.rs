@@ -19,7 +19,6 @@ async fn session_creation_rbac_enforcement_and_expiry_are_enforced() {
 
     let quote_service = Arc::new(QuoteService::new(
         repos.quote.clone(),
-        db.clone(),
         Arc::new(InMemoryEventBus::new()),
     ));
     let quotes = QuotesFacade::new(quote_service);

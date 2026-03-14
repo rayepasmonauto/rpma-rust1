@@ -213,6 +213,9 @@ impl ServiceBuilder {
                 self.db.clone(),
             ),
         );
+        let calendar_service = Arc::new(
+            crate::domains::calendar::calendar_handler::CalendarService::new(self.db.clone()),
+        );
 
         // Initialize Auth Service (needs initialization)
         let auth_service =
@@ -278,11 +281,11 @@ impl ServiceBuilder {
         let event_bus = Arc::new(InMemoryEventBus::new());
         set_global_event_bus(event_bus.clone());
 
-        // Initialize Quote Service (depends on QuoteRepository and DB)
+        // Initialize Quote Service (depends on QuoteRepository)
         let quote_service = Arc::new(
             crate::domains::quotes::infrastructure::quote::QuoteService::new(
-                self.repositories.quote.clone(),
-                self.db.clone(),
+                self.repositories.quote.clone()
+                    as Arc<dyn crate::domains::quotes::domain::models::quote::IQuoteRepository>,
                 quote_event_bus,
             ),
         );
@@ -341,6 +344,7 @@ impl ServiceBuilder {
             task_service,
             client_service,
             task_import_service,
+            calendar_service,
             intervention_service,
             material_service,
             inventory_service,

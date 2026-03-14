@@ -11,7 +11,7 @@ use super::application::{
     parse_material_type, InterventionFinalizedHandler, InventoryError, InventoryService,
     RecordConsumptionRequest, UpdateStockRequest,
 };
-use super::infrastructure::MaterialService;
+use super::infrastructure::{InventoryTransactionRepository, MaterialService};
 
 /// TODO: document
 #[derive(Debug)]
@@ -22,8 +22,12 @@ pub struct InventoryFacade {
 impl InventoryFacade {
     /// TODO: document
     pub fn new(db: Arc<Database>, material_service: Arc<MaterialService>) -> Self {
+        let transaction_repository = Arc::new(InventoryTransactionRepository::new(db));
         Self {
-            service: Arc::new(InventoryService::new(db, material_service)),
+            service: Arc::new(InventoryService::new(
+                material_service,
+                transaction_repository,
+            )),
         }
     }
 

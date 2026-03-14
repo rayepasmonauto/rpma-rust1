@@ -10,7 +10,7 @@ fn setup_service() -> (QuoteService, Arc<Database>) {
     let cache = Arc::new(Cache::new(100));
     let repo = Arc::new(QuoteRepository::new(db.clone(), cache));
     let event_bus = Arc::new(crate::shared::services::event_bus::InMemoryEventBus::new());
-    let service = QuoteService::new(repo, db.clone(), event_bus);
+    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus);
 
     // Insert test client
     let now = chrono::Utc::now().timestamp_millis();
@@ -29,7 +29,7 @@ async fn setup_service_async() -> (QuoteService, Arc<Database>) {
     let cache = Arc::new(Cache::new(100));
     let repo = Arc::new(QuoteRepository::new(db.clone(), cache));
     let event_bus = Arc::new(crate::shared::services::event_bus::InMemoryEventBus::new());
-    let service = QuoteService::new(repo, db.clone(), event_bus);
+    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus);
 
     let now = chrono::Utc::now().timestamp_millis();
     db.execute(

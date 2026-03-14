@@ -30,7 +30,7 @@ fn cmd_service(state: &AppState<'_>) -> TaskCommandService {
         state.task_import_service.clone(),
         state.message_service.clone()
             as std::sync::Arc<dyn crate::shared::contracts::notification::NotificationSender>,
-        state.db.clone(),
+        state.calendar_service.clone(),
     )
 }
 

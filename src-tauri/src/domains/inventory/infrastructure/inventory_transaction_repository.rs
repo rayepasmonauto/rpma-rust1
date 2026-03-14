@@ -4,16 +4,68 @@ use std::sync::Arc;
 
 use rusqlite::params;
 
-use crate::domains::inventory::domain::models::material::InventoryTransaction;
+use crate::domains::inventory::domain::models::material::{
+    IInventoryTransactionRepository, InventoryTransaction,
+};
 use crate::shared::db::Database;
 
 /// TODO: document
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct InventoryTransactionRepository {
     db: Arc<Database>,
 }
 
+impl IInventoryTransactionRepository for InventoryTransactionRepository {
+    fn insert(
+        &self,
+        tx: &rusqlite::Transaction<'_>,
+        transaction: &InventoryTransaction,
+    ) -> Result<(), String> {
+        self.insert(tx, transaction)
+    }
+
+    fn references_exist_batch(
+        &self,
+        tx: &rusqlite::Transaction<'_>,
+        reference_type: &str,
+        reference_numbers: &[String],
+    ) -> Result<HashSet<String>, String> {
+        self.references_exist_batch(tx, reference_type, reference_numbers)
+    }
+
+    fn upsert_intervention_consumptions(
+        &self,
+        reference_type: &str,
+        transactions: &[InventoryTransaction],
+    ) -> Result<usize, String> {
+        self.db
+            .with_transaction(|tx| {
+                // QW-4 perf: batch existence check — 1 WHERE IN query instead of N individual queries.
+                let refs_to_check: Vec<String> = transactions
+                    .iter()
+                    .filter_map(|t| t.reference_number.clone())
+                    .collect();
+                let existing_refs =
+                    self.references_exist_batch(tx, reference_type, &refs_to_check)?;
+
+                let mut inserted = 0usize;
+                for transaction in transactions {
+                    if let Some(ref_num) = &transaction.reference_number {
+                        if existing_refs.contains(ref_num) {
+                            continue;
+                        }
+                    }
+                    self.insert(tx, transaction)?;
+                    inserted += 1;
+                }
+                Ok(inserted)
+            })
+            .map_err(|e| e.to_string())
+    }
+}
+
 impl InventoryTransactionRepository {
+
     /// TODO: document
     pub fn new(db: Arc<Database>) -> Self {
         Self { db }

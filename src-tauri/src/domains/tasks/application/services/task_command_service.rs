@@ -10,7 +10,7 @@ use std::sync::Arc;
 use tracing::{error, info, instrument, warn};
 
 use crate::commands::AppError;
-use crate::db::Database;
+use crate::domains::calendar::calendar_handler::CalendarService;
 use crate::domains::tasks::application::services::task_policy_service;
 use crate::domains::tasks::domain::models::task::{
     CreateTaskRequest, SortOrder, Task, TaskPriority, TaskQuery, TaskStatus, UpdateTaskRequest,
@@ -32,7 +32,7 @@ pub struct TaskCommandService {
     task_service: Arc<TaskService>,
     task_import_service: Arc<TaskImportService>,
     notification_sender: Arc<dyn NotificationSender>,
-    db: Arc<Database>,
+    calendar_service: Arc<CalendarService>,
 }
 
 impl TaskCommandService {
@@ -41,13 +41,13 @@ impl TaskCommandService {
         task_service: Arc<TaskService>,
         task_import_service: Arc<TaskImportService>,
         notification_sender: Arc<dyn NotificationSender>,
-        db: Arc<Database>,
+        calendar_service: Arc<CalendarService>,
     ) -> Self {
         Self {
             task_service,
             task_import_service,
             notification_sender,
-            db,
+            calendar_service,
         }
     }
 
@@ -337,9 +337,7 @@ impl TaskCommandService {
         let task = self.fetch_task(task_id).await?;
         task_policy_service::check_task_permissions(&ctx.auth, &task, "edit")?;
 
-        let calendar_service =
-            crate::shared::services::cross_domain::CalendarService::new(self.db.clone());
-        calendar_service
+        self.calendar_service
             .schedule_task(
                 task_id.to_string(),
                 new_scheduled_date.clone(),

@@ -8,6 +8,57 @@ use rusqlite::Row;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::shared::repositories::base::RepoResult;
+
+/// Repository trait for quote operations (ADR-005)
+pub trait IQuoteRepository: Send + Sync + std::fmt::Debug {
+    fn next_quote_number(&self) -> RepoResult<String>;
+    fn create(&self, quote: &Quote) -> RepoResult<()>;
+    fn find_by_id(&self, id: &str) -> RepoResult<Option<Quote>>;
+    fn list(&self, query: &QuoteQuery) -> RepoResult<(Vec<Quote>, i64)>;
+    fn update(&self, id: &str, req: &UpdateQuoteRequest) -> RepoResult<()>;
+    fn delete(&self, id: &str) -> RepoResult<bool>;
+    fn update_status(&self, id: &str, status: &QuoteStatus) -> RepoResult<()>;
+    fn link_task(&self, quote_id: &str, task_id: &str) -> RepoResult<()>;
+    fn update_totals(&self, id: &str, subtotal: i64, tax_total: i64, total: i64) -> RepoResult<()>;
+    fn update_totals_with_discount(
+        &self,
+        id: &str,
+        subtotal: i64,
+        discount_amount: i64,
+        tax_total: i64,
+        total: i64,
+    ) -> RepoResult<()>;
+    fn find_items_by_quote_id(&self, quote_id: &str) -> RepoResult<Vec<QuoteItem>>;
+    fn add_item(&self, item: &QuoteItem) -> RepoResult<()>;
+    fn create_with_items(&self, quote: &Quote, items: &[QuoteItem]) -> RepoResult<()>;
+    fn link_task_and_update_status(
+        &self,
+        quote_id: &str,
+        task_id: &str,
+        status: &QuoteStatus,
+    ) -> RepoResult<()>;
+    fn add_items_batch(&self, items: &[QuoteItem]) -> RepoResult<()>;
+    fn update_item(&self, item_id: &str, quote_id: &str, req: &UpdateQuoteItemRequest)
+        -> RepoResult<()>;
+    fn delete_item(&self, item_id: &str, quote_id: &str) -> RepoResult<bool>;
+    fn find_attachments_by_quote_id(&self, quote_id: &str) -> RepoResult<Vec<QuoteAttachment>>;
+    fn find_attachment_by_id(&self, id: &str) -> RepoResult<Option<QuoteAttachment>>;
+    fn create_attachment(
+        &self,
+        quote_id: &str,
+        req: &CreateQuoteAttachmentRequest,
+        created_by: Option<&str>,
+    ) -> RepoResult<String>;
+    fn update_attachment(
+        &self,
+        id: &str,
+        quote_id: &str,
+        req: &UpdateQuoteAttachmentRequest,
+    ) -> RepoResult<()>;
+    fn delete_attachment(&self, id: &str, quote_id: &str) -> RepoResult<bool>;
+}
+
 /// Quote status enumeration
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, TS)]
 pub enum QuoteStatus {

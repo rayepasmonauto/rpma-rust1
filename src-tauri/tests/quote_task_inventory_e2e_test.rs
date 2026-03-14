@@ -24,7 +24,6 @@ async fn quote_to_task_conversion_updates_inventory_and_audit() {
 
     let quote_service = QuoteService::new(
         repos.quote.clone(),
-        db.clone(),
         Arc::new(InMemoryEventBus::new()),
     );
     let task_service = TaskService::new(db.clone());

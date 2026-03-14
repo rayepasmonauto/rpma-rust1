@@ -5,8 +5,8 @@
 /// ADR-005: Repository Pattern
 use crate::db::Database;
 use crate::domains::quotes::domain::models::quote::{
-    AttachmentType, CreateQuoteAttachmentRequest, Quote, QuoteAttachment, QuoteItem, QuoteQuery,
-    QuoteStatus, UpdateQuoteAttachmentRequest,
+    AttachmentType, CreateQuoteAttachmentRequest, IQuoteRepository, Quote, QuoteAttachment,
+    QuoteItem, QuoteQuery, QuoteStatus, UpdateQuoteAttachmentRequest, UpdateQuoteRequest,
 };
 use crate::shared::repositories::base::{RepoError, RepoResult};
 use crate::shared::repositories::cache::{ttl, Cache, CacheKeyBuilder};
@@ -20,6 +20,123 @@ pub struct QuoteRepository {
     db: Arc<Database>,
     cache: Arc<Cache>,
     cache_key_builder: CacheKeyBuilder,
+}
+
+impl IQuoteRepository for QuoteRepository {
+    fn next_quote_number(&self) -> RepoResult<String> {
+        self.next_quote_number()
+    }
+
+    fn create(&self, quote: &Quote) -> RepoResult<()> {
+        self.create(quote)
+    }
+
+    fn find_by_id(&self, id: &str) -> RepoResult<Option<Quote>> {
+        self.find_by_id(id)
+    }
+
+    fn list(&self, query: &QuoteQuery) -> RepoResult<(Vec<Quote>, i64)> {
+        self.list(query)
+    }
+
+    fn update(&self, id: &str, req: &UpdateQuoteRequest) -> RepoResult<()> {
+        self.update(id, req)
+    }
+
+    fn delete(&self, id: &str) -> RepoResult<bool> {
+        self.delete(id)
+    }
+
+    fn update_status(&self, id: &str, status: &QuoteStatus) -> RepoResult<()> {
+        self.update_status(id, status)
+    }
+
+    fn link_task(&self, quote_id: &str, task_id: &str) -> RepoResult<()> {
+        self.link_task(quote_id, task_id)
+    }
+
+    fn update_totals(&self, id: &str, subtotal: i64, tax_total: i64, total: i64) -> RepoResult<()> {
+        self.update_totals(id, subtotal, tax_total, total)
+    }
+
+    fn update_totals_with_discount(
+        &self,
+        id: &str,
+        subtotal: i64,
+        discount_amount: i64,
+        tax_total: i64,
+        total: i64,
+    ) -> RepoResult<()> {
+        self.update_totals_with_discount(id, subtotal, discount_amount, tax_total, total)
+    }
+
+    fn find_items_by_quote_id(&self, quote_id: &str) -> RepoResult<Vec<QuoteItem>> {
+        self.find_items_by_quote_id(quote_id)
+    }
+
+    fn add_item(&self, item: &QuoteItem) -> RepoResult<()> {
+        self.add_item(item)
+    }
+
+    fn create_with_items(&self, quote: &Quote, items: &[QuoteItem]) -> RepoResult<()> {
+        self.create_with_items(quote, items)
+    }
+
+    fn link_task_and_update_status(
+        &self,
+        quote_id: &str,
+        task_id: &str,
+        status: &QuoteStatus,
+    ) -> RepoResult<()> {
+        self.link_task_and_update_status(quote_id, task_id, status)
+    }
+
+    fn add_items_batch(&self, items: &[QuoteItem]) -> RepoResult<()> {
+        self.add_items_batch(items)
+    }
+
+    fn update_item(
+        &self,
+        item_id: &str,
+        quote_id: &str,
+        req: &crate::domains::quotes::domain::models::quote::UpdateQuoteItemRequest,
+    ) -> RepoResult<()> {
+        self.update_item(item_id, quote_id, req)
+    }
+
+    fn delete_item(&self, item_id: &str, quote_id: &str) -> RepoResult<bool> {
+        self.delete_item(item_id, quote_id)
+    }
+
+    fn find_attachments_by_quote_id(&self, quote_id: &str) -> RepoResult<Vec<QuoteAttachment>> {
+        self.find_attachments_by_quote_id(quote_id)
+    }
+
+    fn find_attachment_by_id(&self, id: &str) -> RepoResult<Option<QuoteAttachment>> {
+        self.find_attachment_by_id(id)
+    }
+
+    fn create_attachment(
+        &self,
+        quote_id: &str,
+        req: &CreateQuoteAttachmentRequest,
+        created_by: Option<&str>,
+    ) -> RepoResult<String> {
+        self.create_attachment(quote_id, req, created_by)
+    }
+
+    fn update_attachment(
+        &self,
+        id: &str,
+        quote_id: &str,
+        req: &UpdateQuoteAttachmentRequest,
+    ) -> RepoResult<()> {
+        self.update_attachment(id, quote_id, req)
+    }
+
+    fn delete_attachment(&self, id: &str, quote_id: &str) -> RepoResult<bool> {
+        self.delete_attachment(id, quote_id)
+    }
 }
 
 impl QuoteRepository {

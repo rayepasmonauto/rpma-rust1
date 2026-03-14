@@ -8,6 +8,31 @@ use crate::shared::contracts::common::{serialize_optional_timestamp, serialize_t
 use rusqlite::Row;
 use serde::{Deserialize, Serialize};
 
+use std::collections::HashSet;
+
+/// Repository trait for inventory transaction operations (ADR-005)
+pub trait IInventoryTransactionRepository: Send + Sync + std::fmt::Debug {
+    fn insert(
+        &self,
+        tx: &rusqlite::Transaction<'_>,
+        transaction: &InventoryTransaction,
+    ) -> Result<(), String>;
+
+    fn references_exist_batch(
+        &self,
+        tx: &rusqlite::Transaction<'_>,
+        reference_type: &str,
+        reference_numbers: &[String],
+    ) -> Result<HashSet<String>, String>;
+
+    /// Upsert intervention consumptions as inventory transactions (ADR-005: Extract SQL from service)
+    fn upsert_intervention_consumptions(
+        &self,
+        reference_type: &str,
+        transactions: &[InventoryTransaction],
+    ) -> Result<usize, String>;
+}
+
 /// Material types for PPF workflows
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ts_rs::TS)]
 #[ts(export)]
