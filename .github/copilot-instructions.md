@@ -74,8 +74,8 @@ Use the real command surfaces below; do not invent shortcuts.
 
 ## Mindset
 
-Make it work → Make it right → Make it fast.  
-Correctness first. Clarity second. Performance third.  
+Make it work → Make it right → Make it fast.
+Correctness first. Clarity second. Performance third.
 Write boring, predictable, deletable code. The best solution is often less code, not more.
 
 ---
@@ -145,7 +145,7 @@ Every change requires tests. No exceptions.
 | New IPC command | Success + auth failure + validation failure |
 | New RBAC rule | Authorized success + unauthorized failure per affected role |
 
-Test files per domain: `unit_*.rs` · `integration_*.rs` · `validation_*.rs` · `permission_*.rs`  
+Test files per domain: `unit_*.rs` · `integration_*.rs` · `validation_*.rs` · `permission_*.rs`
 Naming convention: `test_<function>_<scenario>_<expected_result>`
 
 ### Required test runs per change scope
@@ -187,6 +187,22 @@ let db = Arc::new(Database::new_in_memory().unwrap());
 let ctx = RequestContext { auth: fake_auth(), correlation_id: "x".into() };
 ```
 
+### Validation tests — pattern
+
+Validation tests target the application layer directly with invalid inputs —
+never through IPC. They must cover: empty fields, type violations, and business
+rule violations (e.g. invalid status transitions).
+
+```rust
+#[tokio::test]
+async fn test_create_task_empty_title_returns_validation_error() {
+    let app = TestApp::new().await;
+    let request = CreateTaskRequest { title: "".into(), ..Default::default() };
+    let result = app.services.task.create(request, app.admin_ctx()).await;
+    assert!(matches!(result.unwrap_err(), AppError::Validation(_)));
+}
+```
+
 ---
 
 ## Test Harness — Architecture
@@ -195,12 +211,24 @@ The harness lives in `src-tauri/tests/harness/` and exposes:
 
 ```
 tests/
+├── integration.rs         — cargo [[test]] entry point (required by Cargo.toml)
 └── harness/
-    ├── mod.rs        — public re-exports
-    ├── app.rs        — TestApp struct and constructors
-    ├── db.rs         — in-memory SQLite with migrations applied
-    ├── auth.rs       — RequestContext builders per role
-    └── fixtures.rs   — deterministic seed data (users, client, task)
+    ├── mod.rs             — public re-exports
+    ├── app.rs             — TestApp struct and constructors
+    ├── db.rs              — in-memory SQLite with migrations applied
+    ├── auth.rs            — RequestContext builders per role
+    └── fixtures.rs        — deterministic seed data (users, client, task)
+```
+
+**Required in `src-tauri/Cargo.toml`:**
+```toml
+[[test]]
+name = "integration"
+path = "tests/integration.rs"
+
+[dev-dependencies]
+tokio = { version = "1", features = ["test-util"] }
+pretty_assertions = "1"
 ```
 
 **Public API:**
@@ -208,7 +236,7 @@ tests/
 | Symbol | Description |
 |---|---|
 | `TestApp::new()` | Empty DB with all migrations applied |
-| `TestApp::seeded()` | DB with one seeded client + task; use when a test needs pre-existing data |
+| `TestApp::seeded()` | DB with fixtures pre-seeded (admin, technician, client, task) — default choice for most tests |
 | `app.admin_ctx()` | `RequestContext` for Admin role |
 | `app.technician_ctx()` | `RequestContext` for Technician role |
 | `app.supervisor_ctx()` | `RequestContext` for Supervisor role |

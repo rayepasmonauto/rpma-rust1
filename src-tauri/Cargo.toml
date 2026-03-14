@@ -35,6 +35,9 @@ harness = false
 name = "audit_benchmarks"
 harness = false
 
+
+# ── Command-level tests ────────────────────────────────────────────────────────
+
 [[test]]
 name = "auth_commands_test"
 path = "tests/commands/auth_commands_test.rs"
@@ -71,6 +74,9 @@ path = "tests/commands/quote_commands_test.rs"
 name = "inventory_commands_test"
 path = "tests/commands/inventory_commands_test.rs"
 
+
+# ── End-to-end tests ───────────────────────────────────────────────────────────
+
 [[test]]
 name = "intervention_lifecycle_e2e_test"
 path = "tests/intervention_lifecycle_e2e_test.rs"
@@ -83,12 +89,23 @@ path = "tests/quote_task_inventory_e2e_test.rs"
 name = "session_rbac_expiry_e2e_test"
 path = "tests/session_rbac_expiry_e2e_test.rs"
 
+
+# ── Harness ────────────────────────────────────────────────────────────────────
+
 [[test]]
 name = "harness_smoke_test"
 path = "tests/harness_smoke_test.rs"
 
+# Point d'entrée principal du harness — référencé dans CLAUDE.md
+# Commande : cd src-tauri && cargo test --test integration -- --nocapture
+[[test]]
+name = "integration"
+path = "tests/integration.rs"
+
+
 [build-dependencies]
 tauri-build = { version = "2.0", features = [] }
+
 
 [dependencies]
 tauri = { version = "2.1", features = ["protocol-asset"] }
@@ -135,8 +152,6 @@ dirs = "5.0"
 # File system operations
 fs2 = "0.4"
 
-
-
 # Async runtime
 tokio = { version = "1.42", features = ["rt-multi-thread", "macros", "sync", "time", "net"] }
 async-trait = "0.1"
@@ -145,8 +160,6 @@ async-trait = "0.1"
 tokio-tungstenite = "0.21"
 futures-util = "0.3"
 async-stream = "0.3"
-
-
 
 # Password hashing
 argon2 = { version = "0.5", features = ["std"] }
@@ -178,21 +191,29 @@ printpdf = "0.7"
 # Geospatial operations
 geo = "0.28"
 
+
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
-sqlcipher = []  # Optional feature for SQLCipher encryption support
-export-types = [] # Opens domain visibility for the export-types binary (ts-rs)
-legacy-tests = [] # Enable legacy integration/performance/proptest modules
-perf-monitoring = [] # Enable DB persistence of command performance metrics (disabled by default in release)
+sqlcipher = []        # Optional feature for SQLCipher encryption support
+export-types = []     # Opens domain visibility for the export-types binary (ts-rs)
+legacy-tests = []     # Enable legacy integration/performance/proptest modules
+perf-monitoring = []  # Enable DB persistence of command performance metrics (disabled by default in release)
+
 
 [dev-dependencies]
+# Async runtime — test-util gives access to tokio::test and time control
+tokio = { version = "1", features = ["test-util"] }
+
 # Testing framework
 tokio-test = "0.4"
 mockall = "0.12"          # Mocking framework
-tempfile = "3.8"          # Test database
-serial_test = "3.0"      # Test isolation
-criterion = "0.5"         # Performance testing
-proptest = "1.4"         # Property-based testing
-pretty_assertions = "1.4" # Better error messages in tests
-cargo-tarpaulin = "0.27"  # Coverage reporting
+tempfile = "3.8"          # Temp database files when needed
+serial_test = "3.0"       # Test isolation for shared-state tests
+criterion = "0.5"         # Performance benchmarking
+proptest = "1.4"          # Property-based testing
+pretty_assertions = "1.4" # Readable assertion diffs in test output
+
+# Note: cargo-tarpaulin is a CLI tool, not a library crate.
+# Install once with: cargo install cargo-tarpaulin
+# Then run: cargo tarpaulin --out Html
