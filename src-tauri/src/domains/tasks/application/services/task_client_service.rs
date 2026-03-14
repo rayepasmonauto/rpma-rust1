@@ -82,19 +82,23 @@ impl TaskClientService {
 
         let mut enhanced_tasks = Vec::new();
 
+        let empty_id = String::new();
         for task_with_client in &tasks_with_clients.data {
             let client_details = if include_client_details {
-                self.client_service
-                    .get_client_async(
-                        task_with_client
-                            .task
-                            .client_id
-                            .as_ref()
-                            .unwrap_or(&"".to_string()),
-                    )
-                    .await
-                    .ok()
-                    .flatten()
+                let client_id = task_with_client
+                    .task
+                    .client_id
+                    .as_ref()
+                    .unwrap_or(&empty_id);
+                if client_id.is_empty() {
+                    None
+                } else {
+                    self.client_service
+                        .get_client_async(client_id)
+                        .await
+                        .ok()
+                        .flatten()
+                }
             } else {
                 None
             };
