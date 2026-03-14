@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 import { getUserFullName } from '@/lib/types';
 import { Task } from '@/lib/backend';
-import { TaskWithDetails } from '@/types/task.types';
 import { Badge } from '@/components/ui/badge';
+import { TaskWithDetails } from '@/types/task.types';
 
 interface TaskOverviewProps {
   task: TaskWithDetails;
@@ -425,14 +425,14 @@ export function TaskOverview({ task, defaultExpandedSections = [] }: TaskOvervie
             </div>
           )}
 
-          {(task as Task & { customer_comments?: string }).customer_comments && (
+          {task.customer_comments && (
             <div className="bg-background/60 rounded-lg border border-border/40 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <User className="h-3 w-3 text-accent" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-border-light">Commentaires client</span>
               </div>
               <ExpandableText
-                value={(task as Task & { customer_comments?: string }).customer_comments || ''}
+                value={task.customer_comments}
                 sectionKey="commentaires-client"
                 expanded={expandedSections.has('commentaires-client')}
                 onToggle={toggleSection}
@@ -440,14 +440,14 @@ export function TaskOverview({ task, defaultExpandedSections = [] }: TaskOvervie
             </div>
           )}
 
-          {(task as Task & { special_instructions?: string }).special_instructions && (
+          {task.special_instructions && (
             <div className="bg-background/60 rounded-lg border border-border/40 p-4">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="h-3 w-3 text-yellow-500" />
                 <span className="text-xs font-semibold uppercase tracking-wide text-border-light">Instructions spéciales</span>
               </div>
               <ExpandableText
-                value={(task as Task & { special_instructions?: string }).special_instructions || ''}
+                value={task.special_instructions}
                 sectionKey="instructions-speciales"
                 expanded={expandedSections.has('instructions-speciales')}
                 onToggle={toggleSection}
@@ -456,8 +456,8 @@ export function TaskOverview({ task, defaultExpandedSections = [] }: TaskOvervie
           )}
 
           {!task.client?.notes && !task.note && !task.notes && !task.description &&
-            !(task as Task & { customer_comments?: string }).customer_comments &&
-            !(task as Task & { special_instructions?: string }).special_instructions && (
+            !task.customer_comments &&
+            !task.special_instructions && (
               <EmptyState label="Aucune note opérationnelle disponible" />
             )}
         </div>

@@ -1,10 +1,7 @@
-﻿import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
 import { TaskWithDetails, TaskPriority } from '@/lib/backend';
-import { ipcClient } from '@/lib/ipc';
-import enhancedToast from '@/lib/enhanced-toast';
-import { taskKeys } from '@/lib/query-keys';
 import type { JsonObject } from '@/types/json';
+import enhancedToast from '@/lib/enhanced-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InlineLoading } from '@/components/ui/loading';
-import { useAuth } from '@/shared/hooks/useAuth';
+import { useTaskMutations } from '../../hooks/useTaskMutations';
 
 interface EditTaskModalProps {
   task: TaskWithDetails;
@@ -21,8 +18,7 @@ interface EditTaskModalProps {
 }
 
 const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange }) => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const { editTask } = useTaskMutations();
 
   // Form state
   const [title, setTitle] = useState(task.title);
@@ -46,28 +42,10 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
     setNotes(task.notes || '');
   }, [task]);
 
-  // Edit task mutation
-  const editTaskMutation = useMutation({
-    mutationFn: async (updates: Record<string, unknown>) => {
-      if (!user?.token) throw new Error('User not authenticated');
-      return await ipcClient.tasks.editTask(task.id, updates as JsonObject);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
-      enhancedToast.success('Tâche mise Ã  jour avec succès');
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      enhancedToast.error('Erreur lors de la mise Ã  jour de la tâche');
-      console.error('Edit task error:', error);
-    }
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const updates: Record<string, unknown> = {};
+    const updates: JsonObject = {};
 
     // Only include fields that have changed
     if (title !== task.title) updates.title = title;
@@ -87,7 +65,17 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
       return;
     }
 
-    editTaskMutation.mutate(updates);
+    try {
+      await editTask.mutateAsync({
+        taskId: task.id,
+        data: updates
+      });
+      enhancedToast.success('Tâche mise à jour avec succès');
+      onOpenChange(false);
+    } catch (error) {
+      enhancedToast.error('Erreur lors de la mise à jour de la tâche');
+      console.error('Edit task error:', error);
+    }
   };
 
   const handleCancel = () => {
@@ -233,22 +221,22 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
               type="button"
               variant="outline"
               onClick={handleCancel}
-              disabled={editTaskMutation.isPending}
+              disabled={editTask.isPending}
               className="border-border text-foreground hover:bg-border"
             >
               Annuler
             </Button>
             <Button
               type="submit"
-              disabled={editTaskMutation.isPending || !title.trim()}
+              disabled={editTask.isPending || !title.trim()}
               variant="default"
             >
-              {editTaskMutation.isPending ? (
+              {editTask.isPending ? (
                 <span className="inline-flex items-center gap-2">
                   <InlineLoading size="sm" />
-                  Mise Ã  jour...
+                  Mise à jour...
                 </span>
-              ) : 'Mettre Ã  jour'}
+              ) : 'Mettre à jour'}
             </Button>
           </div>
         </form>
@@ -258,4 +246,3 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, open, onOpenChange 
 };
 
 export default EditTaskModal;
-

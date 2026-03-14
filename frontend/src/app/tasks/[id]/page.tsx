@@ -195,7 +195,7 @@ export default function TaskDetailPage() {
               {/* Task Attachments - Only shown when intervention exists */}
               {interventionId && (
                 <section id="task-attachments" className="scroll-mt-28 rounded-xl border border-[hsl(var(--rpma-border))] bg-white p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
-                  <TaskAttachments taskId={taskId} />
+                  <TaskAttachments taskId={taskId} interventionId={interventionId} />
                 </section>
               )}
 

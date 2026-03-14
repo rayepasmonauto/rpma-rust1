@@ -1,33 +1,13 @@
 import React from 'react';
 import { Camera, AlertCircle } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { ipcClient } from '@/lib/ipc';
-import { useAuth } from '@/shared/hooks/useAuth';
 import { TaskPhotos } from './TaskPhotos';
 
 interface TaskAttachmentsProps {
   taskId: string;
+  interventionId: string;
 }
 
-export function TaskAttachments({ taskId }: TaskAttachmentsProps) {
-  const { session } = useAuth();
-
-  const { data: interventionData } = useQuery({
-    queryKey: ['intervention', taskId],
-    queryFn: async () => {
-      if (!session?.token) return null;
-      try {
-        const result = await ipcClient.interventions.getActiveByTask(taskId);
-        return result;
-      } catch {
-        return null;
-      }
-    },
-    enabled: !!session?.token
-  });
-
-  const interventionId = (interventionData as { intervention?: { id?: string } })?.intervention?.id;
-
+export function TaskAttachments({ taskId, interventionId }: TaskAttachmentsProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">

@@ -29,8 +29,6 @@ export interface TaskHistoryEntry {
   changed_by?: string | null;
 }
 
-
-
 /**
  * Task with full details including related data
  */
@@ -42,21 +40,21 @@ export interface TaskWithDetails extends Task {
    checklist?: ChecklistItem[];
    workflow_execution?: WorkflowExecution;
 
-    // Photo arrays
+    // Photo arrays extensions
     photos_before?: Photo[] | null;
     photos_after?: Photo[] | null;
     photos?: { before: Photo[], after: Photo[], during: Photo[] };
 
    // Additional fields for compatibility
    note?: string | null; // Alias for notes
+   customer_comments?: string | null;
+   special_instructions?: string | null;
 
-   // New fields not in base Task
+   // Computed and extra fields not in base Task
    assigned_user_name?: string;
    client_name?: string;
-   is_available?: boolean | null;
+   is_available?: boolean;
    estimated_duration_minutes?: number | null; // Alias for estimated_duration
-
-   // Computed fields
    progress: number;
    checklist_completed: boolean;
    duration?: string | null;
@@ -130,26 +128,27 @@ export interface CreateTaskRequest {
  * Task update request for Tauri command
  */
 export interface UpdateTaskRequest {
-  id?: string;
-  title?: string;
-  description?: string;
-  status?: string;
-  priority?: string;
-  technician_id?: string;
-  assigned_at?: string;
-  scheduled_date?: string;
-  start_time?: string;
-   end_time?: string;
-   notes?: string;
-   tags?: string;
-   estimated_duration?: number;
-  actual_duration?: number;
+  id?: string | null;
+  title?: string | null;
+  description?: string | null;
+  status?: TaskStatus | null;
+  priority?: TaskPriority | null;
+  technician_id?: string | null;
+  assigned_at?: string | null;
+  scheduled_date?: string | null;
+  start_time?: string | null;
+   end_time?: string | null;
+   notes?: string | null;
+   tags?: string | null;
+   estimated_duration?: number | null;
+  actual_duration?: number | null;
   // Additional fields for compatibility
-  vin?: string;
-  date_rdv?: string;
-  heure_rdv?: string;
-  lot_film?: string;
-  ppf_zones?: string[];
+  vin?: string | null;
+  date_rdv?: string | null;
+  heure_rdv?: string | null;
+  lot_film?: string | null;
+  ppf_zones?: string[] | null;
+  checklist_completed?: boolean | null;
 }
 
 /**
@@ -297,10 +296,6 @@ export interface Client {
   created_at: string; // ISO datetime
   updated_at: string; // ISO datetime
 }
-
-// Type guards moved to use imported Task type
-
-// Type guards removed - use proper type checking
 
 /**
  * Get status display label

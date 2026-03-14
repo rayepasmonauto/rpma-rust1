@@ -1,13 +1,13 @@
 import { format } from 'date-fns';
-import { useQuery } from '@tanstack/react-query';
 import { Check, History, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { taskGateway } from '../api/taskGateway';
 import type { TaskHistoryEntry } from '../api/types';
 
 interface TaskHistoryProps {
   taskId: string;
+  historyEntries: TaskHistoryEntry[] | undefined;
+  isLoading: boolean;
+  error: Error | null;
 }
 
 function toDate(value: number | string): Date {
@@ -29,17 +29,7 @@ function entryTitle(entry: TaskHistoryEntry): string {
   return `${formatStatusLabel(entry.old_status)} -> ${formatStatusLabel(entry.new_status)}`;
 }
 
-export function TaskHistory({ taskId }: TaskHistoryProps) {
-  const { user } = useAuth();
-
-  const { data: historyEntries, isLoading, error } = useQuery<TaskHistoryEntry[]>({
-    queryKey: ['tasks', taskId, 'history'],
-    queryFn: async () => {
-      if (!user?.token) throw new Error('Utilisateur non authentifie');
-      return taskGateway.getTaskHistory(taskId);
-    },
-    enabled: !!user?.token
-  });
+export function TaskHistory({ taskId: _taskId, historyEntries, isLoading, error }: TaskHistoryProps) {
 
   if (isLoading) {
     return (

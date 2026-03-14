@@ -1,16 +1,13 @@
 ﻿import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TaskWithDetails } from '@/lib/backend';
-import { ipcClient } from '@/lib/ipc';
 import enhancedToast from '@/lib/enhanced-toast';
-import { taskKeys } from '@/lib/query-keys';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InlineLoading } from '@/components/ui/loading';
-import { useAuth } from '@/shared/hooks/useAuth';
+import { useTaskMutations } from '../../hooks/useTaskMutations';
 
 interface ReportIssueModalProps {
   task: TaskWithDetails;
@@ -19,35 +16,14 @@ interface ReportIssueModalProps {
 }
 
 const ReportIssueModal: React.FC<ReportIssueModalProps> = ({ task, open, onOpenChange }) => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const { reportIssue } = useTaskMutations();
 
   // Form state
   const [issueType, setIssueType] = useState('technical');
   const [severity, setSeverity] = useState('medium');
   const [description, setDescription] = useState('');
 
-  // Report issue mutation
-  const reportIssueMutation = useMutation({
-    mutationFn: async ({ issueType, severity, description }: { issueType: string; severity: string; description: string }) => {
-      if (!user?.token) throw new Error('User not authenticated');
-      return await ipcClient.tasks.reportTaskIssue(task.id, issueType, severity, description);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });
-      enhancedToast.success('Problème signalé avec succès');
-      setIssueType('technical');
-      setSeverity('medium');
-      setDescription('');
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      enhancedToast.error('Erreur lors du signalement du problème');
-      console.error('Report issue error:', error);
-    }
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!description.trim()) {
@@ -55,7 +31,22 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({ task, open, onOpenC
       return;
     }
 
-    reportIssueMutation.mutate({ issueType, severity, description: description.trim() });
+    try {
+      await reportIssue.mutateAsync({
+        taskId: task.id,
+        issueType,
+        severity,
+        description: description.trim()
+      });
+      enhancedToast.success('Problème signalé avec succès');
+      setIssueType('technical');
+      setSeverity('medium');
+      setDescription('');
+      onOpenChange(false);
+    } catch (error) {
+      enhancedToast.error('Erreur lors du signalement du problème');
+      console.error('Report issue error:', error);
+    }
   };
 
   const handleCancel = () => {
@@ -131,17 +122,17 @@ const ReportIssueModal: React.FC<ReportIssueModalProps> = ({ task, open, onOpenC
               type="button"
               variant="outline"
               onClick={handleCancel}
-              disabled={reportIssueMutation.isPending}
+              disabled={reportIssue.isPending}
               className="border-border text-foreground hover:bg-border"
             >
               Annuler
             </Button>
             <Button
               type="submit"
-              disabled={reportIssueMutation.isPending || !description.trim()}
+              disabled={reportIssue.isPending || !description.trim()}
               variant="destructive"
             >
-              {reportIssueMutation.isPending ? (
+              {reportIssue.isPending ? (
                 <span className="inline-flex items-center gap-2">
                   <InlineLoading size="sm" />
                   Signalement...

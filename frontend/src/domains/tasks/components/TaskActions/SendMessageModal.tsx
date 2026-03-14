@@ -1,16 +1,13 @@
-﻿import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState } from 'react';
 import { TaskWithDetails } from '@/lib/backend';
-import { ipcClient } from '@/lib/ipc';
 import enhancedToast from '@/lib/enhanced-toast';
-import { taskKeys } from '@/lib/query-keys';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InlineLoading } from '@/components/ui/loading';
-import { useAuth } from '@/shared/hooks/useAuth';
+import { useTaskMutations } from '../../hooks/useTaskMutations';
 
 interface SendMessageModalProps {
   task: TaskWithDetails;
@@ -19,33 +16,13 @@ interface SendMessageModalProps {
 }
 
 const SendMessageModal: React.FC<SendMessageModalProps> = ({ task, open, onOpenChange }) => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const { sendMessage } = useTaskMutations();
 
   // Form state
+  const [messageType, setMessageType] = useState('internal');
   const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState('general');
 
-  // Send message mutation
-  const sendMessageMutation = useMutation({
-    mutationFn: async ({ message, messageType }: { message: string; messageType: string }) => {
-      if (!user?.token) throw new Error('User not authenticated');
-      return await ipcClient.tasks.sendTaskMessage(task.id, message, messageType);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });
-      enhancedToast.success('Message envoyé avec succès');
-      setMessage('');
-      setMessageType('general');
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      enhancedToast.error('Erreur lors de l\'envoi du message');
-      console.error('Send message error:', error);
-    }
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!message.trim()) {
@@ -53,12 +30,23 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({ task, open, onOpenC
       return;
     }
 
-    sendMessageMutation.mutate({ message: message.trim(), messageType });
+    try {
+      await sendMessage.mutateAsync({
+        taskId: task.id,
+        message: message.trim(),
+        messageType
+      });
+      enhancedToast.success('Message envoyé avec succès');
+      setMessage('');
+      onOpenChange(false);
+    } catch (error) {
+      enhancedToast.error('Erreur lors de l\'envoi du message');
+      console.error('Send message error:', error);
+    }
   };
 
   const handleCancel = () => {
     setMessage('');
-    setMessageType('general');
     onOpenChange(false);
   };
 
@@ -70,18 +58,20 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({ task, open, onOpenC
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="text-sm text-muted-foreground">
+            <p>Tâche concernée: #{task.task_number} - {task.title}</p>
+          </div>
+
           <div>
-            <Label htmlFor="message-type">Type de message</Label>
+            <Label htmlFor="message-type">Canal de communication</Label>
             <Select value={messageType} onValueChange={setMessageType}>
               <SelectTrigger className="bg-muted border-border text-foreground">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-muted border-border">
-                <SelectItem value="general" className="text-foreground hover:bg-border">Général</SelectItem>
-                <SelectItem value="update" className="text-foreground hover:bg-border">Mise Ã  jour</SelectItem>
-                <SelectItem value="urgent" className="text-foreground hover:bg-border">Urgent</SelectItem>
-                <SelectItem value="question" className="text-foreground hover:bg-border">Question</SelectItem>
-                <SelectItem value="confirmation" className="text-foreground hover:bg-border">Confirmation</SelectItem>
+                <SelectItem value="internal" className="text-foreground hover:bg-border">Note interne (Technicien)</SelectItem>
+                <SelectItem value="client" className="text-foreground hover:bg-border">Message au client</SelectItem>
+                <SelectItem value="admin" className="text-foreground hover:bg-border">Note à l&apos;administration</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -92,18 +82,11 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({ task, open, onOpenC
               id="message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Saisissez votre message..."
+              placeholder="Saisissez votre message ici..."
               rows={4}
               required
               className="bg-muted border-border text-foreground"
             />
-          </div>
-
-          <div className="text-sm text-muted-foreground">
-            <p>Ce message sera associé Ã  la tâche #{task.task_number}</p>
-            {task.customer_name && (
-              <p>Destinataire: {task.customer_name}</p>
-            )}
           </div>
 
           <div className="flex justify-end space-x-3 pt-4 border-t border-border">
@@ -111,17 +94,17 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({ task, open, onOpenC
               type="button"
               variant="outline"
               onClick={handleCancel}
-              disabled={sendMessageMutation.isPending}
+              disabled={sendMessage.isPending}
               className="border-border text-foreground hover:bg-border"
             >
               Annuler
             </Button>
             <Button
               type="submit"
-              disabled={sendMessageMutation.isPending || !message.trim()}
+              disabled={sendMessage.isPending || !message.trim()}
               variant="default"
             >
-              {sendMessageMutation.isPending ? (
+              {sendMessage.isPending ? (
                 <span className="inline-flex items-center gap-2">
                   <InlineLoading size="sm" />
                   Envoi...
@@ -136,4 +119,3 @@ const SendMessageModal: React.FC<SendMessageModalProps> = ({ task, open, onOpenC
 };
 
 export default SendMessageModal;
-

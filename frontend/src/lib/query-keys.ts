@@ -33,3 +33,12 @@ export const notificationKeys = {
   lists: () => [...notificationKeys.all, 'list'],
   byId: (notificationId: string) => [...notificationKeys.all, notificationId],
 };
+
+export const inventoryKeys = {
+  all: ['inventory'],
+  materials: () => [...inventoryKeys.all, 'materials'],
+  categories: () => [...inventoryKeys.all, 'categories'],
+  suppliers: () => [...inventoryKeys.all, 'suppliers'],
+  reports: () => [...inventoryKeys.all, 'reports'],
+  dashboard: () => [...inventoryKeys.all, 'dashboard'],
+};
