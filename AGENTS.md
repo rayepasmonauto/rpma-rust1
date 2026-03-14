@@ -1,5 +1,3 @@
-# AGENTS.md
-
 ## Stack
 
 * Frontend: Next.js 14, React 18, TypeScript, Tailwind CSS, shadcn/ui.
@@ -179,8 +177,9 @@ always go through `TestApp::new()` or `TestApp::seeded()`.
 
 ```rust
 // ✅ Correct
-let app = TestApp::seeded().await?;
-let result = some_service.create(request, app.admin_ctx.clone()).await;
+let app = TestApp::seeded().await;
+let ctx = app.admin_ctx();
+let result = some_service.create(request, &ctx).await;
 assert!(result.is_ok());
 
 // ❌ Wrong — never bypass the harness
@@ -209,11 +208,18 @@ tests/
 | Symbol | Description |
 |---|---|
 | `TestApp::new()` | Empty DB with all migrations applied |
-| `TestApp::seeded()` | DB with fixtures: admin, technician, client, task |
-| `app.admin_ctx` | `RequestContext` for Admin role |
-| `app.technician_ctx` | `RequestContext` for Technician role |
-| `app.ctx_for_role(role)` | Arbitrary role context |
-| `app.db` | `Arc<Database>` for direct repository access |
+| `TestApp::seeded()` | DB with one seeded client + task; use when a test needs pre-existing data |
+| `app.admin_ctx()` | `RequestContext` for Admin role |
+| `app.technician_ctx()` | `RequestContext` for Technician role |
+| `app.supervisor_ctx()` | `RequestContext` for Supervisor role |
+| `app.viewer_ctx()` | `RequestContext` for Viewer role |
+| `app.ctx_for_role(role)` | `RequestContext` for any arbitrary role |
+| `app.inject_session(role)` | Inject session into store (required before calling IPC handlers) |
+| `app.clear_session()` | Remove session from store (simulate unauthenticated caller) |
+| `app.db` | `Arc<Database>` for direct SQL assertions |
+| `fixtures::client_fixture(name)` | Minimal valid `CreateClientRequest` |
+| `fixtures::task_fixture(plate)` | Minimal valid `CreateTaskRequest` |
+| `fixtures::unique_id()` | Random UUID string for stable test IDs |
 
 **Hard constraints:**
 

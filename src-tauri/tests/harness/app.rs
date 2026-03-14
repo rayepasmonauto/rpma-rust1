@@ -46,7 +46,7 @@ use rpma_ppf_intervention::shared::context::request_context::RequestContext;
 use rpma_ppf_intervention::shared::contracts::auth::UserRole;
 use std::sync::Arc;
 
-use super::auth;
+use super::{auth, fixtures};
 
 /// Fully wired backend fixture for integration tests.
 ///
@@ -84,6 +84,42 @@ impl TestApp {
     /// initialization fails.  Both conditions indicate a broken
     /// environment, not a test failure.
     pub async fn new() -> Self {
+        Self::build().await
+    }
+
+    /// Build a [`TestApp`] with standard seed data already inserted.
+    ///
+    /// Seeds one client (`"Seeded Client"`) and one task (`"SEED-001"`)
+    /// using the same service path as production, so the DB reflects a
+    /// realistic starting state without manual row insertion.
+    ///
+    /// Use this when a test needs pre-existing entities to operate on
+    /// (e.g. updating a client, creating a quote for an existing task).
+    /// Use [`TestApp::new`] when the test wants a completely empty DB.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any seed operation fails.
+    pub async fn seeded() -> Self {
+        let app = Self::build().await;
+        let admin_id = "test-user-Admin";
+
+        app.state
+            .client_service
+            .create_client(fixtures::client_fixture("Seeded Client"), admin_id)
+            .await
+            .expect("harness: failed to seed client");
+
+        app.state
+            .task_service
+            .create_task_async(fixtures::task_fixture("SEED-001"), admin_id)
+            .await
+            .expect("harness: failed to seed task");
+
+        app
+    }
+
+    async fn build() -> Self {
         let db = Arc::new(
             Database::new_in_memory()
                 .await
@@ -119,6 +155,14 @@ impl TestApp {
     /// Viewer [`RequestContext`] with correlation ID `"test-corr-viewer"`.
     pub fn viewer_ctx(&self) -> RequestContext {
         auth::make_context_with_corr(UserRole::Viewer, "test-corr-viewer")
+    }
+
+    /// [`RequestContext`] for any `role`, with an auto-generated correlation ID.
+    ///
+    /// Useful when a test is parameterised over roles or needs a role that
+    /// does not have its own dedicated shortcut method.
+    pub fn ctx_for_role(&self, role: UserRole) -> RequestContext {
+        auth::make_context(role)
     }
 
     // ── Session store helpers ────────────────────────────────────────
