@@ -90,7 +90,7 @@ async fn test_app_db_is_queryable() {
 
 #[test]
 fn auth_make_session_produces_non_expired_session_for_admin() {
-    use rpma_ppf_intervention::domains::auth::domain::models::auth::UserSession;
+    use rpma_ppf_intervention::shared::contracts::auth::UserSession;
     let session: UserSession = harness::auth::make_session(UserRole::Admin);
     assert!(!session.is_expired(), "test session must not be expired");
     assert_eq!(session.role, UserRole::Admin);
