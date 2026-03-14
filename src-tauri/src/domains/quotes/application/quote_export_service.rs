@@ -10,7 +10,7 @@ use crate::commands::AppError;
 use crate::domains::quotes::application::QuoteConvertToTaskRequest;
 use crate::domains::quotes::domain::models::quote::*;
 use crate::domains::quotes::QuotesFacade;
-use crate::shared::services::cross_domain::TaskService;
+use crate::shared::services::cross_domain::{CreateTaskRequest, TaskService};
 use crate::shared::context::RequestContext;
 use crate::shared::contracts::auth::UserRole;
 
@@ -88,7 +88,7 @@ impl QuoteExportService {
             .clone()
             .unwrap_or_else(|| vec!["Full Body".to_string()]);
 
-        let create_task_req = crate::domains::tasks::domain::models::task::CreateTaskRequest {
+        let create_task_req = CreateTaskRequest {
             vehicle_plate: request.vehicle_plate.clone(),
             vehicle_model: request.vehicle_model.clone(),
             ppf_zones,
@@ -123,6 +123,7 @@ impl QuoteExportService {
             estimated_duration: None,
             tags: None,
         };
+
 
         let task = self
             .task_service
