@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TaskWithDetails, TaskPriority } from '@/lib/backend';
-import type { JsonObject } from '@/types/json';
 import enhancedToast from '@/lib/enhanced-toast';
+import type { JsonObject } from '@/types/json';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

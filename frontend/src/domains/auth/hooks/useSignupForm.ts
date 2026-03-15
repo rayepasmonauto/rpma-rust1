@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { isValidEmailFormat } from '@/lib/utils/validators';
 import { UserRoleValues } from '@/shared/utils';
 import { createLogger } from '@/shared/utils';
 import { ROUTES } from '@/constants';
@@ -50,7 +51,7 @@ export function useSignupForm() {
       return false;
     }
 
-    if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+    if (!isValidEmailFormat(formData.email)) {
       setError(t('errors.invalidEmail'));
       return false;
     }

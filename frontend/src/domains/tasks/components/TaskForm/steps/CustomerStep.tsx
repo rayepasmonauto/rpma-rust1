@@ -13,6 +13,7 @@ import {
   Search,
 } from "lucide-react";
 import { Client } from "@/lib/backend";
+import { isValidEmailFormat } from "@/lib/utils/validators";
 import { useClients, useClient } from "@/domains/clients/api";
 import { FormStepProps } from "../types";
 import { ClientSelectorModal } from "./ClientSelectorModal";
@@ -141,10 +142,7 @@ export const CustomerStep: React.FC<FormStepProps> = ({
     onChange({ customer_phone: value.slice(0, 14) });
   };
 
-  const validateEmail = (email: string) => {
-    if (!email) return true;
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  };
+  const validateEmail = (email: string) => isValidEmailFormat(email);
 
   const validatePhone = (phone: string) => {
     if (!phone) return true;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { History } from 'lucide-react';
-import { TaskHistory } from './TaskHistory';
 import { useTaskHistory } from '../hooks/useTaskHistory';
+import { TaskHistory } from './TaskHistory';
 
 interface TaskTimelineProps {
   taskId: string;
