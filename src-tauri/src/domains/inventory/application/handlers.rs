@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use crate::shared::event_bus::{DomainEvent, DomainEventHandler, InterventionFinalized};
+use crate::shared::contracts::events::InterventionFinalized;
+use crate::shared::event_bus::{DomainEvent, DomainEventHandler};
 
 use super::service::InventoryService;
 
