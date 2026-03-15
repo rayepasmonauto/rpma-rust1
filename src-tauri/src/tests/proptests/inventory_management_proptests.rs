@@ -252,6 +252,8 @@ proptest! {
                 batch_number: None,
                 storage_location: None,
                 warehouse_id: None,
+            is_active: None,
+            is_discontinued: None,
             };
 
             let result = service.create_material(request, Some("user_test".to_string()));
@@ -313,6 +315,8 @@ proptest! {
                 batch_number: None,
                 storage_location: None,
                 warehouse_id: None,
+            is_active: None,
+            is_discontinued: None,
             };
 
             let material = service.create_material(material_request, Some("user_test".to_string())).unwrap();
@@ -411,6 +415,8 @@ proptest! {
                 batch_number: None,
                 storage_location: None,
                 warehouse_id: None,
+            is_active: None,
+            is_discontinued: None,
             };
 
             let material = service.create_material(material_request, Some("user_test".to_string())).unwrap();
@@ -524,6 +530,8 @@ proptest! {
                     batch_number: None,
                     storage_location: None,
                     warehouse_id: None,
+                is_active: None,
+                is_discontinued: None,
                 };
 
                 service.create_material(material_request, Some("user_test".to_string())).unwrap();
@@ -602,6 +610,8 @@ proptest! {
                 batch_number: None,
                 storage_location: None,
                 warehouse_id: None,
+            is_active: None,
+            is_discontinued: None,
             };
 
             let material = service.create_material(material_request, Some("user_test".to_string())).unwrap();
@@ -711,6 +721,8 @@ proptest! {
                 batch_number: None,
                 storage_location: None,
                 warehouse_id: None,
+            is_active: None,
+            is_discontinued: None,
             };
 
             let material = service.create_material(material_request, Some("user_test".to_string())).unwrap();

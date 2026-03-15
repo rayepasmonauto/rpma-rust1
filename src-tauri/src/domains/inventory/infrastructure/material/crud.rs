@@ -70,6 +70,12 @@ impl super::MaterialService {
         material.storage_location = request.storage_location;
         material.warehouse_id = request.warehouse_id;
         material.current_stock = request.current_stock.unwrap_or(0.0);
+        if let Some(active) = request.is_active {
+            material.is_active = active;
+        }
+        if let Some(discontinued) = request.is_discontinued {
+            material.is_discontinued = discontinued;
+        }
         material.created_by = Some(created_by.clone());
         material.updated_by = Some(created_by);
 
@@ -193,9 +199,12 @@ impl super::MaterialService {
         self.validate_update_request(id, &updates)?;
 
         debug!(material_id = %id, updated_by = %updated_by, "Updating material");
-        if !material.is_active || material.is_discontinued {
+        if (!material.is_active || material.is_discontinued)
+            && updates.is_active != Some(true)
+            && updates.is_discontinued != Some(false)
+        {
             return Err(MaterialError::Validation(
-                "Cannot update inactive or discontinued materials".to_string(),
+                "Cannot update inactive or discontinued materials unless reactivating".to_string(),
             ));
         }
 
@@ -234,6 +243,14 @@ impl super::MaterialService {
         material.batch_number = updates.batch_number;
         material.storage_location = updates.storage_location;
         material.warehouse_id = updates.warehouse_id;
+
+        if let Some(active) = updates.is_active {
+            material.is_active = active;
+        }
+        if let Some(discontinued) = updates.is_discontinued {
+            material.is_discontinued = discontinued;
+        }
+
         material.updated_by = Some(updated_by);
         material.updated_at = crate::shared::contracts::common::now();
 

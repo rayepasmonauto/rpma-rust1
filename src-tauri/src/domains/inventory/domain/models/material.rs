@@ -34,7 +34,7 @@ pub trait IInventoryTransactionRepository: Send + Sync + std::fmt::Debug {
 }
 
 /// Material types for PPF workflows
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ts_rs::TS)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, ts_rs::TS)]
 #[ts(export)]
 pub enum MaterialType {
     #[serde(rename = "ppf_film")]
@@ -45,6 +45,7 @@ pub enum MaterialType {
     CleaningSolution,
     #[serde(rename = "tool")]
     Tool,
+    #[default]
     #[serde(rename = "consumable")]
     Consumable,
 }
@@ -62,9 +63,10 @@ impl std::fmt::Display for MaterialType {
 }
 
 /// Unit of measure for materials
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ts_rs::TS)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, ts_rs::TS)]
 #[ts(export)]
 pub enum UnitOfMeasure {
+    #[default]
     #[serde(rename = "piece")]
     Piece,
     #[serde(rename = "meter")]
@@ -661,13 +663,14 @@ impl FromSqlRow for Supplier {
 }
 
 /// Transaction types for inventory movements
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, ts_rs::TS)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, ts_rs::TS)]
 #[ts(export)]
 pub enum InventoryTransactionType {
     #[serde(rename = "stock_in")]
     StockIn,
     #[serde(rename = "stock_out")]
     StockOut,
+    #[default]
     #[serde(rename = "adjustment")]
     Adjustment,
     #[serde(rename = "transfer")]

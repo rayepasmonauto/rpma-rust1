@@ -63,6 +63,8 @@ async fn create_and_list_materials_round_trip() {
         batch_number: None,
         storage_location: Some("Test Shelf".to_string()),
         warehouse_id: None,
+    is_active: None,
+    is_discontinued: None,
     };
 
     material_service
@@ -116,6 +118,8 @@ async fn stats_reflect_created_materials() {
         batch_number: None,
         storage_location: None,
         warehouse_id: None,
+    is_active: None,
+    is_discontinued: None,
     };
 
     material_service
@@ -155,6 +159,8 @@ fn make_material(sku: &str, name: &str, min_stock: Option<f64>) -> CreateMateria
         batch_number: None,
         storage_location: None,
         warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
     }
 }
 

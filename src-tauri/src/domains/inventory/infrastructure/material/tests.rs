@@ -131,6 +131,8 @@ fn make_test_material_request(sku: &str, name: &str) -> types::CreateMaterialReq
         batch_number: None,
         storage_location: None,
         warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
     }
 }
 
@@ -262,6 +264,8 @@ fn test_adjustment_zero_quantity_rejected() {
                 batch_number: None,
                 storage_location: None,
                 warehouse_id: None,
+            is_active: None,
+            is_discontinued: None,
             },
             Some(user_id.clone()),
         )

@@ -149,6 +149,8 @@ impl PerformanceTestFixture {
                 batch_number: Some(format!("BATCH-PERF-{:03}", i)),
                 storage_location: Some("Performance Warehouse".to_string()),
                 warehouse_id: None,
+            is_active: None,
+            is_discontinued: None,
             };
 
             let material = self

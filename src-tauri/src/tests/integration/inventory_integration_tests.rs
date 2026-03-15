@@ -60,6 +60,8 @@ mod tests {
             batch_number: None,
             storage_location: Some("Warehouse A".to_string()),
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         let service = state.material_service.clone();
@@ -117,6 +119,8 @@ mod tests {
             batch_number: None,
             storage_location: Some("Warehouse A".to_string()),
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         let result = crate::domains::inventory::ipc::material::material_create(
@@ -173,6 +177,8 @@ mod tests {
             batch_number: None,
             storage_location: Some("Warehouse A".to_string()),
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         let result = crate::domains::inventory::ipc::material::material_create(
@@ -294,6 +300,8 @@ mod tests {
                 batch_number: None,
                 storage_location: None,
                 warehouse_id: None,
+            is_active: None,
+            is_discontinued: None,
             };
 
             crate::domains::inventory::ipc::material::material_create(
@@ -363,6 +371,8 @@ mod tests {
                 batch_number: None,
                 storage_location: None,
                 warehouse_id: None,
+            is_active: None,
+            is_discontinued: None,
             };
 
             crate::domains::inventory::ipc::material::material_create(
@@ -427,6 +437,8 @@ mod tests {
             batch_number: None,
             storage_location: Some("Warehouse B".to_string()),
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         let result = crate::domains::inventory::ipc::material::material_update(
@@ -483,6 +495,8 @@ mod tests {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         let result = crate::domains::inventory::ipc::material::material_update(
@@ -816,6 +830,8 @@ mod tests {
                 batch_number: None,
                 storage_location: None,
                 warehouse_id: None,
+            is_active: None,
+            is_discontinued: None,
             };
 
             crate::domains::inventory::ipc::material::material_create(
@@ -873,6 +889,8 @@ mod tests {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         let normal_material = crate::domains::inventory::ipc::material::material_create(
@@ -925,6 +943,8 @@ mod tests {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         let low_stock_material = crate::domains::inventory::ipc::material::material_create(
@@ -991,6 +1011,8 @@ mod tests {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         crate::domains::inventory::ipc::material::material_create(
@@ -1028,6 +1050,8 @@ mod tests {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         crate::domains::inventory::ipc::material::material_create(

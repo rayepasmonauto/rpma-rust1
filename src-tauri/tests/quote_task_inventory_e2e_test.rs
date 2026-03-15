@@ -100,6 +100,8 @@ async fn quote_to_task_conversion_updates_inventory_and_audit() {
                 batch_number: None,
                 storage_location: Some("A1".to_string()),
                 warehouse_id: None,
+            is_active: None,
+            is_discontinued: None,
             },
             Some(tester_id.clone()),
         )

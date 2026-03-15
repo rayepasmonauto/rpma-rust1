@@ -61,6 +61,8 @@ fn update_stock_validates_invariants() {
         batch_number: None,
         storage_location: Some("Test Shelf".to_string()),
         warehouse_id: None,
+    is_active: None,
+    is_discontinued: None,
     };
 
     let material = material_service

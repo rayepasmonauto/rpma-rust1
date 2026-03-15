@@ -112,6 +112,8 @@ impl ClientTaskInterventionMaterialFlowTestFixture {
             batch_number: Some("BATCH-WF-001".to_string()),
             storage_location: Some("Workflow Storage".to_string()),
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         let film = self
@@ -145,6 +147,8 @@ impl ClientTaskInterventionMaterialFlowTestFixture {
             batch_number: Some("BATCH-WA-001".to_string()),
             storage_location: Some("Workflow Storage".to_string()),
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         let adhesive = self
