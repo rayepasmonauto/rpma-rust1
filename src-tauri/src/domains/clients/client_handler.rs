@@ -45,6 +45,7 @@ impl std::fmt::Display for CustomerType {
 
 /// Main Client entity
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(rename = "Client")]
 pub struct ClientModel {
     pub id: String,
     pub name: String,
