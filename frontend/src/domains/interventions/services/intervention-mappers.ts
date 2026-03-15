@@ -87,6 +87,8 @@ export function mapBackendStepToFrontend(step: BackendStep): PPFInterventionStep
   } as PPFInterventionStep;
 }
 
+// Both camelCase and snake_case aliases are intentionally preserved so that
+// callers built against either convention can consume this partial update.
 export function mapBackendStepPartialUpdate(step: BackendStep): {
   status: string;
   step_status: string;

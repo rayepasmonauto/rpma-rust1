@@ -18,6 +18,13 @@ import type { JsonObject, JsonValue } from '@/types/json';
 import { handleInvoke, resetDb } from './mock-db';
 import { installMockControls } from './mock-controls';
 
+/** Represents a photo file passed to the mock photo upload handler. */
+interface PhotoUploadFile {
+  name: string;
+  mimeType: string;
+  bytes: ArrayLike<number>;
+}
+
 const mockSafeInvoke = <T>(command: string, args?: JsonObject) =>
   handleInvoke(command, args) as Promise<T>;
 
@@ -225,7 +232,7 @@ export const ipcClient = {
   },
   photos: {
     list: (interventionId: string) => mockSafeInvoke('document_get_photos', { request: { intervention_id: interventionId } }),
-    upload: (interventionId: string, file: { name: string; mimeType: string; bytes: ArrayLike<number> }, photoType: string) => mockSafeInvoke('document_store_photo', { request: { intervention_id: interventionId, file_name: file.name, mime_type: file.mimeType, photo_type: photoType }, image_data: Array.from(file.bytes) as number[] }),
+    upload: (interventionId: string, file: PhotoUploadFile, photoType: string) => mockSafeInvoke('document_store_photo', { request: { intervention_id: interventionId, file_name: file.name, mime_type: file.mimeType, photo_type: photoType }, image_data: Array.from(file.bytes) as number[] }),
     delete: (photoId: string) => mockSafeInvoke('document_delete_photo', { photo_id: photoId }),
   },
   material: {
