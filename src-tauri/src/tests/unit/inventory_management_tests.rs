@@ -321,6 +321,8 @@ async fn test_create_material() {
         batch_number: None,
         storage_location: Some("Warehouse A".to_string()),
         warehouse_id: Some("WH-01".to_string()),
+    is_active: None,
+    is_discontinued: None,
     };
 
     let material = service
@@ -382,6 +384,8 @@ async fn test_create_inventory_transaction() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
     let material = service
@@ -471,6 +475,8 @@ async fn test_stock_out_transaction() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
     let material = service
@@ -578,6 +584,8 @@ async fn test_adjustment_transaction() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
     let material = service
@@ -685,6 +693,8 @@ async fn test_transfer_transaction() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
     let material = service
@@ -794,6 +804,8 @@ async fn test_waste_transaction() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
     let material = service
@@ -902,6 +914,8 @@ async fn test_get_material_by_id() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
     let created_material = service
@@ -954,6 +968,8 @@ async fn test_get_material_by_sku() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
     let created_material = service
@@ -1005,6 +1021,8 @@ async fn test_list_materials() {
                 batch_number: None,
                 storage_location: None,
                 warehouse_id: None,
+            is_active: None,
+            is_discontinued: None,
             };
 
         service
@@ -1056,6 +1074,8 @@ async fn test_list_materials_with_filters() {
         batch_number: None,
         storage_location: None,
         warehouse_id: None,
+    is_active: None,
+    is_discontinued: None,
     };
 
     let liquid_request =
@@ -1085,6 +1105,8 @@ async fn test_list_materials_with_filters() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
     service

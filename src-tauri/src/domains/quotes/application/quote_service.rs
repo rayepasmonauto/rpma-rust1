@@ -19,21 +19,18 @@ use tracing::{info, warn};
 
 /// Service for quote-related business operations.
 pub struct QuoteService {
-    pub(super) repo: Arc<QuoteRepository>,
-    pub(super) _db: Arc<crate::db::Database>,
+    pub(super) repo: Arc<dyn IQuoteRepository>,
     pub(super) event_bus: Arc<crate::shared::services::event_bus::InMemoryEventBus>,
 }
 
 impl QuoteService {
     /// Create a new QuoteService.
     pub fn new(
-        repo: Arc<QuoteRepository>,
-        db: Arc<crate::db::Database>,
+        repo: Arc<dyn IQuoteRepository>,
         event_bus: Arc<crate::shared::services::event_bus::InMemoryEventBus>,
     ) -> Self {
         Self {
             repo,
-            _db: db,
             event_bus,
         }
     }

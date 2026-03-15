@@ -40,7 +40,7 @@ impl std::fmt::Display for UserRole {
 }
 
 /// TODO: document
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct User {
     pub id: String,
     pub email: String,
@@ -60,4 +60,16 @@ pub struct User {
     pub updated_at: Timestamp,
 }
 
-
+/// Manual `Debug` impl: redacts `password_hash` to prevent credential leakage in logs.
+impl std::fmt::Debug for User {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("User")
+            .field("id", &self.id)
+            .field("email", &self.email)
+            .field("username", &self.username)
+            .field("role", &self.role)
+            .field("is_active", &self.is_active)
+            .field("password_hash", &"[REDACTED]")
+            .finish()
+    }
+}

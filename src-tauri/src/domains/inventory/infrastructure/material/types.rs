@@ -5,7 +5,7 @@ use crate::domains::inventory::domain::models::material::{
 };
 
 /// Request to create a new material.
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, Default)]
 #[serde(deny_unknown_fields)]
 pub struct CreateMaterialRequest {
     pub sku: String,
@@ -34,6 +34,8 @@ pub struct CreateMaterialRequest {
     pub batch_number: Option<String>,
     pub storage_location: Option<String>,
     pub warehouse_id: Option<String>,
+    pub is_active: Option<bool>,
+    pub is_discontinued: Option<bool>,
 }
 
 /// Request to update material stock.

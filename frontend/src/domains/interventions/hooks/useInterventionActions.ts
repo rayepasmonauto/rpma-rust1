@@ -3,6 +3,13 @@ import { AuthSecureStorage } from '@/lib/secureStorage';
 import { interventionKeys, taskKeys } from '@/lib/query-keys';
 import { logger } from '@/lib/logging';
 import { LogDomain } from '@/lib/logging/types';
+import type { BackendStep, BackendIntervention } from '../services/intervention-mappers';
+import {
+  mapBackendStepToFrontend,
+  mapBackendStepPartialUpdate,
+  mapBackendInterventionToFrontend,
+} from '../services/intervention-mappers';
+import { InterventionWorkflowService } from '../services/intervention-workflow.service';
 import type {
   PPFInterventionData,
   PPFInterventionStep,
@@ -13,13 +20,6 @@ import type {
   StepProgressResponse,
   InterventionFinalizationResponse
 } from '@/types/ppf-intervention';
-import type { BackendStep, BackendIntervention } from '../services/intervention-mappers';
-import {
-  mapBackendStepToFrontend,
-  mapBackendStepPartialUpdate,
-  mapBackendInterventionToFrontend,
-} from '../services/intervention-mappers';
-import { InterventionWorkflowService } from '../services/intervention-workflow.service';
 
 interface UseInterventionActionsProps {
   taskId?: string;
@@ -200,9 +200,26 @@ export function useInterventionActions({
     },
   });
 
+  // Save step progress mutation
+  const saveStepProgressMutation = useMutation<unknown, Error, { stepId: string; collectedData: unknown; notes?: string; photos?: string[] }>({
+    mutationFn: async ({ stepId, collectedData, notes, photos }) => {
+      const result = await InterventionWorkflowService.saveStepProgress(stepId, collectedData, notes, photos);
+      if (!result.success) {
+        throw new Error(result.error?.message || 'Failed to save step progress');
+      }
+      return result.data;
+    },
+    onSuccess: () => {
+      if (taskId) {
+        queryClient.invalidateQueries({ queryKey: interventionKeys.byTask(taskId) });
+      }
+    },
+  });
+
   return {
     createInterventionMutation,
     advanceStepMutation,
     finalizeInterventionMutation,
+    saveStepProgressMutation,
   };
 }

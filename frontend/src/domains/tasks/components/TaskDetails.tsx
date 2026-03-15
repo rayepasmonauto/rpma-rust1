@@ -1,16 +1,15 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { Loader2, UserPlus, Edit3, Trash, Play, XCircle, CheckCircle } from 'lucide-react';
 import type { UpdateTaskRequest } from '@/lib/backend';
-import { taskKeys } from '@/lib/query-keys';
 import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, Tabs, TabsContent, TabsList, TabsTrigger, Badge } from '@/shared/ui';
 import { TaskStatus, TaskWithDetails } from '@/shared/types';
 import { getUserFullName } from '@/shared/utils';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useTasks } from '../hooks/useTasks';
-import { taskService } from '../services/task.service';
+import { useInterventionData } from '@/domains/interventions/hooks/useInterventionData';
+import { useTaskMutations } from '../hooks/useTaskMutations';
+import { useTaskHistory } from '../hooks/useTaskHistory';
 import { TaskChecklist } from './TaskChecklist';
 import { TaskPhotos } from './TaskPhotos';
 import { TaskHistory } from './TaskHistory';
@@ -23,11 +22,14 @@ interface TaskDetailsProps {
 }
 
 export function TaskDetails({ task, open, onOpenChange, onTaskUpdated }: TaskDetailsProps) {
-  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('checklist');
-  const { deleteTask } = useTasks();
+  
+  const { updateTask, deleteTask } = useTaskMutations();
+  const { data: historyEntries, isLoading: historyLoading, error: historyError } = useTaskHistory(task?.id || '');
+  const { data: interventionData } = useInterventionData(task?.id || '');
+  const interventionId = interventionData?.id;
 
   // Helper functions to create proper UpdateTaskRequest objects
   const createStatusUpdate = (status: TaskStatus): UpdateTaskRequest => ({
@@ -98,44 +100,36 @@ export function TaskDetails({ task, open, onOpenChange, onTaskUpdated }: TaskDet
     technician_id
   });
 
-  // Update task status
-  const updateStatusMutation = useMutation({
-    mutationFn: async (status: TaskStatus) => {
-      if (!task || !user?.token) return;
-
-      return await taskService.updateTask(task.id, createStatusUpdate(status));
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+  const handleUpdateStatus = async (status: TaskStatus) => {
+    if (!task) return;
+    try {
+      await updateTask.mutateAsync({ taskId: task.id, data: createStatusUpdate(status) });
       onTaskUpdated();
-    },
-  });
+    } catch (error) {
+      console.error('Update status error:', error);
+    }
+  };
 
-  // Assign task to current user
-  const assignToMeMutation = useMutation({
-    mutationFn: async () => {
-      if (!task || !user?.token) return;
-
-      return await taskService.updateTask(task.id, createTechnicianUpdate(user.id));
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+  const handleAssignToMe = async () => {
+    if (!task || !user) return;
+    try {
+      await updateTask.mutateAsync({ taskId: task.id, data: createTechnicianUpdate(user.id) });
       onTaskUpdated();
-    },
-  });
+    } catch (error) {
+      console.error('Assign to me error:', error);
+    }
+  };
 
-  // Delete task
-  const deleteTaskMutation = useMutation({
-    mutationFn: async () => {
-      if (!task) return;
-      await deleteTask(task.id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
+  const handleDeleteTask = async () => {
+    if (!task) return;
+    try {
+      await deleteTask.mutateAsync(task.id);
       onTaskUpdated();
-      onOpenChange(false); // Close the dialog after successful deletion
-    },
-  });
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Delete task error:', error);
+    }
+  };
 
   if (!task) return null;
 
@@ -177,10 +171,10 @@ export function TaskDetails({ task, open, onOpenChange, onTaskUpdated }: TaskDet
                <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => assignToMeMutation.mutate()}
-                  disabled={assignToMeMutation.isPending}
+                  onClick={handleAssignToMe}
+                  disabled={updateTask.isPending}
                 >
-                  {assignToMeMutation.isPending ? (
+                  {updateTask.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   ) : (
                     <UserPlus className="h-4 w-4 mr-2" />
@@ -196,9 +190,9 @@ export function TaskDetails({ task, open, onOpenChange, onTaskUpdated }: TaskDet
                     <Button
                       variant="destructive"
                       size="sm"
-                      disabled={deleteTaskMutation.isPending}
+                      disabled={deleteTask.isPending}
                     >
-                      {deleteTaskMutation.isPending ? (
+                      {deleteTask.isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-2" />
                       ) : (
                         <Trash className="h-4 w-4 mr-2" />
@@ -216,7 +210,7 @@ export function TaskDetails({ task, open, onOpenChange, onTaskUpdated }: TaskDet
                     <AlertDialogFooter>
                       <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => deleteTaskMutation.mutate()}
+                        onClick={handleDeleteTask}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         {t('tasks.deleteTask')}
@@ -256,11 +250,16 @@ export function TaskDetails({ task, open, onOpenChange, onTaskUpdated }: TaskDet
             </TabsContent>
 
             <TabsContent value="photos" className="mt-6">
-              <TaskPhotos taskId={task.id} />
+              <TaskPhotos taskId={task.id} interventionId={interventionId} />
             </TabsContent>
 
             <TabsContent value="history" className="mt-6">
-              <TaskHistory taskId={task.id} />
+              <TaskHistory 
+                taskId={task.id} 
+                historyEntries={historyEntries}
+                isLoading={historyLoading}
+                error={historyError as Error | null}
+              />
             </TabsContent>
           </Tabs>
         </div>
@@ -269,10 +268,10 @@ export function TaskDetails({ task, open, onOpenChange, onTaskUpdated }: TaskDet
            {task.status === 'draft' && (
              <Button
                variant="secondary"
-               onClick={() => updateStatusMutation.mutate('in_progress')}
-               disabled={updateStatusMutation.isPending}
+               onClick={() => handleUpdateStatus('in_progress')}
+               disabled={updateTask.isPending}
              >
-               {updateStatusMutation.isPending ? (
+               {updateTask.isPending ? (
                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
                ) : (
                  <Play className="h-4 w-4 mr-2" />
@@ -285,17 +284,17 @@ export function TaskDetails({ task, open, onOpenChange, onTaskUpdated }: TaskDet
              <>
                <Button
                  variant="outline"
-                 onClick={() => updateStatusMutation.mutate('cancelled')}
-                 disabled={updateStatusMutation.isPending}
+                 onClick={() => handleUpdateStatus('cancelled')}
+                 disabled={updateTask.isPending}
                >
                  <XCircle className="h-4 w-4 mr-2" />
                  {t('tasks.markInvalid')}
                </Button>
                <Button
-                 onClick={() => updateStatusMutation.mutate('completed')}
-                 disabled={updateStatusMutation.isPending}
+                 onClick={() => handleUpdateStatus('completed')}
+                 disabled={updateTask.isPending}
                >
-                 {updateStatusMutation.isPending ? (
+                 {updateTask.isPending ? (
                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
                  ) : (
                    <CheckCircle className="h-4 w-4 mr-2" />

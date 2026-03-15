@@ -182,6 +182,8 @@ impl NetworkResilienceTestFixture {
             batch_number: None,
             storage_location: Some("Resilience Warehouse".to_string()),
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         let material = self
@@ -463,6 +465,8 @@ impl NetworkResilienceTestFixture {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         match self

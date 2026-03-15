@@ -3,11 +3,10 @@ use std::sync::Arc;
 use tracing::instrument;
 
 use crate::domains::inventory::domain::models::material::{
-    InventoryDashboardData, InventoryStats, InventoryTransaction, InventoryTransactionType,
-    Material, MaterialConsumption, MaterialStats, MaterialType,
+    IInventoryTransactionRepository, InventoryDashboardData, InventoryStats, InventoryTransaction,
+    InventoryTransactionType, Material, MaterialConsumption, MaterialStats, MaterialType,
 };
 use crate::domains::inventory::infrastructure::MaterialService;
-use crate::shared::db::Database;
 use crate::shared::event_bus::InterventionFinalized;
 
 use crate::domains::inventory::domain::material::{
@@ -21,18 +20,19 @@ use crate::domains::inventory::infrastructure::{InventoryTransactionRepository, 
 /// TODO: document
 #[derive(Debug)]
 pub struct InventoryService {
-    db: Arc<Database>,
     gateway: MaterialGateway,
-    transaction_repository: InventoryTransactionRepository,
+    transaction_repository: Arc<dyn IInventoryTransactionRepository>,
 }
 
 impl InventoryService {
     /// TODO: document
-    pub fn new(db: Arc<Database>, material_service: Arc<MaterialService>) -> Self {
+    pub fn new(
+        material_service: Arc<MaterialService>,
+        transaction_repository: Arc<dyn IInventoryTransactionRepository>,
+    ) -> Self {
         Self {
-            db: db.clone(),
             gateway: MaterialGateway::new(material_service),
-            transaction_repository: InventoryTransactionRepository::new(db),
+            transaction_repository,
         }
     }
 
@@ -186,31 +186,8 @@ impl InventoryService {
             transactions.push(transaction);
         }
 
-        self.db
-            .with_transaction(|tx| {
-                // QW-4 perf: batch existence check — 1 WHERE IN query instead of N individual queries.
-                let refs_to_check: Vec<String> = transactions
-                    .iter()
-                    .filter_map(|t| t.reference_number.clone())
-                    .collect();
-                let existing_refs = self.transaction_repository.references_exist_batch(
-                    tx,
-                    "intervention_finalized",
-                    &refs_to_check,
-                )?;
-
-                let mut inserted = 0usize;
-                for transaction in &transactions {
-                    if let Some(ref_num) = &transaction.reference_number {
-                        if existing_refs.contains(ref_num) {
-                            continue;
-                        }
-                    }
-                    self.transaction_repository.insert(tx, transaction)?;
-                    inserted += 1;
-                }
-                Ok(inserted)
-            })
+        self.transaction_repository
+            .upsert_intervention_consumptions("intervention_finalized", &transactions)
             .map_err(InventoryError::Database)
     }
 }

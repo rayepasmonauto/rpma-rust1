@@ -55,6 +55,8 @@ mod tests {
             batch_number: None,
             storage_location: Some("Warehouse A".to_string()),
             warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
         };
 
         let material = service

@@ -1,8 +1,5 @@
 import React, { useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { Eye, Edit, Trash2 } from 'lucide-react';
-import { ipcClient } from '@/lib/ipc';
-import { taskKeys } from '@/lib/query-keys';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +15,6 @@ import {
   VirtualizedTable,
 } from '@/shared/ui/facade';
 import { getUserFullName } from '@/shared/utils';
-import { useAuth } from '@/shared/hooks/useAuth';
 import { getTaskDisplayTitle, getTaskDisplayStatus } from '@/domains/tasks/utils/display';
 import {
   getStatusVariant,
@@ -39,9 +35,6 @@ export const TaskListTable = React.memo(({
   onEdit,
   onDelete
 }: TaskListTableProps) => {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
   const getStatusLabel = useCallback((status: string) => {
     return getTaskDisplayStatus(status as TaskStatus);
   }, []);
@@ -50,15 +43,6 @@ export const TaskListTable = React.memo(({
     if (!dateString) return '-';
     return formatDateShort(dateString);
   }, []);
-
-  const handleRowHover = useCallback((task: TaskWithDetails) => {
-    if (!user?.token) return;
-    queryClient.prefetchQuery({
-      queryKey: taskKeys.byId(task.id),
-      queryFn: () => ipcClient.tasks.get(task.id),
-      staleTime: 5 * 60 * 1000,
-    });
-  }, [queryClient, user?.token]);
 
   type TableColumn = {
     key: string;
@@ -239,7 +223,6 @@ export const TaskListTable = React.memo(({
       height={600}
       rowHeight={60}
       onRowClick={(task) => onView(task)}
-      onRowHover={(task) => handleRowHover(task)}
       className="bg-background"
     />
   );

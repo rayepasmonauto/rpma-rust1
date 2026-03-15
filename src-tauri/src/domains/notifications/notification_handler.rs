@@ -43,12 +43,14 @@ impl NotificationService {
         let now = Utc::now().with_timezone(&Europe::Paris);
 
         if let (Some(start), Some(end)) = (&config.quiet_hours_start, &config.quiet_hours_end) {
-            let start_time = chrono::NaiveTime::parse_from_str(start, "%H:%M").unwrap_or(
-                chrono::NaiveTime::from_hms_opt(22, 0, 0).expect("valid time"),
-            );
-            let end_time = chrono::NaiveTime::parse_from_str(end, "%H:%M").unwrap_or(
-                chrono::NaiveTime::from_hms_opt(8, 0, 0).expect("valid time"),
-            );
+            let start_time = chrono::NaiveTime::parse_from_str(start, "%H:%M")
+                .unwrap_or_else(|_| {
+                    chrono::NaiveTime::from_hms_opt(22, 0, 0).unwrap_or(chrono::NaiveTime::MIN)
+                });
+            let end_time = chrono::NaiveTime::parse_from_str(end, "%H:%M")
+                .unwrap_or_else(|_| {
+                    chrono::NaiveTime::from_hms_opt(8, 0, 0).unwrap_or(chrono::NaiveTime::MIN)
+                });
             let current_time = now.time();
             if start_time <= end_time {
                 current_time >= start_time && current_time <= end_time

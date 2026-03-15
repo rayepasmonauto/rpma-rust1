@@ -1,16 +1,14 @@
-﻿import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { format, addDays } from 'date-fns';
 import { TaskWithDetails } from '@/lib/backend';
-import { ipcClient } from '@/lib/ipc';
 import enhancedToast from '@/lib/enhanced-toast';
-import { taskKeys } from '@/lib/query-keys';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { InlineLoading } from '@/components/ui/loading';
-import { useAuth } from '@/shared/hooks/useAuth';
+import { useTaskMutations } from '../../hooks/useTaskMutations';
 
 interface DelayTaskModalProps {
   task: TaskWithDetails;
@@ -19,34 +17,15 @@ interface DelayTaskModalProps {
 }
 
 const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChange }) => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const { delayTask } = useTaskMutations();
 
   // Form state
-  const [newDate, setNewDate] = useState('');
+  const [newDate, setNewDate] = useState(
+    task.scheduled_date || format(addDays(new Date(), 1), 'yyyy-MM-dd')
+  );
   const [reason, setReason] = useState('');
 
-  // Delay task mutation
-  const delayTaskMutation = useMutation({
-    mutationFn: async ({ newDate, reason }: { newDate: string; reason: string }) => {
-      if (!user?.token) throw new Error('User not authenticated');
-      return await ipcClient.tasks.delayTask(task.id, newDate, reason);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });
-      queryClient.invalidateQueries({ queryKey: taskKeys.all });
-      enhancedToast.success('Tâche reportée avec succès');
-      setNewDate('');
-      setReason('');
-      onOpenChange(false);
-    },
-    onError: (error) => {
-      enhancedToast.error('Erreur lors du report de la tâche');
-      console.error('Delay task error:', error);
-    }
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!newDate) {
@@ -55,74 +34,62 @@ const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChang
     }
 
     if (!reason.trim()) {
-      enhancedToast.error('Veuillez indiquer la raison du report');
+      enhancedToast.error('Veuillez indiquer un motif pour le report');
       return;
     }
 
-    // Check if new date is in the future
-    const selectedDate = new Date(newDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (selectedDate <= today) {
-      enhancedToast.error('La nouvelle date doit être dans le futur');
-      return;
+    try {
+      await delayTask.mutateAsync({
+        taskId: task.id,
+        newDate,
+        reason: reason.trim()
+      });
+      enhancedToast.success('Tâche reportée avec succès');
+      onOpenChange(false);
+    } catch (error) {
+      enhancedToast.error('Erreur lors du report de la tâche');
+      console.error('Delay task error:', error);
     }
-
-    delayTaskMutation.mutate({ newDate, reason: reason.trim() });
   };
 
   const handleCancel = () => {
-    setNewDate('');
     setReason('');
     onOpenChange(false);
-  };
-
-  // Get minimum date (tomorrow)
-  const getMinDate = () => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow.toISOString().split('T')[0];
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Reporter la tï¿½che</DialogTitle>
+          <DialogTitle>Reporter l&apos;intervention</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            <p>Tâche actuelle: #{task.task_number} - {task.title}</p>
-            {task.scheduled_date && (
-              <p>Date actuelle: {new Date(task.scheduled_date).toLocaleDateString('fr-FR')}</p>
-            )}
+            <p>Tâche concernée: #{task.task_number} - {task.title}</p>
+            <p>Date actuelle: {task.scheduled_date ? format(new Date(task.scheduled_date), 'dd/MM/yyyy') : 'Non définie'}</p>
           </div>
 
           <div>
-            <Label htmlFor="new-date">Nouvelle date *</Label>
+            <Label htmlFor="new-date">Nouvelle date planifiée *</Label>
             <Input
               id="new-date"
               type="date"
               value={newDate}
               onChange={(e) => setNewDate(e.target.value)}
-              min={getMinDate()}
               required
+              min={format(new Date(), 'yyyy-MM-dd')}
               className="bg-muted border-border text-foreground"
             />
-            <p className="text-xs text-border mt-1">
-              La date doit être dans le futur
-            </p>
           </div>
 
           <div>
-            <Label htmlFor="reason">Raison du report *</Label>
+            <Label htmlFor="reason">Motif du report *</Label>
             <Textarea
               id="reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Expliquez pourquoi cette tï¿½che doit ï¿½tre reportï¿½e..."
+              placeholder="Ex: Pièce manquante, client absent, problème technique..."
               rows={3}
               required
               className="bg-muted border-border text-foreground"
@@ -134,22 +101,22 @@ const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChang
               type="button"
               variant="outline"
               onClick={handleCancel}
-              disabled={delayTaskMutation.isPending}
+              disabled={delayTask.isPending}
               className="border-border text-foreground hover:bg-border"
             >
               Annuler
             </Button>
             <Button
               type="submit"
-              disabled={delayTaskMutation.isPending || !newDate || !reason.trim()}
+              disabled={delayTask.isPending || !newDate || !reason.trim()}
               variant="default"
             >
-              {delayTaskMutation.isPending ? (
+              {delayTask.isPending ? (
                 <span className="inline-flex items-center gap-2">
                   <InlineLoading size="sm" />
-                  Report...
+                  Report en cours...
                 </span>
-              ) : 'Reporter'}
+              ) : 'Confirmer le report'}
             </Button>
           </div>
         </form>
@@ -159,4 +126,3 @@ const DelayTaskModal: React.FC<DelayTaskModalProps> = ({ task, open, onOpenChang
 };
 
 export default DelayTaskModal;
-

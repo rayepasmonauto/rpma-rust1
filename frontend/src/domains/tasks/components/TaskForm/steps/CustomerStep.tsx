@@ -1,7 +1,6 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   User,
   Info,
@@ -14,56 +13,26 @@ import {
   Search,
 } from "lucide-react";
 import { Client } from "@/lib/backend";
+import { useClients, useClient } from "@/domains/clients/api";
 import { FormStepProps } from "../types";
 import { ClientSelectorModal } from "./ClientSelectorModal";
 import { CustomerInfoSummary } from "./CustomerInfoSummary";
-
-// Legacy service imports removed - now using API routes
 
 export const CustomerStep: React.FC<FormStepProps> = ({
   formData,
   onChange,
   errors = {},
   isLoading = false,
-  sessionToken,
+  sessionToken: _sessionToken,
 }) => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showClientSelector, setShowClientSelector] = useState(false);
   const [useExistingClient, setUseExistingClient] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch clients using TanStack Query
-  const { data: clientsData = [] } = useQuery({
-    queryKey: ['clients', sessionToken],
-    queryFn: async () => {
-      const { ipcClient } = await import('@/lib/ipc');
-      const clientListResponse = await ipcClient.clients.list({
-        page: 1,
-        limit: 100,
-        sort_by: 'name',
-        sort_order: 'asc'
-      });
-      return clientListResponse.data || [];
-    },
-    enabled: !!sessionToken,
-    retry: 1,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  // Fetch pre-filled client if needed
-  const { data: prefilledClient } = useQuery({
-    queryKey: ['client', formData.client_id, sessionToken],
-    queryFn: async () => {
-      const { ipcClient } = await import('@/lib/ipc');
-      return await ipcClient.clients.get(formData.client_id!);
-    },
-    enabled: !!formData.client_id && !!sessionToken && !clientsData.find((c: Client) => c.id === formData.client_id),
-    retry: 1,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Use query data for clients
-  const clients = clientsData;
+  // Use domain hooks instead of raw useQuery
+  const { clients = [] } = useClients();
+  const { client: prefilledClient } = useClient({ clientId: formData.client_id || undefined });
 
   // Focus on the first field with error
   useEffect(() => {
@@ -76,11 +45,9 @@ export const CustomerStep: React.FC<FormStepProps> = ({
     }
   }, [errors]);
 
-
-
   // Handle pre-filled client_id
   useEffect(() => {
-    const client = prefilledClient || clients.find((c: Client) => c.id === formData.client_id);
+    const client = (prefilledClient as Client) || clients.find((c: Client) => c.id === formData.client_id);
     if (client && !selectedClient) {
       setSelectedClient(client);
       setUseExistingClient(true);
@@ -92,7 +59,7 @@ export const CustomerStep: React.FC<FormStepProps> = ({
         customer_address: client.address_street ? `${client.address_street}, ${client.address_city || ''} ${client.address_zip || ''}`.trim() : '',
       });
     }
-  }, [formData.client_id, clients, prefilledClient, selectedClient, onChange]); // Keep onChange but ensure it's stable
+  }, [formData.client_id, clients, prefilledClient, selectedClient, onChange]);
 
   // Filter clients based on search query
   const filteredClients = useMemo(() => {
@@ -152,11 +119,10 @@ export const CustomerStep: React.FC<FormStepProps> = ({
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, ""); // Remove non-digits
+    let value = e.target.value.replace(/\D/g, "");
 
-    // Format French phone number: 06 12 34 56 78
     if (value.startsWith("33")) {
-      value = "0" + value.slice(2); // Convert +33 to 0
+      value = "0" + value.slice(2);
     }
 
     if (value.length >= 2) {
@@ -172,7 +138,7 @@ export const CustomerStep: React.FC<FormStepProps> = ({
       value = value.slice(0, 11) + " " + value.slice(11);
     }
 
-    onChange({ customer_phone: value.slice(0, 14) }); // Limit to 14 chars (with spaces)
+    onChange({ customer_phone: value.slice(0, 14) });
   };
 
   const validateEmail = (email: string) => {
@@ -189,7 +155,6 @@ export const CustomerStep: React.FC<FormStepProps> = ({
   const getFieldStatus = (fieldName: string) => {
     if (errors[fieldName]) return "error";
 
-    // Special validation for email and phone
     if (fieldName === "customer_email" && formData.customer_email) {
       return validateEmail(formData.customer_email) ? "success" : "error";
     }

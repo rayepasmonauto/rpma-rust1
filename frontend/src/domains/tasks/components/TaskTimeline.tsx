@@ -1,12 +1,15 @@
 import React from 'react';
 import { History } from 'lucide-react';
 import { TaskHistory } from './TaskHistory';
+import { useTaskHistory } from '../hooks/useTaskHistory';
 
 interface TaskTimelineProps {
   taskId: string;
 }
 
 export function TaskTimeline({ taskId }: TaskTimelineProps) {
+  const { data: historyEntries, isLoading, error } = useTaskHistory(taskId);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -17,7 +20,12 @@ export function TaskTimeline({ taskId }: TaskTimelineProps) {
         <span className="text-xs text-border-light uppercase tracking-wide">Historique</span>
       </div>
       <div className="h-px bg-border/40" />
-      <TaskHistory taskId={taskId} />
+      <TaskHistory
+        taskId={taskId}
+        historyEntries={historyEntries}
+        isLoading={isLoading}
+        error={error as Error | null}
+      />
     </div>
   );
 }

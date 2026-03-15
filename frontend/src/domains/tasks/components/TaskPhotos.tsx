@@ -1,17 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Camera, Trash2, Upload, ImageIcon } from 'lucide-react';
 import { addKeyboardNavigation } from '@/lib/accessibility.ts';
-import { ipcClient } from '@/lib/ipc';
-import { interventionKeys } from '@/lib/query-keys';
 import { Photo } from '@/lib/backend';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
 import { resolveLocalImageUrl, shouldUseUnoptimizedImage } from '@/shared/utils';
-import { useAuth } from '@/shared/hooks/useAuth';
+import { useInterventionPhotos } from '@/domains/interventions/hooks/useInterventionPhotos';
 
 
 interface TaskPhotosProps {
@@ -19,137 +16,59 @@ interface TaskPhotosProps {
   interventionId?: string;
 }
 
-export function TaskPhotos({ taskId, interventionId }: TaskPhotosProps) {
+export function TaskPhotos({ taskId: _taskId, interventionId }: TaskPhotosProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-  const [isUploading, setIsUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'Before' | 'After'>('Before');
+  const [activeTab, setActiveTab] = React.useState<'Before' | 'After'>('Before');
   const galleryRef = useRef<HTMLDivElement>(null);
+
+  const {
+    photos,
+    isLoading,
+    uploadPhoto,
+    deletePhoto,
+    isUploading
+  } = useInterventionPhotos(interventionId);
 
   const tabLabel = (tab: 'Before' | 'After') => tab === 'Before' ? 'Avant' : 'Après';
 
-  // Fetch photos for the intervention
-  const { data: photos, isLoading: _isLoading, error: _error } = useQuery<Photo[]>({
-    queryKey: interventionId ? interventionKeys.photos(interventionId) : ['interventions', 'photos', taskId],
-    queryFn: async () => {
-      if (!user?.token) {
-        throw new Error('User not authenticated');
-      }
-      // Use interventionId if available, otherwise we can't fetch photos
-      if (!interventionId) {
-        return [];
-      }
-      return await ipcClient.photos.list(interventionId);
-    },
-    enabled: !!user?.token && !!interventionId,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-
-  // Handle file upload
-  const uploadPhoto = async (file: File, type: 'Before' | 'After') => {
-    if (!user?.token) {
-      toast({
-        title: 'Erreur',
-        description: 'Utilisateur non authentifié',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      // Upload the photo using Tauri command
-      if (!interventionId) {
-        toast({
-          title: 'Erreur',
-          description: 'Aucune intervention active trouvée',
-          variant: 'destructive',
-        });
-        return;
-      }
-      const buffer = await file.arrayBuffer();
-      await ipcClient.photos.upload(
-        interventionId,
-        {
-          name: (file as { path?: string }).path || file.name,
-          mimeType: file.type || 'application/octet-stream',
-          bytes: new Uint8Array(buffer),
-        },
-        type.toLowerCase()
-      );
-
-      toast({
-        title: 'Succès',
-        description: 'Photo téléversée avec succès',
-      });
-
-      // Refresh the photos list
-      if (interventionId) {
-        queryClient.invalidateQueries({ queryKey: interventionKeys.photos(interventionId) });
-      }
-
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Échec du téléversement de la photo',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   // Handle file input change
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'Before' | 'After') => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'Before' | 'After') => {
     const file = e.target.files?.[0];
     if (file) {
-      uploadPhoto(file, type);
+      try {
+        await uploadPhoto.mutateAsync({ file, type });
+        toast({
+          title: 'Succès',
+          description: 'Photo téléversée avec succès',
+        });
+      } catch (error) {
+        console.error('Error uploading photo:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Échec du téléversement de la photo',
+          variant: 'destructive',
+        });
+      }
     }
     // Reset the input value to allow selecting the same file again
     e.target.value = '';
   };
 
-  // Delete a photo
-  const deletePhotoMutation = useMutation({
-    mutationFn: async (photoId: string) => {
-      if (!user?.token) {
-        throw new Error('User not authenticated');
-      }
-      return await ipcClient.photos.delete(photoId);
-    },
-    onMutate: async (photoId: string) => {
-      const queryKey = interventionId ? interventionKeys.photos(interventionId) : ['interventions', 'photos', taskId];
-      await queryClient.cancelQueries({ queryKey });
-      const previousPhotos = queryClient.getQueryData<Photo[]>(queryKey);
-      queryClient.setQueryData<Photo[]>(queryKey, (old) => old?.filter((p) => p.id !== photoId) ?? []);
-      return { previousPhotos, queryKey };
-    },
-    onSuccess: () => {
+  const handleDeletePhoto = async (photoId: string) => {
+    try {
+      await deletePhoto.mutateAsync(photoId);
       toast({
         title: 'Succès',
         description: 'Photo supprimée avec succès',
       });
-    },
-    onError: (_err, _photoId, context) => {
-      if (context?.previousPhotos !== undefined && context.queryKey) {
-        queryClient.setQueryData(context.queryKey, context.previousPhotos);
-      }
+    } catch (error) {
       toast({
         title: 'Erreur',
         description: 'Échec de la suppression de la photo',
         variant: 'destructive',
       });
-    },
-    onSettled: (_data, _err, _photoId, context) => {
-      if (context?.queryKey) {
-        queryClient.invalidateQueries({ queryKey: context.queryKey });
-      }
-    },
-  });
+    }
+  };
 
   // Add keyboard navigation to photo gallery
   useEffect(() => {
@@ -304,8 +223,8 @@ export function TaskPhotos({ taskId, interventionId }: TaskPhotosProps) {
               aria-colindex={(index % 3) + 1}
                aria-label={`Photo ${index + 1} of ${filteredPhotos.length}: ${photo.photo_type || 'Unknown'} photo uploaded on ${new Date(photo.created_at as unknown as string).toLocaleDateString()}`}
               onKeyDown={(e) => {
-                if (e.key === 'Delete' && !deletePhotoMutation.isPending) {
-                  deletePhotoMutation.mutate(photo.id);
+                if (e.key === 'Delete' && !deletePhoto.isPending) {
+                  deletePhoto.mutate(photo.id);
                   e.preventDefault();
                 }
               }}
@@ -322,17 +241,17 @@ export function TaskPhotos({ taskId, interventionId }: TaskPhotosProps) {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => deletePhotoMutation.mutate(photo.id)}
-                    disabled={deletePhotoMutation.isPending}
+                    onClick={() => deletePhoto.mutate(photo.id)}
+                    disabled={deletePhoto.isPending}
                     aria-label={`Delete ${photo.photo_type} photo`}
                     onKeyDown={(e) => {
-                      if ((e.key === 'Enter' || e.key === ' ') && !deletePhotoMutation.isPending) {
-                        deletePhotoMutation.mutate(photo.id);
+                      if ((e.key === 'Enter' || e.key === ' ') && !deletePhoto.isPending) {
+                        deletePhoto.mutate(photo.id);
                         e.preventDefault();
                       }
                     }}
                   >
-                    {deletePhotoMutation.isPending ? (
+                    {deletePhoto.isPending ? (
                       <Skeleton className="h-4 w-4 animate-spin" />
                     ) : (
                       <Trash2 className="h-4 w-4" />

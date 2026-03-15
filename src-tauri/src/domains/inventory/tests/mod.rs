@@ -10,10 +10,13 @@ use std::sync::Arc;
 
 use crate::domains::inventory::application::InventoryService;
 use crate::domains::inventory::domain::material::validate_stock_change;
-use crate::domains::inventory::domain::models::material::{MaterialType, UnitOfMeasure};
+use crate::domains::inventory::domain::models::material::{
+    IInventoryTransactionRepository, MaterialType, UnitOfMeasure,
+};
 use crate::domains::inventory::infrastructure::material::{
     CreateMaterialRequest, MaterialService, UpdateStockRequest,
 };
+use crate::domains::inventory::infrastructure::InventoryTransactionRepository;
 use crate::test_utils::TestDatabase;
 
 #[test]
@@ -27,7 +30,9 @@ fn update_stock_validates_invariants() {
     let test_db = TestDatabase::new().expect("create test db");
     let db = test_db.db();
     let material_service = Arc::new(MaterialService::new((*db).clone()));
-    let inventory_service = InventoryService::new(db.clone(), material_service.clone());
+    let transaction_repo = Arc::new(InventoryTransactionRepository::new(db.clone()));
+    let inventory_service =
+        InventoryService::new(material_service.clone(), transaction_repo.clone());
 
     let request = CreateMaterialRequest {
         sku: "INV-TEST-001".to_string(),
@@ -56,6 +61,8 @@ fn update_stock_validates_invariants() {
         batch_number: None,
         storage_location: Some("Test Shelf".to_string()),
         warehouse_id: None,
+    is_active: None,
+    is_discontinued: None,
     };
 
     let material = material_service

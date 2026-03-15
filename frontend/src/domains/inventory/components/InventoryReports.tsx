@@ -1,162 +1,83 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { BarChart3, AlertTriangle, Package } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { LoadingState } from '@/shared/ui/layout/LoadingState';
-import { ErrorState } from '@/shared/ui/layout/ErrorState';
-import { EmptyState } from '@/components/ui/empty-state';
-import { useTranslation } from '@/shared/hooks/useTranslation';
-import type { LowStockMaterial, InventoryMovementSummary } from '@/shared/types';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { inventoryIpc } from '../ipc/inventory.ipc';
+import { useInventoryReports } from '../hooks/useInventoryData';
 
 export function InventoryReports() {
-  const { t } = useTranslation();
-  const { user } = useAuth();
-  const [lowStockMaterials, setLowStockMaterials] = useState<LowStockMaterial[]>([]);
-  const [movementSummary, setMovementSummary] = useState<InventoryMovementSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading } = useInventoryReports();
 
-  const fetchReports = useCallback(async () => {
-    if (!user?.token) {
-      setLowStockMaterials([]);
-      setMovementSummary([]);
-      setError(t('errors.unauthorized'));
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      const [lowStock, movements] = await Promise.all([
-        inventoryIpc.getLowStockMaterials(),
-        inventoryIpc.getMovementSummaries(),
-      ]);
-      setLowStockMaterials(lowStock.items);
-      setMovementSummary(movements);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [t, user?.token]);
-
-  // Root cause fix: prevent StrictMode double-invoke request storms
-  const fetchingRef = useRef(false);
-
-  useEffect(() => {
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
-    fetchReports().finally(() => {
-      fetchingRef.current = false;
-    });
-  }, [fetchReports]);
-
-  if (!user?.token) {
-    return <ErrorState message={t('errors.unauthorized')} />;
+  if (isLoading) {
+    return <div className="p-8 text-center">Chargement des rapports...</div>;
   }
 
-  if (loading) {
-    return <LoadingState message={t('common.loading')} />;
-  }
-
-  if (error) {
-    return <ErrorState message={error} onRetry={fetchReports} />;
-  }
+  const lowStockMaterials = data?.lowStockMaterials || [];
+  const movementSummary = data?.movementSummary || [];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold text-foreground">{t('inventory.reports')}</h2>
-        <p className="text-muted-foreground">{t('inventory.reportsDesc')}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-muted border-border">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Alertes stock bas</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">{lowStockMaterials.length}</div>
+            <p className="text-xs text-muted-foreground">Articles sous le seuil critique</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-muted border-border">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Mouvements (30j)</CardTitle>
+            <Package className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">
+              {movementSummary.reduce((acc, m) => acc + (m.total_stock_out || 0), 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">Total des articles mouvementés</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-muted border-border">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Taux de rotation</CardTitle>
+            <BarChart3 className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">--</div>
+            <p className="text-xs text-muted-foreground">Calcul en cours...</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <Card className="rpma-shell">
+      <Card className="bg-muted border-border">
         <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-red-500" />
-            {t('inventory.lowStockItems')} ({lowStockMaterials.length})
-          </CardTitle>
+          <CardTitle className="text-foreground">Articles en stock critique</CardTitle>
         </CardHeader>
         <CardContent>
           {lowStockMaterials.length === 0 ? (
-            <EmptyState
-              icon={<Package className="w-10 h-10" />}
-              title={t('inventory.noMaterials')}
-              description={t('inventory.noLowStockItemsDesc')}
-            />
+            <p className="text-muted-foreground py-4">Aucune alerte de stock pour le moment.</p>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="rpma-table-header">
-                  <TableHead>{t('inventory.sku')}</TableHead>
-                  <TableHead>{t('inventory.name')}</TableHead>
-                  <TableHead>{t('inventory.currentStock')}</TableHead>
-                  <TableHead>{t('inventory.minimumStock')}</TableHead>
+                <TableRow className="border-border hover:bg-muted/50">
+                  <TableHead className="text-muted-foreground">Article</TableHead>
+                  <TableHead className="text-muted-foreground">SKU</TableHead>
+                  <TableHead className="text-muted-foreground text-right">Stock actuel</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {lowStockMaterials.map((material) => (
-                  <TableRow key={material.material_id} className="border-border hover:bg-[hsl(var(--rpma-surface))]/35">
-                    <TableCell className="text-foreground font-mono">{material.sku}</TableCell>
-                    <TableCell className="text-foreground">{material.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="destructive">
-                        {material.current_stock} {material.unit_of_measure}
-                      </Badge>
+                {lowStockMaterials.map((item) => (
+                  <TableRow key={item.material_id} className="border-border hover:bg-muted/50">
+                    <TableCell className="font-medium text-foreground">{item.name}</TableCell>
+                    <TableCell className="text-foreground">{item.sku}</TableCell>
+                    <TableCell className="text-right text-foreground font-bold text-yellow-500">
+                      {item.current_stock}
                     </TableCell>
-                    <TableCell className="text-foreground">
-                      {material.minimum_stock} {material.unit_of_measure}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="rpma-shell">
-        <CardHeader>
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <BarChart3 className="w-5 h-5" />
-            {t('inventory.movementSummary')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {movementSummary.length === 0 ? (
-            <EmptyState
-              icon={<BarChart3 className="w-10 h-10" />}
-              title={t('inventory.noMovements')}
-              description={t('inventory.noMovementSummaryDesc')}
-            />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="rpma-table-header">
-                  <TableHead>{t('inventory.name')}</TableHead>
-                  <TableHead>{t('inventory.totalStockIn')}</TableHead>
-                  <TableHead>{t('inventory.totalStockOut')}</TableHead>
-                  <TableHead>{t('inventory.netMovement')}</TableHead>
-                  <TableHead>{t('inventory.currentStock')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {movementSummary.map((item) => (
-                  <TableRow key={item.material_id} className="border-border hover:bg-[hsl(var(--rpma-surface))]/35">
-                    <TableCell className="text-foreground font-medium">{item.material_name}</TableCell>
-                    <TableCell className="text-green-600">+{item.total_stock_in}</TableCell>
-                    <TableCell className="text-red-600">-{item.total_stock_out}</TableCell>
-                    <TableCell className={item.net_movement >= 0 ? 'text-green-600' : 'text-red-600'}>
-                      {item.net_movement >= 0 ? '+' : ''}
-                      {item.net_movement}
-                    </TableCell>
-                    <TableCell className="text-foreground">{item.current_stock}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

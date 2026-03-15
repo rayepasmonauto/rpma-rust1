@@ -48,6 +48,8 @@ fn valid_material_request(sku: &str) -> CreateMaterialRequest {
         batch_number: None,
         storage_location: Some("Shelf A".to_string()),
         warehouse_id: None,
+        is_active: None,
+        is_discontinued: None,
     }
 }
 
@@ -155,4 +157,34 @@ fn test_material_create_duplicate_sku_returns_error() {
         .create_material(valid_material_request("IPC-DUP-001"), Some("test_user".to_string()));
 
     assert!(result.is_err(), "duplicate SKU should be rejected");
+}
+
+#[test]
+fn test_material_create_with_active_status() {
+    let test_db = TestDatabase::new().expect("test db");
+    let material_service = MaterialService::new((*test_db.db()).clone());
+
+    // Test creating inactive material
+    let mut req_inactive = valid_material_request("IPC-INACTIVE");
+    req_inactive.is_active = Some(false);
+    let mat_inactive = material_service
+        .create_material(req_inactive, Some("test_user".to_string()))
+        .expect("create inactive material");
+    assert!(!mat_inactive.is_active, "material should be inactive");
+
+    // Test creating active material (explicitly)
+    let mut req_active = valid_material_request("IPC-ACTIVE");
+    req_active.is_active = Some(true);
+    let mat_active = material_service
+        .create_material(req_active, Some("test_user".to_string()))
+        .expect("create active material");
+    assert!(mat_active.is_active, "material should be active");
+
+    // Test updating inactive to active
+    let mut update_req = valid_material_request("IPC-INACTIVE"); // Use same SKU for update logic if needed, but update_material takes ID
+    update_req.is_active = Some(true);
+    let mat_reactivated = material_service
+        .update_material(&mat_inactive.id, update_req, Some("test_user".to_string()))
+        .expect("reactivate material");
+    assert!(mat_reactivated.is_active, "material should now be active");
 }

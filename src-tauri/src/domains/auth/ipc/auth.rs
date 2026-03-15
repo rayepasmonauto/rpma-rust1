@@ -1,10 +1,15 @@
 //! Authentication commands for Tauri IPC
 
+use crate::domains::auth::application::auth_security_service::AuthSecurityService;
 use crate::domains::auth::AuthFacade;
 use crate::shared::app_state::AppState;
 use crate::shared::ipc::{ApiResponse, AppError};
 use serde::Deserialize;
 use tracing::{debug, error, info, instrument, warn};
+
+fn security_service(state: &AppState<'_>) -> AuthSecurityService {
+    AuthSecurityService::new(state.session_service.clone())
+}
 
 pub use crate::domains::auth::application::SignupRequest;
 
@@ -153,6 +158,7 @@ pub async fn auth_logout(
 }
 
 /// Validate session command
+/// ADR-018: Thin IPC layer — session restore delegated to AuthSecurityService
 #[tauri::command]
 #[instrument(skip(state))]
 pub async fn auth_validate_session(
@@ -163,29 +169,17 @@ pub async fn auth_validate_session(
     debug!("Session validation request");
     let correlation_id = crate::commands::init_correlation_context(&correlation_id, None);
 
-    // Try to get session from in-memory store first
-    let session_res = state.session_store.get();
-
-    let session = match session_res {
+    let session = match state.session_store.get() {
         Ok(s) => s,
         Err(_) => {
-            // If not in memory, try to restore from database if token provided
-            if let Some(token) = session_token {
-                debug!("Session not in memory, attempting to restore from database");
-                match state.session_service.validate_session(&token).await? {
-                    Some(s) => {
-                        info!("Session restored from database for user: {}", s.username);
-                        state.session_store.set(s.clone());
-                        s
-                    }
-                    None => {
-                        warn!("Provided session token is invalid or expired");
-                        return Err(AppError::Authentication("Not authenticated".to_string()));
-                    }
-                }
-            } else {
-                return Err(AppError::Authentication("Not authenticated".to_string()));
-            }
+            let token = session_token.ok_or_else(|| {
+                AppError::Authentication("Not authenticated".to_string())
+            })?;
+
+            debug!("Session not in memory, attempting to restore from database");
+            let restored = security_service(&state).restore_session(&token).await?;
+            state.session_store.set(restored.clone());
+            restored
         }
     };
 

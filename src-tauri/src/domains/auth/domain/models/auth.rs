@@ -115,8 +115,12 @@ impl UserSession {
     }
 }
 
-/// TODO: document
-#[derive(Clone, Serialize, Deserialize, Debug, TS)]
+/// Local user account — entity with behaviour.
+///
+/// Security-sensitive fields (`password_hash`, `salt`) are excluded from
+/// serialisation via `#[serde(skip_serializing)]` so they are never sent
+/// to the frontend.
+#[derive(Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct UserAccount {
     pub id: String,
@@ -125,7 +129,11 @@ pub struct UserAccount {
     pub first_name: String,
     pub last_name: String,
     pub role: UserRole,
+    #[serde(skip_serializing)]
+    #[ts(skip)]
     pub password_hash: String,
+    #[serde(skip_serializing)]
+    #[ts(skip)]
     pub salt: Option<String>,
     pub phone: Option<String>,
     pub is_active: bool,
@@ -181,5 +189,21 @@ impl UserAccount {
         self.last_login = Some(now());
         self.login_count += 1;
         self.updated_at = now();
+    }
+}
+
+/// Manual `Debug` impl: redacts `password_hash` and `salt` to prevent
+/// credential leakage in log output.
+impl std::fmt::Debug for UserAccount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("UserAccount")
+            .field("id", &self.id)
+            .field("email", &self.email)
+            .field("username", &self.username)
+            .field("role", &self.role)
+            .field("is_active", &self.is_active)
+            .field("password_hash", &"[REDACTED]")
+            .field("salt", &"[REDACTED]")
+            .finish()
     }
 }

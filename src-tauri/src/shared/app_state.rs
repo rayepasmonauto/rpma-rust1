@@ -18,6 +18,7 @@ pub struct AppStateType {
     pub client_service: Arc<ClientService>,
     pub task_import_service:
         Arc<crate::domains::tasks::infrastructure::task_import::TaskImportService>,
+    pub calendar_service: Arc<crate::domains::calendar::calendar_handler::CalendarService>,
     pub intervention_service:
         Arc<crate::domains::interventions::infrastructure::intervention::InterventionService>,
     pub material_service: Arc<crate::domains::inventory::infrastructure::material::MaterialService>,
