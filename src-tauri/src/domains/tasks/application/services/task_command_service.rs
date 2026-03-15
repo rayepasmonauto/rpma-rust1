@@ -30,11 +30,11 @@ use crate::shared::services::event_bus::{event_factory, EventPublisher, InMemory
 /// high-level operations that combine validation, persistence, and
 /// side-effects (e.g. notification sending).
 pub struct TaskCommandService {
-    task_service: Arc<TaskService>,
-    task_import_service: Arc<TaskImportService>,
-    notification_sender: Arc<dyn NotificationSender>,
-    calendar_service: Arc<CalendarService>,
-    event_bus: Arc<InMemoryEventBus>,
+    pub(super) task_service: Arc<TaskService>,
+    pub(super) task_import_service: Arc<TaskImportService>,
+    pub(super) notification_sender: Arc<dyn NotificationSender>,
+    pub(super) calendar_service: Arc<CalendarService>,
+    pub(super) event_bus: Arc<InMemoryEventBus>,
 }
 
 impl TaskCommandService {
@@ -602,77 +602,6 @@ impl TaskCommandService {
             })?;
         info!(task_id = %task_id, correlation_id = %ctx.correlation_id, "Task deleted");
         Ok(())
-    }
-
-    // ------------------------------------------------------------------
-    // task_crud helpers - notification side-effects
-    // ------------------------------------------------------------------
-
-    /// Send an in-app notification when a task is assigned to a technician
-    /// other than the current user.
-    #[instrument(skip(self), fields(task_id = %task.id, user_id = %current_user_id))]
-    pub async fn notify_assignment(
-        &self,
-        task: &Task,
-        current_user_id: &str,
-        correlation_id: &str,
-    ) {
-        if let Some(technician_id) = &task.technician_id {
-            if technician_id != current_user_id {
-                if let Err(e) = self
-                    .notification_sender
-                    .send_message_raw(
-                        "in_app".to_string(),
-                        Some(technician_id.clone()),
-                        None,
-                        None,
-                        Some(format!("Nouvelle tache assignee: {}", task.title)),
-                        format!("La tache '{}' vous a ete assignee.", task.title),
-                        Some(task.id.clone()),
-                        task.client_id.clone(),
-                        Some("normal".to_string()),
-                        None,
-                        Some(correlation_id.to_string()),
-                    )
-                    .await
-                {
-                    error!("Failed to create task assignment notification: {}", e);
-                }
-            }
-        }
-    }
-
-    /// Send an in-app notification when a task's status changes.
-    #[instrument(skip(self), fields(task_id = %task.id, user_id = %current_user_id))]
-    pub async fn notify_status_change(
-        &self,
-        task: &Task,
-        current_user_id: &str,
-        correlation_id: &str,
-    ) {
-        let status = task.status.to_string();
-        if let Err(e) = self
-            .notification_sender
-            .send_message_raw(
-                "in_app".to_string(),
-                Some(current_user_id.to_string()),
-                None,
-                None,
-                Some(format!("Statut de tache mis a jour: {}", task.title)),
-                format!(
-                    "Le statut de la tache '{}' est maintenant '{}'.",
-                    task.title, status
-                ),
-                Some(task.id.clone()),
-                task.client_id.clone(),
-                Some("normal".to_string()),
-                None,
-                Some(correlation_id.to_string()),
-            )
-            .await
-        {
-            error!("Failed to create task update notification: {}", e);
-        }
     }
 
     // ------------------------------------------------------------------

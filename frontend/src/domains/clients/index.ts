@@ -2,6 +2,7 @@ export { ClientsProvider, useClientsContext } from './api/ClientsProvider';
 export { useClients } from './hooks/useClients';
 export { useClientsPage } from './hooks/useClientsPage';
 export { useClient } from './hooks/useClient';
+export { useClientSearch, useClientById } from './hooks/useClientSearch';
 export { useClientStats } from './hooks/useClientStats';
 export { useClientDetailPage } from './hooks/useClientDetailPage';
 export { useEditClientPage } from './hooks/useEditClientPage';
