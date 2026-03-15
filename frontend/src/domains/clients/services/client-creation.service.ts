@@ -24,8 +24,10 @@ export class ClientCreationService {
       // Create new client
       const clientData = {
         name: customerData.name.trim(),
+        // normalizeOptionalText trims and converts empty strings to null; ?? undefined
+        // converts that null to undefined to satisfy the DTO's optional field type.
         email: normalizeOptionalText(customerData.email) ?? undefined,
-        phone: customerData.phone?.replace(/\s/g, '') || undefined,
+        phone: normalizeOptionalText(customerData.phone?.replace(/\s/g, '')) ?? undefined,
         customer_type: 'individual' as const
       };
 
