@@ -87,7 +87,17 @@ export function mapBackendStepToFrontend(step: BackendStep): PPFInterventionStep
   } as PPFInterventionStep;
 }
 
-export function mapBackendStepPartialUpdate(step: BackendStep) {
+export function mapBackendStepPartialUpdate(step: BackendStep): {
+  status: string;
+  step_status: string;
+  completedAt: string | undefined;
+  completed_at: string | undefined;
+  duration_seconds: number | undefined;
+  photo_count: number | undefined;
+  observations: string[] | undefined;
+  collected_data: Record<string, unknown>;
+  updated_at: string | undefined;
+} {
   return {
     status: step.step_status,
     step_status: step.step_status,
