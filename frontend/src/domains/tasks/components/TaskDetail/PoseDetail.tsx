@@ -1,14 +1,13 @@
 import React, { useMemo, useCallback, memo, useState, useEffect } from 'react';
 import { Suspense } from 'react';
-import { AlertCircle } from 'lucide-react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { toast } from 'sonner';
 import type { UpdateTaskRequest } from '@/lib/backend';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import { useIntersectionObserver } from '@/shared/hooks/useIntersectionObserver';
-import { Skeleton, Button, ErrorFallback } from '@/shared/ui';
+import { Skeleton, ErrorFallback } from '@/shared/ui';
 import { convertTimestamps, cn, convertNullsToUndefined } from '@/shared/utils';
-import { TaskWithDetails, TaskDisplay, ChecklistItem, TaskStatus, JsonValue } from '@/shared/types';
+import { TaskWithDetails, TaskDisplay, ChecklistItem, TaskStatus } from '@/shared/types';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useInterventionData } from '@/domains/interventions/api';
 import { useInterventionActions } from '@/domains/interventions/hooks/useInterventionActions';
@@ -36,7 +35,7 @@ interface PoseDetailProps {
 const PoseDetail: React.FC<PoseDetailProps> = ({
   task: propTask,
   onStartTask,
-  onCompleteTask,
+  onCompleteTask: _onCompleteTask,
   onViewPhotos: _onViewPhotos,
   onViewChecklist: _onViewChecklist,
   currentUserId: propCurrentUserId = '',
@@ -51,7 +50,7 @@ const PoseDetail: React.FC<PoseDetailProps> = ({
 
   // Performance optimizations
   const { ref: containerRef, isVisible: isInView } = useIntersectionObserver({ threshold: 0.1 });
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, _setIsExpanded] = useState(false);
   const debouncedIsExpanded = useDebounce(isExpanded, 300);
 
   const { updateTask } = useTaskMutations();

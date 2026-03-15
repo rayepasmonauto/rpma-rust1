@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { isValidEmailFormat } from '@/lib/utils/validators';
 import { UserRoleValues } from '@/shared/utils';
 import { createLogger } from '@/shared/utils';
 import { ROUTES } from '@/constants';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { PasswordValidationResult } from '../api/types';
 import { useAuth } from '../api/useAuth';
-import { isValidEmailFormat } from '@/lib/utils/validators';
 
 const logger = createLogger('useSignupForm');
 

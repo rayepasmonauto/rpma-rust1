@@ -1,6 +1,6 @@
 import { safeInvoke, invalidatePattern } from '@/lib/ipc/core';
 import { IPC_COMMANDS } from '@/lib/ipc/commands';
-import type { JsonValue, JsonObject } from '@/types/json';
+import type { JsonValue } from '@/types/json';
 
 export interface MaterialQueryParams {
   page?: number;

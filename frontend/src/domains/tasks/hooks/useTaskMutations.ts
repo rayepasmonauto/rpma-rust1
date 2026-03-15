@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { taskKeys } from '@/lib/query-keys';
-import { taskIpc } from '../ipc/task.ipc';
-import { useAuth } from '@/shared/hooks/useAuth';
 import type { UpdateTaskRequest } from '@/lib/backend';
+import { useAuth } from '@/shared/hooks/useAuth';
 import type { JsonObject } from '@/types/json';
+import { taskIpc } from '../ipc/task.ipc';
 
 /**
  * Hook providing common task mutations with automatic cache invalidation

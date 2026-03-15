@@ -21,7 +21,7 @@ export function InventorySettings() {
       await createCategory.mutateAsync({ name: newCategoryName.trim() });
       setNewCategoryName('');
       toast.success('Catégorie créée avec succès');
-    } catch (error) {
+    } catch (_error) {
       toast.error('Erreur lors de la création de la catégorie');
     }
   };

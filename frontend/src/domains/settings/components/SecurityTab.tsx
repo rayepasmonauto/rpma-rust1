@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import type { UserSession } from '@/lib/backend';
 import { useIpcClient } from '@/lib/ipc/client';
-import { useLogger } from '@/shared/hooks/useLogger';
 import { LogDomain } from '@/lib/logging/types';
+import { useLogger } from '@/shared/hooks/useLogger';
 
 export interface SecurityTabProps {
   user: UserSession;

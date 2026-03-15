@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Camera, Trash2, Upload, ImageIcon } from 'lucide-react';
 import { addKeyboardNavigation } from '@/lib/accessibility.ts';
-import { Photo } from '@/lib/backend';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,7 +22,7 @@ export function TaskPhotos({ taskId: _taskId, interventionId }: TaskPhotosProps)
 
   const {
     photos,
-    isLoading,
+    isLoading: _isLoading,
     uploadPhoto,
     deletePhoto,
     isUploading
@@ -54,14 +53,14 @@ export function TaskPhotos({ taskId: _taskId, interventionId }: TaskPhotosProps)
     e.target.value = '';
   };
 
-  const handleDeletePhoto = async (photoId: string) => {
+  const _handleDeletePhoto = async (photoId: string) => {
     try {
       await deletePhoto.mutateAsync(photoId);
       toast({
         title: 'Succès',
         description: 'Photo supprimée avec succès',
       });
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Erreur',
         description: 'Échec de la suppression de la photo',

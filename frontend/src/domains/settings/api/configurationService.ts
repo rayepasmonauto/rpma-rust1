@@ -1,8 +1,8 @@
 // Configuration service
 import { ipcClient } from '@/lib/ipc/client';
 import { AuthSecureStorage as _AuthSecureStorage } from '@/lib/secureStorage';
-import type { JsonValue, JsonObject } from '@/types/json';
 import type { AppSettings } from '@/lib/backend';
+import type { JsonValue, JsonObject } from '@/types/json';
 import type { Configuration, BusinessRule } from './types';
 
 export interface ServiceResponse<T> {

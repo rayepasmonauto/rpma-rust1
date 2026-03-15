@@ -12,7 +12,6 @@ import {
   User
 } from 'lucide-react';
 import { getUserFullName } from '@/lib/types';
-import { Task } from '@/lib/backend';
 import { Badge } from '@/components/ui/badge';
 import { TaskWithDetails } from '@/types/task.types';
 

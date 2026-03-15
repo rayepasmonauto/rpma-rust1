@@ -3,13 +3,6 @@ import { AuthSecureStorage } from '@/lib/secureStorage';
 import { interventionKeys, taskKeys } from '@/lib/query-keys';
 import { logger } from '@/lib/logging';
 import { LogDomain } from '@/lib/logging/types';
-import type { BackendStep, BackendIntervention } from '../services/intervention-mappers';
-import {
-  mapBackendStepToFrontend,
-  mapBackendStepPartialUpdate,
-  mapBackendInterventionToFrontend,
-} from '../services/intervention-mappers';
-import { InterventionWorkflowService } from '../services/intervention-workflow.service';
 import type {
   PPFInterventionData,
   PPFInterventionStep,
@@ -20,6 +13,13 @@ import type {
   StepProgressResponse,
   InterventionFinalizationResponse
 } from '@/types/ppf-intervention';
+import type { BackendStep, BackendIntervention } from '../services/intervention-mappers';
+import {
+  mapBackendStepToFrontend,
+  mapBackendStepPartialUpdate,
+  mapBackendInterventionToFrontend,
+} from '../services/intervention-mappers';
+import { InterventionWorkflowService } from '../services/intervention-workflow.service';
 
 interface UseInterventionActionsProps {
   taskId?: string;

@@ -15,12 +15,12 @@ import {
   VirtualizedTable,
 } from '@/shared/ui/facade';
 import { getUserFullName } from '@/shared/utils';
+import type { TaskWithDetails, TaskStatus } from '@/types/task.types';
 import { getTaskDisplayTitle, getTaskDisplayStatus } from '@/domains/tasks/utils/display';
 import {
   getStatusVariant,
   formatDateShort,
 } from '@/domains/tasks/utils/task-presentation';
-import type { TaskWithDetails, TaskStatus } from '@/types/task.types';
 
 interface TaskListTableProps {
   tasks: TaskWithDetails[];

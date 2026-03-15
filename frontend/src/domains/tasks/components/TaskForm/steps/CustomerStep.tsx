@@ -13,11 +13,11 @@ import {
   Search,
 } from "lucide-react";
 import { Client } from "@/lib/backend";
+import { isValidEmailFormat } from "@/lib/utils/validators";
 import { useClients, useClient } from "@/domains/clients/api";
 import { FormStepProps } from "../types";
 import { ClientSelectorModal } from "./ClientSelectorModal";
 import { CustomerInfoSummary } from "./CustomerInfoSummary";
-import { isValidEmailFormat } from "@/lib/utils/validators";
 
 export const CustomerStep: React.FC<FormStepProps> = ({
   formData,
