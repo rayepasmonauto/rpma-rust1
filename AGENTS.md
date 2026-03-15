@@ -78,6 +78,53 @@ Use the real command surfaces below; do not invent shortcuts.
 - `detect-schema-drift.js`: Compares local DB schema with migrations.
 - `backend-architecture-check.js`: Validates the four-layer rule in Rust source.
 - `generate-docs-index.js`: Rebuilds the documentation TOC.
+- `scaffold-domain.ts`: **Domain scaffolder** — generates all boilerplate for a new bounded context.
+
+---
+
+## Creating a New Domain — Mandatory Workflow
+
+**Never create domain files by hand.** Always use the scaffolder first.
+
+### Step 1 — Run the scaffolder
+
+```bash
+npx tsx scripts/scaffold-domain.ts <domain_name> [flags]
+```
+
+| Flag | Effect |
+|---|---|
+| `--crud` | Adds create / update / delete handlers + request structs |
+| `--admin-only` | Wraps all IPC handlers with `UserRole::Admin` enforcement |
+| `--no-frontend` | Skips frontend scaffolding |
+| `--no-tests` | Skips test stub generation |
+| `--dry-run` | Previews all files and patches without writing |
+
+### Step 2 — Work through the printed checklist in order
+
+The script prints an ADR compliance checklist. Complete every item before writing business logic:
+
+1. **ADR-017** — Add `<Domain>Created` variant to `DomainEvent` enum → `shared/services/domain_event.rs`
+2. **ADR-010** — Add migration SQL → `src-tauri/migrations/<N>_create_<domain>s.sql`
+3. **ADR-004** — Wire `<Domain>Service` in `service_builder.rs` (replace `TODO(scaffold)` comment with real code at the correct LAYER)
+4. **ADR-015** — Run `npm run types:sync` after any `#[derive(TS)]` struct is defined
+
+### Step 3 — Implement business logic
+
+Only after the checklist is complete, fill in:
+- Fields in `domain/models/<domain>.rs`
+- Service methods in `application/services/<domain>_service.rs`
+- SQL in `infrastructure/<domain>_repository/mod.rs`
+
+### Step 4 — Verify
+
+```bash
+cd src-tauri && cargo check
+cd src-tauri && cargo test <domain> -- --nocapture
+npm run frontend:type-check
+```
+
+A domain task is **not complete** until all four commands pass.
 
 ---
 
@@ -88,33 +135,6 @@ Correctness first. Clarity second. Performance third.
 Write boring, predictable, deletable code. The best solution is often less code, not more.
 
 ---
-
-## Architecture — Non-Negotiable
-
-Four-layer rule (`src-tauri/src/domains/*/`):
-```
-IPC → Application → Domain → Infrastructure
-```
-- **Domain layer has zero dependencies** on any other layer — pure business logic only
-- Frontend mirrors backend: every domain has `api/ components/ hooks/ ipc/ services/` under `frontend/src/domains/<name>/`
-
-Cross-domain communication uses **exactly three channels**:
-1. `shared/contracts/` — shared types only
-2. `shared/services/cross_domain.rs` — concrete services at composition layer only
-3. `shared/services/event_bus.rs` — reactive/decoupled coordination
-
-Direct imports from another domain's internals are **forbidden**.
-
-
----
-
-## Testing — Mandatory
-
-## "If You Change X, You Must Run Y" Checklist
-- **Change Rust IPC Model** → `npm run types:sync`.
-- **Add DB Migration** → `npm run backend:migration:fresh-db-test`.
-- **Modify IPC Signature** → Update both `src-tauri/src/domains/*/ipc/` and `frontend/src/domains/*/ipc/`.
-- **Change Tailwind Config** → The dev server should reload automatically.
 
 Every change requires tests. No exceptions.
 
@@ -241,22 +261,13 @@ pretty_assertions = "1"
 
 ---
 
-## Universal Rules
-
-- No `TODO`/`FIXME`/`HACK` without a linked issue: `// TODO(issue-123): description`
-- No abstraction until 3 real use cases exist in this codebase
-- No optimization without profiling (`cargo flamegraph`, `criterion`, React DevTools Profiler)
-- Every file touched must be left cleaner: remove dead code, improve naming, simplify logic
-
----
-
 ## When unsure
 
 If a requirement is ambiguous or conflicts with architecture rules, choose the most conservative compliant option and explicitly say so.
 
 When unsure, check docs:
 
-* `docs/`
+* `docs/README.md`
 * `docs/adr/`
 ```
 
