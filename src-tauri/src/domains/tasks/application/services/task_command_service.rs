@@ -12,8 +12,7 @@ use tracing::{error, info, instrument, warn};
 use crate::commands::AppError;
 use crate::domains::tasks::application::services::task_policy_service;
 use crate::domains::tasks::domain::models::task::{
-    BulkImportResponse, CreateTaskRequest, SortOrder, Task, TaskPriority, TaskQuery, TaskStatus,
-    UpdateTaskRequest,
+    BulkImportResponse, SortOrder, Task, TaskPriority, TaskQuery, TaskStatus, UpdateTaskRequest,
 };
 use crate::domains::tasks::infrastructure::task::TaskService;
 use crate::domains::tasks::infrastructure::task_import::TaskImportService;
@@ -22,7 +21,7 @@ use crate::domains::tasks::TasksFacade;
 use crate::shared::context::RequestContext;
 use crate::shared::contracts::notification::NotificationSender;
 use crate::shared::contracts::task_scheduler::TaskScheduler;
-use crate::shared::services::event_bus::{event_factory, EventPublisher, InMemoryEventBus};
+use crate::shared::services::event_bus::InMemoryEventBus;
 
 /// Lightweight orchestration service constructed per-request by IPC handlers.
 ///
@@ -461,72 +460,6 @@ impl TaskCommandService {
     // task_crud orchestration (extracted from facade.rs — ADR-018)
     // ------------------------------------------------------------------
 
-    /// Validate and create a task, sending assignment notification afterward.
-    #[instrument(skip(self, ctx, data), fields(user_id = %ctx.auth.user_id, correlation_id = %ctx.correlation_id))]
-    pub async fn create_task(
-        &self,
-        ctx: &RequestContext,
-        data: CreateTaskRequest,
-    ) -> Result<Task, AppError> {
-        let validator = crate::shared::services::validation::ValidationService::new();
-        let validated_action = validator
-            .validate_task_action(crate::commands::TaskAction::Create { data })
-            .await
-            .map_err(|e| {
-                warn!(correlation_id = %ctx.correlation_id, "Task validation failed: {}", e);
-                AppError::Validation(format!("Task validation failed: {}", e))
-            })?;
-
-        let validated_data = match validated_action {
-            crate::commands::TaskAction::Create { data: d } => d,
-            _ => {
-                return Err(AppError::Validation(
-                    "Invalid task action after validation".to_string(),
-                ))
-            }
-        };
-
-        let task = self
-            .task_service
-            .create_task_async(validated_data, &ctx.auth.user_id)
-            .await
-            .map_err(|e| {
-                error!(correlation_id = %ctx.correlation_id, "Task creation failed: {}", e);
-                AppError::db_sanitized("tasks.create", e)
-            })?;
-
-        // Publish domain event so audit log and other handlers can trace this
-        // request via its correlation_id.  Publishing is non-fatal: the task
-        // is already persisted, so a transient bus failure must not roll it
-        // back (offline-first semantics, ADR-016).
-        let domain_event = event_factory::task_created_with_ctx(
-            task.id.clone(),
-            task.task_number.clone(),
-            task.title.clone(),
-            ctx.auth.user_id.clone(),
-            ctx.correlation_id.clone(),
-        );
-        if let Err(e) = self.event_bus.publish(domain_event) {
-            warn!(
-                correlation_id = %ctx.correlation_id,
-                task_id = %task.id,
-                "Failed to publish TaskCreated event: {}",
-                e
-            );
-        }
-
-        self.notify_assignment(&task, &ctx.auth.user_id, &ctx.correlation_id)
-            .await;
-
-        info!(
-            action = "CREATE_TASK",
-            task_id = %task.id,
-            correlation_id = %ctx.correlation_id,
-            "Task created"
-        );
-        Ok(task)
-    }
-
     /// Retrieve a single task by ID.
     #[instrument(skip(self))]
     pub async fn get_task(&self, task_id: &str) -> Result<Option<Task>, AppError> {
@@ -539,140 +472,11 @@ impl TaskCommandService {
             })
     }
 
-    /// Validate and update a task, sending notifications afterward.
-    #[instrument(skip(self, ctx, data), fields(user_id = %ctx.auth.user_id, correlation_id = %ctx.correlation_id))]
-    pub async fn update_task_crud(
-        &self,
-        ctx: &RequestContext,
-        id: String,
-        data: UpdateTaskRequest,
-    ) -> Result<Task, AppError> {
-        let existing_task = self.fetch_task(&id).await?;
-        let status_updated = data.status.is_some();
-
-        let validator = crate::shared::services::validation::ValidationService::new();
-        let validated_action = validator
-            .validate_task_action(crate::commands::TaskAction::Update {
-                id: id.clone(),
-                data: data.clone(),
-            })
-            .await
-            .map_err(|e| {
-                warn!(correlation_id = %ctx.correlation_id, "Task validation failed: {}", e);
-                AppError::Validation(format!("Task validation failed: {}", e))
-            })?;
-
-        let validated_data = match validated_action {
-            crate::commands::TaskAction::Update { data: d, .. } => d,
-            _ => {
-                return Err(AppError::Validation(
-                    "Invalid task action after validation".to_string(),
-                ))
-            }
-        };
-
-        let task = self
-            .task_service
-            .update_task_async(validated_data, &ctx.auth.user_id)
-            .await
-            .map_err(|e| {
-                error!(correlation_id = %ctx.correlation_id, "Task update failed: {}", e);
-                AppError::db_sanitized("tasks.update", e)
-            })?;
-
-        let changed_fields = Self::changed_fields_from_update_request(&data);
-        let updated_event = event_factory::task_updated_with_ctx(
-            task.id.clone(),
-            changed_fields,
-            ctx.auth.user_id.clone(),
-            ctx.correlation_id.clone(),
-        );
-        if let Err(e) = self.event_bus.publish(updated_event) {
-            warn!(
-                correlation_id = %ctx.correlation_id,
-                task_id = %task.id,
-                "Failed to publish TaskUpdated event: {}",
-                e
-            );
-        }
-
-        if status_updated && existing_task.status != task.status {
-            let status_event = event_factory::task_status_changed_with_ctx(
-                task.id.clone(),
-                existing_task.status.to_string(),
-                task.status.to_string(),
-                ctx.auth.user_id.clone(),
-                ctx.correlation_id.clone(),
-                None,
-            );
-            if let Err(e) = self.event_bus.publish(status_event) {
-                warn!(
-                    correlation_id = %ctx.correlation_id,
-                    task_id = %task.id,
-                    "Failed to publish TaskStatusChanged event: {}",
-                    e
-                );
-            }
-        }
-
-        self.notify_assignment(&task, &ctx.auth.user_id, &ctx.correlation_id)
-            .await;
-
-        if status_updated {
-            self.notify_status_change(&task, &ctx.auth.user_id, &ctx.correlation_id)
-                .await;
-        }
-
-        info!(
-            action = "UPDATE_TASK",
-            task_id = %task.id,
-            correlation_id = %ctx.correlation_id,
-            "Task updated"
-        );
-        Ok(task)
-    }
-
-    /// Delete a task by ID.
-    #[instrument(skip(self, ctx), fields(user_id = %ctx.auth.user_id, correlation_id = %ctx.correlation_id))]
-    pub async fn delete_task(&self, ctx: &RequestContext, task_id: &str) -> Result<(), AppError> {
-        let existing_task = self.fetch_task(task_id).await?;
-        self.task_service
-            .delete_task_async(task_id, &ctx.auth.user_id)
-            .await
-            .map_err(|e| {
-                error!(correlation_id = %ctx.correlation_id, "Task deletion failed: {}", e);
-                AppError::db_sanitized("tasks.delete", e)
-            })?;
-
-        let deleted_event = event_factory::task_deleted_with_ctx(
-            task_id.to_string(),
-            Some(existing_task.task_number),
-            ctx.auth.user_id.clone(),
-            ctx.correlation_id.clone(),
-        );
-        if let Err(e) = self.event_bus.publish(deleted_event) {
-            warn!(
-                correlation_id = %ctx.correlation_id,
-                task_id = %task_id,
-                "Failed to publish TaskDeleted event: {}",
-                e
-            );
-        }
-
-        info!(
-            action = "DELETE_TASK",
-            task_id = %task_id,
-            correlation_id = %ctx.correlation_id,
-            "Task deleted"
-        );
-        Ok(())
-    }
-
     // ------------------------------------------------------------------
     // Private helpers
     // ------------------------------------------------------------------
 
-    async fn fetch_task(&self, task_id: &str) -> Result<Task, AppError> {
+    pub(super) async fn fetch_task(&self, task_id: &str) -> Result<Task, AppError> {
         self.task_service
             .get_task_async(task_id)
             .await
@@ -682,42 +486,5 @@ impl TaskCommandService {
 
     fn facade(&self) -> TasksFacade {
         TasksFacade::new(self.task_service.clone(), self.task_import_service.clone())
-    }
-
-    fn changed_fields_from_update_request(request: &UpdateTaskRequest) -> Vec<String> {
-        let mut changed = Vec::new();
-        macro_rules! track {
-            ($field:ident) => {
-                if request.$field.is_some() {
-                    changed.push(stringify!($field).to_string());
-                }
-            };
-        }
-
-        track!(title);
-        track!(description);
-        track!(priority);
-        track!(status);
-        track!(vehicle_plate);
-        track!(vehicle_model);
-        track!(vehicle_year);
-        track!(vehicle_make);
-        track!(vin);
-        track!(ppf_zones);
-        track!(custom_ppf_zones);
-        track!(client_id);
-        track!(customer_name);
-        track!(customer_email);
-        track!(customer_phone);
-        track!(customer_address);
-        track!(scheduled_date);
-        if request.estimated_duration.is_some() {
-            changed.push("estimated_duration".to_string());
-        }
-        track!(notes);
-        track!(tags);
-        track!(technician_id);
-
-        changed
     }
 }
