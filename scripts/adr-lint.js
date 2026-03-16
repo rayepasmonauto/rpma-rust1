@@ -189,10 +189,6 @@ function readFile(absolutePath) {
   return fs.readFileSync(absolutePath, 'utf8');
 }
 
-function matchesAny(relativeFile, patterns) {
-  return patterns.some((pattern) => pattern.test(relativeFile));
-}
-
 function checkAdr001(rootDir, files) {
   const violations = [];
 
