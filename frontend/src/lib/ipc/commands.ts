@@ -243,4 +243,17 @@ export const IPC_COMMANDS = {
   SEND_STREAM_CHUNK: 'send_stream_chunk',
   GET_STREAM_DATA: 'get_stream_data',
   GET_IPC_STATS: 'get_ipc_stats',
+  // Trash commands
+  LIST_TRASH: 'list_trash',
+  RESTORE_ENTITY: 'restore_entity',
+  HARD_DELETE_ENTITY: 'hard_delete_entity',
+  EMPTY_TRASH: 'empty_trash',
+
+  // Audit/Security commands
+  GET_SECURITY_METRICS: 'get_security_metrics',
+  GET_SECURITY_EVENTS: 'get_security_events',
+  GET_SECURITY_ALERTS: 'get_security_alerts',
+  ACKNOWLEDGE_SECURITY_ALERT: 'acknowledge_security_alert',
+  RESOLVE_SECURITY_ALERT: 'resolve_security_alert',
+  CLEANUP_SECURITY_EVENTS: 'cleanup_security_events',
 } as const;

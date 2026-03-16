@@ -1,4 +1,5 @@
-import { safeInvoke } from '@/lib/ipc/core';
+import { safeInvoke, invalidatePattern } from '@/lib/ipc/core';
+import { signalMutation } from '@/lib/data-freshness';
 import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import type {
   CalendarTask,
@@ -51,7 +52,7 @@ export async function scheduleTask(
   newEnd?: string,
   force?: boolean
 ): Promise<ConflictDetection> {
-  return await safeInvoke<ConflictDetection>(IPC_COMMANDS.CALENDAR_SCHEDULE_TASK, {
+  const result = await safeInvoke<ConflictDetection>(IPC_COMMANDS.CALENDAR_SCHEDULE_TASK, {
     request: {
       task_id: taskId,
       new_date: newDate,
@@ -60,6 +61,10 @@ export async function scheduleTask(
       force: force ?? false,
     },
   });
+  invalidatePattern('task:');
+  invalidatePattern('calendar:');
+  signalMutation('tasks');
+  return result;
 }
 
 export async function rescheduleTask(
@@ -77,6 +82,9 @@ export async function rescheduleTask(
       reason: reason ?? '',
     }
   });
+  invalidatePattern('task:');
+  invalidatePattern('calendar:');
+  signalMutation('tasks');
 }
 
 // Utility functions for calendar operations
@@ -121,21 +129,30 @@ export const calendarEvents = {
   },
 
   createEvent: async (eventData: CreateEventInput): Promise<JsonValue> => {
-    return safeInvoke<JsonValue>(IPC_COMMANDS.CREATE_EVENT, {
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.CREATE_EVENT, {
       request: { event_data: eventData },
     });
+    invalidatePattern('calendar:');
+    signalMutation('calendar');
+    return result;
   },
 
   updateEvent: async (id: string, eventData: UpdateEventInput): Promise<JsonValue> => {
-    return safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_EVENT, {
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_EVENT, {
       request: { id, event_data: eventData },
     });
+    invalidatePattern('calendar:');
+    signalMutation('calendar');
+    return result;
   },
 
   deleteEvent: async (id: string): Promise<JsonValue> => {
-    return safeInvoke<JsonValue>(IPC_COMMANDS.DELETE_EVENT, {
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.DELETE_EVENT, {
       request: { id },
     });
+    invalidatePattern('calendar:');
+    signalMutation('calendar');
+    return result;
   },
 
   getEventsForTechnician: async (technicianId: string): Promise<JsonValue> => {

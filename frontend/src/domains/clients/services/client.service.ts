@@ -8,6 +8,7 @@ import type {
   PaginationInfo,
 } from '@/lib/backend';
 import { ipcClient } from '@/lib/ipc';
+import { normalizeOptionalText } from '@/lib/utils';
 import { CreateClientRequestSchema, UpdateClientRequestSchema } from '@/lib/validation/ipc-schemas';
 import type { CreateClientDTO, ClientStats } from '@/types/client.types';
 import type { ServiceResponse, ApiResponse } from '@/types/unified.types';

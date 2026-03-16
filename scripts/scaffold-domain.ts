@@ -740,6 +740,125 @@ export function ${n.pascal}List({ items, isLoading }: ${n.pascal}ListProps) {
 `;
 }
 
+function TS_PAGE_HOOK_TEMPLATE(n: DomainNames): string {
+  return `\
+import { useState } from 'react';
+import { use${n.pascal}List } from '../api';
+
+/**
+ * Page-level hook for ${n.pascal} domain logic.
+ * Encapsulates search, filtering, and navigation logic.
+ */
+export function use${n.pascal}Page() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const { data: items = [], isLoading } = use${n.pascal}List();
+
+  const filteredItems = items.filter(item =>
+    // TODO: Implement real search logic
+    item.id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleCreate = () => {
+    // TODO: Navigate to creation page
+    console.log("Create ${n.pascal} clicked");
+  };
+
+  return {
+    items: filteredItems,
+    isLoading,
+    searchQuery,
+    setSearchQuery,
+    totalCount: items.length,
+    handleCreate,
+  };
+}
+`;
+}
+
+function TS_DOMAIN_INDEX_TEMPLATE(n: DomainNames): string {
+  return `\
+export * from "./api";
+export * from "./ipc";
+export * from "./hooks";
+export { ${n.pascal}List } from "./components/${n.pascal}List";
+export { use${n.pascal}Page } from "./hooks/use${n.pascal}Page";
+`;
+}
+
+function TS_APP_PAGE_TEMPLATE(n: DomainNames): string {
+  return `\
+"use client";
+
+import { Plus, Search, FileText } from "lucide-react";
+import { PageShell } from "@/shared/ui/layout/PageShell";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { FadeIn } from "@/shared/ui/animations/FadeIn";
+import { ${n.pascal}List, use${n.pascal}Page } from "@/domains/${n.snake}";
+
+/**
+ * Route page for ${n.pascal} domain.
+ * ADR-013: Orchestrates data fetching, search, and layout.
+ */
+export default function ${n.pascal}Page() {
+  const {
+    items,
+    isLoading,
+    searchQuery,
+    setSearchQuery,
+    totalCount,
+    handleCreate,
+  } = use${n.pascal}Page();
+
+  return (
+    <PageShell>
+      <FadeIn>
+        <PageHeader
+          title="${n.pascal} Management"
+          subtitle={\`\${totalCount} total items\`}
+          actions={
+            <Button onClick={handleCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              New ${n.pascal}
+            </Button>
+          }
+        />
+
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search ${n.snake.replace(/_/g, " ")}s..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        {items.length === 0 && !isLoading ? (
+          <EmptyState
+            icon={<FileText className="h-12 w-12" />}
+            title="No ${n.snake.replace(/_/g, " ")}s found"
+            description="Get started by creating your first ${n.snake.replace(/_/g, " ")}."
+            action={{
+              label: 'Create ${n.pascal}',
+              onClick: handleCreate,
+              icon: <Plus className="h-4 w-4" />,
+            }}
+          />
+        ) : (
+          <${n.pascal}List items={items} isLoading={isLoading} />
+        )}
+      </FadeIn>
+    </PageShell>
+  );
+}
+`;
+}
+
 // ─── Backend File Generation ──────────────────────────────────────────────────
 
 export async function generateBackendFiles(
@@ -865,10 +984,24 @@ export async function generateFrontendFiles(
     opts.dryRun
   );
   await writeFile(
+    path.join(base, "hooks", `use${n.pascal}Page.ts`),
+    TS_PAGE_HOOK_TEMPLATE(n),
+    opts.dryRun
+  );
+  await writeFile(
     path.join(base, "components", `${n.pascal}List.tsx`),
     TS_COMPONENT_TEMPLATE(n),
     opts.dryRun
   );
+  await writeFile(
+    path.join(base, "index.ts"),
+    TS_DOMAIN_INDEX_TEMPLATE(n),
+    opts.dryRun
+  );
+
+  // App Route (ADR-013)
+  const appRoutePath = path.join(p.repoRoot, "frontend", "src", "app", n.kebab, "page.tsx");
+  await writeFile(appRoutePath, TS_APP_PAGE_TEMPLATE(n), opts.dryRun);
 }
 
 // ─── Patch Existing Files ─────────────────────────────────────────────────────

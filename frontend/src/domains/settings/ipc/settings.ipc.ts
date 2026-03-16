@@ -1,4 +1,5 @@
 import { safeInvoke, cachedInvoke, invalidatePattern } from '@/lib/ipc/core';
+import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import type { UserSettings } from '@/lib/backend';
 import type { JsonObject, JsonValue } from '@/types/json';
 
@@ -8,113 +9,113 @@ const invalidateUserSettingsCache = (): void => {
 
 export const settingsIpc = {
   getAppSettings: () =>
-    safeInvoke<JsonValue>('get_app_settings', {}),
+    safeInvoke<JsonValue>(IPC_COMMANDS.GET_APP_SETTINGS, {}),
 
   updateNotificationSettings: async (request: JsonObject) => {
-    return safeInvoke<JsonValue>('update_notification_settings', { request });
+    return safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_NOTIFICATION_SETTINGS, { request });
   },
 
   // User settings operations
   getUserSettings: () =>
-    cachedInvoke<UserSettings>('user-settings', 'get_user_settings', {}, undefined, 30000),
+    cachedInvoke<UserSettings>('user-settings', IPC_COMMANDS.GET_USER_SETTINGS, {}, undefined, 30000),
 
   updateUserProfile: async (request: JsonObject) => {
-    const result = await safeInvoke<JsonValue>('update_user_profile', { request });
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_PROFILE, { request });
     invalidateUserSettingsCache();
     return result;
   },
 
   updateUserPreferences: async (request: JsonObject) => {
-    const result = await safeInvoke<JsonValue>('update_user_preferences', { request });
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_PREFERENCES, { request });
     invalidateUserSettingsCache();
     return result;
   },
 
   updateUserSecurity: async (request: JsonObject) => {
-    const result = await safeInvoke<JsonValue>('update_user_security', { request });
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_SECURITY, { request });
     invalidateUserSettingsCache();
     return result;
   },
 
   updateUserPerformance: async (request: JsonObject) => {
-    const result = await safeInvoke<JsonValue>('update_user_performance', { request });
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_PERFORMANCE, { request });
     invalidateUserSettingsCache();
     return result;
   },
 
   updateUserAccessibility: async (request: JsonObject) => {
-    const result = await safeInvoke<JsonValue>('update_user_accessibility', { request });
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_ACCESSIBILITY, { request });
     invalidateUserSettingsCache();
     return result;
   },
 
   updateUserNotifications: async (request: JsonObject) => {
-    const result = await safeInvoke<JsonValue>('update_user_notifications', { request });
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_NOTIFICATIONS, { request });
     invalidateUserSettingsCache();
     return result;
   },
 
   updateGeneralSettings: async (request: JsonObject): Promise<JsonValue> => {
-    const result = await safeInvoke<JsonValue>('update_general_settings', {
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_GENERAL_SETTINGS, {
       request
     });
     return result;
   },
 
   updateBusinessRules: async (rules: JsonValue[]): Promise<JsonValue> => {
-    return safeInvoke<JsonValue>('update_business_rules', {
+    return safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_BUSINESS_RULES, {
       request: { rules }
     });
   },
 
   updateSecurityPolicies: async (policies: JsonValue[]): Promise<JsonValue> => {
-    return safeInvoke<JsonValue>('update_security_policies', {
+    return safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_SECURITY_POLICIES, {
       request: { policies }
     });
   },
 
   updateIntegrations: async (integrations: JsonValue[]): Promise<JsonValue> => {
-    return safeInvoke<JsonValue>('update_integrations', {
+    return safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_INTEGRATIONS, {
       request: { integrations }
     });
   },
 
   updatePerformanceConfigs: async (configs: JsonValue[]): Promise<JsonValue> => {
-    return safeInvoke<JsonValue>('update_performance_configs', {
+    return safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_PERFORMANCE_CONFIGS, {
       request: { configs }
     });
   },
 
   updateBusinessHours: async (hours: JsonObject): Promise<JsonValue> => {
-    return safeInvoke<JsonValue>('update_business_hours', {
+    return safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_BUSINESS_HOURS, {
       request: { hours }
     });
   },
 
   changeUserPassword: async (request: JsonObject) => {
-    const result = await safeInvoke<string>('change_user_password', { request });
+    const result = await safeInvoke<string>(IPC_COMMANDS.CHANGE_USER_PASSWORD, { request });
     invalidateUserSettingsCache();
     return result;
   },
 
   // Security operations
   getActiveSessions: () =>
-    safeInvoke<JsonValue>('get_active_sessions', {}),
+    safeInvoke<JsonValue>(IPC_COMMANDS.GET_ACTIVE_SESSIONS, {}),
 
   revokeSession: (sessionId: string) =>
-    safeInvoke<void>('revoke_session', { session_id: sessionId }),
+    safeInvoke<void>(IPC_COMMANDS.REVOKE_SESSION, { session_id: sessionId }),
 
   revokeAllSessionsExceptCurrent: () =>
-    safeInvoke<void>('revoke_all_sessions_except_current', {}),
+    safeInvoke<void>(IPC_COMMANDS.REVOKE_ALL_SESSIONS_EXCEPT_CURRENT, {}),
 
   updateSessionTimeout: (timeoutMinutes: number) =>
-    safeInvoke<void>('update_session_timeout', { timeout_minutes: timeoutMinutes }),
+    safeInvoke<void>(IPC_COMMANDS.UPDATE_SESSION_TIMEOUT, { timeout_minutes: timeoutMinutes }),
 
   getSessionTimeoutConfig: () =>
-    safeInvoke<JsonValue>('get_session_timeout_config', {}),
+    safeInvoke<JsonValue>(IPC_COMMANDS.GET_SESSION_TIMEOUT_CONFIG, {}),
 
   uploadUserAvatar: (fileData: string, fileName: string, mimeType: string) =>
-    safeInvoke<string>('upload_user_avatar', {
+    safeInvoke<string>(IPC_COMMANDS.UPLOAD_USER_AVATAR, {
       request: { avatar_data: fileData, mime_type: mimeType }
     }).then((result) => {
       invalidateUserSettingsCache();
@@ -122,10 +123,10 @@ export const settingsIpc = {
     }),
 
   exportUserData: () =>
-    safeInvoke<JsonObject>('export_user_data', {}),
+    safeInvoke<JsonObject>(IPC_COMMANDS.EXPORT_USER_DATA, {}),
 
   deleteUserAccount: async (confirmation: string) => {
-    const result = await safeInvoke<string>('delete_user_account', {
+    const result = await safeInvoke<string>(IPC_COMMANDS.DELETE_USER_ACCOUNT, {
       request: { confirmation }
     });
     invalidateUserSettingsCache();
@@ -133,10 +134,10 @@ export const settingsIpc = {
   },
 
   getDataConsent: () =>
-    safeInvoke<JsonObject>('get_data_consent', {}),
+    safeInvoke<JsonObject>(IPC_COMMANDS.GET_DATA_CONSENT, {}),
 
   updateDataConsent: (request: JsonObject) =>
-    safeInvoke<JsonObject>('update_data_consent', {
+    safeInvoke<JsonObject>(IPC_COMMANDS.UPDATE_DATA_CONSENT, {
       request
     }),
 };

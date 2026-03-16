@@ -1,25 +1,26 @@
 import { safeInvoke } from '@/lib/ipc/core';
+import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import type { JsonValue } from '@/types/json';
 
 export const adminIpc = {
   healthCheck: () =>
-    safeInvoke<string>('health_check'),
+    safeInvoke<string>(IPC_COMMANDS.HEALTH_CHECK),
 
   getHealthStatus: () =>
-    safeInvoke<JsonValue>('health_check'),
+    safeInvoke<JsonValue>(IPC_COMMANDS.HEALTH_CHECK),
 
   getDatabaseStatus: () =>
-    safeInvoke<JsonValue>('diagnose_database', {}),
+    safeInvoke<JsonValue>(IPC_COMMANDS.DIAGNOSE_DATABASE, {}),
 
   getDatabaseStats: () =>
-    safeInvoke<JsonValue>('get_database_stats', {}),
+    safeInvoke<JsonValue>(IPC_COMMANDS.GET_DATABASE_STATS, {}),
 
   getDatabasePoolHealth: () =>
-    safeInvoke<JsonValue>('get_database_pool_health', {}),
+    safeInvoke<JsonValue>(IPC_COMMANDS.GET_DATABASE_POOL_HEALTH, {}),
 
   getAppInfo: () =>
-    safeInvoke<JsonValue>('get_app_info'),
+    safeInvoke<JsonValue>(IPC_COMMANDS.GET_APP_INFO),
 
   getDeviceInfo: () =>
-    safeInvoke<JsonValue>('get_device_info'),
+    safeInvoke<JsonValue>(IPC_COMMANDS.GET_DEVICE_INFO),
 };
