@@ -1,3 +1,4 @@
+/// Builds a comma-separated `?` placeholder list for an `IN` clause. Returns an empty string for empty slices.
 pub fn in_clause_placeholders<T>(values: &[T]) -> String {
     std::iter::repeat("?")
         .take(values.len())

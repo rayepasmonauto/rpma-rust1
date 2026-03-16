@@ -10,6 +10,7 @@ use rusqlite::{Result as SqliteResult, Row, ToSql};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+/// Classifies a photo by workflow timing. Stored as lowercase strings across IPC and SQLite.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum PhotoType {
@@ -35,6 +36,7 @@ impl ToSql for PhotoType {
     }
 }
 
+/// Classifies a photo by capture purpose. Stored as snake_case strings across IPC and SQLite.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "snake_case")]
 pub enum PhotoCategory {
@@ -66,6 +68,7 @@ impl ToSql for PhotoCategory {
     }
 }
 
+/// Represents a shared intervention photo record. Carries storage, metadata, and approval fields.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct Photo {
     pub id: String,
@@ -126,6 +129,7 @@ pub struct Photo {
 }
 
 impl Photo {
+    /// Creates a new photo with generated identifiers and default image metadata. Marks the record unsynced.
     pub fn new(intervention_id: String, file_path: String) -> Self {
         let now = now();
         Self {
@@ -171,6 +175,7 @@ impl Photo {
         }
     }
 
+    /// Hydrates a photo from a SQLite row. Best-effort parses JSON-backed optional fields.
     pub fn from_row(row: &Row) -> SqliteResult<Self> {
         let gps_location_lat: Option<f64> = row.get("gps_location_lat")?;
         let gps_location_lon: Option<f64> = row.get("gps_location_lon")?;
