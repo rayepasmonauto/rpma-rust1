@@ -7,6 +7,8 @@ const { spawnSync } = require('node:child_process');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCRIPT_JS = path.join(REPO_ROOT, 'scripts', 'adr-lint.js');
+const STALE_OFFSET_MS = 5_000;
+const NEWER_MTIME_OFFSET_MS = 10_000;
 
 function write(filePath, content) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -159,12 +161,12 @@ test('adr-lint reports ADR-019 and ADR-015 violations while ignoring cfg(test) u
     ].join('\n'),
   );
 
-  const staleStamp = Date.now() - 5_000;
+  const staleStamp = Date.now() - STALE_OFFSET_MS;
   fs.writeFileSync(path.join(fixture, '.git', 'types-sync-stamp'), `${staleStamp}\n`, 'utf8');
   fs.utimesSync(
     path.join(fixture, 'frontend', 'src', 'types', 'Task.ts'),
     new Date(),
-    new Date(staleStamp + 10_000),
+    new Date(staleStamp + NEWER_MTIME_OFFSET_MS),
   );
 
   stageAll(fixture);

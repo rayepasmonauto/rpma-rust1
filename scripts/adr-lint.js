@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
+const MTIME_TOLERANCE_MS = 1;
+
 function parseArgs(argv) {
   const args = {
     root: null,
@@ -321,7 +323,7 @@ function checkAdr015(rootDir, args, stampFile) {
     }
 
     const { mtimeMs } = fs.statSync(absolutePath);
-    if (mtimeMs > lastTypesSync + 1) {
+    if (mtimeMs > lastTypesSync + MTIME_TOLERANCE_MS) {
       violations.push({
         file: relPath,
         reason: 'modified after the last recorded types:sync run',
