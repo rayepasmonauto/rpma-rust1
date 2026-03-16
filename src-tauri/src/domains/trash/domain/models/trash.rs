@@ -6,6 +6,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+/// Enumerates soft-deletable entity kinds. Must stay aligned with trash repository table mappings.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export, export_to = "frontend/src/types/EntityType.ts")]
 pub enum EntityType {
@@ -19,6 +20,7 @@ pub enum EntityType {
 }
 
 impl EntityType {
+    /// Returns the source table name for this entity type. Must match the persisted soft-delete mapping.
     pub fn table_name(&self) -> &'static str {
         match self {
             EntityType::Task => "tasks",
@@ -31,6 +33,7 @@ impl EntityType {
         }
     }
 
+    /// Returns the primary display-name column for this entity type. Used to label trash entries in the UI.
     pub fn display_name_column(&self) -> &'static str {
         match self {
             EntityType::Task => "task_number",
@@ -55,4 +58,3 @@ pub struct DeletedItem {
     pub deleted_by: Option<String>,
     pub deleted_by_name: Option<String>,
 }
-

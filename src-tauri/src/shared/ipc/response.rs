@@ -32,6 +32,7 @@ pub struct ApiResponse<T> {
 }
 
 impl<T> ApiResponse<T> {
+    /// Creates a successful API response with a generated correlation ID. Clears error fields.
     pub fn success(data: T) -> Self {
         Self {
             success: true,
@@ -43,6 +44,7 @@ impl<T> ApiResponse<T> {
         }
     }
 
+    /// Creates a failed API response from an application error. Sanitizes backend details before returning them.
     pub fn error(error: AppError) -> Self {
         let error_code = error.code().to_string();
         let sanitized = error.sanitize_for_frontend();
@@ -61,6 +63,7 @@ impl<T> ApiResponse<T> {
         }
     }
 
+    /// Creates a failed API response from a plain message. Uses the `UNKNOWN` error code.
     pub fn error_message(message: &str) -> Self {
         Self {
             success: false,
@@ -76,6 +79,7 @@ impl<T> ApiResponse<T> {
         }
     }
 
+    /// Replaces or generates the response correlation ID. Ensures callers always receive one.
     pub fn with_correlation_id(mut self, correlation_id: Option<String>) -> Self {
         self.correlation_id = correlation_id.or_else(|| Some(generate_correlation_id()));
         self

@@ -7,11 +7,13 @@ use crate::shared::services::event_bus::{EventHandler, InMemoryEventBus};
 use super::events::DomainEvent;
 
 #[async_trait]
+/// Handles published domain events for subscribed consumers. Implementations declare the event names they accept.
 pub trait DomainEventHandler: Send + Sync {
     async fn handle(&self, event: &DomainEvent) -> Result<(), String>;
     fn interested_events(&self) -> Vec<&'static str>;
 }
 
+/// Publishes domain events to registered handlers. Implementations must support concurrent shared access.
 pub trait DomainEventBus: Send + Sync {
     fn publish(&self, event: DomainEvent);
     fn subscribe(&self, handler: Arc<dyn DomainEventHandler>);

@@ -1,3 +1,4 @@
+/// Generates a new UUID v4 string. Returns the canonical hyphenated representation.
 pub fn generate_uuid_string() -> String {
     uuid::Uuid::new_v4().to_string()
 }
