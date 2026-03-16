@@ -3,6 +3,7 @@
 use super::*;
 use crate::db::Database;
 use crate::domains::quotes::infrastructure::quote_repository::QuoteRepository;
+use crate::shared::contracts::auth::UserRole;
 use crate::shared::repositories::cache::Cache;
 
 fn setup_service() -> (QuoteService, Arc<Database>) {
@@ -110,7 +111,7 @@ fn test_create_quote_with_items_calculates_totals() {
         ],
     };
 
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
     assert_eq!(quote.items.len(), 2);
     // subtotal = 50000 + 2*10000 = 70000
     assert_eq!(quote.subtotal, 70000);
@@ -137,7 +138,7 @@ fn test_create_quote_with_missing_client_returns_validation() {
         items: vec![],
     };
 
-    let result = service.create_quote(req, "test-user");
+    let result = service.create_quote(req, "test-user", &UserRole::Admin);
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("introuvable"));
 }
@@ -147,7 +148,7 @@ fn test_create_quote_with_existing_client_succeeds() {
     let (service, _db) = setup_service();
 
     let req = make_quote_req("test-client");
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
     assert_eq!(quote.client_id, "test-client");
 }
 
@@ -156,15 +157,15 @@ fn test_update_forbidden_when_not_draft() {
     let (service, _db) = setup_service();
 
     let req = make_quote_req("test-client");
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
 
     // Need items to mark as sent
     service
-        .add_item(&quote.id, make_item("PPF", 10000, 1.0, 20.0))
+        .add_item(&quote.id, make_item("PPF", 10000, 1.0, 20.0), &UserRole::Admin)
         .unwrap();
 
     // Mark as sent
-    service.mark_sent(&quote.id).unwrap();
+    service.mark_sent(&quote.id, &UserRole::Admin).unwrap();
 
     // Try to update - should fail
     let result = service.update_quote(
@@ -182,6 +183,7 @@ fn test_update_forbidden_when_not_draft() {
             vehicle_year: None,
             vehicle_vin: None,
         },
+        &UserRole::Admin,
     );
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("draft"));
@@ -192,15 +194,15 @@ async fn test_mark_accepted_from_sent_succeeds() {
     let (service, _db) = setup_service_async().await;
 
     let req = make_quote_req("test-client");
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
 
     // Add item and mark sent first
     service
-        .add_item(&quote.id, make_item("PPF", 10000, 1.0, 20.0))
+        .add_item(&quote.id, make_item("PPF", 10000, 1.0, 20.0), &UserRole::Admin)
         .unwrap();
-    service.mark_sent(&quote.id).unwrap();
+    service.mark_sent(&quote.id, &UserRole::Admin).unwrap();
 
-    let result = service.mark_accepted(&quote.id, "accepting-user").unwrap();
+    let result = service.mark_accepted(&quote.id, "accepting-user", &UserRole::Admin).unwrap();
     assert_eq!(result.quote.status, QuoteStatus::Accepted);
 }
 
@@ -209,15 +211,15 @@ fn test_status_transitions() {
     let (service, _db) = setup_service();
 
     let req = make_quote_req("test-client");
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
     assert_eq!(quote.status, QuoteStatus::Draft);
 
     // Cannot accept a draft directly
-    let result = service.mark_accepted(&quote.id, "test-user");
+    let result = service.mark_accepted(&quote.id, "test-user", &UserRole::Admin);
     assert!(result.is_err());
 
     // Cannot reject a draft (changed behavior: only from Sent now)
-    let result = service.mark_rejected(&quote.id, "test-user");
+    let result = service.mark_rejected(&quote.id, "test-user", &UserRole::Admin);
     assert!(result.is_err());
     let err = result.unwrap_err();
     assert!(
@@ -232,15 +234,15 @@ async fn test_mark_rejected_from_sent_succeeds() {
     let (service, _db) = setup_service_async().await;
 
     let req = make_quote_req("test-client");
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
 
     // Add item, mark sent, then reject
     service
-        .add_item(&quote.id, make_item("PPF", 10000, 1.0, 20.0))
+        .add_item(&quote.id, make_item("PPF", 10000, 1.0, 20.0), &UserRole::Admin)
         .unwrap();
-    service.mark_sent(&quote.id).unwrap();
+    service.mark_sent(&quote.id, &UserRole::Admin).unwrap();
 
-    let rejected = service.mark_rejected(&quote.id, "test-user").unwrap();
+    let rejected = service.mark_rejected(&quote.id, "test-user", &UserRole::Admin).unwrap();
     assert_eq!(rejected.status, QuoteStatus::Rejected);
 }
 
@@ -249,10 +251,10 @@ fn test_mark_sent_with_no_items_fails() {
     let (service, _db) = setup_service();
 
     let req = make_quote_req("test-client");
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
 
     // Try to send empty quote
-    let result = service.mark_sent(&quote.id);
+    let result = service.mark_sent(&quote.id, &UserRole::Admin);
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("sans lignes"));
 }
@@ -284,8 +286,8 @@ fn test_mark_sent_with_zero_total_fails() {
         }],
     };
 
-    let quote = service.create_quote(req, "test-user").unwrap();
-    let result = service.mark_sent(&quote.id);
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
+    let result = service.mark_sent(&quote.id, &UserRole::Admin);
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("total nul"));
 }
@@ -295,9 +297,9 @@ fn test_mark_expired_from_draft_succeeds() {
     let (service, _db) = setup_service();
 
     let req = make_quote_req("test-client");
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
 
-    let expired = service.mark_expired(&quote.id).unwrap();
+    let expired = service.mark_expired(&quote.id, &UserRole::Admin).unwrap();
     assert_eq!(expired.status, QuoteStatus::Expired);
 }
 
@@ -306,14 +308,14 @@ async fn test_mark_expired_from_accepted_fails() {
     let (service, _db) = setup_service_async().await;
 
     let req = make_quote_req("test-client");
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
     service
-        .add_item(&quote.id, make_item("PPF", 10000, 1.0, 20.0))
+        .add_item(&quote.id, make_item("PPF", 10000, 1.0, 20.0), &UserRole::Admin)
         .unwrap();
-    service.mark_sent(&quote.id).unwrap();
-    service.mark_accepted(&quote.id, "user").unwrap();
+    service.mark_sent(&quote.id, &UserRole::Admin).unwrap();
+    service.mark_accepted(&quote.id, "user", &UserRole::Admin).unwrap();
 
-    let result = service.mark_expired(&quote.id);
+    let result = service.mark_expired(&quote.id, &UserRole::Admin);
     assert!(result.is_err());
 }
 
@@ -322,11 +324,11 @@ fn test_soft_delete_preserves_data() {
     let (service, db) = setup_service();
 
     let req = make_quote_req("test-client");
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
     let quote_id = quote.id.clone();
 
     // Delete (soft)
-    let deleted = service.delete_quote(&quote_id).unwrap();
+    let deleted = service.delete_quote(&quote_id, &UserRole::Admin).unwrap();
     assert!(deleted);
 
     // Not visible via service
@@ -364,8 +366,8 @@ fn test_duplicate_creates_new_draft_with_items() {
         ],
     };
 
-    let original = service.create_quote(req, "test-user").unwrap();
-    let dup = service.duplicate_quote(&original.id, "test-user").unwrap();
+    let original = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
+    let dup = service.duplicate_quote(&original.id, "test-user", &UserRole::Admin).unwrap();
 
     assert_ne!(dup.id, original.id);
     assert_ne!(dup.quote_number, original.quote_number);
@@ -384,7 +386,7 @@ fn test_list_filters() {
     // Create 3 quotes
     for _ in 0..3 {
         let req = make_quote_req("test-client");
-        service.create_quote(req, "test-user").unwrap();
+        service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
     }
 
     let list = service
@@ -425,7 +427,7 @@ fn test_discount_calculation_percentage() {
         }],
     };
 
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
     // subtotal = 10000
     assert_eq!(quote.subtotal, 10000);
 
@@ -446,6 +448,7 @@ fn test_discount_calculation_percentage() {
                 vehicle_year: None,
                 vehicle_vin: None,
             },
+            &UserRole::Admin,
         )
         .unwrap();
 
@@ -486,7 +489,7 @@ fn test_discount_calculation_fixed() {
         }],
     };
 
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
     // subtotal = 10000
     assert_eq!(quote.subtotal, 10000);
 
@@ -507,6 +510,7 @@ fn test_discount_calculation_fixed() {
                 vehicle_year: None,
                 vehicle_vin: None,
             },
+            &UserRole::Admin,
         )
         .unwrap();
 
@@ -525,7 +529,7 @@ fn test_discount_validation_percentage_over_100() {
     let (service, _db) = setup_service();
 
     let req = make_quote_req("test-client");
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
 
     // Try to apply 150% discount - should fail
     let result = service.update_quote(
@@ -543,6 +547,7 @@ fn test_discount_validation_percentage_over_100() {
             vehicle_year: None,
             vehicle_vin: None,
         },
+        &UserRole::Admin,
     );
 
     assert!(result.is_err());
@@ -576,7 +581,7 @@ fn test_remove_discount() {
         }],
     };
 
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
 
     // Apply 10% discount
     let discounted = service
@@ -595,6 +600,7 @@ fn test_remove_discount() {
                 vehicle_year: None,
                 vehicle_vin: None,
             },
+            &UserRole::Admin,
         )
         .unwrap();
 
@@ -618,6 +624,7 @@ fn test_remove_discount() {
                 vehicle_year: None,
                 vehicle_vin: None,
             },
+            &UserRole::Admin,
         )
         .unwrap();
 
@@ -634,14 +641,14 @@ fn test_quote_number_uses_max_not_count() {
 
     // Create and delete (soft) a quote
     let req = make_quote_req("test-client");
-    let q1 = service.create_quote(req, "test-user").unwrap();
+    let q1 = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
     assert_eq!(q1.quote_number, "DEV-00001");
 
-    service.delete_quote(&q1.id).unwrap();
+    service.delete_quote(&q1.id, &UserRole::Admin).unwrap();
 
     // Next quote should be DEV-00002, not DEV-00001 (COUNT vs MAX)
     let req2 = make_quote_req("test-client");
-    let q2 = service.create_quote(req2, "test-user").unwrap();
+    let q2 = service.create_quote(req2, "test-user", &UserRole::Admin).unwrap();
     assert_eq!(q2.quote_number, "DEV-00002");
 }
 
@@ -671,7 +678,7 @@ fn test_create_quote_and_items_are_atomic() {
         ],
     };
 
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
 
     // Both the quote row and its items must exist in the DB.
     let item_count: i64 = db
@@ -700,12 +707,12 @@ async fn test_convert_to_task_is_atomic() {
 
     // Create a quote and advance it to Accepted.
     let req = make_quote_req("test-client");
-    let quote = service.create_quote(req, "test-user").unwrap();
+    let quote = service.create_quote(req, "test-user", &UserRole::Admin).unwrap();
     service
-        .add_item(&quote.id, make_item("PPF Hood", 50000, 1.0, 20.0))
+        .add_item(&quote.id, make_item("PPF Hood", 50000, 1.0, 20.0), &UserRole::Admin)
         .unwrap();
-    service.mark_sent(&quote.id).unwrap();
-    service.mark_accepted(&quote.id, "test-user").unwrap();
+    service.mark_sent(&quote.id, &UserRole::Admin).unwrap();
+    service.mark_accepted(&quote.id, "test-user", &UserRole::Admin).unwrap();
 
     let task_id = "task-uuid-001";
     let task_number = "T-00001";
@@ -719,7 +726,7 @@ async fn test_convert_to_task_is_atomic() {
         ).expect("seed task row");
     }
     let result = service
-        .convert_to_task(&quote.id, task_id, task_number)
+        .convert_to_task(&quote.id, task_id, task_number, &UserRole::Admin)
         .unwrap();
 
     // Both status and task_id must be updated together.
