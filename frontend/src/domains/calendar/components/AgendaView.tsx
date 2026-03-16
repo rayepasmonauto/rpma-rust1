@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import type { CalendarTask } from '@/lib/backend';
+import { formatRelativeDate } from '@/shared/utils/date-formatters';
 import { getCalendarTaskLabel } from './TaskCard';
 
 interface AgendaViewProps {
@@ -47,26 +48,6 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
     return groups;
   }, [sortedTasks]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-
-    if (date.toDateString() === today.toDateString()) {
-      return "Aujourd'hui";
-    }
-    if (date.toDateString() === tomorrow.toDateString()) {
-      return 'Demain';
-    }
-
-    return new Intl.DateTimeFormat('fr-FR', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-    }).format(date);
-  };
-
   const formatTime = (startTime?: string | null, endTime?: string | null) => {
     if (!startTime) return 'Heure à définir';
     if (!endTime) return startTime;
@@ -95,7 +76,7 @@ export const AgendaView: React.FC<AgendaViewProps> = ({
             {/* Date header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3">
               <h2 className="text-lg font-semibold text-gray-900">
-                {formatDate(dateString)}
+                {formatRelativeDate(dateString)}
               </h2>
             </div>
 

@@ -12,6 +12,7 @@ import { LogDomain } from '@/lib/logging/types';
 import { Task, Client } from '@/types';
 import { DesktopForm, DesktopTable, type Column, EntitySyncIndicator } from '@/shared/ui';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { formatDate } from '@/shared/utils/date-formatters';
 import { useAuth } from '@/shared/hooks/useAuth';
 
 // Validation schema for task creation/editing
@@ -291,7 +292,7 @@ export default function TaskManager() {
       render: (value: unknown, item: Record<string, unknown>) => (
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-gray-400" />
-          {(item as unknown as TaskWithClient).scheduled_date ? new Date((item as unknown as TaskWithClient).scheduled_date! as unknown as string).toLocaleDateString('fr-FR') : '-'}
+          {(item as unknown as TaskWithClient).scheduled_date ? formatDate((item as unknown as TaskWithClient).scheduled_date as unknown as string) : '-'}
         </div>
       ),
     },

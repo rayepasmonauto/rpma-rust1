@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { formatDateTime } from '@/shared/utils/date-formatters';
 
 interface ClientDetailProps {
   client: ClientWithTasks;
@@ -48,15 +49,6 @@ export function ClientDetail({
   onDelete,
   onCreateTask
 }: ClientDetailProps) {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -277,9 +269,9 @@ export function ClientDetail({
                             {getStatusLabel(task.status)}
                           </Badge>
                           <div className="text-right text-sm text-muted-foreground">
-                             <p>Créée le {formatDate(task.created_at as unknown as string)}</p>
+                             <p>Créée le {formatDateTime(task.created_at as unknown as string)}</p>
                              {task.completed_at && (
-                               <p>Terminée le {formatDate(task.completed_at as unknown as string)}</p>
+                               <p>Terminée le {formatDateTime(task.completed_at as unknown as string)}</p>
                              )}
                           </div>
                         </div>
@@ -315,12 +307,12 @@ export function ClientDetail({
               
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Créé le</span>
-                 <span className="font-medium">{formatDate(client.created_at as unknown as string)}</span>
+                 <span className="font-medium">{formatDateTime(client.created_at as unknown as string)}</span>
               </div>
               
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Modifié le</span>
-                 <span className="font-medium">{formatDate(client.updated_at as unknown as string)}</span>
+                 <span className="font-medium">{formatDateTime(client.updated_at as unknown as string)}</span>
               </div>
             </CardContent>
           </Card>

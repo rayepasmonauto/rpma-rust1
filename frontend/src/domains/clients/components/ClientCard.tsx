@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Client, ClientWithTasks, Task } from '@/lib/backend';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/shared/utils/date-formatters';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -60,14 +61,6 @@ export function ClientCard({
     } else if (onView) {
       onView(client);
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   return (

@@ -4,6 +4,7 @@ import { Activity, RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
+import { formatDateTime, formatTime } from '@/shared/utils/date-formatters';
 import { useSystemHealth } from '../hooks/useSystemHealth';
 
 export function MonitoringTab() {
@@ -66,7 +67,7 @@ export function MonitoringTab() {
             État du Système
           </CardTitle>
           <CardDescription>
-            Dernière vérification: {systemStatus ? new Date(systemStatus.timestamp).toLocaleString('fr-FR') : 'N/A'}
+            Dernière vérification: {systemStatus ? formatDateTime(systemStatus.timestamp) : 'N/A'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -86,7 +87,7 @@ export function MonitoringTab() {
                   </div>
                   <p className="text-sm opacity-80">{component.message || 'Aucun détail fourni'}</p>
                   <p className="text-xs opacity-60 mt-1">
-                    Vérifié: {new Date(component.lastChecked).toLocaleTimeString('fr-FR')}
+                    Vérifié: {formatTime(component.lastChecked)}
                   </p>
                 </div>
               ))}

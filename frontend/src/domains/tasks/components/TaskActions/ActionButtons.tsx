@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Play, 
@@ -44,6 +44,11 @@ export function ActionButtons({
   const router = useRouter();
   const { user } = useAuth();
   const canComplete = completedSteps.size === 5; // All 5 steps completed
+
+  const completedChecklistCount = useMemo(
+    () => task.checklist_items?.filter(item => item.is_completed).length ?? 0,
+    [task.checklist_items],
+  );
 
   const handleViewPhotos = () => {
     router.push(`/tasks/${task.id}/photos`);
@@ -172,7 +177,7 @@ export function ActionButtons({
             <FileText className="h-4 w-4 mr-2" />
             Voir la checklist
             <Badge variant="secondary" className="ml-auto">
-              {task.checklist_items?.filter(item => item.is_completed).length || 0}/
+              {completedChecklistCount}/
               {task.checklist_items?.length || 0}
             </Badge>
           </Button>

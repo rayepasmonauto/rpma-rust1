@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { QuoteAttachment, AttachmentType } from '@/types/quote.types';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { formatDateTimeCompact } from '@/shared/utils/date-formatters';
 
 export interface QuoteAttachmentsManagerProps {
   quoteId: string | null;
@@ -41,16 +42,6 @@ export function QuoteAttachmentsManager({
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-  };
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   const getAttachmentIcon = (attachmentType: AttachmentType): string => {
@@ -195,7 +186,7 @@ export function QuoteAttachmentsManager({
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <span>{formatFileSize(attachment.file_size)}</span>
                     <span>•</span>
-                    <span>{formatDate(attachment.created_at)}</span>
+                    <span>{formatDateTimeCompact(attachment.created_at)}</span>
                   </div>
                   {attachment.description && (
                     <p className="text-xs text-gray-600 mt-1 truncate">

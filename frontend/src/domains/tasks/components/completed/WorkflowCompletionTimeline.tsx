@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle, ChevronDown, ChevronUp, Pencil, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatDateTimeShort } from '@/shared/utils/date-formatters';
 
 const STEP_META: Record<string, { label: string; description: string }> = {
   inspection: {
@@ -62,15 +63,6 @@ export function WorkflowCompletionTimeline({
   onEditStep,
   onDownloadStep,
 }: WorkflowCompletionTimelineProps) {
-  const formatCompletionTime = (dateString: string | null | undefined) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleString('fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   return (
     <div className="space-y-3">
@@ -145,7 +137,7 @@ export function WorkflowCompletionTimeline({
                 {isCompleted && step.completed_at && (
                   <div className="mt-2 flex items-center gap-1 text-[10px] text-gray-400">
                     <CheckCircle className="h-3 w-3" />
-                    Terminé le {formatCompletionTime(step.completed_at)}
+                    Terminé le {formatDateTimeShort(step.completed_at)}
                   </div>
                 )}
               </div>
