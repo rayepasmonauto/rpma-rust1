@@ -1,4 +1,5 @@
 import { safeInvoke } from '@/lib/ipc/core';
+import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import type { UserSession } from '@/lib/backend/auth';
 
 export interface SessionTimeoutConfig {
@@ -9,17 +10,17 @@ export interface SessionTimeoutConfig {
 
 export const securityIpc = {
   getActiveSessions: () =>
-    safeInvoke<UserSession[]>('get_active_sessions', {}),
+    safeInvoke<UserSession[]>(IPC_COMMANDS.GET_ACTIVE_SESSIONS, {}),
 
   revokeSession: (sessionId: string) =>
-    safeInvoke<string>('revoke_session', { session_id: sessionId }),
+    safeInvoke<string>(IPC_COMMANDS.REVOKE_SESSION, { session_id: sessionId }),
 
   revokeAllSessionsExceptCurrent: () =>
-    safeInvoke<number>('revoke_all_sessions_except_current', {}),
+    safeInvoke<number>(IPC_COMMANDS.REVOKE_ALL_SESSIONS_EXCEPT_CURRENT, {}),
 
   updateSessionTimeout: (timeoutMinutes: number) =>
-    safeInvoke<string>('update_session_timeout', { timeout_minutes: timeoutMinutes }),
+    safeInvoke<string>(IPC_COMMANDS.UPDATE_SESSION_TIMEOUT, { timeout_minutes: timeoutMinutes }),
 
   getSessionTimeoutConfig: () =>
-    safeInvoke<SessionTimeoutConfig>('get_session_timeout_config', {}),
+    safeInvoke<SessionTimeoutConfig>(IPC_COMMANDS.GET_SESSION_TIMEOUT_CONFIG, {}),
 };

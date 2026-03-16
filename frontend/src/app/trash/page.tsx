@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { EntityType } from '@/types/trash';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { Button } from '@/components/ui/button';
 import { TrashCategoryTab } from '@/domains/trash/components/TrashCategoryTab';
 import { EmptyTrashDialog } from '@/domains/trash/components/EmptyTrashDialog';
 import { useEmptyTrash } from '@/domains/trash/api';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import type { EntityType } from '@/types/trash';
 
 const CATEGORIES: { value: EntityType; label: string }[] = [
   { value: 'Task', label: 'Tâches' },

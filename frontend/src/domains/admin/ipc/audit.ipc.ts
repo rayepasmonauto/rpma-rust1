@@ -1,22 +1,23 @@
 import { safeInvoke } from '@/lib/ipc/core';
+import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import type { JsonValue } from '@/types/json';
 
 export const auditIpc = {
   getMetrics: () =>
-    safeInvoke<JsonValue>('get_security_metrics', {}),
+    safeInvoke<JsonValue>(IPC_COMMANDS.GET_SECURITY_METRICS, {}),
 
   getEvents: (limit: number) =>
-    safeInvoke<JsonValue>('get_security_events', { limit }),
+    safeInvoke<JsonValue>(IPC_COMMANDS.GET_SECURITY_EVENTS, { limit }),
 
   getAlerts: () =>
-    safeInvoke<JsonValue>('get_security_alerts', {}),
+    safeInvoke<JsonValue>(IPC_COMMANDS.GET_SECURITY_ALERTS, {}),
 
   acknowledgeAlert: (alertId: string) =>
-    safeInvoke<JsonValue>('acknowledge_security_alert', { alert_id: alertId }),
+    safeInvoke<JsonValue>(IPC_COMMANDS.ACKNOWLEDGE_SECURITY_ALERT, { alert_id: alertId }),
 
   resolveAlert: (alertId: string, actionsTaken: string[]) =>
-    safeInvoke<JsonValue>('resolve_security_alert', { alert_id: alertId, actions_taken: actionsTaken }),
+    safeInvoke<JsonValue>(IPC_COMMANDS.RESOLVE_SECURITY_ALERT, { alert_id: alertId, actions_taken: actionsTaken }),
 
   cleanupEvents: () =>
-    safeInvoke<JsonValue>('cleanup_security_events', {}),
+    safeInvoke<JsonValue>(IPC_COMMANDS.CLEANUP_SECURITY_EVENTS, {}),
 };

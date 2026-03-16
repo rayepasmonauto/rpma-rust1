@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import type { DeletedItem } from '@/types/trash';
-import { useRestoreEntity, useHardDeleteEntity } from '@/domains/trash/api';
 import { RotateCcw, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useRestoreEntity, useHardDeleteEntity } from '@/domains/trash/api';
+import type { DeletedItem } from '@/types/trash';
 
 interface Props {
   item: DeletedItem;
