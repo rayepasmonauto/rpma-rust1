@@ -6,4 +6,4 @@ import type { SyncStatus } from "./SyncStatus";
 /**
  * Main sync operation structure
  */
-export type SyncOperation = { id: bigint | null, operation_type: OperationType, entity_type: EntityType, entity_id: string, data: JsonValue, dependencies: Array<string>, timestamp_utc: string, retry_count: number, max_retries: number, last_error: string | null, status: SyncStatus, created_at: string, updated_at: string, };
+export type SyncOperation = { operation_type: OperationType, entity_type: EntityType, entity_id: string, data: JsonValue, dependencies: Array<string>, timestamp_utc: string, retry_count: number, max_retries: number, last_error: string | null, status: SyncStatus, created_at: string, updated_at: string, };

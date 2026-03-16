@@ -132,11 +132,6 @@ fn main() {
     type_definitions
         .push_str(&ApiError::export_to_string().expect("Failed to export ApiError type"));
     type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &ApiResponse::<serde_json::Value>::export_to_string()
-            .expect("Failed to export ApiResponse type"),
-    );
-    type_definitions.push_str("\n");
     type_definitions.push_str("\n\n");
 
     // Domain: auth

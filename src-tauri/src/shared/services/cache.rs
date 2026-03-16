@@ -6,7 +6,7 @@
 use crate::commands::AppError;
 use serde::{de::DeserializeOwned, Serialize};
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone)]
@@ -15,6 +15,7 @@ struct CacheEntry {
     expires_at: Instant,
 }
 
+/// Stores JSON-serialized values in memory with TTL expiration. Uses a process-local mutex-protected HashMap.
 #[derive(Debug, Clone)]
 pub struct SimpleCache {
     cache: Arc<Mutex<HashMap<String, CacheEntry>>>,
@@ -22,6 +23,7 @@ pub struct SimpleCache {
 }
 
 impl SimpleCache {
+    /// Creates an empty cache with the given default TTL. Applies that TTL when `set` receives `None`.
     pub fn new(default_ttl: Duration) -> Self {
         Self {
             cache: Arc::new(Mutex::new(HashMap::new())),
@@ -29,8 +31,9 @@ impl SimpleCache {
         }
     }
 
+    /// Returns a deserialized cached value by key. Expired or invalid entries are evicted before returning.
     pub fn get<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
-        let mut cache = self.cache.lock().unwrap();
+        let mut cache = self.lock_cache();
         if let Some(entry) = cache.get(key) {
             if entry.expires_at <= Instant::now() {
                 cache.remove(key);
@@ -48,13 +51,14 @@ impl SimpleCache {
         }
     }
 
+    /// Stores a serializable value under a cache key. Uses the provided TTL or the cache default.
     pub fn set<T: Serialize>(
         &self,
         key: &str,
         value: &T,
         ttl: Option<Duration>,
     ) -> Result<(), AppError> {
-        let mut cache = self.cache.lock().unwrap();
+        let mut cache = self.lock_cache();
         let ttl = ttl.unwrap_or(self.default_ttl);
         let json = serde_json::to_vec(value)
             .map_err(|e| AppError::Internal(format!("Cache serialization error: {}", e)))?;
@@ -68,20 +72,30 @@ impl SimpleCache {
         Ok(())
     }
 
+    /// Removes a cached value by key. Missing keys are ignored.
     pub fn invalidate(&self, key: &str) {
-        self.cache.lock().unwrap().remove(key);
+        self.lock_cache().remove(key);
     }
 
+    /// Removes all cached values. Resets the in-memory store immediately.
     pub fn clear(&self) {
-        self.cache.lock().unwrap().clear();
+        self.lock_cache().clear();
     }
 
+    /// Returns the number of stored cache entries. Expired entries remain until cleanup occurs.
     pub fn len(&self) -> usize {
-        self.cache.lock().unwrap().len()
+        self.lock_cache().len()
     }
 
+    /// Returns whether the cache currently has no stored entries. Expired entries remain until cleanup occurs.
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    fn lock_cache(&self) -> MutexGuard<'_, HashMap<String, CacheEntry>> {
+        self.cache
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 }
 

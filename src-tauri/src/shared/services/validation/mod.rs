@@ -22,9 +22,11 @@ mod tests;
 
 // ── Error type ────────────────────────────────────────────────────────────────
 
-/// TODO: document
+/// Validation errors returned by field, GPS, business, and security validators.
 #[derive(Error, Debug)]
 pub enum ValidationError {
+    #[error("{0}")]
+    Message(String),
     #[error("Invalid email format: {0}")]
     InvalidEmail(String),
     #[error("Password too weak: {0}")]
@@ -49,7 +51,7 @@ pub enum ValidationError {
 
 // ── Service struct ────────────────────────────────────────────────────────────
 
-/// TODO: document
+/// Stateless service exposing input-validation helpers to the application layer.
 #[derive(Clone, Debug)]
 pub struct ValidationService;
 
@@ -60,7 +62,7 @@ impl Default for ValidationService {
 }
 
 impl ValidationService {
-    /// TODO: document
+    /// Creates a new validation service instance.
     pub fn new() -> Self {
         Self
     }

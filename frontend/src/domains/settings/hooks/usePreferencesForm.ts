@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { LogDomain } from '@/lib/logging/types';
+import { TIMING } from '@/lib/constants';
 import { ipcClient } from '@/lib/ipc';
 import {
   UserSession,
@@ -12,6 +13,7 @@ import {
 } from '@/lib/backend';
 import { SettingsErrorHandler } from '@/lib/utils/settings-error-handler';
 import { useLogger } from '@/shared/hooks/useLogger';
+import { useSettings } from '../api/useSettings';
 
 // Combined form data type for all preference sections
 export type PreferencesFormData = {
@@ -21,10 +23,10 @@ export type PreferencesFormData = {
 };
 
 export function usePreferencesForm(user?: UserSession) {
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const { settings, loading: settingsLoading, error: settingsError } = useSettings();
 
   const { logInfo, logError, logUserAction } = useLogger({
     context: LogDomain.USER,
@@ -49,7 +51,7 @@ export function usePreferencesForm(user?: UserSession) {
         reduce_motion: false,
         screen_reader: false,
         auto_refresh: true,
-        refresh_interval: 60,
+        refresh_interval: TIMING.DEFAULT_REFRESH_INTERVAL_SECS,
       },
       notifications: {
         email_enabled: true,
@@ -85,37 +87,27 @@ export function usePreferencesForm(user?: UserSession) {
     },
   });
 
-  // Load user preferences
   useEffect(() => {
-    const loadPreferences = async () => {
-      if (!user?.token) return;
-
-      setIsLoading(true);
-      try {
-        const settings = await ipcClient.settings.getUserSettings();
-
-        // Apply loaded preferences to form
-        if (settings) {
-          form.reset({
-            preferences: settings.preferences,
-            notifications: settings.notifications,
-            accessibility: settings.accessibility,
-          });
-        }
-
-        logInfo('Preferences loaded successfully', { userId: user.user_id });
-      } catch (error) {
+    if (!settings) {
+      if (settingsError && user?.user_id) {
         logError('Failed to load preferences', {
-          error: error instanceof Error ? error.message : error,
-          userId: user.user_id
+          error: settingsError,
+          userId: user.user_id,
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
+      return;
+    }
 
-    loadPreferences();
-  }, [user?.token, user?.user_id, form, logInfo, logError]);
+    form.reset({
+      preferences: settings.preferences,
+      notifications: settings.notifications,
+      accessibility: settings.accessibility,
+    });
+
+    if (user?.user_id) {
+      logInfo('Preferences loaded successfully', { userId: user.user_id });
+    }
+  }, [form, logError, logInfo, settings, settingsError, user?.user_id]);
 
   const onSubmit = async (data: PreferencesFormData) => {
     if (!user?.token) {
@@ -188,7 +180,7 @@ export function usePreferencesForm(user?: UserSession) {
 
   return {
     form,
-    isLoading,
+    isLoading: settingsLoading,
     isSaving,
     saveSuccess,
     saveError,

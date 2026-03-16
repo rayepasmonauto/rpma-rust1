@@ -4,11 +4,13 @@
 //! values declared in `models`, preventing silent drift.
 
 use crate::domains::settings::models::{
+    AppSettings, OnboardingData, StorageSettings,
     UserAccessibilitySettings, UserNotificationSettings, UserPerformanceSettings, UserPreferences,
     UserProfileSettings, UserSecuritySettings, UserSettings,
     default_profile, default_preferences, default_security, default_performance,
     default_accessibility, default_notifications, default_user_settings,
 };
+use crate::test_utils::build_test_app_state;
 
 // ── UserProfileSettings ─────────────────────────────────────────────
 
@@ -142,4 +144,123 @@ fn user_settings_default_composes_all_sub_defaults() {
 
     // Notifications
     assert_eq!(d.notifications.sound_volume, c.notifications.sound_volume);
+}
+
+#[test]
+fn storage_settings_serialization_omits_cloud_credentials() {
+    let settings = StorageSettings {
+        photo_storage_type: "cloud".to_string(),
+        local_storage_path: Some("/tmp/photos".to_string()),
+        cloud_provider: Some("s3".to_string()),
+        cloud_bucket: Some("bucket".to_string()),
+        cloud_region: Some("eu-west-1".to_string()),
+        cloud_access_key: Some("access-key".to_string()),
+        cloud_secret_key: Some("secret-key".to_string()),
+        auto_sync_photos: true,
+        sync_on_wifi_only: false,
+        max_photo_size_mb: 10,
+        compression_quality: 80,
+    };
+
+    let value = serde_json::to_value(&settings).expect("storage settings should serialize");
+    let object = value.as_object().expect("storage settings should serialize to an object");
+
+    assert!(!object.contains_key("cloud_access_key"));
+    assert!(!object.contains_key("cloud_secret_key"));
+}
+
+#[test]
+fn onboarding_data_serialization_omits_admin_password() {
+    let data = OnboardingData {
+        organization: Default::default(),
+        admin_email: "admin@example.com".to_string(),
+        admin_password: "super-secret".to_string(),
+        admin_first_name: "Admin".to_string(),
+        admin_last_name: "User".to_string(),
+    };
+
+    let value = serde_json::to_value(&data).expect("onboarding data should serialize");
+    let object = value.as_object().expect("onboarding data should serialize to an object");
+
+    assert!(!object.contains_key("admin_password"));
+}
+
+#[tokio::test]
+async fn storage_settings_repository_round_trip_preserves_cloud_credentials() {
+    let state = build_test_app_state().await;
+    let mut settings = AppSettings::default();
+    settings.storage = StorageSettings {
+        photo_storage_type: "cloud".to_string(),
+        local_storage_path: Some("/tmp/photos".to_string()),
+        cloud_provider: Some("s3".to_string()),
+        cloud_bucket: Some("bucket".to_string()),
+        cloud_region: Some("eu-west-1".to_string()),
+        cloud_access_key: Some("access-key".to_string()),
+        cloud_secret_key: Some("secret-key".to_string()),
+        auto_sync_photos: true,
+        sync_on_wifi_only: false,
+        max_photo_size_mb: 10,
+        compression_quality: 80,
+    };
+
+    state
+        .settings_repository
+        .save_app_settings_db(&settings, "test-user")
+        .expect("app settings should save");
+
+    let loaded = state
+        .settings_repository
+        .get_app_settings_db()
+        .expect("app settings should load");
+
+    assert_eq!(loaded.storage.cloud_access_key.as_deref(), Some("access-key"));
+    assert_eq!(loaded.storage.cloud_secret_key.as_deref(), Some("secret-key"));
+}
+
+#[tokio::test]
+async fn storage_settings_repository_persists_cloud_credentials_in_raw_json() {
+    let state = build_test_app_state().await;
+    let mut settings = AppSettings::default();
+    settings.storage = StorageSettings {
+        photo_storage_type: "cloud".to_string(),
+        local_storage_path: Some("/tmp/photos".to_string()),
+        cloud_provider: Some("s3".to_string()),
+        cloud_bucket: Some("bucket".to_string()),
+        cloud_region: Some("eu-west-1".to_string()),
+        cloud_access_key: Some("access-key".to_string()),
+        cloud_secret_key: Some("secret-key".to_string()),
+        auto_sync_photos: true,
+        sync_on_wifi_only: false,
+        max_photo_size_mb: 10,
+        compression_quality: 80,
+    };
+
+    state
+        .settings_repository
+        .save_app_settings_db(&settings, "test-user")
+        .expect("app settings should save");
+
+    let conn = state.db.get_connection().expect("database connection should be available");
+    let raw_storage: String = conn
+        .query_row(
+            "SELECT storage_settings FROM app_settings WHERE id = 'global'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("storage_settings JSON should be readable");
+
+    let raw_value: serde_json::Value =
+        serde_json::from_str(&raw_storage).expect("storage_settings JSON should parse");
+    let raw_object = raw_value
+        .as_object()
+        .expect("storage_settings JSON should be an object");
+
+    assert_eq!(
+        raw_object.get("cloud_access_key").and_then(serde_json::Value::as_str),
+        Some("access-key")
+    );
+    assert_eq!(
+        raw_object.get("cloud_secret_key").and_then(serde_json::Value::as_str),
+        Some("secret-key")
+    );
 }

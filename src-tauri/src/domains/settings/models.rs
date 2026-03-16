@@ -176,7 +176,11 @@ pub struct StorageSettings {
     pub cloud_provider: Option<String>,
     pub cloud_bucket: Option<String>,
     pub cloud_region: Option<String>,
+    // SECURITY: not serialized to frontend
+    #[serde(skip_serializing)]
     pub cloud_access_key: Option<String>,
+    // SECURITY: not serialized to frontend
+    #[serde(skip_serializing)]
     pub cloud_secret_key: Option<String>,
     pub auto_sync_photos: bool,
     pub sync_on_wifi_only: bool,
@@ -731,6 +735,8 @@ pub struct OnboardingStatus {
 pub struct OnboardingData {
     pub organization: CreateOrganizationRequest,
     pub admin_email: String,
+    // SECURITY: not serialized to frontend
+    #[serde(skip_serializing)]
     pub admin_password: String,
     pub admin_first_name: String,
     pub admin_last_name: String,

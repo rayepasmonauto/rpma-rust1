@@ -726,7 +726,6 @@ export const OperationTypeSchema = z.enum(['create', 'update', 'delete']);
 export const SyncStatusSchema = z.enum(['pending', 'processing', 'completed', 'failed', 'abandoned']);
 
 export const SyncOperationSchema = z.object({
-  id: z.number().nullable(),
   operation_type: OperationTypeSchema,
   entity_type: EntityTypeSchema,
   entity_id: z.string(),

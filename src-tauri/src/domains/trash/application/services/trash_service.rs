@@ -2,10 +2,10 @@ use crate::db::Database;
 use crate::domains::trash::domain::models::trash::{DeletedItem, EntityType};
 use crate::domains::trash::infrastructure::trash_repository::TrashRepository;
 use crate::shared::context::RequestContext;
-use crate::shared::ipc::AppError;
-use crate::shared::services::domain_event::DomainEvent;
+use crate::shared::contracts::auth::UserRole;
+use crate::shared::error::AppError;
 use crate::shared::event_bus::publish_event;
-use chrono::Utc;
+use crate::shared::services::event_bus::event_factory;
 use std::sync::Arc;
 
 pub struct TrashService {
@@ -36,17 +36,20 @@ impl TrashService {
         id: String,
         ctx: &RequestContext,
     ) -> Result<(), AppError> {
+        if !matches!(ctx.auth.role, UserRole::Admin | UserRole::Supervisor) {
+            return Err(AppError::Authorization(
+                "Insufficient permissions to restore items".to_string(),
+            ));
+        }
+
         self.repo.restore(&entity_type, &id)?;
 
-        let event = DomainEvent::EntityRestored {
-            id: uuid::Uuid::new_v4().to_string(),
-            entity_id: id,
-            entity_type: format!("{:?}", entity_type),
-            restored_by: ctx.auth.user_id.clone(),
-            timestamp: Utc::now(),
-            metadata: None,
-        };
-        
+        let event = event_factory::entity_restored(
+            id,
+            format!("{:?}", entity_type),
+            ctx.auth.user_id.clone(),
+        );
+
         publish_event(event);
 
         Ok(())
@@ -58,17 +61,20 @@ impl TrashService {
         id: String,
         ctx: &RequestContext,
     ) -> Result<(), AppError> {
+        if ctx.auth.role != UserRole::Admin {
+            return Err(AppError::Authorization(
+                "Insufficient permissions to permanently delete items".to_string(),
+            ));
+        }
+
         self.repo.hard_delete(&entity_type, &id)?;
-        
-        let event = DomainEvent::EntityHardDeleted {
-            id: uuid::Uuid::new_v4().to_string(),
-            entity_id: id,
-            entity_type: format!("{:?}", entity_type),
-            deleted_by: ctx.auth.user_id.clone(),
-            timestamp: Utc::now(),
-            metadata: None,
-        };
-        
+
+        let event = event_factory::entity_hard_deleted(
+            id,
+            format!("{:?}", entity_type),
+            ctx.auth.user_id.clone(),
+        );
+
         publish_event(event);
 
         Ok(())
@@ -79,6 +85,12 @@ impl TrashService {
         entity_type: Option<EntityType>,
         _ctx: &RequestContext,
     ) -> Result<u64, AppError> {
+        if _ctx.auth.role != UserRole::Admin {
+            return Err(AppError::Authorization(
+                "Insufficient permissions to empty trash".to_string(),
+            ));
+        }
+
         self.repo.empty_trash(entity_type)
     }
 }
