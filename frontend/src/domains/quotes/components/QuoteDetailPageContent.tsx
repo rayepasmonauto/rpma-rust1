@@ -49,6 +49,7 @@ import { Badge } from '@/components/ui/badge';
 import { ErrorState, LoadingState } from '@/shared/ui/facade';
 import type { QuoteItemKind } from '@/shared/types';
 import { FadeIn } from '@/shared/ui/animations/FadeIn';
+import { formatDate } from '@/shared/utils/date-formatters';
 import type { ActiveTab } from '../hooks/useQuoteDetailPage';
 import { useQuoteDetailPage } from '../hooks/useQuoteDetailPage';
 import { formatCents } from '../utils/formatting';
@@ -219,7 +220,7 @@ export function QuoteDetailPageContent() {
     <PageShell>
       <PageHeader
         title={quote.quote_number}
-        subtitle={`Créé le ${new Date(quote.created_at).toLocaleDateString('fr-FR')}`}
+        subtitle={`Créé le ${formatDate(quote.created_at)}`}
         icon={<Quote className="h-6 w-6 text-muted-foreground" />}
         actions={
           <div className="flex items-center gap-2">
@@ -325,7 +326,7 @@ export function QuoteDetailPageContent() {
                           <Clock className="h-3 w-3" />
                           Date de création
                         </dt>
-                        <dd className="font-medium">{new Date(quote.created_at).toLocaleDateString('fr-FR')}</dd>
+                        <dd className="font-medium">{formatDate(quote.created_at)}</dd>
                       </div>
                       {quote.valid_until && (
                         <div>
@@ -333,7 +334,7 @@ export function QuoteDetailPageContent() {
                             <Clock className="h-3 w-3" />
                             Valide jusqu&apos;au
                           </dt>
-                          <dd className="font-medium">{new Date(quote.valid_until).toLocaleDateString('fr-FR')}</dd>
+                          <dd className="font-medium">{formatDate(quote.valid_until)}</dd>
                         </div>
                       )}
                     </dl>

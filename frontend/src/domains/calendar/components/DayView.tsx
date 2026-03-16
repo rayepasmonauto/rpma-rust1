@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import type { CalendarTask } from '@/lib/backend';
 import { designTokens } from '@/lib/design-tokens';
+import { formatDateLong } from '@/shared/utils/date-formatters';
 import { TaskCard } from './TaskCard';
 
 interface DayViewProps {
@@ -54,15 +55,6 @@ export const DayView: React.FC<DayViewProps> = ({
     return slots;
   }, []);
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('fr-FR', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }).format(date);
-  };
-
   return (
     <div
       className={`bg-white flex flex-col overflow-hidden ${className}`}
@@ -77,7 +69,7 @@ export const DayView: React.FC<DayViewProps> = ({
           className="text-xl font-semibold"
           style={{ color: designTokens.colors.textPrimary }}
         >
-          {formatDate(currentDate)}
+          {formatDateLong(currentDate)}
         </h2>
       </div>
 

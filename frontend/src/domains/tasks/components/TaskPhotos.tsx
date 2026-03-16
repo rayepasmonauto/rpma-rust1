@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { Camera, Trash2, Upload, ImageIcon } from 'lucide-react';
 import { addKeyboardNavigation } from '@/lib/accessibility.ts';
@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
 import { resolveLocalImageUrl, shouldUseUnoptimizedImage } from '@/shared/utils';
+import { formatDate } from '@/shared/utils/date-formatters';
 import { useInterventionPhotos } from '@/domains/interventions';
 
 
@@ -115,7 +116,10 @@ export function TaskPhotos({ taskId: _taskId, interventionId }: TaskPhotosProps)
   }, [photos, activeTab]);
 
   // Filter photos based on active tab
-  const filteredPhotos = photos?.filter(photo => photo.photo_type === (activeTab === 'Before' ? 'before' : 'after')) || [];
+  const filteredPhotos = useMemo(
+    () => photos?.filter(photo => photo.photo_type === (activeTab === 'Before' ? 'before' : 'after')) ?? [],
+    [photos, activeTab],
+  );
 
   return (
     <div className="space-y-4">
@@ -220,7 +224,7 @@ export function TaskPhotos({ taskId: _taskId, interventionId }: TaskPhotosProps)
               role="gridcell"
               aria-rowindex={Math.floor(index / 3) + 1}
               aria-colindex={(index % 3) + 1}
-               aria-label={`Photo ${index + 1} of ${filteredPhotos.length}: ${photo.photo_type || 'Unknown'} photo uploaded on ${new Date(photo.created_at as unknown as string).toLocaleDateString()}`}
+               aria-label={`Photo ${index + 1} of ${filteredPhotos.length}: ${photo.photo_type || 'Unknown'} photo uploaded on ${formatDate(photo.created_at as unknown as string)}`}
               onKeyDown={(e) => {
                 if (e.key === 'Delete' && !deletePhoto.isPending) {
                   deletePhoto.mutate(photo.id);
@@ -231,7 +235,7 @@ export function TaskPhotos({ taskId: _taskId, interventionId }: TaskPhotosProps)
               <div className="relative aspect-square">
                 <Image
                   src={displaySrc}
-                   alt={`${photo.photo_type || 'Unknown'} photo uploaded on ${new Date(photo.created_at as unknown as string).toLocaleDateString()}`}
+                   alt={`${photo.photo_type || 'Unknown'} photo uploaded on ${formatDate(photo.created_at as unknown as string)}`}
                   fill
                   className="w-full h-full object-cover"
                   unoptimized={shouldUseUnoptimizedImage(displaySrc)}
@@ -262,7 +266,7 @@ export function TaskPhotos({ taskId: _taskId, interventionId }: TaskPhotosProps)
                 <CardTitle className="text-sm font-medium flex items-center justify-between">
                   <span>{photo.photo_type || 'Inconnu'} Photo</span>
                   <span className="text-xs text-muted-foreground">
-                     {photo.created_at ? new Date(photo.created_at as unknown as string).toLocaleDateString() : 'Inconnu'}
+                   {photo.created_at ? formatDate(photo.created_at as unknown as string) : 'Inconnu'}
                   </span>
                 </CardTitle>
 

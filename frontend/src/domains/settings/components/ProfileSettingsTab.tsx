@@ -23,6 +23,7 @@ import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLogger } from '@/shared/hooks/useLogger';
+import { formatDate, formatDateTime } from '@/shared/utils/date-formatters';
 import { UserAccount } from '@/types';
 
 type ProfileFormData = UpdateProfileRequestValidation;
@@ -457,7 +458,7 @@ export function ProfileSettingsTab({ user, profile }: ProfileSettingsTabProps) {
                    <div className="space-y-1">
                       <Label className="text-sm text-muted-foreground">Dernière connexion</Label>
                       <p className="text-sm">
-                        {profile?.last_login ? new Date(profile.last_login as string).toLocaleString('fr-FR') : 'Jamais'}
+                        {profile?.last_login ? formatDateTime(profile.last_login as string) : 'Jamais'}
                       </p>
                     </div>
                     <div className="space-y-1">
@@ -467,7 +468,7 @@ export function ProfileSettingsTab({ user, profile }: ProfileSettingsTabProps) {
                     <div className="space-y-1">
                       <Label className="text-sm text-muted-foreground">Membre depuis</Label>
                       <p className="text-sm">
-                        {profile?.created_at ? new Date(profile.created_at as string).toLocaleDateString('fr-FR') : 'N/D'}
+                        {profile?.created_at ? formatDate(profile.created_at as string) : 'N/D'}
                       </p>
                     </div>
                 </div>

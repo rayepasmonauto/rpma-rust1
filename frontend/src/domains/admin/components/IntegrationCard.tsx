@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { IntegrationConfig } from '@/shared/types';
+import { formatDateTime } from '@/shared/utils/date-formatters';
 import {
   getIntegrationTypeIcon,
   getIntegrationTypeLabel,
@@ -56,7 +57,7 @@ export function IntegrationCard({
                 <h4 className="font-medium mb-2">Dernière synchronisation:</h4>
                 <p className="text-gray-600">
                   {integration.lastSync
-                    ? new Date(integration.lastSync).toLocaleString('fr-FR')
+                    ? formatDateTime(integration.lastSync)
                     : 'Jamais'}
                 </p>
               </div>

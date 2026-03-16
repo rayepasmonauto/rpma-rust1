@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { Camera, Eye, ImageIcon, X } from 'lucide-react';
 import { TaskPhoto, Photo } from '@/lib/backend';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,25 +22,28 @@ export const PhotoSummaryCard: React.FC<PhotoSummaryCardProps> = ({
   onViewPhotos,
 }) => {
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-  // Handle different photo data structures
-  let totalPhotos = 0;
-  let beforePhotos: PhotoLike[] = [];
-  let afterPhotos: PhotoLike[] = [];
-  let progressPhotos: PhotoLike[] = [];
 
-  if (Array.isArray(photos)) {
-    // TaskPhoto[] format
-    totalPhotos = photos.length;
-    beforePhotos = photos.filter(p => p.photo_type === 'before');
-    afterPhotos = photos.filter(p => p.photo_type === 'after');
-    progressPhotos = photos.filter(p => p.photo_type === 'progress');
-  } else if (photos && typeof photos === 'object') {
-    // { before: Photo[], after: Photo[], during: Photo[] } format
-    beforePhotos = photos.before || [];
-    afterPhotos = photos.after || [];
-    progressPhotos = photos.during || [];
-    totalPhotos = beforePhotos.length + afterPhotos.length + progressPhotos.length;
-  }
+  // Handle different photo data structures
+  const { totalPhotos, beforePhotos, afterPhotos, progressPhotos } = useMemo(() => {
+    let total = 0;
+    let before: PhotoLike[] = [];
+    let after: PhotoLike[] = [];
+    let progress: PhotoLike[] = [];
+
+    if (Array.isArray(photos)) {
+      total = photos.length;
+      before = photos.filter(p => p.photo_type === 'before');
+      after = photos.filter(p => p.photo_type === 'after');
+      progress = photos.filter(p => p.photo_type === 'progress');
+    } else if (photos && typeof photos === 'object') {
+      before = photos.before || [];
+      after = photos.after || [];
+      progress = photos.during || [];
+      total = before.length + after.length + progress.length;
+    }
+
+    return { totalPhotos: total, beforePhotos: before, afterPhotos: after, progressPhotos: progress };
+  }, [photos]);
 
   const displayTotal = stepPhotoUrls.length || totalPhotos;
 

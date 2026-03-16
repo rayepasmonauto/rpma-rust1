@@ -2,6 +2,7 @@
 
 import { FileText, Download, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/shared/ui';
+import { formatDateTime } from '@/shared/utils/date-formatters';
 import { useInterventionReport } from '../hooks/useInterventionReport';
 
 interface InterventionReportSectionProps {
@@ -39,13 +40,7 @@ export function InterventionReportSection({ interventionId }: InterventionReport
             <div className="flex justify-between">
               <span className="text-muted-foreground">Généré le</span>
               <span className="text-foreground">
-                {new Date(report.generated_at).toLocaleDateString('fr-FR', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {formatDateTime(report.generated_at)}
               </span>
             </div>
             {report.technician_name && (

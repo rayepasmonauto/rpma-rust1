@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { formatDate } from '@/shared/utils/date-formatters';
 import { useBusinessRules } from '../hooks/useBusinessRules';
 
 const BusinessRuleFormDialog = dynamic(
@@ -241,7 +242,7 @@ export function BusinessRulesTab() {
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
-                        Créée le {rule.createdAt ? new Date(rule.createdAt).toLocaleDateString() : 'N/A'}
+                        Créée le {rule.createdAt ? formatDate(rule.createdAt) : 'N/A'}
                       </div>
                     </div>
                   </div>

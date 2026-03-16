@@ -30,6 +30,17 @@ export {
 
 export { LOCAL_IMAGE_FALLBACK_SRC, resolveLocalImageUrl, shouldUseUnoptimizedImage } from '@/shared/utils/media';
 
+export {
+  formatDate,
+  formatDateTime,
+  formatDateTimeShort,
+  formatDateTimeCompact,
+  formatTime,
+  formatRelativeDate,
+  formatDateLong,
+} from '@/shared/utils/date-formatters';
+export type { DateInput } from '@/shared/utils/date-formatters';
+
 
 
 

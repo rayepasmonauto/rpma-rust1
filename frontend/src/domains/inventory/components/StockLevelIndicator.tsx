@@ -12,6 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatDate } from '@/shared/utils/date-formatters';
 import { Material } from '@/shared/types';
 
 interface StockLevelIndicatorProps {
@@ -194,7 +195,7 @@ export function StockLevelIndicator({
               <div>
                 <span className="text-muted-foreground">Expiry Date:</span>
                 <div className={`font-medium ${isExpiringSoon ? 'text-yellow-600' : ''}`}>
-                  {new Date(material.expiry_date).toLocaleDateString()}
+                  {formatDate(material.expiry_date)}
                   {isExpiringSoon && ` (${daysUntilExpiry} days)`}
                 </div>
               </div>
@@ -299,7 +300,7 @@ export function StockLevelIndicator({
               <div>Reorder at: {formatStockValue(material.reorder_point)}</div>
             )}
             {material.expiry_date && (
-              <div>Expires: {new Date(material.expiry_date).toLocaleDateString()}</div>
+              <div>Expires: {formatDate(material.expiry_date)}</div>
             )}
           </div>
         </TooltipContent>

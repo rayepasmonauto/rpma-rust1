@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock, Camera, Shield } from 'lucide-react';
+import { formatDate } from '@/shared/utils/date-formatters';
 
 type CompletedHeroProps = {
   task: {
@@ -30,15 +31,6 @@ export function CompletedHero({
   const vehicleInfo = [task.vehicle_make, task.vehicle_model, task.vehicle_year]
     .filter(Boolean)
     .join(' ');
-
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return '—';
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
 
   return (
     <div className="rounded-xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 px-6 py-6 text-white shadow-lg">

@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { resolveLocalImageUrl } from '@/shared/utils/media';
+import { formatDateTime } from '@/shared/utils/date-formatters';
 import {
   Alert,
   AlertDescription,
@@ -203,7 +204,7 @@ export function CompletedTaskPageContent() {
                           </p>
                           {item.completed_at && (
                             <p className="text-[10px] text-gray-400 mt-0.5">
-                              {new Date(item.completed_at).toLocaleString('fr-FR')}
+                              {formatDateTime(item.completed_at)}
                             </p>
                           )}
                           {item.notes && (
@@ -482,8 +483,8 @@ export function CompletedTaskPageContent() {
                     </div>
                     <div className="space-y-1 text-gray-700">
                       <div><span className="font-medium">ID:</span> {task.id?.slice(-8) || 'N/A'}</div>
-                      <div><span className="font-medium">Créé:</span> {task.created_at ? new Date(task.created_at).toLocaleString('fr-FR') : 'N/A'}</div>
-                      <div><span className="font-medium">Modifié:</span> {task.updated_at ? new Date(task.updated_at as unknown as string).toLocaleString('fr-FR') : 'N/A'}</div>
+                      <div><span className="font-medium">Créé:</span> {task.created_at ? formatDateTime(task.created_at) : 'N/A'}</div>
+                      <div><span className="font-medium">Modifié:</span> {task.updated_at ? formatDateTime(task.updated_at as unknown as string) : 'N/A'}</div>
                     </div>
                   </div>
                   {fullInterventionData && (
@@ -493,8 +494,8 @@ export function CompletedTaskPageContent() {
                       </div>
                       <div className="space-y-1 text-gray-700">
                         <div><span className="font-medium">ID:</span> {fullInterventionData.id?.slice(-8) || 'N/A'}</div>
-                        <div><span className="font-medium">Créé:</span> {new Date(fullInterventionData.created_at as unknown as string).toLocaleString('fr-FR')}</div>
-                        <div><span className="font-medium">Modifié:</span> {new Date(fullInterventionData.updated_at as unknown as string).toLocaleString('fr-FR')}</div>
+                        <div><span className="font-medium">Créé:</span> {formatDateTime(fullInterventionData.created_at as unknown as string)}</div>
+                        <div><span className="font-medium">Modifié:</span> {formatDateTime(fullInterventionData.updated_at as unknown as string)}</div>
                       </div>
                     </div>
                   )}
@@ -507,7 +508,7 @@ export function CompletedTaskPageContent() {
                   </span>
                   {task.last_synced_at && (
                     <span className="text-gray-500">
-                      · Dernière sync: {new Date(task.last_synced_at as unknown as string).toLocaleString('fr-FR')}
+                      · Dernière sync: {formatDateTime(task.last_synced_at as unknown as string)}
                     </span>
                   )}
                 </div>

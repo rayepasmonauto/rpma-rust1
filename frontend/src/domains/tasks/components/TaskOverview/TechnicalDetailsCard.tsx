@@ -11,6 +11,7 @@ import {
   ClipboardList
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatDate } from '@/shared/utils/date-formatters';
 
 import { TaskWithDetails } from '@/types/task.types';
 
@@ -41,7 +42,7 @@ export function TechnicalDetailsCard({ task }: TechnicalDetailsCardProps) {
     {
       label: 'Date de création',
       icon: <Calendar className="h-4 w-4 text-gray-400" />,
-      value: task.created_at ? new Date(task.created_at as unknown as string).toLocaleDateString('fr-FR') : 'N/A',
+      value: task.created_at ? formatDate(task.created_at as unknown as string) : 'N/A',
     },
     {
       label: 'Priorité',

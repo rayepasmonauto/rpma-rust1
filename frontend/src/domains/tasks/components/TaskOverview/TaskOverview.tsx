@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   AlertTriangle,
   Building,
@@ -14,22 +14,11 @@ import {
 import { getUserFullName } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { TaskWithDetails } from '@/types/task.types';
+import { formatDate, formatTime } from '@/shared/utils/date-formatters';
 
 interface TaskOverviewProps {
   task: TaskWithDetails;
   defaultExpandedSections?: string[];
-}
-
-function formatTime(timeString: string | null | undefined): string {
-  if (!timeString) return 'Non défini';
-  try {
-    return new Date(timeString).toLocaleTimeString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch {
-    return 'Heure invalide';
-  }
 }
 
 function getPriorityColor(priority: string): string {
@@ -85,15 +74,6 @@ const EmptyState = ({ label }: { label: string }) => (
   </div>
 );
 
-const formatDate = (date: string | Date | null | undefined) => {
-  if (!date) return '—';
-  return new Date(date).toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-};
-
 const handlePhoneClick = (phone: string | null) => {
   if (!phone) return;
   window.location.href = `tel:${phone}`;
@@ -145,6 +125,11 @@ function ExpandableText({
 
 export function TaskOverview({ task, defaultExpandedSections = [] }: TaskOverviewProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(defaultExpandedSections));
+
+  const completedChecklistCount = useMemo(
+    () => task.checklist_items?.filter(item => item.is_completed).length ?? 0,
+    [task.checklist_items],
+  );
 
   const toggleSection = (section: string) => {
     setExpandedSections(current => {
@@ -251,7 +236,7 @@ export function TaskOverview({ task, defaultExpandedSections = [] }: TaskOvervie
               label="Checklist"
               value={
                 task.checklist_items
-                  ? `${task.checklist_items.filter(item => item.is_completed).length}/${task.checklist_items.length}`
+                  ? `${completedChecklistCount}/${task.checklist_items.length}`
                   : '0/0'
               }
             />

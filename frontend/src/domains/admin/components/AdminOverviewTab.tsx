@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from '@/shared/ui/facade';
 import { useTranslation } from '@/shared/hooks/useTranslation';
+import { formatDateTime } from '@/shared/utils/date-formatters';
 import type { RecentActivity, SystemStats } from '@/domains/admin';
 
 interface DashboardStats {
@@ -124,7 +125,7 @@ export function AdminOverviewTab({
                         <span className="text-xs text-muted-foreground">{activity.user}</span>
                       )}
                       <span className="text-xs text-muted-foreground">
-                        {new Date(activity.timestamp).toLocaleString('fr-FR')}
+                        {formatDateTime(activity.timestamp)}
                       </span>
                     </div>
                   </div>
