@@ -37,6 +37,8 @@ impl SettingsRepository {
         })
     }
 
+    /// Persists storage credentials for DB round-trips while frontend-facing
+    /// serde serialization skips those fields.
     fn storage_settings_to_json_str(value: &StorageSettings) -> Result<String, AppError> {
         serde_json::to_string(&serde_json::json!({
             "photo_storage_type": &value.photo_storage_type,
