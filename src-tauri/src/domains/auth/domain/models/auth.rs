@@ -129,9 +129,11 @@ pub struct UserAccount {
     pub first_name: String,
     pub last_name: String,
     pub role: UserRole,
+    // SECURITY: not serialized to frontend
     #[serde(skip_serializing)]
     #[ts(skip)]
     pub password_hash: String,
+    // SECURITY: not serialized to frontend
     #[serde(skip_serializing)]
     #[ts(skip)]
     pub salt: Option<String>,

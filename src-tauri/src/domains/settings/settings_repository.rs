@@ -37,6 +37,28 @@ impl SettingsRepository {
         })
     }
 
+    /// Persists storage credentials for DB round-trips while frontend-facing
+    /// serde serialization skips those fields.
+    fn storage_settings_to_json_str(value: &StorageSettings) -> Result<String, AppError> {
+        serde_json::to_string(&serde_json::json!({
+            "photo_storage_type": &value.photo_storage_type,
+            "local_storage_path": &value.local_storage_path,
+            "cloud_provider": &value.cloud_provider,
+            "cloud_bucket": &value.cloud_bucket,
+            "cloud_region": &value.cloud_region,
+            "cloud_access_key": &value.cloud_access_key,
+            "cloud_secret_key": &value.cloud_secret_key,
+            "auto_sync_photos": value.auto_sync_photos,
+            "sync_on_wifi_only": value.sync_on_wifi_only,
+            "max_photo_size_mb": value.max_photo_size_mb,
+            "compression_quality": value.compression_quality,
+        }))
+        .map_err(|e| {
+            error!("Failed to serialize app_settings.storage_settings: {}", e);
+            AppError::Database("Serialization error for 'storage_settings'".to_string())
+        })
+    }
+
     // ── read ─────────────────────────────────────────────────────────────────
 
     /// Load the global `AppSettings` from the database.
@@ -127,7 +149,7 @@ impl SettingsRepository {
         let notif     = Self::to_json_str(&settings.notifications,   "notifications_settings")?;
         let appear    = Self::to_json_str(&settings.appearance,      "appearance_settings")?;
         let dm        = Self::to_json_str(&settings.data_management, "data_management_settings")?;
-        let stor      = Self::to_json_str(&settings.storage,         "storage_settings")?;
+        let stor      = Self::storage_settings_to_json_str(&settings.storage)?;
         let br        = Self::to_json_str(&settings.business_rules,  "business_rules")?;
         let sp        = Self::to_json_str(&settings.security_policies, "security_policies")?;
         let int       = Self::to_json_str(&settings.integrations,    "integrations")?;
