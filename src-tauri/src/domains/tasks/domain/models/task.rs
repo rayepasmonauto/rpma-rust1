@@ -399,6 +399,7 @@ pub struct CreateTaskRequest {
 }
 
 /// Request for updating a task
+// TODO: run npm run types:sync (`frontend/src/types/task.types.ts` is missing several current update fields and still includes `assigned_at`/`actual_duration`).
 #[derive(Debug, Clone, Serialize, Deserialize, Default, TS)]
 pub struct UpdateTaskRequest {
     pub id: Option<String>,
@@ -441,6 +442,7 @@ pub struct DeleteTaskRequest {
 }
 
 /// Query parameters for task listing
+// TODO: run npm run types:sync (`frontend/src/types/task.types.ts` still exposes legacy query fields like `assignedTo`/`vehicleId` instead of the current backend filters).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct TaskQuery {
     pub page: Option<i32>,
@@ -492,6 +494,7 @@ pub struct PaginationInfo {
 }
 
 /// Task statistics
+// TODO: run npm run types:sync (`frontend/src/types/index.ts` is missing the newer task statistic counters).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct TaskStatistics {
     #[ts(type = "number")]

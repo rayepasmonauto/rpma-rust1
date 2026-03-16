@@ -51,6 +51,7 @@ jobs:
       # Verify the type-export binary compiles with its feature flag.
       # This catches import path regressions in export-types.rs before they
       # silently break `npm run types:sync` and the downstream build.
+      # Drift note: npm run types:sync && git diff --exit-code frontend/src/types/
       - name: Check type-export binary
         working-directory: src-tauri
         run: cargo check --features export-types --bin export-types

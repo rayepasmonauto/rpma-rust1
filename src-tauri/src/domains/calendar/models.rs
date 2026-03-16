@@ -280,6 +280,7 @@ pub enum ParticipantStatus {
 }
 
 /// Input for creating a calendar event.
+// TODO: run npm run types:sync (`frontend/src/types/calendar.ts` is missing `technicianId`).
 #[derive(Debug, Clone, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateEventInput {
