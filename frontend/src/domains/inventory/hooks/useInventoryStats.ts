@@ -1,62 +1,35 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { inventoryKeys } from '@/lib/query-keys';
 import { canAccessInventory } from '@/types/auth.types';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { inventoryIpc } from '../ipc/inventory.ipc';
 import type { InventoryStats } from '../api/types';
-
-const AUTH_ERROR_MESSAGE = 'Authentication required';
-const PERMISSION_ERROR_MESSAGE = 'Insufficient permissions for inventory access';
+import { getInventoryAuthError } from './inventory-query-auth';
 
 export function useInventoryStats() {
   const { user } = useAuth();
   const sessionToken = user?.token;
   const hasInventoryAccess = canAccessInventory(user ?? null);
-  const [stats, setStats] = useState<InventoryStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const fetchingRef = useRef(false);
+  const authError = getInventoryAuthError(sessionToken, hasInventoryAccess);
 
-  const fetchStats = useCallback(async () => {
-    if (!sessionToken) {
-      setStats(null);
-      setError(AUTH_ERROR_MESSAGE);
-      setLoading(false);
-      return;
-    }
-
-    if (!hasInventoryAccess) {
-      setStats(null);
-      setError(PERMISSION_ERROR_MESSAGE);
-      setLoading(false);
-      return;
-    }
-
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
-
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await inventoryIpc.getInventoryStats();
-      setStats(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-      fetchingRef.current = false;
-    }
-  }, [hasInventoryAccess, sessionToken]);
-
-  useEffect(() => {
-    void fetchStats();
-  }, [fetchStats]);
+  const query = useQuery({
+    queryKey: inventoryKeys.dashboard(),
+    queryFn: () => inventoryIpc.getDashboardData(),
+    select: (data): InventoryStats => data.stats,
+    enabled: !authError,
+    retry: false,
+  });
 
   return {
-    stats,
-    loading,
-    error,
-    refetch: fetchStats,
+    stats: authError ? null : (query.data ?? null),
+    loading: authError ? false : query.isLoading,
+    error: authError ?? (query.error instanceof Error ? query.error.message : null),
+    refetch: async () => {
+      if (!authError) {
+        await query.refetch();
+      }
+    },
   };
 }

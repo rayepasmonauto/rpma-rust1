@@ -1,10 +1,12 @@
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { InventoryProvider, useInventoryContext } from '../api/InventoryProvider';
 import { inventoryIpc } from '../ipc/inventory.ipc';
 import type { Material, InventoryStats, InventoryTransaction } from '../api/types';
 
-jest.mock('@/domains/auth', () => ({
+jest.mock('@/shared/hooks/useAuth', () => ({
   useAuth: jest.fn(),
 }));
 
@@ -12,6 +14,7 @@ jest.mock('../ipc/inventory.ipc', () => ({
   inventoryIpc: {
     material: {
       list: jest.fn(),
+      create: jest.fn(),
     },
     reporting: {
       getLowStockMaterials: jest.fn(),
@@ -24,6 +27,17 @@ jest.mock('../ipc/inventory.ipc', () => ({
 
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockInventoryIpc = inventoryIpc as jest.Mocked<typeof inventoryIpc>;
+
+const createWrapper = ({ children }: { children: React.ReactNode }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+};
 
 const createMaterial = (overrides: Partial<Material> = {}): Material => ({
   id: 'material-1',
@@ -98,7 +112,8 @@ describe('InventoryProvider', () => {
     render(
       <InventoryProvider>
         <InventoryConsumer />
-      </InventoryProvider>
+      </InventoryProvider>,
+      { wrapper: createWrapper }
     );
 
     await waitFor(() => {

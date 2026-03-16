@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { clientKeys } from '@/lib/query-keys';
+import { useMutationCounter } from '@/lib/data-freshness';
 import { LogDomain } from '@/lib/logging/types';
 import { useLogger } from '@/shared/hooks/useLogger';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -26,79 +28,55 @@ export interface UseClientStatsReturn {
 
 export const useClientStats = (options: UseClientStatsOptions = {}): UseClientStatsReturn => {
   const { user } = useAuth();
+  const token = user?.token;
   const { logInfo, logError } = useLogger({
     context: LogDomain.SYSTEM,
     component: 'useClientStats'
   });
+  const clientMutations = useMutationCounter('clients');
 
   const { autoFetch = true, refreshInterval } = options;
 
-  const [stats, setStats] = useState<ClientStats | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchStats = useCallback(async () => {
-    if (!user?.token) return;
-
-    try {
-      setLoading(true);
-      setError(null);
+  const query = useQuery({
+    queryKey: [...clientKeys.stats(), clientMutations],
+    queryFn: async () => {
+      if (!token) {
+        throw new Error('Authentication required');
+      }
 
       logInfo('Fetching client statistics');
 
-      const response = await clientService.getClientStats(user.token);
+      const response = await clientService.getClientStats(token);
 
       if (response.success && response.data) {
-        setStats(response.data);
-      } else {
-        throw new Error(typeof response.error === 'string' ? response.error : 'Failed to fetch client statistics');
+        logInfo('Client statistics fetched successfully');
+        return response.data;
       }
 
-      logInfo('Client statistics fetched successfully');
+      throw new Error(typeof response.error === 'string' ? response.error : 'Failed to fetch client statistics');
+    },
+    enabled: autoFetch && !!token,
+    retry: false,
+    refetchInterval: refreshInterval && autoFetch
+      ? () => (
+        typeof document !== 'undefined' && document.visibilityState === 'visible'
+          ? refreshInterval
+          : false
+      )
+      : false,
+  });
 
-    } catch (error: unknown) {
-      const normalizedError = normalizeError(error);
-      logError('Failed to fetch client statistics', normalizedError);
-      setError(normalizedError);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.token, logInfo, logError]);
-
-  const refetch = useCallback(async () => {
-    await fetchStats();
-  }, [fetchStats]);
-
-  // Auto-fetch on mount
-  useEffect(() => {
-    if (autoFetch) {
-      fetchStats();
-    }
-  }, [fetchStats, autoFetch]);
-
-  // Set up refresh interval if specified
-  useEffect(() => {
-    if (!refreshInterval || !autoFetch) return;
-
-    // S-2 perf: skip poll when tab is hidden.
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') fetchStats();
-    }, refreshInterval);
-
-    return () => clearInterval(interval);
-  }, [refreshInterval, autoFetch, fetchStats]);
+  const error = query.error ? normalizeError(query.error) : null;
+  if (error && !query.isFetching) {
+    logError('Failed to fetch client statistics', error);
+  }
 
   return {
-    // Data
-    stats,
-
-    // Loading states
-    loading,
-
-    // Error states
+    stats: query.data ?? null,
+    loading: query.isLoading,
     error,
-
-    // Actions
-    refetch,
+    refetch: async () => {
+      await query.refetch();
+    },
   };
 };
