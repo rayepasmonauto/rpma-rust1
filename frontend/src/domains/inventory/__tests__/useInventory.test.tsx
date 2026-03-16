@@ -1,10 +1,12 @@
+import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useInventory } from '../api/useInventory';
 import { inventoryIpc } from '../ipc/inventory.ipc';
 import type { Material, InventoryStats, InventoryTransaction } from '../api/types';
 
-jest.mock('@/domains/auth', () => ({
+jest.mock('@/shared/hooks/useAuth', () => ({
   useAuth: jest.fn(),
 }));
 
@@ -12,6 +14,7 @@ jest.mock('../ipc/inventory.ipc', () => ({
   inventoryIpc: {
     material: {
       list: jest.fn(),
+      create: jest.fn(),
     },
     reporting: {
       getLowStockMaterials: jest.fn(),
@@ -24,6 +27,21 @@ jest.mock('../ipc/inventory.ipc', () => ({
 
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockInventoryIpc = inventoryIpc as jest.Mocked<typeof inventoryIpc>;
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+  Wrapper.displayName = 'QueryClientWrapper';
+  return Wrapper;
+};
 
 const createMaterial = (overrides: Partial<Material> = {}): Material => ({
   id: 'material-1',
@@ -84,7 +102,7 @@ describe('useInventory', () => {
       expired: [],
     } as never);
 
-    const { result } = renderHook(() => useInventory());
+    const { result } = renderHook(() => useInventory(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -97,7 +115,7 @@ describe('useInventory', () => {
   it('returns auth error when no token is available', async () => {
     mockUseAuth.mockReturnValue({ user: null } as never);
 
-    const { result } = renderHook(() => useInventory());
+    const { result } = renderHook(() => useInventory(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -110,7 +128,7 @@ describe('useInventory', () => {
   it('returns permission error and does not call IPC for viewer role', async () => {
     mockUseAuth.mockReturnValue({ user: { token: 'session-token', role: 'viewer' } } as never);
 
-    const { result } = renderHook(() => useInventory());
+    const { result } = renderHook(() => useInventory(), { wrapper: createWrapper() });
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
@@ -121,5 +139,44 @@ describe('useInventory', () => {
     expect(mockInventoryIpc.getInventoryStats).not.toHaveBeenCalled();
     expect(mockInventoryIpc.reporting.getLowStockMaterials).not.toHaveBeenCalled();
     expect(mockInventoryIpc.reporting.getExpiredMaterials).not.toHaveBeenCalled();
+  });
+
+  it('invalidates active inventory queries after creating a material', async () => {
+    mockUseAuth.mockReturnValue({ user: { token: 'session-token', role: 'technician' } } as never);
+    mockInventoryIpc.getDashboardData
+      .mockResolvedValueOnce({
+        materials: [createMaterial()],
+        stats: createStats(),
+        low_stock: { items: [], total: 0 },
+        expired: [],
+      } as never)
+      .mockResolvedValueOnce({
+        materials: [createMaterial(), createMaterial({ id: 'material-2', sku: 'PPF-002' })],
+        stats: createStats(),
+        low_stock: { items: [], total: 0 },
+        expired: [],
+      } as never);
+    mockInventoryIpc.material.create.mockResolvedValue(createMaterial({ id: 'material-2', sku: 'PPF-002' }) as never);
+
+    const { result } = renderHook(() => useInventory(), { wrapper: createWrapper() });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    await result.current.createMaterial({
+      sku: 'PPF-002',
+      name: 'Second film roll',
+      material_type: 'ppf_film',
+      unit_of_measure: 'meter',
+      current_stock: 25,
+      minimum_stock: 5,
+      cost_per_unit: 10,
+      currency: 'EUR',
+    } as never);
+
+    await waitFor(() => {
+      expect(mockInventoryIpc.getDashboardData).toHaveBeenCalledTimes(2);
+    });
   });
 });

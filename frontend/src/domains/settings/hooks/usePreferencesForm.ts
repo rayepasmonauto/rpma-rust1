@@ -13,6 +13,7 @@ import {
 } from '@/lib/backend';
 import { SettingsErrorHandler } from '@/lib/utils/settings-error-handler';
 import { useLogger } from '@/shared/hooks/useLogger';
+import { useSettings } from '../api/useSettings';
 
 // Combined form data type for all preference sections
 export type PreferencesFormData = {
@@ -22,10 +23,10 @@ export type PreferencesFormData = {
 };
 
 export function usePreferencesForm(user?: UserSession) {
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const { settings, loading: isLoading, error: settingsError } = useSettings();
 
   const { logInfo, logError, logUserAction } = useLogger({
     context: LogDomain.USER,
@@ -86,37 +87,27 @@ export function usePreferencesForm(user?: UserSession) {
     },
   });
 
-  // Load user preferences
   useEffect(() => {
-    const loadPreferences = async () => {
-      if (!user?.token) return;
-
-      setIsLoading(true);
-      try {
-        const settings = await ipcClient.settings.getUserSettings();
-
-        // Apply loaded preferences to form
-        if (settings) {
-          form.reset({
-            preferences: settings.preferences,
-            notifications: settings.notifications,
-            accessibility: settings.accessibility,
-          });
-        }
-
-        logInfo('Preferences loaded successfully', { userId: user.user_id });
-      } catch (error) {
+    if (!settings) {
+      if (settingsError && user?.user_id) {
         logError('Failed to load preferences', {
-          error: error instanceof Error ? error.message : error,
-          userId: user.user_id
+          error: settingsError,
+          userId: user.user_id,
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
+      return;
+    }
 
-    loadPreferences();
-  }, [user?.token, user?.user_id, form, logInfo, logError]);
+    form.reset({
+      preferences: settings.preferences,
+      notifications: settings.notifications,
+      accessibility: settings.accessibility,
+    });
+
+    if (user?.user_id) {
+      logInfo('Preferences loaded successfully', { userId: user.user_id });
+    }
+  }, [form, logError, logInfo, settings, settingsError, user?.user_id]);
 
   const onSubmit = async (data: PreferencesFormData) => {
     if (!user?.token) {

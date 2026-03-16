@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { inventoryKeys } from '@/lib/query-keys';
 import { canAccessInventory } from '@/types/auth.types';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { inventoryIpc } from '../ipc/inventory.ipc';
@@ -8,9 +10,7 @@ import type {
   Material,
   MaterialConsumption,
   MaterialStats,
-  InventoryStats,
   InterventionMaterialSummary,
-  LowStockMaterial,
 } from '../api/types';
 import type {
   CreateMaterialRequest,
@@ -52,198 +52,112 @@ export function useInventory(query?: InventoryQuery) {
   const { user } = useAuth();
   const sessionToken = user?.token;
   const hasInventoryAccess = canAccessInventory(user ?? null);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<InventoryStats | null>(null);
-  const [lowStockMaterials, setLowStockMaterials] = useState<LowStockMaterial[]>([]);
-  const [expiredMaterials, setExpiredMaterials] = useState<Material[]>([]);
+  const queryClient = useQueryClient();
 
-  const fetchMaterials = useCallback(async () => {
-    if (!sessionToken) {
-      setMaterials([]);
-      setError(AUTH_ERROR_MESSAGE);
-      setLoading(false);
-      return;
-    }
+  const normalizedQuery = useMemo(
+    () => ({
+      material_type: query?.material_type ?? undefined,
+      category: query?.category ?? undefined,
+      active_only: query?.active_only,
+      limit: query?.limit,
+      offset: query?.offset,
+    }),
+    [query?.active_only, query?.category, query?.limit, query?.material_type, query?.offset],
+  );
 
-    if (!hasInventoryAccess) {
-      setMaterials([]);
-      setError(PERMISSION_ERROR_MESSAGE);
-      setLoading(false);
-      return;
-    }
+  const hasMaterialFilters = useMemo(
+    () => Object.values(normalizedQuery).some((value) => value !== undefined),
+    [normalizedQuery],
+  );
 
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await inventoryIpc.material.list({
-        material_type: query?.material_type ?? undefined,
-        category: query?.category ?? undefined,
-        active_only: query?.active_only,
-        limit: query?.limit,
-        offset: query?.offset,
-      });
-      setMaterials(extractMaterialList(result));
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [hasInventoryAccess, query?.active_only, query?.category, query?.limit, query?.material_type, query?.offset, sessionToken]);
+  const authError = !sessionToken
+    ? AUTH_ERROR_MESSAGE
+    : !hasInventoryAccess
+      ? PERMISSION_ERROR_MESSAGE
+      : null;
 
-  const fetchStats = useCallback(async () => {
-    if (!sessionToken || !hasInventoryAccess) {
-      setStats(null);
-      return;
-    }
-
-    try {
-      const result = await inventoryIpc.getInventoryStats();
-      setStats(result);
-    } catch (err) {
-      console.error('Failed to fetch inventory stats:', err);
-    }
-  }, [hasInventoryAccess, sessionToken]);
-
-  const fetchLowStock = useCallback(async () => {
-    if (!sessionToken || !hasInventoryAccess) {
-      setLowStockMaterials([]);
-      return;
-    }
-
-    try {
-      const result = await inventoryIpc.reporting.getLowStockMaterials();
-      setLowStockMaterials(result.items);
-    } catch (err) {
-      console.error('Failed to fetch low stock materials:', err);
-    }
-  }, [hasInventoryAccess, sessionToken]);
-
-  const fetchExpired = useCallback(async () => {
-    if (!sessionToken || !hasInventoryAccess) {
-      setExpiredMaterials([]);
-      return;
-    }
-
-    try {
-      const result = await inventoryIpc.reporting.getExpiredMaterials();
-      setExpiredMaterials(result);
-    } catch (err) {
-      console.error('Failed to fetch expired materials:', err);
-    }
-  }, [hasInventoryAccess, sessionToken]);
-
-  // S-1 perf: single IPC call that aggregates materials + stats + lowStock + expired.
-  const fetchDashboard = useCallback(async () => {
-    if (!sessionToken) {
-      setMaterials([]);
-      setStats(null);
-      setLowStockMaterials([]);
-      setExpiredMaterials([]);
-      setError(AUTH_ERROR_MESSAGE);
-      setLoading(false);
-      return;
-    }
-    if (!hasInventoryAccess) {
-      setMaterials([]);
-      setError(PERMISSION_ERROR_MESSAGE);
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      setError(null);
+  const dashboardQuery = useQuery({
+    queryKey: inventoryKeys.dashboard(),
+    queryFn: async () => {
       const t0 = performance.now();
       const data = await inventoryIpc.getDashboardData();
       const elapsed = performance.now() - t0;
       if (elapsed > 200) console.warn(`[Perf] fetchDashboard slow: ${elapsed.toFixed(1)}ms`);
-      setMaterials(data.materials);
-      setStats(data.stats);
-      setLowStockMaterials(data.low_stock.items);
-      setExpiredMaterials(data.expired);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [hasInventoryAccess, sessionToken]);
+      return data;
+    },
+    enabled: !authError,
+    retry: false,
+  });
 
-  const fetchingRef = useRef(false);
-  const initializedRef = useRef(false);
+  const materialsQuery = useQuery({
+    queryKey: [...inventoryKeys.materials(), normalizedQuery],
+    queryFn: async () => extractMaterialList(await inventoryIpc.material.list(normalizedQuery)),
+    enabled: !authError && hasMaterialFilters,
+    retry: false,
+  });
 
-  // Initial load: 1 dashboard call instead of 4 individual calls.
-  useEffect(() => {
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
-    initializedRef.current = false;
+  const invalidateInventoryData = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.dashboard() }),
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.materials() }),
+    ]);
+  }, [queryClient]);
 
-    void fetchDashboard().finally(() => {
-      fetchingRef.current = false;
-      initializedRef.current = true;
-    });
-  }, [fetchDashboard]);
+  const createMaterialMutation = useMutation({
+    mutationFn: async (request: CreateMaterialRequest) => {
+      if (!sessionToken) {
+        throw new Error(AUTH_ERROR_MESSAGE);
+      }
+      if (!hasInventoryAccess) {
+        throw new Error(PERMISSION_ERROR_MESSAGE);
+      }
 
-  // When query filters change after initial load, only refetch materials.
-  useEffect(() => {
-    if (!initializedRef.current) return;
-    void fetchMaterials();
-  }, [fetchMaterials]);
+      return inventoryIpc.material.create(request);
+    },
+    onSuccess: invalidateInventoryData,
+  });
 
-  const createMaterial = useCallback(async (request: CreateMaterialRequest, _userId?: string) => {
-    if (!sessionToken) {
-      throw new Error(AUTH_ERROR_MESSAGE);
-    }
-    if (!hasInventoryAccess) {
-      throw new Error(PERMISSION_ERROR_MESSAGE);
-    }
+  const updateMaterialMutation = useMutation({
+    mutationFn: async ({ id, request }: { id: string; request: CreateMaterialRequest }) => {
+      if (!sessionToken) {
+        throw new Error(AUTH_ERROR_MESSAGE);
+      }
+      if (!hasInventoryAccess) {
+        throw new Error(PERMISSION_ERROR_MESSAGE);
+      }
 
-    const result = await inventoryIpc.material.create(request);
-    setMaterials(prev => [...prev, result]);
-    void fetchStats();
-    return result;
-  }, [fetchStats, hasInventoryAccess, sessionToken]);
+      return inventoryIpc.material.update(id, request);
+    },
+    onSuccess: invalidateInventoryData,
+  });
 
-  const updateMaterial = useCallback(async (id: string, request: CreateMaterialRequest, _userId?: string) => {
-    if (!sessionToken) {
-      throw new Error(AUTH_ERROR_MESSAGE);
-    }
-    if (!hasInventoryAccess) {
-      throw new Error(PERMISSION_ERROR_MESSAGE);
-    }
+  const updateStockMutation = useMutation({
+    mutationFn: async (request: UpdateStockRequest) => {
+      if (!sessionToken) {
+        throw new Error(AUTH_ERROR_MESSAGE);
+      }
+      if (!hasInventoryAccess) {
+        throw new Error(PERMISSION_ERROR_MESSAGE);
+      }
 
-    const result = await inventoryIpc.material.update(id, request);
-    setMaterials(prev => prev.map(m => m.id === id ? result : m));
-    void fetchStats();
-    return result;
-  }, [fetchStats, hasInventoryAccess, sessionToken]);
+      return inventoryIpc.stock.updateStock(request);
+    },
+    onSuccess: invalidateInventoryData,
+  });
 
-  const updateStock = useCallback(async (request: UpdateStockRequest) => {
-    if (!sessionToken) {
-      throw new Error(AUTH_ERROR_MESSAGE);
-    }
-    if (!hasInventoryAccess) {
-      throw new Error(PERMISSION_ERROR_MESSAGE);
-    }
+  const recordConsumptionMutation = useMutation({
+    mutationFn: async (request: RecordConsumptionRequest) => {
+      if (!sessionToken) {
+        throw new Error(AUTH_ERROR_MESSAGE);
+      }
+      if (!hasInventoryAccess) {
+        throw new Error(PERMISSION_ERROR_MESSAGE);
+      }
 
-    const result = await inventoryIpc.stock.updateStock(request);
-    setMaterials(prev => prev.map(m => m.id === request.material_id ? result : m));
-    void fetchStats();
-    void fetchLowStock();
-    return result;
-  }, [fetchLowStock, fetchStats, hasInventoryAccess, sessionToken]);
-
-  const recordConsumption = useCallback(async (request: RecordConsumptionRequest) => {
-    if (!sessionToken) {
-      throw new Error(AUTH_ERROR_MESSAGE);
-    }
-    if (!hasInventoryAccess) {
-      throw new Error(PERMISSION_ERROR_MESSAGE);
-    }
-
-    await inventoryIpc.consumption.recordConsumption(request);
-    await Promise.allSettled([fetchMaterials(), fetchStats()]);
-  }, [fetchMaterials, fetchStats, hasInventoryAccess, sessionToken]);
+      await inventoryIpc.consumption.recordConsumption(request);
+    },
+    onSuccess: invalidateInventoryData,
+  });
 
   const getMaterial = useCallback(async (id: string): Promise<Material | null> => {
     if (!sessionToken) {
@@ -309,30 +223,62 @@ export function useInventory(query?: InventoryQuery) {
     }
 
     await inventoryIpc.material.delete(id);
-    setMaterials(prev => prev.filter(m => m.id !== id));
-    void fetchStats();
-  }, [fetchStats, hasInventoryAccess, sessionToken]);
+    await invalidateInventoryData();
+  }, [hasInventoryAccess, invalidateInventoryData, sessionToken]);
+
+  const materials = authError
+    ? []
+    : hasMaterialFilters
+      ? (materialsQuery.data ?? [])
+      : (dashboardQuery.data?.materials ?? []);
+
+  const error = authError
+    ?? (materialsQuery.error ? getErrorMessage(materialsQuery.error) : null)
+    ?? (dashboardQuery.error ? getErrorMessage(dashboardQuery.error) : null);
+
+  const loading = authError
+    ? false
+    : dashboardQuery.isLoading || (hasMaterialFilters && materialsQuery.isLoading);
 
   return {
     materials,
     loading,
     error,
-    stats,
-    lowStockMaterials,
-    expiredMaterials,
-    createMaterial,
-    updateMaterial,
+    stats: authError ? null : (dashboardQuery.data?.stats ?? null),
+    lowStockMaterials: authError ? [] : (dashboardQuery.data?.low_stock.items ?? []),
+    expiredMaterials: authError ? [] : (dashboardQuery.data?.expired ?? []),
+    createMaterial: (request: CreateMaterialRequest, _userId?: string) =>
+      createMaterialMutation.mutateAsync(request),
+    updateMaterial: (id: string, request: CreateMaterialRequest, _userId?: string) =>
+      updateMaterialMutation.mutateAsync({ id, request }),
     deleteMaterial,
-    updateStock,
-    recordConsumption,
+    updateStock: (request: UpdateStockRequest) => updateStockMutation.mutateAsync(request),
+    recordConsumption: (request: RecordConsumptionRequest) =>
+      recordConsumptionMutation.mutateAsync(request),
     getMaterial,
     getMaterialBySku,
     getInterventionConsumption,
     getInterventionSummary,
     getMaterialStats,
-    refetch: fetchMaterials,
-    refetchStats: fetchStats,
-    refetchLowStock: fetchLowStock,
-    refetchExpired: fetchExpired,
+    refetch: async () => {
+      if (!authError) {
+        await (hasMaterialFilters ? materialsQuery.refetch() : dashboardQuery.refetch());
+      }
+    },
+    refetchStats: async () => {
+      if (!authError) {
+        await dashboardQuery.refetch();
+      }
+    },
+    refetchLowStock: async () => {
+      if (!authError) {
+        await dashboardQuery.refetch();
+      }
+    },
+    refetchExpired: async () => {
+      if (!authError) {
+        await dashboardQuery.refetch();
+      }
+    },
   };
 }
