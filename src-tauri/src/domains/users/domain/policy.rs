@@ -1,6 +1,6 @@
 use crate::domains::users::domain::UserAction;
 use crate::shared::contracts::auth::{UserRole, UserSession};
-use crate::shared::error::AppError;
+use crate::shared::contracts::AppError;
 
 /// Role-based access policy for user management actions.
 #[derive(Debug, Clone, Copy, Default)]
