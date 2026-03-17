@@ -10,7 +10,6 @@
 //! Fixed `discount_value` is in cents and is capped at the subtotal.
 
 use crate::shared::repositories::base::RepoError;
-use chrono::Utc;
 use tracing::debug;
 
 use super::quote_service::QuoteService;
@@ -94,11 +93,6 @@ impl QuoteService {
 
         let subtotal_after_discount = (subtotal - discount_amount).max(0);
         Ok((subtotal_after_discount, discount_amount))
-    }
-
-    /// Current timestamp in milliseconds.
-    pub(super) fn now_ms() -> i64 {
-        Utc::now().timestamp_millis()
     }
 
     /// Map a repository error from a `create` operation to a user-friendly
