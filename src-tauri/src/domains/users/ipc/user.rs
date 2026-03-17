@@ -1,8 +1,7 @@
 //! User CRUD commands for Tauri IPC
 
-use crate::domains::users::application::{
-    CreateUserRequest, UpdateUserRequest, UserAction, UserResponse,
-};
+use crate::domains::users::application::UserResponse;
+use crate::domains::users::domain::{CreateUserRequest, UpdateUserRequest, UserAction};
 use crate::domains::users::{UsersCommand, UsersDomainResponse, UsersFacade, UsersServices};
 use crate::resolve_context;
 use crate::shared::app_state::AppState;

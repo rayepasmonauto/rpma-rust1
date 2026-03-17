@@ -1,27 +1,5 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use ts_rs::TS;
-
-/// TODO: document
-#[derive(TS, Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct CreateUserRequest {
-    pub email: String,
-    pub first_name: String,
-    pub last_name: String,
-    pub role: String,
-    pub password: String,
-}
-
-/// TODO: document
-#[derive(TS, Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct UpdateUserRequest {
-    pub email: Option<String>,
-    pub first_name: Option<String>,
-    pub last_name: Option<String>,
-    pub role: Option<String>,
-    pub is_active: Option<bool>,
-}
 
 /// TODO: document
 #[derive(Serialize, TS)]

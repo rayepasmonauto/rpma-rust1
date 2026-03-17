@@ -1,6 +1,27 @@
-use crate::domains::users::application::{CreateUserRequest, UpdateUserRequest};
 use serde::Deserialize;
 use ts_rs::TS;
+
+/// Request DTO for creating a user.
+#[derive(TS, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct CreateUserRequest {
+    pub email: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub role: String,
+    pub password: String,
+}
+
+/// Request DTO for updating a user.
+#[derive(TS, Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct UpdateUserRequest {
+    pub email: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub role: Option<String>,
+    pub is_active: Option<bool>,
+}
 
 /// Domain-level user management action.
 #[derive(TS, Deserialize, Debug)]

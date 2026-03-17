@@ -1,19 +1,12 @@
 use std::sync::Arc;
 
-use crate::domains::users::application::UserResponse;
-use crate::domains::users::domain::UserAccessPolicy;
+use crate::domains::users::application::{UserListResponse, UserResponse};
+use crate::domains::users::domain::{CreateUserRequest, UpdateUserRequest, UserAccessPolicy, UserAction};
 use crate::domains::users::infrastructure::user::UserService;
 use crate::shared::context::RequestContext;
 use crate::shared::contracts::auth::{UserRole, UserSession};
 use crate::shared::contracts::user_account::UserAccountManager;
 use crate::shared::ipc::errors::AppError;
-
-#[cfg(feature = "export-types")]
-pub use crate::domains::users::application::{
-    CreateUserRequest, UpdateUserRequest, UserAction, UserListResponse,
-};
-#[cfg(not(feature = "export-types"))]
-use crate::domains::users::application::{UserAction, UserListResponse};
 
 /// TODO: document
 pub struct UsersServices {

@@ -87,7 +87,7 @@ use rpma_ppf_intervention::domains::interventions::{
 };
 
 // Import command request types
-use rpma_ppf_intervention::commands::UserAction;
+use rpma_ppf_intervention::domains::users::UserAction;
 use rpma_ppf_intervention::domains::notifications::SendNotificationRequest;
 use rpma_ppf_intervention::domains::notifications::UpdateNotificationConfigRequest;
 use rpma_ppf_intervention::domains::users::CreateUserRequest;

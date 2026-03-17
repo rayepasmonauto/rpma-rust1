@@ -83,7 +83,8 @@ pub use system::{
 
 use crate::domains::clients::client_handler::{Client, ClientWithTasks};
 use crate::domains::tasks::domain::models::task::*;
-pub use crate::domains::users::application::{UserAction, UserResponse};
+use crate::domains::users::application::UserResponse;
+use crate::domains::users::domain::UserAction;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, instrument, warn};
 

@@ -1,6 +1,6 @@
-mod action;
+pub mod action;
 pub(crate) mod models;
 mod policy;
 
-pub(crate) use action::UserAction;
+pub use action::{CreateUserRequest, UpdateUserRequest, UserAction};
 pub(crate) use policy::UserAccessPolicy;
