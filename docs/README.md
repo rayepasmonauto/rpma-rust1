@@ -6,6 +6,9 @@ Auto-generated index of architecture documentation. Run `node scripts/generate-d
 
 | Document | Summary |
 |----------|---------|
+| [API.md](./API.md) | Complete IPC command reference with authentication patterns and request/response types. |
+| [DATABASE.md](./DATABASE.md) | Database schema documentation with tables, relationships, constraints, and migrations. |
+| [DESIGN.md](./DESIGN.md) | Frontend design system including components, tokens, patterns, and accessibility. |
 
 
 ## Agent Knowledge Base
