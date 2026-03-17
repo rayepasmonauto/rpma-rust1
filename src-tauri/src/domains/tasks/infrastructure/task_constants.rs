@@ -3,7 +3,8 @@
 //! This module contains shared constants and utilities used across task-related services.
 
 use crate::commands::AppError;
-use crate::domains::tasks::domain::models::task::{PaginationInfo, TaskQuery};
+use crate::domains::tasks::domain::models::task::TaskQuery;
+use crate::shared::repositories::base::PaginationInfo;
 
 /// Timeout duration for single task operations (in seconds)
 pub const SINGLE_TASK_TIMEOUT_SECS: u64 = 5;
@@ -80,32 +81,11 @@ pub const TASK_QUERY_COLUMNS_ALIASED: &str = r#"
 /// let result: AppResult<Task> = database_operation()
 ///     .map_err(|e| convert_to_app_error(format!("Failed to get task: {}", e)));
 /// ```
+/// Convert a string error to an AppError, inferring the appropriate error type
+///
+/// Delegates to [`crate::shared::error::convert_to_app_error`].
 pub fn convert_to_app_error(error: String) -> AppError {
-    // Database operation errors
-    if error.contains("Failed to get")
-        || error.contains("Failed to query")
-        || error.contains("Failed to insert")
-        || error.contains("Failed to update")
-        || error.contains("Failed to delete")
-        || error.contains("Database operation failed")
-        || error.contains("query")
-        || error.contains("execute")
-        || error.contains("prepare")
-    {
-        return AppError::Database(error);
-    }
-
-    // Validation errors
-    if error.contains("validation")
-        || error.contains("invalid")
-        || error.contains("cannot")
-        || error.contains("must be")
-    {
-        return AppError::Validation(error);
-    }
-
-    // Default to internal error for unknown types
-    AppError::Internal(error)
+    crate::shared::error::convert_to_app_error(error)
 }
 
 /// Calculate pagination information from total count and query parameters
@@ -133,14 +113,7 @@ pub fn calculate_pagination(
 ) -> PaginationInfo {
     let page = page.unwrap_or(1);
     let limit = limit.unwrap_or(DEFAULT_PAGE_SIZE);
-    let total_pages = ((total_count as f64) / (limit as f64)).ceil() as i32;
-
-    PaginationInfo {
-        page,
-        limit,
-        total: total_count,
-        total_pages,
-    }
+    PaginationInfo::new(page, limit, total_count)
 }
 
 /// Calculate offset from page and limit for SQL queries

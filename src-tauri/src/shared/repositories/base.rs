@@ -191,6 +191,11 @@ impl PaginationInfo {
     pub fn has_prev(&self) -> bool {
         self.page > 1
     }
+
+    /// Compute the SQL OFFSET for the current page.
+    pub fn offset(&self) -> i32 {
+        (self.page - 1) * self.limit
+    }
 }
 
 /// Paginated result
@@ -244,14 +249,17 @@ mod tests {
         assert_eq!(pagination.total_pages, 3);
         assert!(pagination.has_next());
         assert!(!pagination.has_prev());
+        assert_eq!(pagination.offset(), 0);
 
         let pagination = PaginationInfo::new(2, 10, 25);
         assert!(pagination.has_next());
         assert!(pagination.has_prev());
+        assert_eq!(pagination.offset(), 10);
 
         let pagination = PaginationInfo::new(3, 10, 25);
         assert!(!pagination.has_next());
         assert!(pagination.has_prev());
+        assert_eq!(pagination.offset(), 20);
     }
 
     #[test]
