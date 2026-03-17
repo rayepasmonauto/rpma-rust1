@@ -474,7 +474,9 @@ impl Default for TaskQuery {
     }
 }
 
-/// Re-export from shared to maintain backward compatibility.
+/// Re-exported from `shared::repositories::base` after consolidating duplicate
+/// definitions.  All existing imports continue to work through this public
+/// re-export.
 pub use crate::shared::repositories::base::PaginationInfo;
 
 /// Response for task listing with pagination

@@ -118,8 +118,6 @@ pub fn calculate_pagination(
 
 /// Calculate offset from page and limit for SQL queries
 ///
-/// Delegates to [`PaginationInfo::offset`] for consistency.
-///
 /// # Arguments
 /// * `page` - Current page number (1-indexed)
 /// * `limit` - Number of records per page
@@ -133,7 +131,7 @@ pub fn calculate_pagination(
 /// assert_eq!(offset, 20);
 /// ```
 pub fn calculate_offset(page: i32, limit: i32) -> i32 {
-    PaginationInfo::new(page, limit, 0).offset()
+    (page - 1) * limit
 }
 
 /// Apply query filters to a SQL WHERE clause
