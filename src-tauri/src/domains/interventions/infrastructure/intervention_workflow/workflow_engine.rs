@@ -329,26 +329,17 @@ impl super::InterventionWorkflowService {
             step
         });
 
-        intervention.customer_satisfaction = request.customer_satisfaction;
-        intervention.quality_score = request.quality_score;
-        intervention.final_observations = request.final_observations;
-        intervention.customer_signature = request.customer_signature;
-        intervention.customer_comments = request.customer_comments;
-        intervention_state_machine::validate_transition(
-            &intervention.status,
-            &InterventionStatus::Completed,
-        )
-        .map_err(InterventionError::BusinessRule)?;
-        intervention.status = InterventionStatus::Completed;
-        intervention.completed_at = TimestampString(Some(crate::shared::contracts::common::now()));
-        intervention.updated_at = crate::shared::contracts::common::now();
-
-        if let (Some(start), Some(end)) = (
-            intervention.started_at.inner(),
-            intervention.completed_at.inner(),
-        ) {
-            intervention.actual_duration = Some(((end - start) / 60000) as i32);
-        }
+        let completed_at_ms = crate::shared::contracts::common::now();
+        intervention
+            .finalize(
+                completed_at_ms,
+                request.customer_satisfaction,
+                request.quality_score,
+                request.final_observations,
+                request.customer_signature,
+                request.customer_comments,
+            )
+            .map_err(InterventionError::BusinessRule)?;
 
         let task_id = intervention.task_id.clone();
         self.db
