@@ -326,6 +326,37 @@ impl Intervention {
             Err(errors)
         }
     }
+
+    /// Apply the domain transition for finalizing an intervention.
+    pub fn finalize(
+        &mut self,
+        completed_at_ms: i64,
+        customer_satisfaction: Option<i32>,
+        quality_score: Option<i32>,
+        final_observations: Option<Vec<String>>,
+        customer_signature: Option<String>,
+        customer_comments: Option<String>,
+    ) -> Result<(), String> {
+        crate::domains::interventions::domain::services::intervention_state_machine::validate_transition(
+            &self.status,
+            &InterventionStatus::Completed,
+        )?;
+
+        self.customer_satisfaction = customer_satisfaction;
+        self.quality_score = quality_score;
+        self.final_observations = final_observations;
+        self.customer_signature = customer_signature;
+        self.customer_comments = customer_comments;
+        self.status = InterventionStatus::Completed;
+        self.completed_at = TimestampString(Some(completed_at_ms));
+        self.updated_at = completed_at_ms;
+
+        if let Some(start) = self.started_at.inner() {
+            self.actual_duration = Some(((completed_at_ms - start) / 60000) as i32);
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -399,6 +430,48 @@ mod tests {
             InterventionStatus::InProgress
         );
         assert!("invalid".parse::<InterventionStatus>().is_err());
+    }
+
+    #[test]
+    fn test_finalize_transitions_status_and_sets_completion_fields() {
+        let task_id = crate::shared::utils::uuid::generate_uuid_string();
+        let mut intervention =
+            Intervention::new(task_id, "ABC-123".to_string(), "ABC-123".to_string());
+        intervention.status = InterventionStatus::InProgress;
+        intervention.started_at = TimestampString(Some(60_000));
+
+        intervention
+            .finalize(
+                180_000,
+                Some(9),
+                Some(95),
+                Some(vec!["Excellent quality work".to_string()]),
+                Some("signed".to_string()),
+                Some("Great".to_string()),
+            )
+            .expect("finalize should succeed");
+
+        assert_eq!(intervention.status, InterventionStatus::Completed);
+        assert_eq!(intervention.completed_at.inner(), Some(180_000));
+        assert_eq!(intervention.updated_at, 180_000);
+        assert_eq!(intervention.customer_satisfaction, Some(9));
+        assert_eq!(intervention.quality_score, Some(95));
+        assert_eq!(intervention.actual_duration, Some(2));
+    }
+
+    #[test]
+    fn test_finalize_rejects_invalid_status_transition() {
+        let task_id = crate::shared::utils::uuid::generate_uuid_string();
+        let mut intervention =
+            Intervention::new(task_id, "ABC-123".to_string(), "ABC-123".to_string());
+        intervention.status = InterventionStatus::Pending;
+
+        let err = intervention
+            .finalize(180_000, None, None, None, None, None)
+            .expect_err("pending intervention should not finalize directly");
+
+        assert!(err.contains("Invalid intervention status transition"));
+        assert_eq!(intervention.status, InterventionStatus::Pending);
     }
 }
 
