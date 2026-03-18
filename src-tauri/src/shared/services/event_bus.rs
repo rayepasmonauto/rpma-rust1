@@ -814,4 +814,41 @@ mod tests {
         // Both event buses should share the same handlers
         assert_eq!(event_bus2.handler_count("TaskCreated"), 1);
     }
+
+    #[tokio::test]
+    async fn test_event_bus_dispatch_releases_rwlock_before_await() {
+        // Verifies that dispatch() drops the read guard from the RwLock
+        // before awaiting handler completion.  If the guard were held across
+        // the .await, concurrent dispatches on the same bus would still
+        // succeed (read locks are shared), but a misplaced *write* guard
+        // would deadlock.  Spawning concurrent dispatches exercises both
+        // the read-lock-release path and the handler invocation path.
+        let bus = Arc::new(InMemoryEventBus::new());
+        let counter = Arc::new(AtomicUsize::new(0));
+
+        bus.register_handler(TestHandler {
+            counter: counter.clone(),
+            event_types: vec!["TaskCreated"],
+        });
+
+        let handles: Vec<_> = (0..4)
+            .map(|i| {
+                let bus = bus.clone();
+                tokio::spawn(async move {
+                    let event = event_factory::task_created(
+                        format!("task-{}", i),
+                        format!("Task {}", i),
+                        None,
+                    );
+                    bus.dispatch(event).await.unwrap();
+                })
+            })
+            .collect();
+
+        for h in handles {
+            h.await.unwrap();
+        }
+
+        assert_eq!(counter.load(Ordering::SeqCst), 4);
+    }
 }

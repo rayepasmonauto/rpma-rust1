@@ -284,4 +284,48 @@ mod tests {
         assert_eq!(cache.get::<i64>("int_key"), Some(42));
         assert_eq!(cache.get::<bool>("bool_key"), Some(true));
     }
+
+    #[test]
+    fn test_cache_concurrent_reads_do_not_block() {
+        // Verify that multiple threads can read concurrently from the
+        // RwLock-backed cache without contention or deadlock.
+        let cache = Arc::new(Cache::new(100));
+        cache.set("shared_key", "hello".to_string(), ttl::LONG);
+
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                let cache = cache.clone();
+                thread::spawn(move || {
+                    for _ in 0..50 {
+                        let v = cache.get::<String>("shared_key");
+                        assert_eq!(v.as_deref(), Some("hello"));
+                    }
+                })
+            })
+            .collect();
+
+        for h in handles {
+            h.join().expect("reader thread panicked");
+        }
+
+        // Cache is still intact after concurrent reads.
+        assert_eq!(cache.get::<String>("shared_key").as_deref(), Some("hello"));
+    }
+
+    #[test]
+    fn test_cache_expired_entry_evicted_under_two_phase_rwlock() {
+        // Verifies the two-phase eviction pattern with RwLock:
+        // get() acquires a read guard, drops it, then re-acquires a write
+        // guard via self.remove() — no deadlock should occur.
+        let cache = Cache::new(10);
+        cache.set("expiring", "value".to_string(), Duration::from_millis(10));
+
+        thread::sleep(Duration::from_millis(50));
+
+        // get() should detect expiry, drop read guard, call remove() (write guard),
+        // and return None — all without deadlocking.
+        assert!(cache.get::<String>("expiring").is_none());
+        // The entry must be physically removed by the eviction.
+        assert!(!cache.exists("expiring"));
+    }
 }
