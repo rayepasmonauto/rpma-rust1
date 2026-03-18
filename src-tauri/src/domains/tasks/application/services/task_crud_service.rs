@@ -91,7 +91,7 @@ impl TaskCommandService {
     pub async fn update_task_crud(
         &self,
         ctx: &RequestContext,
-        id: String,
+        id: &str,
         data: UpdateTaskRequest,
     ) -> Result<Task, AppError> {
         if !AuthMiddleware::can_perform_task_operation(&ctx.auth.role, "update") {
@@ -100,14 +100,17 @@ impl TaskCommandService {
             ));
         }
 
-        let existing_task = self.fetch_task(&id).await?;
+        let existing_task = self.fetch_task(id).await?;
         let status_updated = data.status.is_some();
+
+        // Compute changed fields before moving `data` into the validator.
+        let changed_fields = changed_fields_from_update_request(&data);
 
         let validator = ValidationService::new();
         let validated_action = validator
             .validate_task_action(TaskAction::Update {
-                id: id.clone(),
-                data: data.clone(),
+                id: id.to_string(),
+                data,
             })
             .await
             .map_err(|e| {
@@ -136,7 +139,6 @@ impl TaskCommandService {
                 AppError::db_sanitized("tasks.update", e)
             })?;
 
-        let changed_fields = changed_fields_from_update_request(&data);
         let updated_event = event_factory::task_updated_with_ctx(
             task.id.clone(),
             changed_fields,

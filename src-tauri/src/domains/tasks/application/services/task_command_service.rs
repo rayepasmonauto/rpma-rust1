@@ -318,7 +318,7 @@ impl TaskCommandService {
             total_processed: import_result.total_processed,
             successful: import_result.successful,
             failed: import_result.failed,
-            errors: import_result.errors.clone(),
+            errors: import_result.errors,
             duplicates_skipped: import_result.duplicates_skipped,
         };
 
@@ -343,7 +343,7 @@ impl TaskCommandService {
         &self,
         ctx: &RequestContext,
         task_id: &str,
-        new_scheduled_date: String,
+        new_scheduled_date: &str,
         additional_notes: Option<String>,
     ) -> Result<Task, AppError> {
         let task = self.fetch_task(task_id).await?;
@@ -352,7 +352,7 @@ impl TaskCommandService {
         self.calendar_service
             .schedule_task(
                 task_id.to_string(),
-                new_scheduled_date.clone(),
+                new_scheduled_date.to_string(),
                 None,
                 None,
                 &ctx.auth.user_id,
