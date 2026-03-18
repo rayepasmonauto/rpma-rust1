@@ -44,7 +44,7 @@ describe('settingsOperations cache behavior', () => {
 
     expect(safeInvoke).toHaveBeenCalledWith(
       IPC_COMMANDS.UPDATE_USER_PREFERENCES,
-      { request: { language: 'en' } }
+      { preferences: { language: 'en' } }
     );
     expect(invalidatePattern).toHaveBeenCalled();
   });
@@ -54,7 +54,7 @@ describe('settingsOperations cache behavior', () => {
 
     await settingsOperations.updateUserPerformance({ cache_enabled: true });
     expect(safeInvoke).toHaveBeenCalledWith(IPC_COMMANDS.UPDATE_USER_PERFORMANCE, {
-      request: { cache_enabled: true },
+      performance: { cache_enabled: true },
     });
 
     await settingsOperations.getActiveSessions();

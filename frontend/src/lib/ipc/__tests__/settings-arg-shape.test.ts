@@ -59,7 +59,7 @@ describe('ipcClient.settings IPC argument shapes', () => {
     await ipcClient.settings.updateUserPerformance(request);
 
     expect(safeInvoke).toHaveBeenCalledWith('update_user_performance', {
-      request,
+      performance: request,
     });
     expect(invalidatePattern).toHaveBeenCalled();
   });
@@ -101,7 +101,7 @@ describe('ipcClient.settings IPC argument shapes', () => {
       { full_name: 'Alice Example' }
     );
     expect(safeInvoke).toHaveBeenCalledWith('update_user_profile', {
-      request: {
+      profile: {
         full_name: 'Alice Example',
       },
     });

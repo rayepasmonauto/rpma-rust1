@@ -66,8 +66,8 @@ impl TaskClientService {
                 _ => None,
             }),
             search: None,
-            from_date: filter.date_from.map(|dt| dt.to_rfc3339()),
-            to_date: filter.date_to.map(|dt| dt.to_rfc3339()),
+            from_date: filter.date_from.clone(),
+            to_date: filter.date_to.clone(),
             sort_by: "created_at".to_string(),
             sort_order: SortOrder::Desc,
         };

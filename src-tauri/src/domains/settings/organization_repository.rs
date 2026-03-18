@@ -9,7 +9,7 @@ use super::models::*;
 use crate::commands::AppError;
 use crate::db::Database;
 use crate::db::FromSqlRow;
-use crate::domains::users::domain::models::user::UserRole;
+use crate::shared::contracts::auth::UserRole;
 
 pub struct OrganizationRepository {
     db: Arc<Database>,
@@ -461,7 +461,7 @@ impl OrganizationRepository {
 
         let count: i64 = conn
             .query_row(
-                "SELECT COUNT(*) FROM users WHERE role = ? AND is_active = 1",
+                "SELECT COUNT(*) FROM users WHERE role = ? AND is_active = 1 AND deleted_at IS NULL",
                 params![UserRole::Admin.to_string()],
                 |row| row.get(0),
             )

@@ -21,9 +21,10 @@ pub struct GetTaskHistoryRequest {
 #[tracing::instrument(skip(state))]
 pub async fn get_task_history(
     request: GetTaskHistoryRequest,
+    correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<Vec<TaskHistory>>, AppError> {
-    let ctx = resolve_context!(&state, &request.correlation_id);
+    let ctx = resolve_context!(&state, &correlation_id);
     debug!("Getting task history");
 
     let task = state

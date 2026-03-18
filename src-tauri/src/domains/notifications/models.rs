@@ -143,10 +143,8 @@ pub struct NotificationTemplate {
     pub body_template: String,
     pub variables: Vec<String>,
     pub is_active: bool,
-    #[ts(type = "string")]
-    pub created_at: DateTime<Utc>,
-    #[ts(type = "string")]
-    pub updated_at: DateTime<Utc>,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 impl NotificationTemplate {
@@ -159,7 +157,7 @@ impl NotificationTemplate {
         body_template: String,
         variables: Vec<String>,
     ) -> Self {
-        let now = Utc::now();
+        let now = chrono::Utc::now().timestamp_millis();
         Self {
             id,
             name,
@@ -211,10 +209,8 @@ impl NotificationTemplate {
                 .and_then(|s| serde_json::from_str(&s).ok())
                 .unwrap_or_default(),
             is_active: row.get::<_, i32>("is_active")? == 1,
-            created_at: DateTime::from_timestamp_millis(row.get("created_at")?)
-                .unwrap_or_else(Utc::now),
-            updated_at: DateTime::from_timestamp_millis(row.get("updated_at")?)
-                .unwrap_or_else(Utc::now),
+            created_at: row.get("created_at")?,
+            updated_at: row.get("updated_at")?,
         })
     }
 }
@@ -236,22 +232,17 @@ pub struct NotificationMessage {
     pub body: String,
     pub priority: NotificationPriority,
     pub status: NotificationStatus,
-    #[ts(type = "string")]
-    pub scheduled_at: Option<DateTime<Utc>>,
-    #[ts(type = "string")]
-    pub sent_at: Option<DateTime<Utc>>,
+    pub scheduled_at: Option<i64>,
+    pub sent_at: Option<i64>,
     pub error_message: Option<String>,
-    #[ts(type = "string")]
-    pub created_at: DateTime<Utc>,
-    #[ts(type = "string")]
-    pub updated_at: DateTime<Utc>,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct Notification {
     pub id: String,
-    #[ts(type = "string")]
-    pub created_at: DateTime<Utc>,
+    pub created_at: i64,
     pub r#type: String,
     pub title: String,
     pub message: String,
@@ -274,7 +265,7 @@ impl Notification {
     ) -> Self {
         Self {
             id: crate::shared::utils::uuid::generate_uuid_string(),
-            created_at: Utc::now(),
+            created_at: chrono::Utc::now().timestamp_millis(),
             r#type,
             title,
             message,
@@ -289,8 +280,7 @@ impl Notification {
 
 impl FromSqlRow for Notification {
     fn from_row(row: &Row) -> SqliteResult<Self> {
-        let created_at_ts: i64 = row.get("created_at")?;
-        let created_at = DateTime::from_timestamp(created_at_ts, 0).unwrap_or_else(Utc::now);
+        let created_at: i64 = row.get("created_at")?;
         Ok(Self {
             id: row.get("id")?,
             created_at,

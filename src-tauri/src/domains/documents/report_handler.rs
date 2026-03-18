@@ -30,11 +30,7 @@ impl ReportRepository {
     }
 
     fn row_to_report(row: &rusqlite::Row<'_>) -> rusqlite::Result<InterventionReport> {
-        let generated_at_str: String = row.get(3)?;
-        let generated_at = chrono::DateTime::parse_from_rfc3339(&generated_at_str)
-            .map(|dt| dt.with_timezone(&Utc))
-            .unwrap_or_else(|_| Utc::now());
-
+        let generated_at: i64 = row.get(3)?;
         let file_size: Option<i64> = row.get(8)?;
 
         Ok(InterventionReport {
@@ -79,7 +75,7 @@ impl ReportRepository {
                     report.id,
                     report.intervention_id,
                     report.report_number,
-                    report.generated_at.to_rfc3339(),
+                    report.generated_at,
                     report.technician_id,
                     report.technician_name,
                     report.file_path,
@@ -226,13 +222,12 @@ pub async fn report_generate(
         .ok();
 
     // 6. Create report entity
-    let now = Utc::now();
-    let now_millis = now.timestamp_millis();
+    let now_millis = chrono::Utc::now().timestamp_millis();
     let report = InterventionReport {
         id: crate::shared::utils::uuid::generate_uuid_string(),
         intervention_id: intervention_id.to_string(),
         report_number: report_number.clone(),
-        generated_at: now,
+        generated_at: now_millis,
         technician_id: current_user.user_id.clone().into(),
         technician_name: current_user.username.clone().into(),
         file_path: Some(output_path.to_string_lossy().to_string()),

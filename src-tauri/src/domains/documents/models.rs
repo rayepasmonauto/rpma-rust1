@@ -14,8 +14,7 @@ pub struct InterventionReport {
     pub id: String,
     pub intervention_id: String,
     pub report_number: String,
-    #[ts(type = "string")]
-    pub generated_at: DateTime<Utc>,
+    pub generated_at: i64,
     pub technician_id: Option<String>,
     pub technician_name: Option<String>,
     pub file_path: Option<String>,
@@ -42,8 +41,7 @@ pub struct InterventionReportResult {
     pub file_name: Option<String>,
     pub format: String,
     pub file_size: Option<u64>,
-    #[ts(type = "string")]
-    pub generated_at: DateTime<Utc>,
+    pub generated_at: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

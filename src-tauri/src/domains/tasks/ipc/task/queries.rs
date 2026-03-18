@@ -11,10 +11,12 @@ use crate::domains::tasks::ipc::task_types::TaskFilter;
 use crate::resolve_context;
 use serde::Deserialize;
 use tracing::{debug, info};
+use ts_rs::TS;
 
 /// Request for getting tasks with clients
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct GetTasksWithClientsRequest {
     pub filter: Option<TaskFilter>,
     pub page: Option<u32>,
@@ -24,8 +26,9 @@ pub struct GetTasksWithClientsRequest {
 }
 
 /// Request for getting task statistics
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct GetTaskStatisticsRequest {
     pub filter: Option<TaskFilter>,
     #[serde(default)]
@@ -104,8 +107,8 @@ pub async fn get_tasks_with_clients(
             .as_deref()
             .and_then(TaskPriority::from_str_opt),
         search: None,
-        from_date: filter.date_from.map(|d| d.to_rfc3339()),
-        to_date: filter.date_to.map(|d| d.to_rfc3339()),
+        from_date: filter.date_from.clone(),
+        to_date: filter.date_to.clone(),
         sort_by: "created_at".to_string(),
         sort_order: crate::domains::tasks::domain::models::task::SortOrder::Desc,
     };
@@ -170,8 +173,8 @@ pub async fn get_user_assigned_tasks(
         .get_user_assigned_tasks(
             &target_user_id,
             status_filter,
-            filter.date_from.map(|d| d.to_rfc3339()).as_deref(),
-            filter.date_to.map(|d| d.to_rfc3339()).as_deref(),
+            filter.date_from.as_deref(),
+            filter.date_to.as_deref(),
         )
         .map_err(|e| {
             debug!("Failed to get user assigned tasks: {}", e);

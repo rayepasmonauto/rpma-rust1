@@ -7,11 +7,13 @@ use crate::shared::context::RequestContext;
 use crate::shared::contracts::auth::{UserRole, UserSession};
 use crate::shared::contracts::user_account::UserAccountManager;
 use crate::shared::ipc::errors::AppError;
+use crate::shared::services::event_bus::EventPublisher;
 
 /// TODO: document
 pub struct UsersServices {
     pub account_manager: Arc<dyn UserAccountManager>,
     pub user_service: Arc<UserService>,
+    pub event_bus: Arc<dyn EventPublisher>,
 }
 
 /// TODO: document
@@ -147,6 +149,20 @@ impl UsersFacade {
                             .map_err(|e| {
                                 AppError::Database(format!("User creation failed: {}", e))
                             })?;
+
+                        let event = crate::shared::services::domain_event::DomainEvent::UserCreated {
+                            id: uuid::Uuid::new_v4().to_string(),
+                            user_id: user.id.clone(),
+                            email: user.email.clone(),
+                            role: user.role.to_string(),
+                            timestamp: chrono::Utc::now(),
+                            created_by: ctx.auth.user_id.clone(),
+                            metadata: None,
+                        };
+                        if let Err(e) = services.event_bus.publish(event) {
+                            tracing::warn!("Failed to publish UserCreated event: {}", e);
+                        }
+
                         UserResponse::Created(user)
                     }
                     UserAction::Get { id } => {

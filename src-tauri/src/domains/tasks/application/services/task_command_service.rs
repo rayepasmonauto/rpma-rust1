@@ -287,8 +287,8 @@ impl TaskCommandService {
                 .and_then(|f| f.priority.as_ref())
                 .and_then(|p| TaskPriority::from_str_opt(p)),
             search: None,
-            from_date: filter.and_then(|f| f.date_from.map(|d| d.to_rfc3339())),
-            to_date: filter.and_then(|f| f.date_to.map(|d| d.to_rfc3339())),
+            from_date: filter.and_then(|f| f.date_from.clone()),
+            to_date: filter.and_then(|f| f.date_to.clone()),
             sort_by: "created_at".to_string(),
             sort_order: SortOrder::Desc,
         }

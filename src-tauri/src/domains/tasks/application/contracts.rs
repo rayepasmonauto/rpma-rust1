@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 /// Filter for task queries
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct TaskFilter {
     pub assigned_to: Option<String>,
     pub client_id: Option<String>,
@@ -15,8 +16,8 @@ pub struct TaskFilter {
     pub priority: Option<String>,
     pub region: Option<String>,
     pub include_completed: Option<bool>,
-    pub date_from: Option<DateTime<Utc>>,
-    pub date_to: Option<DateTime<Utc>>,
+    pub date_from: Option<String>,
+    pub date_to: Option<String>,
 }
 
 impl Default for TaskFilter {

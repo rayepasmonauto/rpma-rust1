@@ -1,8 +1,10 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NotificationBell } from '../components/NotificationBell';
 import { useNotificationStore } from '../stores/notificationStore';
+import { useNotifications } from '../hooks/useNotifications';
+
+jest.mock('../hooks/useNotifications');
 
 jest.mock('@/lib/ipc/notification', () => ({
   notificationApi: {
@@ -15,11 +17,19 @@ jest.mock('@/lib/ipc/notification', () => ({
 
 describe('NotificationBell', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     useNotificationStore.setState({
-      notifications: [],
-      unreadCount: 0,
       isConnected: false,
       isPanelOpen: false,
+    });
+
+    (useNotifications as jest.Mock).mockReturnValue({
+      notifications: [],
+      unreadCount: 0,
+      isLoading: false,
+      markRead: jest.fn(),
+      markAllRead: jest.fn(),
+      removeNotification: jest.fn(),
     });
   });
 
@@ -38,7 +48,14 @@ describe('NotificationBell', () => {
   });
 
   it('should show badge with unread count', () => {
-    useNotificationStore.getState().setNotifications([], 5);
+    (useNotifications as jest.Mock).mockReturnValue({
+      notifications: [],
+      unreadCount: 5,
+      isLoading: false,
+      markRead: jest.fn(),
+      markAllRead: jest.fn(),
+      removeNotification: jest.fn(),
+    });
 
     render(<NotificationBell />);
     
@@ -47,7 +64,14 @@ describe('NotificationBell', () => {
   });
 
   it('should show badge with 99+ for high counts', () => {
-    useNotificationStore.getState().setNotifications([], 100);
+    (useNotifications as jest.Mock).mockReturnValue({
+      notifications: [],
+      unreadCount: 100,
+      isLoading: false,
+      markRead: jest.fn(),
+      markAllRead: jest.fn(),
+      removeNotification: jest.fn(),
+    });
 
     render(<NotificationBell />);
     

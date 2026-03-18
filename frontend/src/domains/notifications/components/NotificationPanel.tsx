@@ -14,7 +14,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { useNotificationStore } from '../stores/notificationStore';
-import { markNotificationRead, markAllNotificationsRead, deleteNotification } from '../services/notificationActions';
+import { useNotifications } from '../hooks/useNotifications';
 
 const entityIcons: Record<string, typeof FileText> = {
   intervention: FileText,
@@ -24,13 +24,9 @@ const entityIcons: Record<string, typeof FileText> = {
 
 export function NotificationPanel() {
   const router = useRouter();
-  const notifications = useNotificationStore((state) => state.notifications);
-  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const { notifications, unreadCount, markRead, markAllRead, removeNotification } = useNotifications();
   const isPanelOpen = useNotificationStore((state) => state.isPanelOpen);
   const setPanelOpen = useNotificationStore((state) => state.setPanelOpen);
-  const markRead = useNotificationStore((state) => state.markRead);
-  const markAllRead = useNotificationStore((state) => state.markAllRead);
-  const removeNotification = useNotificationStore((state) => state.removeNotification);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const handleClickNotification = (id: string, entityUrl: string, read: boolean) => {
@@ -40,7 +36,6 @@ export function NotificationPanel() {
     }
     if (!read) {
       markRead(id);
-      markNotificationRead(id);
     }
     setPanelOpen(false);
     setTimeout(() => {
@@ -56,7 +51,6 @@ export function NotificationPanel() {
   const handleConfirmDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     removeNotification(id);
-    deleteNotification(id);
     setPendingDeleteId(null);
   };
 
@@ -67,7 +61,6 @@ export function NotificationPanel() {
 
   const handleMarkAllRead = async () => {
     markAllRead();
-    markAllNotificationsRead();
   };
 
   return (
@@ -98,7 +91,7 @@ export function NotificationPanel() {
             </div>
           ) : (
             <div className="divide-y">
-              {notifications.map((n) => {
+              {notifications.map((n: any) => {
                 const Icon = entityIcons[n.entity_type] || Bell;
                 return (
                   <div
