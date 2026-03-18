@@ -287,8 +287,8 @@ impl TaskCommandService {
                 .and_then(|f| f.priority.as_ref())
                 .and_then(|p| TaskPriority::from_str_opt(p)),
             search: None,
-            from_date: filter.and_then(|f| f.date_from.map(|d| d.to_rfc3339())),
-            to_date: filter.and_then(|f| f.date_to.map(|d| d.to_rfc3339())),
+            from_date: filter.and_then(|f| f.date_from.clone()),
+            to_date: filter.and_then(|f| f.date_to.clone()),
             sort_by: "created_at".to_string(),
             sort_order: SortOrder::Desc,
         }
@@ -318,7 +318,7 @@ impl TaskCommandService {
             total_processed: import_result.total_processed,
             successful: import_result.successful,
             failed: import_result.failed,
-            errors: import_result.errors.clone(),
+            errors: import_result.errors,
             duplicates_skipped: import_result.duplicates_skipped,
         };
 
@@ -343,7 +343,7 @@ impl TaskCommandService {
         &self,
         ctx: &RequestContext,
         task_id: &str,
-        new_scheduled_date: String,
+        new_scheduled_date: &str,
         additional_notes: Option<String>,
     ) -> Result<Task, AppError> {
         let task = self.fetch_task(task_id).await?;
@@ -352,7 +352,7 @@ impl TaskCommandService {
         self.calendar_service
             .schedule_task(
                 task_id.to_string(),
-                new_scheduled_date.clone(),
+                new_scheduled_date.to_string(),
                 None,
                 None,
                 &ctx.auth.user_id,

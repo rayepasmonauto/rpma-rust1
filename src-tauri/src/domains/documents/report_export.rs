@@ -158,7 +158,7 @@ pub async fn export_intervention_report(
         file_name: Some(file_name),
         format: "pdf".to_string(),
         file_size,
-        generated_at: Utc::now(),
+        generated_at: chrono::Utc::now().timestamp_millis(),
     })
 }
 

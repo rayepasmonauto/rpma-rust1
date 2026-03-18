@@ -474,21 +474,17 @@ impl Default for TaskQuery {
     }
 }
 
+/// Re-exported from `shared::repositories::base` after consolidating duplicate
+/// definitions.  All existing imports continue to work through this public
+/// re-export.
+pub use crate::shared::repositories::base::PaginationInfo;
+
 /// Response for task listing with pagination
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 pub struct TaskListResponse {
     pub data: Vec<TaskWithDetails>,
     pub pagination: PaginationInfo,
     pub statistics: Option<TaskStatistics>,
-}
-
-/// Pagination information
-#[derive(Debug, Clone, Serialize, Deserialize, TS)]
-pub struct PaginationInfo {
-    pub page: i32,
-    pub limit: i32,
-    pub total: i64,
-    pub total_pages: i32,
 }
 
 /// Task statistics

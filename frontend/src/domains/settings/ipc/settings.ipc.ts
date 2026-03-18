@@ -20,37 +20,37 @@ export const settingsIpc = {
     cachedInvoke<UserSettings>('user-settings', IPC_COMMANDS.GET_USER_SETTINGS, {}, undefined, 30000),
 
   updateUserProfile: async (request: JsonObject) => {
-    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_PROFILE, { request });
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_PROFILE, { profile: request });
     invalidateUserSettingsCache();
     return result;
   },
 
   updateUserPreferences: async (request: JsonObject) => {
-    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_PREFERENCES, { request });
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_PREFERENCES, { preferences: request });
     invalidateUserSettingsCache();
     return result;
   },
 
   updateUserSecurity: async (request: JsonObject) => {
-    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_SECURITY, { request });
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_SECURITY, { security: request });
     invalidateUserSettingsCache();
     return result;
   },
 
   updateUserPerformance: async (request: JsonObject) => {
-    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_PERFORMANCE, { request });
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_PERFORMANCE, { performance: request });
     invalidateUserSettingsCache();
     return result;
   },
 
   updateUserAccessibility: async (request: JsonObject) => {
-    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_ACCESSIBILITY, { request });
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_ACCESSIBILITY, { accessibility: request });
     invalidateUserSettingsCache();
     return result;
   },
 
   updateUserNotifications: async (request: JsonObject) => {
-    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_NOTIFICATIONS, { request });
+    const result = await safeInvoke<JsonValue>(IPC_COMMANDS.UPDATE_USER_NOTIFICATIONS, { notifications: request });
     invalidateUserSettingsCache();
     return result;
   },

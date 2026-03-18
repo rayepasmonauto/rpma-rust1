@@ -193,7 +193,13 @@ async fn quote_to_task_conversion_updates_inventory_and_audit() {
         .mark_accepted(&quote.id, tester_id.as_str(), &admin_role)
         .expect("mark quote accepted");
     let conversion = quote_service
-        .convert_to_task(&quote.id, &task.id, "TSK-Q2T-001", &admin_role)
+        .convert_to_task(
+            &quote.id,
+            &task.id,
+            "TSK-Q2T-001",
+            tester_id.as_str(),
+            &admin_role,
+        )
         .expect("convert quote");
 
     assert_eq!(conversion.quote.status, QuoteStatus::Converted);

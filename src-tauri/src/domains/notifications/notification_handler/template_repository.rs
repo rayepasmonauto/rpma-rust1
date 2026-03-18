@@ -298,7 +298,7 @@ impl Repository<NotificationTemplate, String> for NotificationTemplateRepository
         } else {
             self.db.execute(
                 "INSERT INTO message_templates (id, name, message_type, channel, subject, body, variables, category, is_active, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                params![entity.id, entity.name, entity.notification_type.to_string(), entity.channel.to_string(), entity.subject_template, entity.body_template, variables_json, "general", if entity.is_active { 1 } else { 0 }, None::<String>, entity.created_at.timestamp_millis(), entity.updated_at.timestamp_millis()],
+                params![entity.id, entity.name, entity.notification_type.to_string(), entity.channel.to_string(), entity.subject_template, entity.body_template, variables_json, "general", if entity.is_active { 1 } else { 0 }, None::<String>, entity.created_at, entity.updated_at],
             ).map_err(|e| RepoError::Database(format!("Failed to create template: {}", e)))?;
         }
         self.cache.remove(&self.cache_key_builder.id(&entity.id));

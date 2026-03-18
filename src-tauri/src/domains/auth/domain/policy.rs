@@ -1,4 +1,4 @@
-use crate::shared::error::AppError;
+use crate::shared::contracts::AppError;
 
 /// Policy that maps raw authentication errors to user-safe messages.
 #[derive(Debug, Clone, Copy, Default)]

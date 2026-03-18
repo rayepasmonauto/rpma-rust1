@@ -18,6 +18,12 @@ pub trait IInventoryTransactionRepository: Send + Sync + std::fmt::Debug {
         reference_type: &str,
         transactions: &[InventoryTransaction],
     ) -> Result<usize, String>;
+
+    /// Revert inventory consumptions for a given intervention (e.g. on cancellation)
+    fn revert_intervention_consumptions(
+        &self,
+        reference_id: &str,
+    ) -> Result<usize, String>;
 }
 
 /// Material types for PPF workflows

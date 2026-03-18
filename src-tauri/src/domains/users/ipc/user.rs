@@ -9,22 +9,22 @@ use crate::shared::ipc::{ApiResponse, AppError};
 use serde::Deserialize;
 use tracing::{debug, info, instrument};
 
+use ts_rs::TS;
+
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct BootstrapFirstAdminRequest {
     pub user_id: String,
-    #[serde(default)]
-    pub correlation_id: Option<String>,
 }
 
 /// User request structure
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct UserCrudRequest {
     pub action: UserAction,
-    #[serde(default)]
-    pub correlation_id: Option<String>,
 }
 
 /// User CRUD operations
@@ -33,18 +33,20 @@ pub struct UserCrudRequest {
 #[instrument(skip(state, request))]
 pub async fn user_crud(
     request: UserCrudRequest,
+    correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<UserResponse>, AppError> {
     let action = request.action;
     debug!("User CRUD operation requested with action: {:?}", action);
 
-    let ctx = resolve_context!(&state, &request.correlation_id);
+    let ctx = resolve_context!(&state, &correlation_id);
 
     let facade = UsersFacade::new();
     let services = UsersServices {
         account_manager: state.auth_service.clone()
             as std::sync::Arc<dyn crate::shared::contracts::user_account::UserAccountManager>,
         user_service: state.user_service.clone(),
+        event_bus: state.event_bus.clone(),
     };
 
     let domain_response = facade
@@ -67,15 +69,17 @@ pub async fn user_crud(
 #[instrument(skip(state, request), fields(user_id = %request.user_id))]
 pub async fn bootstrap_first_admin(
     request: BootstrapFirstAdminRequest,
+    correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<String>, AppError> {
     let user_id = request.user_id.trim().to_string();
     let facade = UsersFacade::new();
-    let ctx = resolve_context!(&state, &request.correlation_id);
+    let ctx = resolve_context!(&state, &correlation_id);
     let services = UsersServices {
         account_manager: state.auth_service.clone()
             as std::sync::Arc<dyn crate::shared::contracts::user_account::UserAccountManager>,
         user_service: state.user_service.clone(),
+        event_bus: state.event_bus.clone(),
     };
     info!("Attempting to bootstrap first admin for user: {}", user_id);
     let response = facade
@@ -130,19 +134,19 @@ pub async fn get_users(
     _role: Option<String>,
     correlation_id: Option<String>,
     state: AppState<'_>,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<ApiResponse<serde_json::Value>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
 
     let limit = Some(page_size);
     let offset = Some((page - 1) * page_size);
 
     match execute_user_action(UserAction::List { limit, offset }, &ctx, state).await? {
-        UserResponse::List(users) => Ok(serde_json::json!({
+        UserResponse::List(users) => Ok(ApiResponse::success(serde_json::json!({
             "users": users.data,
             "total": users.data.len(),
             "page": page,
             "page_size": page_size
-        })),
+        })).with_correlation_id(Some(ctx.correlation_id))),
         _ => Err(AppError::Internal("Unexpected response".to_string())),
     }
 }
@@ -154,11 +158,11 @@ pub async fn create_user(
     user_data: CreateUserRequest,
     correlation_id: Option<String>,
     state: AppState<'_>,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<ApiResponse<serde_json::Value>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
 
     match execute_user_action(UserAction::Create { data: user_data }, &ctx, state).await? {
-        UserResponse::Created(user) => Ok(serde_json::json!(user)),
+        UserResponse::Created(user) => Ok(ApiResponse::success(serde_json::json!(user)).with_correlation_id(Some(ctx.correlation_id))),
         _ => Err(AppError::Internal("Failed to create user".to_string())),
     }
 }
@@ -171,7 +175,7 @@ pub async fn update_user(
     user_data: UpdateUserRequest,
     correlation_id: Option<String>,
     state: AppState<'_>,
-) -> Result<serde_json::Value, AppError> {
+) -> Result<ApiResponse<serde_json::Value>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
 
     match execute_user_action(
@@ -184,7 +188,7 @@ pub async fn update_user(
     )
     .await?
     {
-        UserResponse::Updated(user) => Ok(serde_json::json!(user)),
+        UserResponse::Updated(user) => Ok(ApiResponse::success(serde_json::json!(user)).with_correlation_id(Some(ctx.correlation_id))),
         _ => Err(AppError::Internal("Failed to update user".to_string())),
     }
 }
@@ -197,7 +201,7 @@ pub async fn update_user_status(
     is_active: bool,
     correlation_id: Option<String>,
     state: AppState<'_>,
-) -> Result<(), AppError> {
+) -> Result<ApiResponse<()>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
 
     // Construct a partial update carrying only the status flag.
@@ -220,7 +224,7 @@ pub async fn update_user_status(
     )
     .await?
     {
-        UserResponse::Updated(_) => Ok(()),
+        UserResponse::Updated(_) => Ok(ApiResponse::success(()).with_correlation_id(Some(ctx.correlation_id))),
         _ => Err(AppError::Internal(
             "Failed to update user status".to_string(),
         )),
@@ -234,11 +238,11 @@ pub async fn delete_user(
     user_id: String,
     correlation_id: Option<String>,
     state: AppState<'_>,
-) -> Result<(), AppError> {
+) -> Result<ApiResponse<()>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
 
     match execute_user_action(UserAction::Delete { id: user_id }, &ctx, state).await? {
-        UserResponse::Deleted => Ok(()),
+        UserResponse::Deleted => Ok(ApiResponse::success(()).with_correlation_id(Some(ctx.correlation_id))),
         _ => Err(AppError::Internal("Failed to delete user".to_string())),
     }
 }
@@ -253,6 +257,7 @@ async fn execute_user_action(
         account_manager: state.auth_service.clone()
             as std::sync::Arc<dyn crate::shared::contracts::user_account::UserAccountManager>,
         user_service: state.user_service.clone(),
+        event_bus: state.event_bus.clone(),
     };
 
     let domain_response = facade

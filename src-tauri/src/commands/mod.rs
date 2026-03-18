@@ -172,10 +172,9 @@ pub enum ClientResponse {
 pub async fn user_crud(action: UserAction, state: AppState<'_>) -> Result<UserResponse, AppError> {
     let request = crate::domains::users::ipc::user::UserCrudRequest {
         action,
-        correlation_id: None,
     };
 
-    let response = crate::domains::users::ipc::user::user_crud(request, state).await?;
+    let response = crate::domains::users::ipc::user::user_crud(request, None, state).await?;
     response
         .data
         .ok_or_else(|| AppError::Internal("Missing user_crud response payload".to_string()))

@@ -121,7 +121,7 @@ impl Repository<Notification, String> for NotificationRepository {
                     entity.id, entity.r#type, entity.title, entity.message,
                     entity.entity_type, entity.entity_id, entity.entity_url,
                     if entity.read { 1 } else { 0 }, entity.user_id,
-                    entity.created_at.timestamp(),
+                    entity.created_at,
                 ],
             )
             .map_err(|e| RepoError::Database(format!("Failed to create notification: {}", e)))?;

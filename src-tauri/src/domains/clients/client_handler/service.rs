@@ -194,7 +194,6 @@ impl ClientService {
             .count(count_query)
             .await
             .map_err(|e| format!("Failed to count clients: {}", e))?;
-        let total_pages = ((total as f64) / (limit as f64)).ceil() as i32;
         let stats = self.get_client_stats().await.ok();
         let statistics = stats.map(|s| ClientStatistics {
             total_clients: s.total_clients as i64,
@@ -205,12 +204,7 @@ impl ClientService {
         });
         Ok(ClientListResponse {
             data: clients,
-            pagination: PaginationInfo {
-                page,
-                limit,
-                total,
-                total_pages,
-            },
+            pagination: PaginationInfo::new(page, limit, total),
             statistics,
         })
     }

@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NotificationPanel } from '../components/NotificationPanel';
 import { useNotificationStore } from '../stores/notificationStore';
-import type { Notification } from '../api/notificationTypes';
+import { useNotifications } from '../hooks/useNotifications';
+
+// Mock the hook
+jest.mock('../hooks/useNotifications');
 
 jest.mock('@/lib/ipc/notification', () => ({
   notificationApi: {
@@ -21,8 +23,15 @@ jest.mock('sonner', () => ({
   },
 }));
 
+// Mock useRouter
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+  }),
+}));
+
 describe('NotificationPanel', () => {
-  const mockNotifications: Notification[] = [
+  const mockNotifications: any[] = [
     {
       id: '1',
       type: 'TaskAssignment',
@@ -49,12 +58,24 @@ describe('NotificationPanel', () => {
     },
   ];
 
+  const mockMarkRead = jest.fn();
+  const mockMarkAllRead = jest.fn();
+  const mockRemoveNotification = jest.fn();
+
   beforeEach(() => {
+    jest.clearAllMocks();
     useNotificationStore.setState({
-      notifications: mockNotifications,
-      unreadCount: 1,
       isConnected: true,
       isPanelOpen: false,
+    });
+
+    (useNotifications as jest.Mock).mockReturnValue({
+      notifications: mockNotifications,
+      unreadCount: 1,
+      isLoading: false,
+      markRead: mockMarkRead,
+      markAllRead: mockMarkAllRead,
+      removeNotification: mockRemoveNotification,
     });
   });
 
@@ -66,7 +87,7 @@ describe('NotificationPanel', () => {
   });
 
   it('should render when panel is open', () => {
-    useNotificationStore.getState().setPanelOpen(true);
+    useNotificationStore.setState({ isPanelOpen: true });
     render(<NotificationPanel />);
     
     const panel = screen.getByRole('dialog');
@@ -74,7 +95,7 @@ describe('NotificationPanel', () => {
   });
 
   it('should display notifications', () => {
-    useNotificationStore.getState().setPanelOpen(true);
+    useNotificationStore.setState({ isPanelOpen: true });
     render(<NotificationPanel />);
     
     const taskNotification = screen.getByText('New Task');
@@ -84,8 +105,15 @@ describe('NotificationPanel', () => {
   });
 
   it('should show empty state when no notifications', () => {
-    useNotificationStore.getState().setNotifications([], 0);
-    useNotificationStore.getState().setPanelOpen(true);
+    (useNotifications as jest.Mock).mockReturnValue({
+      notifications: [],
+      unreadCount: 0,
+      isLoading: false,
+      markRead: mockMarkRead,
+      markAllRead: mockMarkAllRead,
+      removeNotification: mockRemoveNotification,
+    });
+    useNotificationStore.setState({ isPanelOpen: true });
     
     render(<NotificationPanel />);
     
@@ -95,19 +123,18 @@ describe('NotificationPanel', () => {
 
   it('should mark notification as read on click', async () => {
     const user = userEvent.setup();
-    useNotificationStore.getState().setPanelOpen(true);
+    useNotificationStore.setState({ isPanelOpen: true });
     
     render(<NotificationPanel />);
     
     const firstNotification = screen.getByText('New Task');
     await user.click(firstNotification);
     
-    const state = useNotificationStore.getState();
-    expect(state.notifications[0].read).toBe(true);
+    expect(mockMarkRead).toHaveBeenCalledWith('1');
   });
 
   it('should show "Mark all as read" button when there are unread', () => {
-    useNotificationStore.getState().setPanelOpen(true);
+    useNotificationStore.setState({ isPanelOpen: true });
     render(<NotificationPanel />);
     
     const button = screen.getByText(/Tout marquer comme lu/i);
@@ -115,15 +142,19 @@ describe('NotificationPanel', () => {
   });
 
   it('should not show "Mark all as read" button when all are read', () => {
-    useNotificationStore.getState().setNotifications(
-      mockNotifications.map((n) => ({ ...n, read: true })),
-      0
-    );
-    useNotificationStore.getState().setPanelOpen(true);
+    (useNotifications as jest.Mock).mockReturnValue({
+      notifications: mockNotifications.map(n => ({ ...n, read: true })),
+      unreadCount: 0,
+      isLoading: false,
+      markRead: mockMarkRead,
+      markAllRead: mockMarkAllRead,
+      removeNotification: mockRemoveNotification,
+    });
+    useNotificationStore.setState({ isPanelOpen: true });
     
     render(<NotificationPanel />);
     
-    const button = screen.queryByText(/mark all as read/i);
+    const button = screen.queryByText(/Tout marquer comme lu/i);
     expect(button).not.toBeInTheDocument();
   });
 });

@@ -32,3 +32,64 @@ pub(crate) fn map_internal_error(context: &str, error: impl std::fmt::Display) -
 pub(crate) fn map_database(context: &str, error: impl std::fmt::Display) -> AppError {
     AppError::db_sanitized(context, error)
 }
+
+/// Convert a string error to an AppError, inferring the appropriate error type
+/// from keywords in the message.
+///
+/// Useful as a `.map_err` adapter when the upstream error is an opaque `String`.
+pub fn convert_to_app_error(error: String) -> AppError {
+    // Database operation errors
+    if error.contains("Failed to get")
+        || error.contains("Failed to query")
+        || error.contains("Failed to insert")
+        || error.contains("Failed to update")
+        || error.contains("Failed to delete")
+        || error.contains("Database operation failed")
+        || error.contains("query")
+        || error.contains("execute")
+        || error.contains("prepare")
+    {
+        return AppError::Database(error);
+    }
+
+    // Validation errors
+    if error.contains("validation")
+        || error.contains("invalid")
+        || error.contains("cannot")
+        || error.contains("must be")
+    {
+        return AppError::Validation(error);
+    }
+
+    // Default to internal error for unknown types
+    AppError::Internal(error)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_convert_to_app_error_database() {
+        let err = convert_to_app_error("Failed to get record".to_string());
+        assert!(matches!(err, AppError::Database(_)));
+
+        let err = convert_to_app_error("Failed to query tasks".to_string());
+        assert!(matches!(err, AppError::Database(_)));
+    }
+
+    #[test]
+    fn test_convert_to_app_error_validation() {
+        let err = convert_to_app_error("invalid input".to_string());
+        assert!(matches!(err, AppError::Validation(_)));
+
+        let err = convert_to_app_error("value must be positive".to_string());
+        assert!(matches!(err, AppError::Validation(_)));
+    }
+
+    #[test]
+    fn test_convert_to_app_error_internal() {
+        let err = convert_to_app_error("something went wrong".to_string());
+        assert!(matches!(err, AppError::Internal(_)));
+    }
+}

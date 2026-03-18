@@ -1,6 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { PageShell } from '@/shared/ui/layout/PageShell';
 
 const CalendarDashboard = dynamic(
   () => import('@/domains/calendar').then((module) => module.CalendarDashboard)
@@ -8,8 +10,10 @@ const CalendarDashboard = dynamic(
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[hsl(var(--rpma-surface))]">
-      <CalendarDashboard />
-    </div>
+    <ErrorBoundary>
+      <PageShell>
+        <CalendarDashboard />
+      </PageShell>
+    </ErrorBoundary>
   );
 }

@@ -12,3 +12,7 @@ pub mod task_assignment;
 pub mod task_scheduler;
 pub mod timestamp;
 pub mod user_account;
+
+// Re-exported so domain/ files can import shared types via the single allowed path.
+pub use crate::shared::error::AppError;
+pub use crate::shared::repositories::base::RepoResult;

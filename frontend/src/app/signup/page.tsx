@@ -198,7 +198,7 @@ export default function SignupPage() {
                     placeholder="••••••••"
                   />
                   {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                    <p className="text-xs text-red-400 mt-1">Les mots de passe ne correspondent pas</p>
+                    <p className="text-xs text-destructive mt-1">Les mots de passe ne correspondent pas</p>
                   )}
                 </div>
               </div>

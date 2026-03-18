@@ -3,9 +3,11 @@
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotificationStore } from '../stores/notificationStore';
+import { useNotifications } from '../hooks/useNotifications';
 
 export function NotificationBell() {
-  const { unreadCount, setPanelOpen } = useNotificationStore();
+  const { setPanelOpen } = useNotificationStore();
+  const { unreadCount } = useNotifications();
 
   return (
     <Button

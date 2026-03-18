@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useNotificationStore } from '../stores/notificationStore';
 import { getNotifications } from '../services/notificationActions';
 
 export function useNotificationUpdates() {
@@ -11,7 +10,12 @@ export function useNotificationUpdates() {
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
 
+  const [knownNotificationIds, setKnownNotificationIds] = useState<Set<string>>(new Set());
+
   useEffect(() => {
+    if (knownNotificationIds.size > 0) {
+      console.debug(`Tracking ${knownNotificationIds.size} notifications`);
+    }
     mountedRef.current = true;
 
     // Fetch initial notifications
@@ -19,10 +23,7 @@ export function useNotificationUpdates() {
       getNotifications().then((result) => {
         if (!mountedRef.current) return;
         if (result.success && result.data) {
-          useNotificationStore.getState().setNotifications(
-            result.data.notifications,
-            result.data.unread_count,
-          );
+          setKnownNotificationIds(new Set(result.data.notifications.map((n: any) => n.id)));
         }
       });
     }
@@ -37,28 +38,28 @@ export function useNotificationUpdates() {
 
         const result = await getNotifications();
         if (result.success && result.data) {
-          const currentIds = new Set(useNotificationStore.getState().notifications.map(n => n.id));
-          const newNotifications = result.data.notifications.filter(n => !currentIds.has(n.id));
+          setKnownNotificationIds((prevIds) => {
+            const newIds = new Set(prevIds);
+            const newNotifications = result.data!.notifications.filter((n: any) => !prevIds.has(n.id));
 
-          // Show toast for new unread notifications
-          newNotifications.forEach((notification) => {
-            if (!notification.read) {
-              toast(notification.title, {
-                description: notification.message,
-                action: {
-                  label: 'View',
-                  onClick: () => {
-                    window.location.href = notification.entity_url;
+            // Show toast for new unread notifications
+            newNotifications.forEach((notification: any) => {
+              if (!notification.read) {
+                toast(notification.title, {
+                  description: notification.message,
+                  action: {
+                    label: 'View',
+                    onClick: () => {
+                      window.location.href = notification.entity_url;
+                    },
                   },
-                },
-              });
-            }
-          });
+                });
+              }
+              newIds.add(notification.id);
+            });
 
-          useNotificationStore.getState().setNotifications(
-            result.data.notifications,
-            result.data.unread_count,
-          );
+            return newIds;
+          });
         }
       }, 120000); // S-2: raised from 30s to 120s (offline-first, tab guard above)
     }
@@ -73,3 +74,4 @@ export function useNotificationUpdates() {
     };
   }, [user?.token]);
 }
+

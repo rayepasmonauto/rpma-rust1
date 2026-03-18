@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronRight, Users, Package, Workflow, Settings, Activity, Trash2, X, LogOut, User, Shield, HelpCircle, Building2 } from 'lucide-react';
+import { ChevronRight, Users, Package, Workflow, Settings, Trash2, X, LogOut, User, Shield, HelpCircle, Building2 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,10 +22,7 @@ interface NavItem {
 const mainItems: NavItem[] = [
   { href: '/staff', label: 'Employés/Ressources', icon: <Users className="h-5 w-5" /> },
   { href: '/inventory', label: 'Inventaire', icon: <Package className="h-5 w-5" /> },
-  { href: '/configuration', label: 'Intégrations', icon: <Workflow className="h-5 w-5" /> },
-  { href: '/settings', label: 'Préférences', icon: <Settings className="h-5 w-5" /> },
   { href: '/tasks', label: 'Flux de travail', icon: <Workflow className="h-5 w-5" /> },
-  { href: '/interventions', label: 'Activité', icon: <Activity className="h-5 w-5" /> },
   { href: '/trash', label: 'Corbeille', icon: <Trash2 className="h-5 w-5" /> },
 ];
 

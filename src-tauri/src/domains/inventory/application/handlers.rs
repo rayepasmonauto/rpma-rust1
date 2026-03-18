@@ -95,27 +95,39 @@ impl InterventionFinalizedHandler {
 #[async_trait]
 impl DomainEventHandler for InterventionFinalizedHandler {
     async fn handle(&self, event: &DomainEvent) -> Result<(), String> {
-        if let DomainEvent::InterventionFinalized {
-            intervention_id,
-            task_id,
-            technician_id,
-            completed_at_ms,
-            ..
-        } = event
-        {
-            let payload = InterventionFinalized {
-                intervention_id: intervention_id.clone(),
-                task_id: task_id.clone(),
-                technician_id: technician_id.clone(),
-                completed_at_ms: *completed_at_ms,
-            };
-            self.process_finalized(&payload)
-                .map_err(|e| e.to_string())?;
+        match event {
+            DomainEvent::InterventionFinalized {
+                intervention_id,
+                task_id,
+                technician_id,
+                completed_at_ms,
+                ..
+            } => {
+                let payload = InterventionFinalized {
+                    intervention_id: intervention_id.clone(),
+                    task_id: task_id.clone(),
+                    technician_id: technician_id.clone(),
+                    completed_at_ms: *completed_at_ms,
+                };
+                self.process_finalized(&payload)
+                    .map_err(|e| e.to_string())?;
+            }
+            DomainEvent::InterventionCancelled {
+                intervention_id,
+                ..
+            } => {
+                // Revert inventory consumptions
+                self.service
+                    .transaction_repository
+                    .revert_intervention_consumptions(intervention_id)
+                    .map_err(|e| e.to_string())?;
+            }
+            _ => {}
         }
         Ok(())
     }
 
     fn interested_events(&self) -> Vec<&'static str> {
-        vec!["InterventionFinalized"]
+        vec!["InterventionFinalized", "InterventionCancelled"]
     }
 }

@@ -805,7 +805,13 @@ async fn test_convert_to_task_is_atomic() {
         ).expect("seed task row");
     }
     let result = service
-        .convert_to_task(&quote.id, task_id, task_number, &UserRole::Admin)
+        .convert_to_task(
+            &quote.id,
+            task_id,
+            task_number,
+            "conversion-user",
+            &UserRole::Admin,
+        )
         .unwrap();
 
     // Both status and task_id must be updated together.
@@ -838,4 +844,93 @@ async fn test_convert_to_task_is_atomic() {
         Some(task_id),
         "DB task_id must be set"
     );
+}
+
+#[tokio::test]
+async fn test_convert_to_task_emits_event_with_current_actor() {
+    use crate::shared::services::domain_event::DomainEvent;
+    use crate::shared::services::event_bus::EventHandler;
+    use async_trait::async_trait;
+    use std::sync::Mutex;
+
+    struct CaptureHandler {
+        converted_by: Arc<Mutex<Option<String>>>,
+    }
+
+    #[async_trait]
+    impl EventHandler for CaptureHandler {
+        async fn handle(&self, event: &DomainEvent) -> Result<(), String> {
+            if let DomainEvent::QuoteConverted { converted_by, .. } = event {
+                let mut slot = self.converted_by.lock().expect("capture mutex");
+                *slot = Some(converted_by.clone());
+            }
+            Ok(())
+        }
+
+        fn interested_events(&self) -> Vec<&'static str> {
+            vec!["QuoteConverted"]
+        }
+    }
+
+    let db = Arc::new(Database::new_in_memory().await.expect("create in-memory db"));
+    let cache = Arc::new(Cache::new(100));
+    let repo = Arc::new(QuoteRepository::new(db.clone(), cache));
+    let event_bus = Arc::new(crate::shared::services::event_bus::InMemoryEventBus::new());
+    let captured_actor = Arc::new(Mutex::new(None));
+    event_bus.register_handler(CaptureHandler {
+        converted_by: captured_actor.clone(),
+    });
+    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus);
+
+    let now = chrono::Utc::now().timestamp_millis();
+    db.execute(
+        r#"INSERT INTO clients (id, name, email, customer_type, total_tasks, active_tasks, completed_tasks, created_at, updated_at, synced)
+           VALUES ('test-client', 'Test Client', 'test@example.com', 'individual', 0, 0, 0, ?, ?, 0)"#,
+        rusqlite::params![now, now],
+    )
+    .expect("insert test client");
+
+    let req = make_quote_req("test-client");
+    let quote = service
+        .create_quote(req, "quote-creator", &UserRole::Admin)
+        .expect("create quote");
+    service
+        .add_item(
+            &quote.id,
+            make_item("PPF Hood", 50000, 1.0, 20.0),
+            &UserRole::Admin,
+        )
+        .expect("add item");
+    service.mark_sent(&quote.id, &UserRole::Admin).expect("mark sent");
+    service
+        .mark_accepted(&quote.id, "acceptor-user", &UserRole::Admin)
+        .expect("mark accepted");
+
+    let task_id = "task-uuid-actor-001";
+    let task_number = "T-00099";
+    db.execute(
+        r#"INSERT INTO tasks (id, task_number, title, vehicle_plate, vehicle_model, ppf_zones, scheduled_date, status, priority, created_at, updated_at, synced)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)"#,
+        rusqlite::params![task_id, task_number, "Seed task", "AA-000-AA", "Model X", r#"["front"]"#, "2025-01-01", "draft", "medium", now, now],
+    )
+    .expect("seed task row");
+
+    service
+        .convert_to_task(
+            &quote.id,
+            task_id,
+            task_number,
+            "conversion-actor-user",
+            &UserRole::Admin,
+        )
+        .expect("convert to task");
+
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
+    let actor = captured_actor
+        .lock()
+        .expect("capture mutex")
+        .clone()
+        .expect("quote converted event actor");
+    assert_eq!(actor, "conversion-actor-user");
 }

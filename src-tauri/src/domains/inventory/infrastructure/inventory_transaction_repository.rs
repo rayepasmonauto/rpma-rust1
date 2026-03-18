@@ -45,6 +45,44 @@ impl IInventoryTransactionRepository for InventoryTransactionRepository {
             })
             .map_err(|e| e.to_string())
     }
+
+    fn revert_intervention_consumptions(
+        &self,
+        reference_id: &str,
+    ) -> Result<usize, String> {
+        let conn = self.db.get_connection().map_err(|e| e.to_string())?;
+        
+        // Find transactions to revert
+        let mut stmt = conn
+            .prepare("SELECT material_id, quantity FROM inventory_transactions WHERE intervention_id = ? AND transaction_type = 'stock_out'")
+            .map_err(|e| e.to_string())?;
+            
+        let to_revert: Vec<(String, f64)> = stmt
+            .query_map(rusqlite::params![reference_id], |row| {
+                Ok((row.get(0)?, row.get(1)?))
+            })
+            .map_err(|e| e.to_string())?
+            .filter_map(Result::ok)
+            .collect();
+            
+        // First delete the transactions
+        let deleted = conn
+            .execute(
+                "DELETE FROM inventory_transactions WHERE intervention_id = ?",
+                rusqlite::params![reference_id],
+            )
+            .map_err(|e| e.to_string())?;
+
+        // Then restore material stock
+        for (material_id, quantity) in to_revert {
+            conn.execute(
+                "UPDATE materials SET current_stock = current_stock + ? WHERE id = ?",
+                rusqlite::params![quantity, material_id],
+            ).map_err(|e| e.to_string())?;
+        }
+
+        Ok(deleted)
+    }
 }
 
 impl InventoryTransactionRepository {

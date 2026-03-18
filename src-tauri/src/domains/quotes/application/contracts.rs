@@ -2,10 +2,12 @@
 
 use crate::domains::quotes::domain::models::quote::*;
 use serde::Deserialize;
+use ts_rs::TS;
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteCreateRequest {
     pub data: CreateQuoteRequest,
     #[serde(default)]
@@ -13,8 +15,9 @@ pub struct QuoteCreateRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteGetRequest {
     pub id: String,
     #[serde(default)]
@@ -22,8 +25,9 @@ pub struct QuoteGetRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteListRequest {
     #[serde(default)]
     pub filters: QuoteQuery,
@@ -32,8 +36,9 @@ pub struct QuoteListRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteUpdateRequest {
     pub id: String,
     pub data: UpdateQuoteRequest,
@@ -42,8 +47,9 @@ pub struct QuoteUpdateRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteDeleteRequest {
     pub id: String,
     #[serde(default)]
@@ -51,8 +57,9 @@ pub struct QuoteDeleteRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteItemAddRequest {
     pub quote_id: String,
     pub item: CreateQuoteItemRequest,
@@ -61,8 +68,9 @@ pub struct QuoteItemAddRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteItemUpdateRequest {
     pub quote_id: String,
     pub item_id: String,
@@ -72,8 +80,9 @@ pub struct QuoteItemUpdateRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteItemDeleteRequest {
     pub quote_id: String,
     pub item_id: String,
@@ -82,8 +91,9 @@ pub struct QuoteItemDeleteRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteStatusRequest {
     pub id: String,
     #[serde(default)]
@@ -91,8 +101,9 @@ pub struct QuoteStatusRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteDuplicateRequest {
     pub id: String,
     #[serde(default)]
@@ -100,8 +111,9 @@ pub struct QuoteDuplicateRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteAttachmentsGetRequest {
     pub quote_id: String,
     #[serde(default)]
@@ -109,8 +121,9 @@ pub struct QuoteAttachmentsGetRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteAttachmentCreateRequest {
     pub quote_id: String,
     pub data: CreateQuoteAttachmentRequest,
@@ -119,8 +132,9 @@ pub struct QuoteAttachmentCreateRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteAttachmentUpdateRequest {
     pub quote_id: String,
     pub attachment_id: String,
@@ -130,8 +144,9 @@ pub struct QuoteAttachmentUpdateRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteAttachmentDeleteRequest {
     pub quote_id: String,
     pub attachment_id: String,
@@ -140,8 +155,9 @@ pub struct QuoteAttachmentDeleteRequest {
 }
 
 /// TODO: document
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteAttachmentOpenRequest {
     pub attachment_id: String,
     #[serde(default)]
@@ -153,8 +169,9 @@ pub struct QuoteAttachmentOpenRequest {
 /// The `vehicle_*` and `scheduled_date` fields provide the data
 /// needed to create the corresponding task at the IPC orchestration
 /// layer.
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, TS)]
 #[serde(deny_unknown_fields)]
+#[ts(export)]
 pub struct QuoteConvertToTaskRequest {
     pub quote_id: String,
     pub vehicle_plate: String,

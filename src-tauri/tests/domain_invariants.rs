@@ -946,7 +946,13 @@ mod quote_invariants {
         let err = app
             .state
             .quote_service
-            .convert_to_task(&quote.id, "fake-task-id", "TSK-999", &UserRole::Admin)
+            .convert_to_task(
+                &quote.id,
+                "fake-task-id",
+                "TSK-999",
+                "test-user",
+                &UserRole::Admin,
+            )
             .unwrap_err();
 
         assert!(
@@ -995,6 +1001,7 @@ mod quote_invariants {
             &quote.id,
             &task.id,
             &task.task_number,
+            "test-user",
             &UserRole::Admin,
         );
 

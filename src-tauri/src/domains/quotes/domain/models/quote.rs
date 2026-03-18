@@ -10,7 +10,7 @@ use crate::shared::contracts::common::{serialize_optional_timestamp, serialize_t
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::shared::repositories::base::RepoResult;
+use crate::shared::contracts::RepoResult;
 
 /// Repository trait for quote operations (ADR-005)
 pub trait IQuoteRepository: Send + Sync + std::fmt::Debug {

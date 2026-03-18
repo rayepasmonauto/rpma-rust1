@@ -152,7 +152,7 @@ pub async fn delay_task(
         .delay_task(
             &ctx,
             &request.task_id,
-            request.new_scheduled_date,
+            request.new_scheduled_date.as_str(),
             request.additional_notes,
         )
         .await?;
@@ -250,7 +250,7 @@ pub async fn task_crud(
             let ctx = resolve_context!(&state, &correlation_id);
             check_task_permission!(&ctx.auth.role, "update");
 
-            let task = svc.update_task_crud(&ctx, id, data).await?;
+            let task = svc.update_task_crud(&ctx, &id, data).await?;
 
             Ok(
                 ApiResponse::success(crate::commands::TaskResponse::Updated(task))

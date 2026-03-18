@@ -21,8 +21,14 @@ export function extractAndValidate<T>(
   // Handle ApiResponse wrapper format: { success: boolean, data?: T, error?: ApiError }
   if ('success' in response) {
     if (!response.success) {
-      console.error('[IPC] API call failed:', response.error);
-      return null;
+      const errorMessage = (() => {
+        const err = response.error as unknown;
+        if (err && typeof err === 'object' && 'message' in err && typeof err.message === 'string') {
+          return err.message;
+        }
+        return 'IPC API call failed';
+      })();
+      throw new Error(errorMessage);
     }
     const data = response.data;
     return validator ? validator(data as JsonValue) : data as T;

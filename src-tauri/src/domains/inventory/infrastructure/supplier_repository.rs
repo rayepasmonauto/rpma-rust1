@@ -66,7 +66,7 @@ impl SupplierRepository {
 
     /// Get supplier by ID.
     pub fn get_supplier(&self, id: &str) -> MaterialResult<Option<Supplier>> {
-        let sql = "SELECT * FROM suppliers WHERE id = ?";
+        let sql = "SELECT * FROM suppliers WHERE id = ? AND deleted_at IS NULL";
         let suppliers = self.db.query_as::<Supplier>(sql, params![id])?;
         Ok(suppliers.into_iter().next())
     }

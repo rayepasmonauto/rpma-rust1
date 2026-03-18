@@ -60,16 +60,11 @@ impl TaskRepository {
             .query_single_value(&count_sql, rusqlite::params_from_iter(count_params))
             .map_err(|e| RepoError::Database(format!("Failed to count tasks: {}", e)))?;
 
-        let total_pages = ((total_count as f64)
-            / (query.limit.unwrap_or(Self::DEFAULT_PAGE_SIZE) as f64))
-            .ceil() as i32;
-
-        let pagination = PaginationInfo {
-            page: query.page.unwrap_or(1),
-            limit: query.limit.unwrap_or(Self::DEFAULT_PAGE_SIZE),
-            total: total_count,
-            total_pages,
-        };
+        let pagination = PaginationInfo::new(
+            query.page.unwrap_or(1),
+            query.limit.unwrap_or(Self::DEFAULT_PAGE_SIZE),
+            total_count,
+        );
 
         let response_data = tasks
             .into_iter()

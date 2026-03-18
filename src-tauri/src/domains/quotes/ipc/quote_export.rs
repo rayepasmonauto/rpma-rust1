@@ -6,6 +6,7 @@
 use crate::commands::{ApiResponse, AppError, AppState};
 use crate::domains::quotes::application::quote_export_service::QuoteExportService;
 use crate::domains::quotes::domain::models::quote::*;
+use crate::shared::services::event_bus::EventPublisher;
 use tracing::{debug, error, instrument, Span};
 
 use crate::domains::quotes::application::{QuoteConvertToTaskRequest, QuoteGetRequest};
@@ -65,6 +66,23 @@ pub async fn quote_convert_to_task(
             error!(error = %e, "Failed to create task from quote");
             AppError::Internal("Impossible de créer la tâche à partir du devis.".to_string())
         })?;
+
+    // Emit TaskCreated event
+    let domain_event = crate::shared::services::event_bus::event_factory::task_created_with_ctx(
+        task.id.clone(),
+        task.task_number.clone(),
+        task.title.clone(),
+        ctx.auth.user_id.clone(),
+        ctx.correlation_id.clone(),
+    );
+    if let Err(e) = state.event_bus.publish(domain_event) {
+        tracing::warn!(
+            correlation_id = %ctx.correlation_id,
+            task_id = %task.id,
+            "Failed to publish TaskCreated event: {}",
+            e
+        );
+    }
 
     // Step 3: record the quote→task link inside quotes domain.
     let result = svc.record_task_conversion(&request, &task.id, &task.task_number, &ctx)?;
