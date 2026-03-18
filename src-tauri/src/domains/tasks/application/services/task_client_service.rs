@@ -82,14 +82,13 @@ impl TaskClientService {
 
         let mut enhanced_tasks = Vec::new();
 
-        let empty_id = String::new();
-        for task_with_client in &tasks_with_clients.data {
+        for task_with_client in tasks_with_clients.data {
             let client_contact_info = if include_client_details {
                 let client_id = task_with_client
                     .task
                     .client_id
-                    .as_ref()
-                    .unwrap_or(&empty_id);
+                    .as_deref()
+                    .unwrap_or("");
                 if client_id.is_empty() {
                     None
                 } else {
@@ -108,7 +107,7 @@ impl TaskClientService {
             );
 
             enhanced_tasks.push(TaskWithClientDetails {
-                task: task_with_client.task.clone(),
+                task: task_with_client.task,
                 client_name: task_with_client
                     .client_info
                     .as_ref()
