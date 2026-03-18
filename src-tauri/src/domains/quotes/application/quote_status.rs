@@ -218,6 +218,7 @@ impl QuoteService {
         quote_id: &str,
         task_id: &str,
         task_number: &str,
+        converted_by: &str,
         role: &UserRole,
     ) -> Result<ConvertQuoteToTaskResponse, String> {
         Self::check_quote_permission(role, "update")?;
@@ -238,7 +239,7 @@ impl QuoteService {
             .map_err(Self::map_repo_error)?;
 
         // Emit QuoteConverted event so intervention can be created
-        if let Err(e) = self.emit_quote_converted(&quote, task_id, task_number) {
+        if let Err(e) = self.emit_quote_converted(&quote, task_id, task_number, converted_by) {
             warn!(quote_id = %quote_id, error = %e, "Failed to emit QuoteConverted event");
         }
 

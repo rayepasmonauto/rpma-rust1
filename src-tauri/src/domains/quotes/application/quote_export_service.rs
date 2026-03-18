@@ -135,7 +135,13 @@ impl QuoteExportService {
     ) -> Result<ConvertQuoteToTaskResponse, AppError> {
         let facade = QuotesFacade::new(self.quote_service.clone());
         let response = facade
-            .convert_to_task(&ctx.auth.role, &request.quote_id, task_id, task_number)
+            .convert_to_task(
+                &ctx.auth.role,
+                &request.quote_id,
+                task_id,
+                task_number,
+                ctx.user_id(),
+            )
             .map_err(|e| {
                 error!(error = %e, quote_id = %request.quote_id, "Failed to convert quote to task");
                 e

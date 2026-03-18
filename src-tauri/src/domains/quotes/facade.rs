@@ -227,10 +227,11 @@ impl QuotesFacade {
         quote_id: &str,
         task_id: &str,
         task_number: &str,
+        converted_by: &str,
     ) -> Result<ConvertQuoteToTaskResponse, AppError> {
         self.check_permission(role, "status")?;
         self.quote_service
-            .convert_to_task(quote_id, task_id, task_number, role)
+            .convert_to_task(quote_id, task_id, task_number, converted_by, role)
             .map_err(|e| self.map_quote_service_error(e))
     }
 

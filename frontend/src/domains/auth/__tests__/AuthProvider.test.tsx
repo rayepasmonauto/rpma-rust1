@@ -141,4 +141,31 @@ describe('AuthProvider / useAuth', () => {
 
     expect(toast.error).toHaveBeenCalledWith('Session invalide');
   });
+
+  it('refreshSession clears auth state when session validation fails', async () => {
+    (AuthSecureStorage.getSession as jest.Mock).mockResolvedValue({
+      token: 'stored-token',
+      user: { user_id: 'user-1' },
+      refreshToken: 'stored-refresh',
+    });
+    (authIpc.validateSession as jest.Mock)
+      .mockResolvedValueOnce(mockSession)
+      .mockRejectedValueOnce(new Error('Session expired'));
+    (authIpc.getUserProfile as jest.Mock).mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isHydrating).toBe(false);
+      expect(result.current.user).toEqual(mockSession);
+    });
+
+    await act(async () => {
+      await result.current.refreshSession();
+    });
+
+    expect(AuthSecureStorage.clearSession).toHaveBeenCalled();
+    expect(result.current.user).toBeNull();
+    expect(toast.error).toHaveBeenCalledWith('Session expirée. Veuillez vous reconnecter.');
+  });
 });

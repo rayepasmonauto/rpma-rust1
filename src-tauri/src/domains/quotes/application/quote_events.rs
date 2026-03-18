@@ -66,6 +66,7 @@ impl QuoteService {
         quote: &Quote,
         task_id: &str,
         task_number: &str,
+        converted_by: &str,
     ) -> Result<(), String> {
         use crate::shared::services::event_bus::event_factory;
         use crate::shared::services::event_bus::EventPublisher;
@@ -76,10 +77,7 @@ impl QuoteService {
             quote.client_id.clone(),
             task_id.to_string(),
             task_number.to_string(),
-            quote
-                .created_by
-                .clone()
-                .unwrap_or_else(|| "system".to_string()),
+            converted_by.to_string(),
         );
 
         self.event_bus
