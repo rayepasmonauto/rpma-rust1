@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
+import { PageShell } from '@/shared/ui/layout/PageShell';
+import { EmptyState } from '@/components/ui';
 import { useEditClientPage } from '@/domains/clients';
 
 interface EditClientPageProps {
@@ -30,52 +32,57 @@ export default function EditClientPage({ params }: EditClientPageProps) {
   } = useEditClientPage({ params });
 
   if (loading) {
-    return <LoadingState />;
+    return (
+      <PageShell>
+        <LoadingState />
+      </PageShell>
+    );
   }
 
   if (error || !client) {
     return (
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-        <div className="flex items-center space-x-4">
+      <PageShell>
+        <div className="flex items-center space-x-4 mb-6">
           <Link
             href="/clients"
-            className="flex items-center space-x-2 text-muted-foreground hover:text-white transition-colors"
+            className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>{t('clients.backToClients')}</span>
           </Link>
         </div>
-        <Card className="border-red-700/50 bg-red-900/20">
+        <Card className="border-destructive/50 bg-destructive/10">
           <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-red-400 text-lg font-medium">{error || t('clients.notFound')}</p>
-              <p className="text-muted-foreground text-sm mt-2">{t('clients.checkIdOrRetry')}</p>
-            </div>
+            <EmptyState
+              icon={<ArrowLeft className="h-12 w-12 text-muted-foreground" />}
+              title={error || t('clients.notFound')}
+              description={t('clients.checkIdOrRetry')}
+            />
           </CardContent>
         </Card>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 p-6">
+    <PageShell>
       {/* Header */}
       <div className="rpma-shell p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-6">
             <Link
               href={`/clients/${params?.id}`}
-              className="flex items-center space-x-2 text-muted-foreground hover:text-white transition-colors"
+              className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="text-sm">{t('common.back')} {client.name}</span>
             </Link>
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-blue-600/20 rounded-full">
-                <Edit className="h-8 w-8 text-blue-400" />
+              <div className="p-3 bg-primary/20 rounded-full">
+                <Edit className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">{t('clients.editClient')}</h1>
+                <h1 className="text-3xl font-bold text-foreground">{t('clients.editClient')}</h1>
                 <p className="text-muted-foreground mt-1">{t('clients.updateClientInfo')}</p>
               </div>
             </div>
@@ -92,8 +99,8 @@ export default function EditClientPage({ params }: EditClientPageProps) {
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* General Error */}
             {formErrors.general && (
-              <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-4">
-                <p className="text-red-400 text-sm font-medium">{formErrors.general}</p>
+              <div className="bg-destructive/10 border border-destructive/50 rounded-lg p-4">
+                <p className="text-destructive text-sm font-medium">{formErrors.general}</p>
               </div>
             )}
 
@@ -107,11 +114,11 @@ export default function EditClientPage({ params }: EditClientPageProps) {
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                className={formErrors.name ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                className={formErrors.name ? 'border-destructive focus-visible:ring-destructive' : ''}
                 placeholder={t('clients.enterClientName')}
                 required
               />
-              {formErrors.name && <p className="text-red-400 text-sm">{formErrors.name}</p>}
+              {formErrors.name && <p className="text-destructive text-sm">{formErrors.name}</p>}
             </div>
 
             {/* Customer Type */}
@@ -127,7 +134,7 @@ export default function EditClientPage({ params }: EditClientPageProps) {
                     value="individual"
                     checked={formData.customer_type === 'individual'}
                     onChange={(e) => handleInputChange('customer_type', e.target.value as 'individual' | 'business')}
-                    className="w-4 h-4 text-green-600 bg-[hsl(var(--rpma-surface))] border-[hsl(var(--rpma-border))] focus:ring-green-500"
+                    className="w-4 h-4 text-primary bg-[hsl(var(--rpma-surface))] border-[hsl(var(--rpma-border))] focus:ring-primary"
                   />
                   <div className="flex items-center space-x-2">
                     <User className="h-4 w-4 text-muted-foreground" />
@@ -141,7 +148,7 @@ export default function EditClientPage({ params }: EditClientPageProps) {
                     value="business"
                     checked={formData.customer_type === 'business'}
                     onChange={(e) => handleInputChange('customer_type', e.target.value as 'individual' | 'business')}
-                    className="w-4 h-4 text-green-600 bg-[hsl(var(--rpma-surface))] border-[hsl(var(--rpma-border))] focus:ring-green-500"
+                    className="w-4 h-4 text-primary bg-[hsl(var(--rpma-surface))] border-[hsl(var(--rpma-border))] focus:ring-primary"
                   />
                   <div className="flex items-center space-x-2">
                     <Building className="h-4 w-4 text-muted-foreground" />
@@ -161,10 +168,10 @@ export default function EditClientPage({ params }: EditClientPageProps) {
                 id="email"
                 value={formData.email ?? ''}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                className={formErrors.email ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                className={formErrors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
                 placeholder={t('clients.enterEmailAddress')}
               />
-              {formErrors.email && <p className="text-red-400 text-sm">{formErrors.email}</p>}
+              {formErrors.email && <p className="text-destructive text-sm">{formErrors.email}</p>}
             </div>
 
             {/* Phone */}
@@ -177,10 +184,10 @@ export default function EditClientPage({ params }: EditClientPageProps) {
                 id="phone"
                 value={formData.phone ?? ''}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                className={formErrors.phone ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                className={formErrors.phone ? 'border-destructive focus-visible:ring-destructive' : ''}
                 placeholder={t('clients.enterPhoneNumber')}
               />
-              {formErrors.phone && <p className="text-red-400 text-sm">{formErrors.phone}</p>}
+              {formErrors.phone && <p className="text-destructive text-sm">{formErrors.phone}</p>}
             </div>
 
             {/* Address */}
@@ -197,10 +204,10 @@ export default function EditClientPage({ params }: EditClientPageProps) {
                     id="address_street"
                     value={formData.address_street ?? ''}
                     onChange={(e) => handleInputChange('address_street', e.target.value)}
-                    className={formErrors.address_street ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                    className={formErrors.address_street ? 'border-destructive focus-visible:ring-destructive' : ''}
                     placeholder={t('clients.enterStreetAddress')}
                   />
-                  {formErrors.address_street && <p className="text-red-400 text-sm">{formErrors.address_street}</p>}
+                  {formErrors.address_street && <p className="text-destructive text-sm">{formErrors.address_street}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -212,10 +219,10 @@ export default function EditClientPage({ params }: EditClientPageProps) {
                     id="address_city"
                     value={formData.address_city ?? ''}
                     onChange={(e) => handleInputChange('address_city', e.target.value)}
-                    className={formErrors.address_city ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                    className={formErrors.address_city ? 'border-destructive focus-visible:ring-destructive' : ''}
                     placeholder={t('clients.enterCity')}
                   />
-                  {formErrors.address_city && <p className="text-red-400 text-sm">{formErrors.address_city}</p>}
+                  {formErrors.address_city && <p className="text-destructive text-sm">{formErrors.address_city}</p>}
                 </div>
               </div>
 
@@ -229,10 +236,10 @@ export default function EditClientPage({ params }: EditClientPageProps) {
                     id="address_state"
                     value={formData.address_state ?? ''}
                     onChange={(e) => handleInputChange('address_state', e.target.value)}
-                    className={formErrors.address_state ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                    className={formErrors.address_state ? 'border-destructive focus-visible:ring-destructive' : ''}
                     placeholder={t('clients.enterStateRegion')}
                   />
-                  {formErrors.address_state && <p className="text-red-400 text-sm">{formErrors.address_state}</p>}
+                  {formErrors.address_state && <p className="text-destructive text-sm">{formErrors.address_state}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -244,10 +251,10 @@ export default function EditClientPage({ params }: EditClientPageProps) {
                     id="address_zip"
                     value={formData.address_zip ?? ''}
                     onChange={(e) => handleInputChange('address_zip', e.target.value)}
-                    className={formErrors.address_zip ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                    className={formErrors.address_zip ? 'border-destructive focus-visible:ring-destructive' : ''}
                     placeholder={t('clients.enterPostalCode')}
                   />
-                  {formErrors.address_zip && <p className="text-red-400 text-sm">{formErrors.address_zip}</p>}
+                  {formErrors.address_zip && <p className="text-destructive text-sm">{formErrors.address_zip}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -259,10 +266,10 @@ export default function EditClientPage({ params }: EditClientPageProps) {
                     id="address_country"
                     value={formData.address_country ?? ''}
                     onChange={(e) => handleInputChange('address_country', e.target.value)}
-                    className={formErrors.address_country ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                    className={formErrors.address_country ? 'border-destructive focus-visible:ring-destructive' : ''}
                     placeholder={t('clients.enterCountry')}
                   />
-                  {formErrors.address_country && <p className="text-red-400 text-sm">{formErrors.address_country}</p>}
+                  {formErrors.address_country && <p className="text-destructive text-sm">{formErrors.address_country}</p>}
                 </div>
               </div>
             </div>
@@ -278,10 +285,10 @@ export default function EditClientPage({ params }: EditClientPageProps) {
                   id="company_name"
                   value={formData.company_name ?? ''}
                   onChange={(e) => handleInputChange('company_name', e.target.value)}
-                  className={formErrors.company_name ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                  className={formErrors.company_name ? 'border-destructive focus-visible:ring-destructive' : ''}
                   placeholder={t('clients.enterCompanyName')}
                 />
-                {formErrors.company_name && <p className="text-red-400 text-sm">{formErrors.company_name}</p>}
+                {formErrors.company_name && <p className="text-destructive text-sm">{formErrors.company_name}</p>}
               </div>
             )}
 
@@ -294,11 +301,11 @@ export default function EditClientPage({ params }: EditClientPageProps) {
                 id="notes"
                 value={formData.notes ?? ''}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
-                className={formErrors.notes ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                className={formErrors.notes ? 'border-destructive focus-visible:ring-destructive' : ''}
                 placeholder={t('clients.enterNotes')}
                 rows={4}
               />
-              {formErrors.notes && <p className="text-red-400 text-sm">{formErrors.notes}</p>}
+              {formErrors.notes && <p className="text-destructive text-sm">{formErrors.notes}</p>}
             </div>
 
             {/* Actions */}
@@ -315,7 +322,8 @@ export default function EditClientPage({ params }: EditClientPageProps) {
               <Button
                 type="submit"
                 disabled={submitting}
-                className="bg-green-600 hover:bg-green-700 flex items-center space-x-2"
+                variant="default"
+                className="flex items-center space-x-2"
               >
                 {submitting ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -328,6 +336,6 @@ export default function EditClientPage({ params }: EditClientPageProps) {
           </form>
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

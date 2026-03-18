@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
+import { PageShell } from '@/shared/ui/layout/PageShell';
+import { EmptyState } from '@/components/ui';
 import { useClientDetailPage } from '@/domains/clients';
 import { formatClientDate } from './date-format';
 
@@ -28,13 +30,17 @@ export default function ClientDetailPage({ params }: ClientDetailPageProps) {
   } = useClientDetailPage({ params });
 
   if (loading) {
-    return <LoadingState />;
+    return (
+      <PageShell>
+        <LoadingState />
+      </PageShell>
+    );
   }
 
   if (error || !client) {
     return (
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
-        <div className="flex items-center space-x-4">
+      <PageShell>
+        <div className="flex items-center space-x-4 mb-6">
           <Link
             href="/clients"
             className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -43,20 +49,21 @@ export default function ClientDetailPage({ params }: ClientDetailPageProps) {
             <span>{t('clients.backToClients')}</span>
           </Link>
         </div>
-        <Card className="border-red-700/50 bg-red-900/20">
+        <Card className="border-destructive/50 bg-destructive/10">
           <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-red-400 text-lg font-medium">{error || t('clients.notFound')}</p>
-              <p className="text-muted-foreground text-sm mt-2">{t('clients.checkId')}</p>
-            </div>
+            <EmptyState
+              icon={<ArrowLeft className="h-12 w-12 text-muted-foreground" />}
+              title={error || t('clients.notFound')}
+              description={t('clients.checkId')}
+            />
           </CardContent>
         </Card>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 p-6">
+    <PageShell>
       {/* Header */}
       <div className="rpma-shell p-4 md:p-6">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-4 lg:space-y-0">
@@ -89,7 +96,7 @@ export default function ClientDetailPage({ params }: ClientDetailPageProps) {
             </div>
           </div>
           <div className="flex items-center space-x-2 md:space-x-3 flex-shrink-0">
-            <Button onClick={handleCreateTask} size="sm" className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleCreateTask} size="sm" variant="default">
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">{t('tasks.newTask')}</span>
             </Button>
@@ -236,8 +243,8 @@ export default function ClientDetailPage({ params }: ClientDetailPageProps) {
                   <div className="text-2xl font-bold text-foreground">{client.tasks?.length || 0}</div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wide">{t('clients.totalTasks')}</div>
                 </div>
-                <div className="text-center p-3 bg-green-900/20 rounded-lg">
-                  <div className="text-2xl font-bold text-green-400">
+                <div className="text-center p-3 bg-success/10 rounded-lg">
+                  <div className="text-2xl font-bold text-success">
                     {client.tasks?.filter(t => t.status === 'completed').length || 0}
                   </div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wide">{t('clients.completed')}</div>
@@ -277,8 +284,8 @@ export default function ClientDetailPage({ params }: ClientDetailPageProps) {
                   {client.tasks.slice(0, 3).map((task) => (
                     <div key={task.id} className="flex items-center space-x-3 p-2 bg-[hsl(var(--rpma-surface))] rounded-lg">
                       <div className={`w-2 h-2 rounded-full ${
-                        task.status === 'completed' ? 'bg-green-500' :
-                        task.status === 'in_progress' ? 'bg-blue-500' :
+                        task.status === 'completed' ? 'bg-success' :
+                        task.status === 'in_progress' ? 'bg-info' :
                         'bg-[hsl(var(--rpma-teal))]'
                       }`} />
                       <div className="flex-1 min-w-0">
@@ -317,6 +324,6 @@ export default function ClientDetailPage({ params }: ClientDetailPageProps) {
           )}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

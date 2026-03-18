@@ -59,22 +59,22 @@ export default function PPFWorkflowPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border-l-4 border-emerald-500 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border-l-4 border-success bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-2xl text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success text-2xl text-success-foreground">
               🚗
             </div>
             <div>
               <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
                 {task?.priority && (
-                  <span className="rounded-full bg-red-50 px-2 py-0.5 text-red-600">
+                  <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-destructive">
                     Priorité {task.priority}
                   </span>
                 )}
-                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">PPF Intégral</span>
+                <span className="rounded-full bg-success/10 px-2 py-0.5 text-success">PPF Intégral</span>
                 {scheduledDate && (
-                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700">
+                  <span className="rounded-full bg-info/10 px-2 py-0.5 text-info">
                     Planifiée · {scheduledDate}
                   </span>
                 )}
@@ -89,11 +89,11 @@ export default function PPFWorkflowPage() {
             </div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-extrabold text-emerald-600">{surfaceInfo}</div>
+            <div className="text-2xl font-extrabold text-success">{surfaceInfo}</div>
             <div className="text-xs text-muted-foreground">
               Surface totale · {task?.ppf_zones?.length ?? 0} zones
             </div>
-            <div className="text-xs font-semibold text-emerald-600">
+            <div className="text-xs font-semibold text-success">
               {intervention?.status === 'completed' ? 'Intervention terminée' : 'Devis validé'}
             </div>
           </div>
@@ -114,8 +114,8 @@ export default function PPFWorkflowPage() {
                   key={`pill-${step.id}`}
                   className={cn(
                     'h-1 flex-1 rounded-full',
-                    isDone && 'bg-emerald-600',
-                    isActive && 'bg-blue-500',
+                    isDone && 'bg-success',
+                    isActive && 'bg-info',
                     !isDone && !isActive && 'bg-[hsl(var(--rpma-border))]'
                   )}
                 />
@@ -124,7 +124,7 @@ export default function PPFWorkflowPage() {
           </div>
           <div className="mt-2 flex flex-wrap justify-between text-[10px] text-muted-foreground">
             {orderedSteps.map((step) => (
-              <span key={`label-${step.id}`} className={step.id === currentStep?.id ? 'text-blue-600' : undefined}>
+              <span key={`label-${step.id}`} className={step.id === currentStep?.id ? 'text-info' : undefined}>
                 {PPF_STEP_CONFIG[step.id]?.label ?? step.title}
               </span>
             ))}
@@ -132,7 +132,7 @@ export default function PPFWorkflowPage() {
         </div>
       </div>
 
-      <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-700">
+      <div className="rounded-md border border-info/30 bg-info/10 px-4 py-3 text-xs text-info">
         L&apos;intervention démarre à l&apos;Étape 1 — Inspection. Chaque étape doit être complétée dans l&apos;ordre. Les données sont sauvegardées automatiquement en local (offline-first).
       </div>
 
@@ -147,7 +147,7 @@ export default function PPFWorkflowPage() {
 
           const cardStyles = cn(
             'rounded-xl border bg-white p-4 shadow-sm transition',
-            isActive && 'border-emerald-500 ring-1 ring-emerald-100',
+            isActive && 'border-success ring-1 ring-success/20',
             isLocked && 'opacity-55 cursor-not-allowed'
           );
 
@@ -163,7 +163,7 @@ export default function PPFWorkflowPage() {
                 router.push(`/tasks/${taskId}/workflow/ppf/${getPPFStepPath(step.id)}`);
               }}
             >
-              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-xl text-blue-700">
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-info/10 text-xl text-info">
                 <Icon className="h-5 w-5" />
               </div>
               <div className="text-sm font-extrabold text-foreground">{config.label}</div>
@@ -181,7 +181,7 @@ export default function PPFWorkflowPage() {
                       'h-1 flex-1 rounded-full',
                       isDone || isActive
                         ? index < 2
-                          ? 'bg-emerald-600'
+                          ? 'bg-success'
                           : 'bg-[hsl(var(--rpma-border))]'
                         : 'bg-[hsl(var(--rpma-border))]'
                     )}
@@ -193,7 +193,7 @@ export default function PPFWorkflowPage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               {lockReason && (
-                <p className="mt-2 text-[11px] font-medium text-amber-700">{lockReason}</p>
+                <p className="mt-2 text-[11px] font-medium text-warning">{lockReason}</p>
               )}
             </div>
           );

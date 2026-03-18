@@ -2,6 +2,8 @@
 
 import { ArrowLeft, AlertCircle, Settings } from 'lucide-react';
 import { Button, TaskErrorBoundary } from '@/shared/ui';
+import { PageShell } from '@/shared/ui/layout/PageShell';
+import { LoadingState } from '@/shared/ui/layout/LoadingState';
 import {
   TaskAttachments,
   TaskOverview,
@@ -52,61 +54,55 @@ export default function TaskDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
-            <div className="absolute inset-0 rounded-full border-2 border-primary/10" />
-          </div>
-          <p className="text-foreground font-medium">{t('tasks.loadingDetails')}</p>
-        </div>
-      </div>
+      <PageShell>
+        <LoadingState message={t('tasks.loadingDetails')} />
+      </PageShell>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center space-y-4 max-w-md">
-          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto ring-4 ring-red-500/20">
-            <AlertCircle className="h-8 w-8 text-red-400" />
+      <PageShell>
+        <div className="text-center space-y-4 max-w-md mx-auto">
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto ring-4 ring-destructive/20">
+            <AlertCircle className="h-8 w-8 text-destructive" />
           </div>
           <h2 className="text-xl font-semibold text-foreground">{t('tasks.error')}</h2>
-          <p className="text-border-light">{error}</p>
+          <p className="text-muted-foreground">{error}</p>
           <Button
             onClick={() => router.back()}
             variant="outline"
-            className="border-border text-border-light hover:text-foreground hover:border-primary transition-all duration-200"
+            className="border-border text-muted-foreground hover:text-foreground hover:border-primary transition-all duration-200"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('common.back')}
           </Button>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   if (!task) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="text-center space-y-4 max-w-md">
+      <PageShell>
+        <div className="text-center space-y-4 max-w-md mx-auto">
           <p className="text-foreground font-medium">{t('tasks.notFound')}</p>
           <Button
             onClick={() => router.back()}
             variant="outline"
-            className="border-border text-border-light hover:text-foreground hover:border-primary transition-all duration-200"
+            className="border-border text-muted-foreground hover:text-foreground hover:border-primary transition-all duration-200"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('common.back')}
           </Button>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   return (
     <TaskErrorBoundary>
-      <div className="min-h-screen bg-[hsl(var(--rpma-surface))]">
+      <PageShell>
         {/* Enhanced Header with TaskHeaderBand */}
         <TaskHeaderBand
           stepLabel={isCompleted ? 'TERMINÉ' : isInProgress ? 'EN COURS' : 'PLANIFIÉ'}
@@ -128,49 +124,47 @@ export default function TaskDetailPage() {
         />
 
         {/* Quick Navigation */}
-        <div className="sticky top-0 z-30 bg-[hsl(var(--rpma-surface))]/95 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--rpma-surface))]/80 border-b border-[hsl(var(--rpma-border))] shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => router.back()}
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-foreground hover:bg-accent/5"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  {t('common.back')}
-                </Button>
-                 <StatusBadge status={(task.status as 'completed' | 'in_progress' | 'pending' | 'scheduled' | 'on_hold' | 'cancelled' | 'failed' | 'overdue' | 'draft') || 'pending'} size="sm" />
-              </div>
+        <div className="sticky top-0 z-30 bg-[hsl(var(--rpma-surface))]/95 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--rpma-surface))]/80 border-b border-[hsl(var(--rpma-border))] shadow-sm py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => router.back()}
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/5"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                {t('common.back')}
+              </Button>
+               <StatusBadge status={(task.status as 'completed' | 'in_progress' | 'pending' | 'scheduled' | 'on_hold' | 'cancelled' | 'failed' | 'overdue' | 'draft') || 'pending'} size="sm" />
+            </div>
 
-              <div className="flex flex-wrap gap-2">
-                {visibleQuickNavSections.map(section => (
-                  <button
-                    key={section.id}
-                    type="button"
-                     onClick={() => {
-                       const target = document.getElementById(section.id);
-                       if (!target) return;
-                       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                       target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' } as ScrollIntoViewOptions);
-                     }}
-                    aria-current={activeSection === section.id ? 'page' : undefined}
-                    className={`px-3 py-1.5 text-xs sm:text-sm rounded-full border transition-all duration-200 ${
-                      activeSection === section.id
-                        ? 'border-primary/40 bg-primary/15 text-primary shadow-sm'
-                        : 'border-border/70 bg-background/70 text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-background'
-                    }`}
-                  >
-                    {t(section.label)}
-                  </button>
-                ))}
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {visibleQuickNavSections.map(section => (
+                <button
+                  key={section.id}
+                  type="button"
+                   onClick={() => {
+                     const target = document.getElementById(section.id);
+                     if (!target) return;
+                     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                     target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' } as ScrollIntoViewOptions);
+                   }}
+                  aria-current={activeSection === section.id ? 'page' : undefined}
+                  className={`px-3 py-1.5 text-xs sm:text-sm rounded-full border transition-all duration-200 ${
+                    activeSection === section.id
+                      ? 'border-primary/40 bg-primary/15 text-primary shadow-sm'
+                      : 'border-border/70 bg-background/70 text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-background'
+                  }`}
+                >
+                  {t(section.label)}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 md:py-7 lg:py-9 space-y-6 ${showMobileActionBar ? 'pb-28 md:pb-9' : ''}`}>
+        <div className={`space-y-6 ${showMobileActionBar ? 'pb-28' : ''}`}>
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6">
             {/* Main Content Area */}
             <main className="space-y-6">
@@ -286,7 +280,7 @@ export default function TaskDetailPage() {
             />
           </div>
         )}
-      </div>
+      </PageShell>
     </TaskErrorBoundary>
   );
 }

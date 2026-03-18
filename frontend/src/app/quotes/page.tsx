@@ -75,14 +75,14 @@ export default function QuotesPage() {
             { label: 'Total', value: stats.total, color: 'text-foreground', trend },
             { label: 'Brouillons', value: stats.draft, color: 'text-muted-foreground', trend: null },
             { label: 'Envoyés', value: stats.sent, color: 'text-primary', trend: null },
-            { label: 'Acceptés', value: stats.accepted, color: 'text-green-600 dark:text-green-400', trend: null },
+            { label: 'Acceptés', value: stats.accepted, color: 'text-success', trend: null },
           ].map(stat => (
             <div key={stat.label} className="rounded-lg border bg-card p-4">
               <p className="text-sm text-muted-foreground">{stat.label}</p>
               <div className="flex items-baseline gap-2">
                 <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
                 {stat.trend !== null && stat.trend !== 0 && (
-                  <span className={`flex items-center text-xs ${stat.trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className={`flex items-center text-xs ${stat.trend > 0 ? 'text-success' : 'text-destructive'}`}>
                     {stat.trend > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                     {Math.abs(stat.trend)}%
                   </span>
