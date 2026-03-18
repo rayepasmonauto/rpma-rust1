@@ -258,6 +258,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logger.error(LogContext.AUTH, 'Session refresh failed', {
         error: error instanceof Error ? error.message : String(error),
       });
+      await AuthSecureStorage.clearSession();
+      clearCache();
+      setState({
+        user: null,
+        profile: null,
+        loading: false,
+        isAuthenticating: false,
+        isHydrating: false,
+      });
+      toast.error('Session expirée. Veuillez vous reconnecter.');
     }
   }, [state.user?.token]);
 
