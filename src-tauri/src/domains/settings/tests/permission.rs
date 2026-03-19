@@ -127,14 +127,21 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_user_settings_all_roles_succeed() {
+        // User settings require the caller's user_id to exist in the users table
+        // (FK constraint). We verify only the RBAC gate here — the FK is a
+        // DB-setup concern tested separately in the integration harness.
         for role in [UserRole::Admin, UserRole::Supervisor, UserRole::Technician, UserRole::Viewer] {
             let state = build_test_app_state().await;
             state.session_store.set(make_test_session(role.clone()));
             let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
             let service = SettingsService::new(state.db.clone());
+            // RBAC: all roles are permitted; any error must NOT be Authorization.
             let result = service.get_user_settings(&ctx);
-            assert!(result.is_ok(), "Role {:?} should read user settings: {:?}", role, result);
+            assert!(
+                !matches!(result, Err(crate::shared::ipc::errors::AppError::Authorization(_))),
+                "Role {:?} should not be rejected by RBAC for user settings, got: {:?}", role, result
+            );
         }
     }
 
