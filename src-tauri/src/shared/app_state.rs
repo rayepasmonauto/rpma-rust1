@@ -37,6 +37,7 @@ pub struct AppStateType {
     pub app_data_dir: std::path::PathBuf,
     pub trash_service:
         Arc<crate::domains::trash::application::services::trash_service::TrashService>,
+    pub global_search_service: Arc<crate::shared::services::global_search::GlobalSearchService>,
 }
 
 pub type AppState<'a> = State<'a, AppStateType>;

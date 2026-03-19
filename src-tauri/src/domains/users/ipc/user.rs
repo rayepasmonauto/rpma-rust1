@@ -130,8 +130,8 @@ pub async fn has_admins(
 pub async fn get_users(
     page: i32,
     page_size: i32,
-    _search: Option<String>,
-    _role: Option<String>,
+    search: Option<String>,
+    role: Option<String>,
     correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<serde_json::Value>, AppError> {
@@ -140,14 +140,28 @@ pub async fn get_users(
     let limit = Some(page_size);
     let offset = Some((page - 1) * page_size);
 
-    match execute_user_action(UserAction::List { limit, offset }, &ctx, state).await? {
-        UserResponse::List(users) => Ok(ApiResponse::success(serde_json::json!({
-            "users": users.data,
-            "total": users.data.len(),
-            "page": page,
-            "page_size": page_size
-        }))
-        .with_correlation_id(Some(ctx.correlation_id))),
+    match execute_user_action(
+        UserAction::List {
+            limit,
+            offset,
+            search,
+            role_filter: role,
+        },
+        &ctx,
+        state,
+    )
+    .await?
+    {
+        UserResponse::List(users) => {
+            let total = users.data.len();
+            Ok(ApiResponse::success(serde_json::json!({
+                "users": users.data,
+                "total": total,
+                "page": page,
+                "page_size": page_size
+            }))
+        .with_correlation_id(Some(ctx.correlation_id)))
+        }
         _ => Err(AppError::Internal("Unexpected response".to_string())),
     }
 }

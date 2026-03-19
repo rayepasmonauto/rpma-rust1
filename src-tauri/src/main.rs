@@ -266,6 +266,7 @@ fn main() {
             navigation::navigation_go_forward,
             navigation::navigation_get_current,
             navigation::navigation_refresh,
+            navigation::global_search,
             navigation::shortcuts_register,
             // ── Logging ──────────────────────────────────────────────────
             commands::log::send_log_to_frontend,

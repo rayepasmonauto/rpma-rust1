@@ -100,7 +100,7 @@ const DOCUMENTED_SERVICE_DEPENDENCIES: &[(&str, &[&str])] = &[
     ("SettingsService", &["Database"]),
     ("TaskImportService", &["Database"]),
     ("AuthService", &["Database"]),
-    ("UserService", &["Repositories.user"]),
+    ("UserService", &["Repositories.user", "SessionRepository"]),
     ("CacheService", &[]),
     ("SessionService", &["Database"]),
     ("SessionStore", &[]),
@@ -234,8 +234,16 @@ impl ServiceBuilder {
         auth_service.init()?;
         let auth_service = Arc::new(auth_service);
 
-        // Initialize User Service (depends on user repository)
-        let user_service = Arc::new(UserService::new(self.repositories.user.clone()));
+        // Initialize User Service (depends on user repository + session repository)
+        let user_session_repo = Arc::new(
+            crate::domains::auth::infrastructure::session_repository::SessionRepository::new(
+                self.db.clone(),
+            ),
+        );
+        let user_service = Arc::new(UserService::new(
+            self.repositories.user.clone(),
+            user_session_repo,
+        ));
 
         // Initialize Cache Service (self-contained)
         let cache_service = Arc::new(crate::shared::services::cache::CacheService::default());
@@ -341,6 +349,12 @@ impl ServiceBuilder {
             ),
         );
 
+        let global_search_service = Arc::new(
+            crate::shared::services::global_search::GlobalSearchService::new(
+                self.repositories.clone(),
+            ),
+        );
+
         // Build and return AppStateType
         Ok(AppStateType {
             db: self.db,
@@ -366,6 +380,7 @@ impl ServiceBuilder {
             event_bus,
             app_data_dir: self.app_data_dir,
             trash_service,
+            global_search_service,
         })
     }
 }
