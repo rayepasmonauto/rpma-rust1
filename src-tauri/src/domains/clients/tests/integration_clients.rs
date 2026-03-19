@@ -5,6 +5,7 @@ use crate::shared::ipc::errors::AppError;
 use std::sync::Arc;
 
 #[tokio::test]
+#[allow(deprecated)]
 async fn map_service_error_returns_not_found_for_missing_entity() {
     let db = Arc::new(Database::new_in_memory().await.expect("in-memory database"));
     let service = Arc::new(ClientService::new_with_db(db));
@@ -14,6 +15,7 @@ async fn map_service_error_returns_not_found_for_missing_entity() {
 }
 
 #[tokio::test]
+#[allow(deprecated)]
 async fn map_service_error_returns_validation_for_invalid_input() {
     let db = Arc::new(Database::new_in_memory().await.expect("in-memory database"));
     let service = Arc::new(ClientService::new_with_db(db));
@@ -23,6 +25,7 @@ async fn map_service_error_returns_validation_for_invalid_input() {
 }
 
 #[tokio::test]
+#[allow(deprecated)]
 async fn map_service_error_returns_database_for_unknown_errors() {
     let db = Arc::new(Database::new_in_memory().await.expect("in-memory database"));
     let service = Arc::new(ClientService::new_with_db(db));
