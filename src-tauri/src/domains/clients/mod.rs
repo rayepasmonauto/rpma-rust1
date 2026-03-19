@@ -1,3 +1,4 @@
+pub mod application;
 pub mod client_handler;
 pub mod domain;
 pub mod infrastructure;
