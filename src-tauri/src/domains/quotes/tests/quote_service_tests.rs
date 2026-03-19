@@ -872,7 +872,11 @@ async fn test_convert_to_task_emits_event_with_current_actor() {
         }
     }
 
-    let db = Arc::new(Database::new_in_memory().await.expect("create in-memory db"));
+    let db = Arc::new(
+        Database::new_in_memory()
+            .await
+            .expect("create in-memory db"),
+    );
     let cache = Arc::new(Cache::new(100));
     let repo = Arc::new(QuoteRepository::new(db.clone(), cache));
     let event_bus = Arc::new(crate::shared::services::event_bus::InMemoryEventBus::new());
@@ -901,7 +905,9 @@ async fn test_convert_to_task_emits_event_with_current_actor() {
             &UserRole::Admin,
         )
         .expect("add item");
-    service.mark_sent(&quote.id, &UserRole::Admin).expect("mark sent");
+    service
+        .mark_sent(&quote.id, &UserRole::Admin)
+        .expect("mark sent");
     service
         .mark_accepted(&quote.id, "acceptor-user", &UserRole::Admin)
         .expect("mark accepted");

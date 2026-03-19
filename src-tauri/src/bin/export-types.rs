@@ -87,11 +87,11 @@ use rpma_ppf_intervention::domains::interventions::{
 };
 
 // Import command request types
-use rpma_ppf_intervention::domains::users::UserAction;
 use rpma_ppf_intervention::domains::notifications::SendNotificationRequest;
 use rpma_ppf_intervention::domains::notifications::UpdateNotificationConfigRequest;
 use rpma_ppf_intervention::domains::users::CreateUserRequest;
 use rpma_ppf_intervention::domains::users::UpdateUserRequest;
+use rpma_ppf_intervention::domains::users::UserAction;
 use rpma_ppf_intervention::domains::users::UserListResponse;
 use rpma_ppf_intervention::domains::users::UserResponse;
 use rpma_ppf_intervention::shared::ipc::response::{ApiError, ApiResponse};

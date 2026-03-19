@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
-import { Bell, FileText, ClipboardCheck, Receipt, X } from 'lucide-react';
+import { Bell, FileText, ClipboardCheck, Receipt, X, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,10 +13,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import type { Notification } from '../api/notificationTypes';
 import { useNotificationStore } from '../stores/notificationStore';
 import { useNotifications } from '../hooks/useNotifications';
 
-const entityIcons: Record<string, typeof FileText> = {
+const entityIcons: Record<string, LucideIcon> = {
   intervention: FileText,
   task: ClipboardCheck,
   quote: Receipt,
@@ -91,7 +92,7 @@ export function NotificationPanel() {
             </div>
           ) : (
             <div className="divide-y">
-              {notifications.map((n: any) => {
+              {notifications.map((n: Notification) => {
                 const Icon = entityIcons[n.entity_type] || Bell;
                 return (
                   <div

@@ -26,6 +26,7 @@ impl TaskCommandService {
                     .notification_sender
                     .send_message_raw(
                         "in_app".to_string(),
+                        Some("task_assigned".to_string()),
                         Some(technician_id.clone()),
                         None,
                         None,
@@ -54,10 +55,16 @@ impl TaskCommandService {
         correlation_id: &str,
     ) {
         let status = task.status.to_string();
+        let notification_kind = match task.status {
+            crate::domains::tasks::domain::models::task::TaskStatus::Completed => "task_completed",
+            crate::domains::tasks::domain::models::task::TaskStatus::Overdue => "task_overdue",
+            _ => "task_updated",
+        };
         if let Err(e) = self
             .notification_sender
             .send_message_raw(
                 "in_app".to_string(),
+                Some(notification_kind.to_string()),
                 Some(current_user_id.to_string()),
                 None,
                 None,

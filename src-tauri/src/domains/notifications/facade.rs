@@ -7,8 +7,8 @@
 use std::sync::Arc;
 
 use crate::db::Database;
+use crate::domains::settings::{models::UserSettings, UserSettingsRepository};
 use crate::shared::ipc::errors::AppError;
-use crate::shared::repositories::base::Repository;
 use crate::shared::repositories::cache::Cache;
 
 use super::models::{
@@ -16,8 +16,8 @@ use super::models::{
     NotificationPreferences, SendMessageRequest, UpdateNotificationPreferencesRequest,
 };
 use super::notification_handler::{
-    GetNotificationsResponse, MessageService, NotificationPreferencesRepository,
-    NotificationRepository, NotificationTemplateRepository,
+    GetNotificationsResponse, MessageService, NotificationRepository,
+    NotificationTemplateRepository,
 };
 
 /// Facade for the Notifications bounded context.
@@ -146,10 +146,8 @@ impl NotificationsFacade {
         &self,
         user_id: &str,
     ) -> Result<NotificationPreferences, AppError> {
-        self.preferences_repo()
-            .get_or_create(user_id.to_string())
-            .await
-            .map_err(|e| AppError::Database(format!("Failed to get preferences: {}", e)))
+        let settings = self.user_settings_repo().get_user_settings(user_id)?;
+        Ok(map_user_settings_to_preferences(user_id, &settings))
     }
 
     /// Update notification preferences for the given user.
@@ -158,52 +156,43 @@ impl NotificationsFacade {
         user_id: &str,
         updates: &UpdateNotificationPreferencesRequest,
     ) -> Result<NotificationPreferences, AppError> {
-        let repo = self.preferences_repo();
-        let mut prefs = repo
-            .get_or_create(user_id.to_string())
-            .await
-            .map_err(|e| AppError::Database(format!("Failed to get preferences: {}", e)))?;
+        let repo = self.user_settings_repo();
+        let mut settings = repo.get_user_settings(user_id)?;
 
         if let Some(v) = updates.in_app_enabled {
-            prefs.in_app_enabled = v;
+            settings.notifications.in_app_enabled = v;
         }
         if let Some(v) = updates.task_assigned {
-            prefs.task_assigned = v;
+            settings.notifications.task_assigned = v;
         }
         if let Some(v) = updates.task_updated {
-            prefs.task_updated = v;
+            settings.notifications.task_updated = v;
         }
         if let Some(v) = updates.task_completed {
-            prefs.task_completed = v;
+            settings.notifications.task_completed = v;
         }
         if let Some(v) = updates.task_overdue {
-            prefs.task_overdue = v;
-        }
-        if let Some(v) = updates.client_created {
-            prefs.client_created = v;
-        }
-        if let Some(v) = updates.client_updated {
-            prefs.client_updated = v;
+            settings.notifications.task_overdue = v;
         }
         if let Some(v) = updates.system_alerts {
-            prefs.system_alerts = v;
+            settings.notifications.system_alerts = v;
         }
         if let Some(v) = updates.maintenance_notifications {
-            prefs.maintenance_notifications = v;
+            settings.notifications.maintenance = v;
         }
         if let Some(v) = updates.quiet_hours_enabled {
-            prefs.quiet_hours_enabled = v;
+            settings.notifications.quiet_hours_enabled = v;
         }
         if let Some(ref v) = updates.quiet_hours_start {
-            prefs.quiet_hours_start = Some(v.clone());
+            settings.notifications.quiet_hours_start = v.clone();
         }
         if let Some(ref v) = updates.quiet_hours_end {
-            prefs.quiet_hours_end = Some(v.clone());
+            settings.notifications.quiet_hours_end = v.clone();
         }
 
-        repo.save(prefs)
-            .await
-            .map_err(|e| AppError::Database(format!("Failed to save preferences: {}", e)))
+        repo.save_user_settings(user_id, &settings)?;
+        let refreshed = repo.get_user_settings(user_id)?;
+        Ok(map_user_settings_to_preferences(user_id, &refreshed))
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -212,11 +201,35 @@ impl NotificationsFacade {
         NotificationRepository::new(self.db.clone(), self.cache.clone())
     }
 
-    fn preferences_repo(&self) -> NotificationPreferencesRepository {
-        NotificationPreferencesRepository::new(self.db.clone(), self.cache.clone())
-    }
-
     fn template_repo(&self) -> NotificationTemplateRepository {
         NotificationTemplateRepository::new(self.db.clone(), self.cache.clone())
+    }
+
+    fn user_settings_repo(&self) -> UserSettingsRepository {
+        UserSettingsRepository::new(self.db.clone())
+    }
+}
+
+fn map_user_settings_to_preferences(
+    user_id: &str,
+    settings: &UserSettings,
+) -> NotificationPreferences {
+    NotificationPreferences {
+        id: format!("user-settings:{}", user_id),
+        user_id: user_id.to_string(),
+        in_app_enabled: settings.notifications.in_app_enabled,
+        task_assigned: settings.notifications.task_assigned,
+        task_updated: settings.notifications.task_updated,
+        task_completed: settings.notifications.task_completed,
+        task_overdue: settings.notifications.task_overdue,
+        client_created: false,
+        client_updated: false,
+        system_alerts: settings.notifications.system_alerts,
+        maintenance_notifications: settings.notifications.maintenance,
+        quiet_hours_enabled: settings.notifications.quiet_hours_enabled,
+        quiet_hours_start: Some(settings.notifications.quiet_hours_start.clone()),
+        quiet_hours_end: Some(settings.notifications.quiet_hours_end.clone()),
+        created_at: 0,
+        updated_at: chrono::Utc::now().timestamp(),
     }
 }

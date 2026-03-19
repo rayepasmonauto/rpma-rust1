@@ -150,6 +150,7 @@ impl TaskCommandService {
             .notification_sender
             .send_message_raw(
                 message_type,
+                None,
                 task.client_id.clone().or(task.technician_id.clone()),
                 recipient_email,
                 recipient_phone,
@@ -214,6 +215,7 @@ impl TaskCommandService {
                 .notification_sender
                 .send_message_raw(
                     "in_app".to_string(),
+                    Some("system_alert".to_string()),
                     task.technician_id.clone(),
                     None,
                     None,

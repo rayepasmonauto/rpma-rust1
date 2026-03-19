@@ -84,11 +84,7 @@ impl TaskClientService {
 
         for task_with_client in tasks_with_clients.data {
             let client_contact_info = if include_client_details {
-                let client_id = task_with_client
-                    .task
-                    .client_id
-                    .as_deref()
-                    .unwrap_or("");
+                let client_id = task_with_client.task.client_id.as_deref().unwrap_or("");
                 if client_id.is_empty() {
                     None
                 } else {

@@ -113,8 +113,7 @@ impl DomainEventHandler for InterventionFinalizedHandler {
                     .map_err(|e| e.to_string())?;
             }
             DomainEvent::InterventionCancelled {
-                intervention_id,
-                ..
+                intervention_id, ..
             } => {
                 // Revert inventory consumptions
                 self.service

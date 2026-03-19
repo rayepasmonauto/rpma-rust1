@@ -280,11 +280,11 @@ fn main() {
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
                 info!("Application shutdown initiated - performing cleanup");
-                
+
                 // Get app state to access database and session store
                 let app_handle = window.app_handle();
                 let state = app_handle.try_state::<shared::app_state::AppStateType>();
-                
+
                 if let Some(app_state) = state {
                     // Step 1: Flush SQLite WAL checkpoint with FULL mode
                     info!("Flushing SQLite WAL checkpoint (FULL mode)...");
@@ -296,7 +296,7 @@ fn main() {
                     } else {
                         warn!("Could not get database connection for WAL checkpoint");
                     }
-                    
+
                     // Step 2: Clear session store
                     info!("Clearing in-memory session store...");
                     app_state.session_store.clear();
@@ -304,10 +304,10 @@ fn main() {
                 } else {
                     warn!("App state not available during shutdown - skipping cleanup");
                 }
-                
+
                 // Step 3: Log about background tasks
                 info!("Background tasks (tokio::spawn) will be terminated by process exit");
-                
+
                 info!("Application shutdown cleanup completed");
             }
         })

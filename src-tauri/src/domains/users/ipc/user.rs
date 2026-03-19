@@ -146,7 +146,8 @@ pub async fn get_users(
             "total": users.data.len(),
             "page": page,
             "page_size": page_size
-        })).with_correlation_id(Some(ctx.correlation_id))),
+        }))
+        .with_correlation_id(Some(ctx.correlation_id))),
         _ => Err(AppError::Internal("Unexpected response".to_string())),
     }
 }
@@ -162,7 +163,8 @@ pub async fn create_user(
     let ctx = resolve_context!(&state, &correlation_id);
 
     match execute_user_action(UserAction::Create { data: user_data }, &ctx, state).await? {
-        UserResponse::Created(user) => Ok(ApiResponse::success(serde_json::json!(user)).with_correlation_id(Some(ctx.correlation_id))),
+        UserResponse::Created(user) => Ok(ApiResponse::success(serde_json::json!(user))
+            .with_correlation_id(Some(ctx.correlation_id))),
         _ => Err(AppError::Internal("Failed to create user".to_string())),
     }
 }
@@ -188,7 +190,8 @@ pub async fn update_user(
     )
     .await?
     {
-        UserResponse::Updated(user) => Ok(ApiResponse::success(serde_json::json!(user)).with_correlation_id(Some(ctx.correlation_id))),
+        UserResponse::Updated(user) => Ok(ApiResponse::success(serde_json::json!(user))
+            .with_correlation_id(Some(ctx.correlation_id))),
         _ => Err(AppError::Internal("Failed to update user".to_string())),
     }
 }
@@ -224,7 +227,9 @@ pub async fn update_user_status(
     )
     .await?
     {
-        UserResponse::Updated(_) => Ok(ApiResponse::success(()).with_correlation_id(Some(ctx.correlation_id))),
+        UserResponse::Updated(_) => {
+            Ok(ApiResponse::success(()).with_correlation_id(Some(ctx.correlation_id)))
+        }
         _ => Err(AppError::Internal(
             "Failed to update user status".to_string(),
         )),
@@ -242,7 +247,9 @@ pub async fn delete_user(
     let ctx = resolve_context!(&state, &correlation_id);
 
     match execute_user_action(UserAction::Delete { id: user_id }, &ctx, state).await? {
-        UserResponse::Deleted => Ok(ApiResponse::success(()).with_correlation_id(Some(ctx.correlation_id))),
+        UserResponse::Deleted => {
+            Ok(ApiResponse::success(()).with_correlation_id(Some(ctx.correlation_id)))
+        }
         _ => Err(AppError::Internal("Failed to delete user".to_string())),
     }
 }

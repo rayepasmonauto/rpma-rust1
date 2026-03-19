@@ -16,3 +16,5 @@ export { default as AppNavigation } from './AppNavigation';
 export { SkipLink } from './SkipLink';
 
 export * from '@/error-boundaries';
+
+export * from './inline-edit';

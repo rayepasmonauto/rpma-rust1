@@ -20,11 +20,11 @@ import { organizationIpc } from '@/domains/admin/ipc/organization.ipc';
 import { securityIpc } from '@/domains/admin/ipc/security.ipc';
 import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
 import { reportsIpc } from '@/domains/reports/ipc/reports.ipc';
+import { trashIpc } from "@/domains/trash/ipc";
 import { systemOperations } from './domains/system';
 
 // Re-export necessary types that might be used by consumers of ipcClient
 // or used in the domain wrappers themselves.
-import { trashIpc } from "@/domains/trash/ipc";
 export * from './types';
 
 export const ipcClient = {

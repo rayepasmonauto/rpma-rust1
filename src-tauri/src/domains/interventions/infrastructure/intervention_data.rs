@@ -79,11 +79,15 @@ impl InterventionDataService {
         intervention.client_email = customer_email;
         intervention.client_phone = customer_phone;
 
-        // Set vehicle info from task (fetch full vehicle details)
-        let (vehicle_model, vehicle_make, vehicle_year, vehicle_vin): (
+        // Set vehicle info from task (fetch full vehicle details).
+        // BUG-3: tasks.vehicle_year is stored as TEXT, not INTEGER.  Reading it
+        // directly as Option<i32> causes a rusqlite type error that the
+        // .unwrap_or silently swallows — making ALL four fields None.  Read
+        // vehicle_year as Option<String> and parse it to i32 afterward.
+        let (vehicle_model, vehicle_make, vehicle_year_str, vehicle_vin): (
             Option<String>,
             Option<String>,
-            Option<i32>,
+            Option<String>,
             Option<String>,
         ) = tx
             .query_row(
@@ -94,7 +98,9 @@ impl InterventionDataService {
             .unwrap_or((None, None, None, None));
         intervention.vehicle_model = vehicle_model;
         intervention.vehicle_make = vehicle_make;
-        intervention.vehicle_year = vehicle_year;
+        intervention.vehicle_year = vehicle_year_str
+            .as_deref()
+            .and_then(|y| y.parse::<i32>().ok());
         intervention.vehicle_vin = vehicle_vin;
 
         // Set audit fields
@@ -654,8 +660,87 @@ impl InterventionDataService {
 mod tests {
     use super::*;
     use crate::domains::interventions::domain::models::step::InterventionStep;
-    use crate::domains::interventions::infrastructure::intervention_types::AdvanceStepRequest;
+    use crate::domains::interventions::infrastructure::intervention_types::{
+        AdvanceStepRequest, StartInterventionRequest,
+    };
     use crate::test_utils::TestDatabase;
+
+    fn make_start_request(task_id: &str) -> StartInterventionRequest {
+        StartInterventionRequest {
+            task_id: task_id.to_string(),
+            intervention_number: None,
+            ppf_zones: vec!["full_front".to_string()],
+            custom_zones: None,
+            film_type: "matte".to_string(),
+            film_brand: None,
+            film_model: None,
+            weather_condition: "sunny".to_string(),
+            lighting_condition: "natural".to_string(),
+            work_location: "indoor".to_string(),
+            temperature: None,
+            humidity: None,
+            technician_id: "tech-001".to_string(),
+            assistant_ids: None,
+            scheduled_start: "2026-01-01T08:00:00Z".to_string(),
+            estimated_duration: 120,
+            gps_coordinates: None,
+            address: None,
+            notes: None,
+            customer_requirements: None,
+            special_instructions: None,
+        }
+    }
+
+    // BUG-3 regression: vehicle_year stored as TEXT in tasks must not prevent
+    // vehicle_model/vehicle_make/vehicle_vin from being copied to the new intervention.
+    #[test]
+    fn test_create_intervention_copies_vehicle_fields_despite_text_year() {
+        let test_db = TestDatabase::new().expect("Failed to create test database");
+        let db = test_db.db();
+        let now = chrono::Utc::now().timestamp_millis();
+        // Use a valid UUID so Intervention::validate() accepts the task_id.
+        let task_id = "a1b2c3d4-e5f6-7890-abcd-ef1234567890";
+        let tech_id = "b2c3d4e5-f6a7-8901-bcde-f12345678901";
+        // Seed a task with vehicle fields — year stored as TEXT (SQLite stores it as TEXT).
+        db.execute(
+            "INSERT INTO tasks \
+             (id, task_number, title, vehicle_plate, vehicle_model, vehicle_make, vehicle_year, vin, \
+              ppf_zones, scheduled_date, status, priority, created_at, updated_at, synced) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)",
+            rusqlite::params![
+                task_id, "T-VEH", "Vehicle test task", "CV-234-DO",
+                "Model 3", "Tesla", "2022", "VIN999",
+                r#"["full_front"]"#, "2026-01-01", "draft", "medium", now, now
+            ],
+        ).expect("seed task");
+
+        // Seed a user so the interventions.technician_id FK is satisfied.
+        db.execute(
+            "INSERT INTO users \
+             (id, email, username, password_hash, full_name, role, created_at, updated_at, synced) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)",
+            rusqlite::params![
+                tech_id, "tech@test.com", "tech_test", "hash",
+                "Tech Test", "technician", now, now
+            ],
+        ).expect("seed user");
+
+        let service = InterventionDataService::new(db.clone());
+        let mut req = make_start_request(task_id);
+        req.technician_id = tech_id.to_string();
+
+        let mut raw_conn = db.get_connection().unwrap();
+        let tx = raw_conn.transaction().expect("open tx");
+        let intervention = service
+            .create_intervention_with_tx(&tx, &req, tech_id)
+            .expect("create_intervention_with_tx failed");
+        tx.commit().expect("commit tx");
+
+        assert_eq!(intervention.vehicle_model.as_deref(), Some("Model 3"), "vehicle_model must be copied");
+        assert_eq!(intervention.vehicle_make.as_deref(), Some("Tesla"), "vehicle_make must be copied");
+        assert_eq!(intervention.vehicle_year, Some(2022), "vehicle_year must be parsed from TEXT");
+        assert_eq!(intervention.vehicle_vin.as_deref(), Some("VIN999"), "vehicle_vin must be copied");
+    }
 
     #[test]
     fn update_step_with_data_mirrors_collected_data_to_step_data() {

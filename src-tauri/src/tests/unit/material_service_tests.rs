@@ -50,6 +50,7 @@ mod tests {
             is_active: None,
             is_discontinued: None,
         }
+    }
 
     /// Helper function to create a test material with stock
     fn create_test_material_with_stock(

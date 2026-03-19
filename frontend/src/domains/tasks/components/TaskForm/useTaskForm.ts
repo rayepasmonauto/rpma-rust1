@@ -22,18 +22,6 @@ const logger = createLogger('useTaskForm');
 export const useTaskForm = (userId?: string, initialData?: Partial<TaskFormData>) => {
   const getDraftStorageKey = useCallback(() => `task-form-draft:${userId || 'anonymous'}`, [userId]);
 
-  const loadDraftFromStorage = useCallback(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const raw = window.localStorage.getItem(getDraftStorageKey());
-      if (!raw) return null;
-      return JSON.parse(raw) as { data: Partial<TaskFormData>; lastSaved?: string };
-    } catch (error) {
-      logger.warn('Failed to load task draft from storage', error);
-      return null;
-    }
-  }, [getDraftStorageKey]);
-
   const saveDraftToStorage = useCallback((data: TaskFormData, lastSaved: string) => {
     if (typeof window === 'undefined') return;
     try {
@@ -139,20 +127,9 @@ export const useTaskForm = (userId?: string, initialData?: Partial<TaskFormData>
     }
   }, [generateTaskTitle, initialData, taskNumber]);
 
-  // Load local draft for new tasks only
-  useEffect(() => {
-    if (initialData && Object.keys(initialData).length > 0) return;
-    const draft = loadDraftFromStorage();
-    if (!draft?.data) return;
-
-    setFormData(prev => ({
-      ...prev,
-      ...draft.data,
-      updated_at: new Date().toISOString()
-    }));
-    setIsDirty(false);
-    setLastSaved(draft.lastSaved ? new Date(draft.lastSaved) : null);
-  }, [initialData, loadDraftFromStorage]);
+  // Draft is intentionally NOT auto-loaded on mount.
+  // The wizard always starts clean for new tasks — the auto-save still protects
+  // against accidental in-session refresh, but won't bleed into the next session.
 
   const updateFormData = useCallback((updates: Partial<TaskFormData>) => {
     setFormData(prev => {

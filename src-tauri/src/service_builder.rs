@@ -289,6 +289,8 @@ impl ServiceBuilder {
         // Initialize Message Service (depends on MessageRepository)
         let message_service = Arc::new(crate::domains::notifications::MessageService::new(
             self.repositories.message.clone(),
+            self.db.clone(),
+            self.repositories.cache.clone(),
         ));
 
         // Create async database wrapper

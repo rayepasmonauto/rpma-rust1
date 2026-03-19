@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
+import type { EntityType } from '@/types/trash';
 import { useTrashList } from '@/domains/trash/api';
 import { TrashItemRow } from './TrashItemRow';
-import type { EntityType } from '@/types/trash';
 
 interface Props {
   entityType: EntityType;

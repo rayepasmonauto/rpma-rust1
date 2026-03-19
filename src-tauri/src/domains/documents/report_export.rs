@@ -9,6 +9,47 @@ use chrono::Utc;
 use rusqlite::OptionalExtension;
 use std::path::Path;
 
+/// Enriches vehicle fields on the intervention from the linked `tasks` row when
+/// the denormalized columns are NULL (BUG-3: `vehicle_year` type mismatch during
+/// creation silently dropped all four vehicle fields for historical interventions).
+///
+/// Only patches fields that are still None to avoid overwriting intentional NULLs.
+fn enrich_vehicle_from_task(db: &Database, intervention: &mut Intervention) -> AppResult<()> {
+    // Skip if we already have all the data we care about.
+    if intervention.vehicle_model.is_some()
+        && intervention.vehicle_make.is_some()
+        && intervention.vehicle_year.is_some()
+        && intervention.vehicle_vin.is_some()
+    {
+        return Ok(());
+    }
+    let conn = db
+        .get_connection()
+        .map_err(|e| AppError::Database(format!("DB connection error: {}", e)))?;
+    let result: rusqlite::Result<(Option<String>, Option<String>, Option<String>, Option<String>)> =
+        conn.query_row(
+            "SELECT vehicle_model, vehicle_make, vehicle_year, vin FROM tasks WHERE id = ?1",
+            [&intervention.task_id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        );
+    if let Ok((model, make, year_str, vin)) = result {
+        if intervention.vehicle_model.is_none() {
+            intervention.vehicle_model = model;
+        }
+        if intervention.vehicle_make.is_none() {
+            intervention.vehicle_make = make;
+        }
+        if intervention.vehicle_year.is_none() {
+            intervention.vehicle_year =
+                year_str.as_deref().and_then(|y| y.parse::<i32>().ok());
+        }
+        if intervention.vehicle_vin.is_none() {
+            intervention.vehicle_vin = vin;
+        }
+    }
+    Ok(())
+}
+
 /// Resolves `technician_name` from the `users` table when the denormalized
 /// field on the intervention row is NULL but `technician_id` is set (Bug B4).
 fn resolve_technician_name(db: &Database, intervention: &mut Intervention) -> AppResult<()> {
@@ -79,6 +120,9 @@ pub async fn get_intervention_with_details(
 
     // Resolve technician_name from users table if the denormalized field is NULL (Bug B4).
     resolve_technician_name(db, &mut intervention)?;
+
+    // Enrich vehicle fields from the task if absent on the intervention row (BUG-3 fallback).
+    enrich_vehicle_from_task(db, &mut intervention)?;
 
     let workflow_steps = intervention_svc
         .get_intervention_steps(intervention_id)

@@ -7,8 +7,8 @@ import { clientKeys } from '@/lib/query-keys';
 import { LogDomain } from '@/lib/logging/types';
 import { useLogger } from '@/shared/hooks/useLogger';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { clientService, type ClientStats } from '../services';
 import { normalizeError } from '@/types/utility.types';
+import { clientService, type ClientStats } from '../services';
 
 export interface ClientFilters {
   search?: string;

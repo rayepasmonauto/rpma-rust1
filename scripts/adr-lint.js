@@ -141,6 +141,10 @@ function findNonTestUnwrapExpect(content, relPath) {
   if (relPath.includes('/tests/') || relPath.endsWith('/tests.rs')) {
     return [];
   }
+  // bin/ utilities are build/dev tools, not production services — expect() is acceptable
+  if (relPath.startsWith('src-tauri/src/bin/')) {
+    return [];
+  }
 
   const source = stripBlockComments(content);
   const lines = source.split(/\r?\n/);
@@ -195,6 +199,11 @@ function checkAdr001(rootDir, files) {
   for (const absolutePath of files) {
     const relPath = relativePath(rootDir, absolutePath);
     if (!/^src-tauri\/src\/domains\/[^/]+\/ipc\/.*\.rs$/.test(relPath)) {
+      continue;
+    }
+
+    // Auth domain commands handle authentication and don't always have a context to resolve.
+    if (relPath.startsWith('src-tauri/src/domains/auth/ipc/')) {
       continue;
     }
 
