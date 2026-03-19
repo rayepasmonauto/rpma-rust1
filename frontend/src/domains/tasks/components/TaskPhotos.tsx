@@ -53,7 +53,7 @@ export function TaskPhotos({ taskId: _taskId, interventionId }: TaskPhotosProps)
   useEffect(() => {
     if (galleryRef.current && photos && photos.length > 0) {
       const cleanup = addKeyboardNavigation(galleryRef.current, {
-        orientation: 'both',
+        orientation: 'horizontal',
         loop: true,
       });
       return cleanup;
