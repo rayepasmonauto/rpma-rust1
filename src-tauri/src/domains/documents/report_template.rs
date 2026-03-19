@@ -126,15 +126,9 @@ fn push_summary(out: &mut String, vm: &ReportViewModel) {
     section_open(out, "Résumé de l'intervention");
     out.push_str(r#"<div class="card"><table class="kv">"#);
     let completion = format!("{:.1}%", vm.summary.completion_percentage);
-    kv_row(
-        out,
-        "Statut",
-        &format!(
-            "{} {}",
-            badge_status(&vm.summary.status_badge),
-            esc(&vm.summary.status)
-        ),
-    );
+    // The badge already contains the French label — do not append vm.summary.status
+    // (which is the raw enum label) or it will render twice (BUG-1).
+    kv_row(out, "Statut", &badge_status(&vm.summary.status_badge));
     kv_row(out, "Technicien", &esc(&vm.summary.technician_name));
     kv_row(out, "Type", &esc(&vm.summary.intervention_type));
     kv_row(out, "Durée estimée", &esc(&vm.summary.estimated_duration));
@@ -162,11 +156,19 @@ fn push_client_vehicle(out: &mut String, vm: &ReportViewModel) {
     out.push_str(r#"<div class="sub-title">Véhicule</div>"#);
     out.push_str(r#"<table class="kv">"#);
     kv_row(out, "Plaque", &esc(&vm.vehicle.plate));
-    kv_row(
-        out,
-        "Marque / Modèle",
-        &format!("{} {}", esc(&vm.vehicle.make), esc(&vm.vehicle.model)),
-    );
+    // BUG-2: When both make and model are the placeholder, concatenating them
+    // produces "Non renseigne Non renseigne". Use a match to display only what
+    // is actually known.
+    let ns = &vm.display.placeholder_not_specified;
+    let make_val = if &vm.vehicle.make == ns { None } else { Some(vm.vehicle.make.as_str()) };
+    let model_val = if &vm.vehicle.model == ns { None } else { Some(vm.vehicle.model.as_str()) };
+    let make_model = match (make_val, model_val) {
+        (Some(make), Some(model)) => format!("{} {}", esc(make), esc(model)),
+        (Some(make), None)        => esc(make),
+        (None, Some(model))       => esc(model),
+        (None, None)              => esc(ns),
+    };
+    kv_row(out, "Marque / Modèle", &make_model);
     kv_row(out, "Année", &esc(&vm.vehicle.year));
     kv_row(out, "Couleur", &esc(&vm.vehicle.color));
     kv_row(out, "VIN", &esc(&vm.vehicle.vin));
@@ -691,6 +693,52 @@ mod tests {
         let html = render_report_html(&vm);
         assert!(html.contains("Capot avant"), "zone name missing");
         assert!(html.contains("9.5"), "quality score missing");
+    }
+
+    // --- BUG-1 regression: status must not appear twice ---
+    #[test]
+    fn test_status_not_duplicated_in_html() {
+        let vm = minimal_vm(); // status="Terminee", status_badge="[OK]"
+        let html = render_report_html(&vm);
+        // The badge already contains "Terminé"; the raw label "Terminee" must not follow it
+        assert!(
+            !html.contains("Terminé</span> Terminee"),
+            "status rendered twice: badge label + raw status"
+        );
+        assert!(html.contains("badge-completed"), "status badge missing");
+    }
+
+    // --- BUG-2 regression: make/model must not be doubled when both are placeholder ---
+    #[test]
+    fn test_make_model_not_doubled_when_both_unspecified() {
+        let mut vm = minimal_vm();
+        vm.vehicle.make = "Non renseigne".to_string();
+        vm.vehicle.model = "Non renseigne".to_string();
+        let html = render_report_html(&vm);
+        assert!(
+            !html.contains("Non renseigne Non renseigne"),
+            "make+model placeholder doubled"
+        );
+        assert!(html.contains("Non renseigne"), "placeholder should appear once");
+    }
+
+    #[test]
+    fn test_make_model_concatenated_when_both_present() {
+        let mut vm = minimal_vm();
+        vm.vehicle.make = "Tesla".to_string();
+        vm.vehicle.model = "Model 3".to_string();
+        let html = render_report_html(&vm);
+        assert!(html.contains("Tesla Model 3"), "make and model not concatenated");
+    }
+
+    #[test]
+    fn test_make_model_shows_only_make_when_model_missing() {
+        let mut vm = minimal_vm();
+        vm.vehicle.make = "Tesla".to_string();
+        vm.vehicle.model = "Non renseigne".to_string();
+        let html = render_report_html(&vm);
+        assert!(html.contains("Tesla"), "make missing");
+        assert!(!html.contains("Tesla Non renseigne"), "placeholder leaked");
     }
 
     #[test]
