@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { PAGINATION } from '@/lib/constants';
 import { useMutationCounter } from '@/lib/data-freshness';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
 import type { JsonObject } from '@/types/json';
 import type {
   Quote,
@@ -12,6 +11,7 @@ import type {
   UpdateQuoteRequest,
 } from '@/types/quote.types';
 import { normalizeError } from '@/types/utility.types';
+import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
 
 // --- useQuotesList ---
 

@@ -46,10 +46,7 @@ impl IInventoryTransactionRepository for InventoryTransactionRepository {
             .map_err(|e| e.to_string())
     }
 
-    fn revert_intervention_consumptions(
-        &self,
-        reference_id: &str,
-    ) -> Result<usize, String> {
+    fn revert_intervention_consumptions(&self, reference_id: &str) -> Result<usize, String> {
         let mut conn = self.db.get_connection().map_err(|e| e.to_string())?;
         let tx = conn.transaction().map_err(|e| e.to_string())?;
 
@@ -83,7 +80,8 @@ impl IInventoryTransactionRepository for InventoryTransactionRepository {
             tx.execute(
                 "UPDATE materials SET current_stock = current_stock + ? WHERE id = ?",
                 rusqlite::params![quantity, material_id],
-            ).map_err(|e| e.to_string())?;
+            )
+            .map_err(|e| e.to_string())?;
         }
 
         tx.commit().map_err(|e| e.to_string())?;

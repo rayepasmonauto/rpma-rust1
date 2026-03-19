@@ -130,9 +130,13 @@ impl TaskCommandService {
             }
         };
 
+        // Ensure the task ID is set on the update request
+        let mut update_request = validated_data;
+        update_request.id = Some(id.to_string());
+
         let task = self
             .task_service
-            .update_task_async(validated_data, &ctx.auth.user_id)
+            .update_task_async(update_request, &ctx.auth.user_id)
             .await
             .map_err(|e| {
                 error!(correlation_id = %ctx.correlation_id, "Task update failed: {}", e);

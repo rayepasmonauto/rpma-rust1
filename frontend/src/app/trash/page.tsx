@@ -9,10 +9,10 @@ import { Button } from '@/components/ui/button';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { PageHeader } from '@/components/ui/page-header';
 import { PageShell } from '@/shared/ui/layout/PageShell';
+import type { EntityType } from '@/types/trash';
 import { TrashCategoryTab } from '@/domains/trash/components/TrashCategoryTab';
 import { EmptyTrashDialog } from '@/domains/trash/components/EmptyTrashDialog';
 import { useEmptyTrash } from '@/domains/trash/api';
-import type { EntityType } from '@/types/trash';
 
 const CATEGORIES: { value: EntityType; label: string }[] = [
   { value: 'Task', label: 'Tâches' },

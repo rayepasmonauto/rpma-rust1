@@ -170,9 +170,7 @@ pub enum ClientResponse {
 
 /// Internal user CRUD handler
 pub async fn user_crud(action: UserAction, state: AppState<'_>) -> Result<UserResponse, AppError> {
-    let request = crate::domains::users::ipc::user::UserCrudRequest {
-        action,
-    };
+    let request = crate::domains::users::ipc::user::UserCrudRequest { action };
 
     let response = crate::domains::users::ipc::user::user_crud(request, None, state).await?;
     response

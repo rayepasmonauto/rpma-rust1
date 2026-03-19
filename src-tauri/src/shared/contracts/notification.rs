@@ -20,6 +20,7 @@ pub trait NotificationSender: Send + Sync {
     async fn send_message_raw(
         &self,
         message_type: String,
+        notification_kind: Option<String>,
         recipient_id: Option<String>,
         recipient_email: Option<String>,
         recipient_phone: Option<String>,

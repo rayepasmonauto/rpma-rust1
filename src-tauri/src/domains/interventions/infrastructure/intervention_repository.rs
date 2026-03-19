@@ -792,10 +792,9 @@ impl InterventionRepository {
     pub fn delete_orphaned(&self) -> InterventionResult<u32> {
         let orphaned_count = self.count_orphaned()?;
         if orphaned_count > 0 {
-            let mut conn = self
-                .db
-                .get_connection()
-                .map_err(|e| InterventionError::Database(format!("Failed to get connection: {}", e)))?;
+            let mut conn = self.db.get_connection().map_err(|e| {
+                InterventionError::Database(format!("Failed to get connection: {}", e))
+            })?;
 
             let tx = conn.transaction().map_err(|e| {
                 InterventionError::Database(format!("Failed to start transaction: {}", e))

@@ -3,8 +3,8 @@
 import React from 'react';
 import { RotateCcw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRestoreEntity, useHardDeleteEntity } from '@/domains/trash/api';
 import type { DeletedItem } from '@/types/trash';
+import { useRestoreEntity, useHardDeleteEntity } from '@/domains/trash/api';
 
 interface Props {
   item: DeletedItem;

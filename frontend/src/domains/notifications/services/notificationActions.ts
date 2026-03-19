@@ -1,7 +1,12 @@
+import type { GetNotificationsResponse } from '@/lib/ipc/notification';
 import { toast } from 'sonner';
 import { notificationApi } from '@/lib/ipc/notification';
 
-export async function getNotifications() {
+type NotificationQueryResult =
+  | { success: true; data: GetNotificationsResponse }
+  | { success: false; error: string };
+
+export async function getNotifications(): Promise<NotificationQueryResult> {
   try {
     const result = await notificationApi.get();
     return { success: true, data: result };

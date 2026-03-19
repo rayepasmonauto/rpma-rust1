@@ -27,6 +27,8 @@ export { default as TaskManager } from '../components/TaskManager';
 /** TODO: document */
 export { TaskOverview } from '../components/TaskOverview';
 /** TODO: document */
+export { TaskOverviewEditable } from '../components/TaskOverview';
+/** TODO: document */
 export { TaskTimeline } from '../components/TaskTimeline';
 /** TODO: document */
 export { WorkflowProgressCard } from '../components/WorkflowProgressCard';
@@ -93,6 +95,8 @@ export { useWorkflowStepAutoSave } from '../hooks/useWorkflowStepAutoSave';
 export { useCompletedTaskPage } from '../hooks/useCompletedTaskPage';
 /** TODO: document */
 export { useTaskDetailPage } from '../hooks/useTaskDetailPage';
+/** TODO: document */
+export { useInlineEditTask } from '../hooks/useInlineEditTask';
 /** TODO: document */
 export { useEditTaskPage } from '../hooks/useEditTaskPage';
 /** TODO: document */

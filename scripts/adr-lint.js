@@ -141,6 +141,10 @@ function findNonTestUnwrapExpect(content, relPath) {
   if (relPath.includes('/tests/') || relPath.endsWith('/tests.rs')) {
     return [];
   }
+  // bin/ utilities are build/dev tools, not production services — expect() is acceptable
+  if (relPath.startsWith('src-tauri/src/bin/')) {
+    return [];
+  }
 
   const source = stripBlockComments(content);
   const lines = source.split(/\r?\n/);

@@ -6,7 +6,7 @@ import { PageShell } from '@/shared/ui/layout/PageShell';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
 import {
   TaskAttachments,
-  TaskOverview,
+  TaskOverviewEditable,
   TaskTimeline,
   TaskHeaderBand,
   TaskStepperBand,
@@ -183,7 +183,7 @@ export default function TaskDetailPage() {
 
               {/* Task Overview */}
               <section id="task-overview" className="scroll-mt-28 rounded-xl border border-[hsl(var(--rpma-border))] bg-white p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
-                <TaskOverview task={task} defaultExpandedSections={['notes-operationnelles']} />
+                <TaskOverviewEditable task={task} defaultExpandedSections={['notes-operationnelles']} />
               </section>
 
               {/* Task Attachments - Only shown when intervention exists */}

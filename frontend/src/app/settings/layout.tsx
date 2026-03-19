@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -68,9 +68,18 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
   const { user, loading: authLoading } = useAuth();
   const isAdmin = user?.role === 'admin';
 
-  const userTabs = getUserTabs(t).filter(tab => !tab.adminOnly || isAdmin);
-  const configTabs = isAdmin ? getConfigTabs() : [];
-  const allTabs = [...userTabs, ...configTabs];
+  const userTabs = useMemo(
+    () => getUserTabs(t).filter(tab => !tab.adminOnly || isAdmin),
+    [t, isAdmin],
+  );
+  const configTabs = useMemo(
+    () => (isAdmin ? getConfigTabs() : []),
+    [isAdmin],
+  );
+  const allTabs = useMemo(
+    () => [...userTabs, ...configTabs],
+    [userTabs, configTabs],
+  );
 
   const { systemStatus, refreshing: isRefreshing, refresh } = useSystemHealth({
     pollInterval: isAdmin ? 30000 : 0,

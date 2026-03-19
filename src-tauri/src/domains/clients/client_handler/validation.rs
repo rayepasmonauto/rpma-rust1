@@ -1,8 +1,7 @@
 //! Client validation — IPC request sanitization and ClientValidationService.
 
 use super::{
-    ClientRepoQuery, CreateClientRequest, CustomerType, IClientRepository,
-    UpdateClientRequest,
+    ClientRepoQuery, CreateClientRequest, CustomerType, IClientRepository, UpdateClientRequest,
 };
 use crate::db::Database;
 use crate::shared::ipc::errors::AppError as IpcAppError;

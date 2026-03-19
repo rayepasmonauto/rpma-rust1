@@ -137,13 +137,13 @@ pub async fn message_get_templates(
 #[tracing::instrument(skip_all)]
 #[tauri::command]
 pub async fn message_get_preferences(
-    user_id: String,
+    _user_id: String,
     correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<NotificationPreferences>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
     let prefs = notifications_facade(&state)
-        .get_preferences(&user_id)
+        .get_preferences(&ctx.auth.user_id)
         .await?;
     Ok(ApiResponse::success(prefs).with_correlation_id(Some(ctx.correlation_id)))
 }
@@ -151,14 +151,14 @@ pub async fn message_get_preferences(
 #[tracing::instrument(skip_all)]
 #[tauri::command]
 pub async fn message_update_preferences(
-    user_id: String,
+    _user_id: String,
     updates: UpdateNotificationPreferencesRequest,
     correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<ApiResponse<NotificationPreferences>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
     let prefs = notifications_facade(&state)
-        .update_preferences(&user_id, &updates)
+        .update_preferences(&ctx.auth.user_id, &updates)
         .await?;
     Ok(ApiResponse::success(prefs).with_correlation_id(Some(ctx.correlation_id)))
 }

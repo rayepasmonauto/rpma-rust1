@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { Shield, Lock, Monitor, Clock, Trash2, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import type { UserSession } from '@/lib/backend';
 import { useIpcClient } from '@/lib/ipc/client';
 import { LogDomain } from '@/lib/logging/types';
@@ -13,7 +14,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Shield, Lock, Monitor, Clock, Trash2, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
 export interface SecurityTabProps {
   user: UserSession;

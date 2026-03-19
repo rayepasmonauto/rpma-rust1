@@ -14,6 +14,7 @@ import { useTaskFormSteps } from './TaskFormSteps';
 
 const TaskFormWizard: React.FC<TaskFormProps> = React.memo(({
   onSuccess,
+  onCancel,
   initialData,
   isEditing = false,
   className = '',
@@ -84,6 +85,11 @@ const TaskFormWizard: React.FC<TaskFormProps> = React.memo(({
     });
     setFormErrors(newErrors);
   }, [updateFormData, formErrors, setFormErrors]);
+
+  const handleCancel = useCallback(() => {
+    clearDraft?.();
+    onCancel?.();
+  }, [clearDraft, onCancel]);
 
   const { handleSubmit } = useTaskFormSubmission({
     formData,
