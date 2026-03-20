@@ -332,10 +332,11 @@ async fn handle_crud_statistics(
 }
 
 /// Task CRUD command handler
-/// ADR-018: Thin IPC layer — delegates to per-action handler functions.
+/// ADR-018: Thin IPC layer — single IPC entry point, delegates internally to
+/// private `handle_crud_*` helper functions.
 ///
-/// Each action variant is handled by a dedicated `handle_crud_*` function,
-/// keeping this dispatcher under 10 lines and allowing individual actions
+/// Each action variant is handled by a dedicated `handle_crud_*` helper,
+/// keeping this dispatcher under 25 lines and allowing individual actions
 /// to be read, tested, and extended independently.
 #[tracing::instrument(skip(state))]
 #[tauri::command]
