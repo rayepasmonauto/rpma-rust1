@@ -16,7 +16,14 @@ mod tests {
     use std::sync::Arc;
 
     fn make_ctx(role: UserRole) -> RequestContext {
-        RequestContext::new_for_test(role)
+        let auth = crate::shared::context::auth_context::AuthContext {
+            user_id: "test-user".into(),
+            role,
+            session_id: "sess-1".into(),
+            username: "test".into(),
+            email: "test@example.com".into(),
+        };
+        RequestContext::new(auth, "corr-1".into())
     }
 
     // ── restore permissions ─────────────────────────────────────────────────
