@@ -62,7 +62,7 @@ describe('clientOperations IPC contract tests', () => {
     jest.clearAllMocks();
     
     // Setup default mock returns
-    safeInvoke.mockResolvedValue('ok');
+    safeInvoke.mockResolvedValue([]);
     cachedInvoke.mockResolvedValue({
       data: [],
       pagination: {
@@ -312,6 +312,7 @@ describe('clientOperations IPC contract tests', () => {
     });
 
     it('validates search query parameters', async () => {
+      safeInvoke.mockResolvedValue([]);
       await clientOperations.search('', 0);
 
       expect(safeInvoke).toHaveBeenCalledWith('client_search', {
