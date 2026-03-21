@@ -93,10 +93,11 @@ describe('domains/clients/clientIpc individual commands', () => {
     expect(Array.isArray(result)).toBe(true);
   });
 
-  it('search returns empty array for non-array response', async () => {
+  it('search throws on non-array response', async () => {
     extractAndValidate.mockReturnValue({});
 
-    const result = await clientIpc.search('x', 10);
-    expect(result).toEqual([]);
+    await expect(clientIpc.search('x', 10)).rejects.toThrow(
+      'Invalid client search response: expected array payload'
+    );
   });
 });

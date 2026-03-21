@@ -46,7 +46,7 @@ export const clientIpc = {
     if (Array.isArray(payload)) {
       return (payload as Client[]).map((client) => validateClient(client));
     }
-    return [];
+    throw new Error('Invalid client search response: expected array payload');
   },
 
   list: async (filters: Partial<ClientQuery>): Promise<ClientListResponse> => {
@@ -83,7 +83,7 @@ export const clientIpc = {
     if (Array.isArray(payload)) {
       return payload as ClientWithTasks[];
     }
-    return [];
+    throw new Error('Invalid client list with tasks response: expected array payload');
   },
 
   stats: async (): Promise<ClientStatistics> => {
