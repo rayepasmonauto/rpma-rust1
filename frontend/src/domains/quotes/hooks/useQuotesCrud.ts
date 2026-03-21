@@ -211,8 +211,8 @@ export function useDeleteQuote() {
       try {
         setLoading(true);
         setError(null);
-        const result = await quotesIpc.delete(id);
-        return (result as unknown as boolean) ?? false;
+        await quotesIpc.delete(id);
+        return true;
       } catch (err: unknown) {
         setError(normalizeError(err));
         return false;

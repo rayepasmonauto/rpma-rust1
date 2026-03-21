@@ -164,6 +164,15 @@ pub struct QuoteAttachmentOpenRequest {
     pub correlation_id: Option<String>,
 }
 
+/// Request to fetch aggregate quote statistics.
+#[derive(Deserialize, Debug, TS)]
+#[serde(deny_unknown_fields)]
+#[ts(export)]
+pub struct QuoteGetStatsRequest {
+    #[serde(default)]
+    pub correlation_id: Option<String>,
+}
+
 /// Request to convert an accepted quote into a task.
 ///
 /// The `vehicle_*` and `scheduled_date` fields provide the data

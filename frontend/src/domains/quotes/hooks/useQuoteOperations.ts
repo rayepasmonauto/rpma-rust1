@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type {
   Quote,
   QuoteExportResponse,
@@ -6,6 +6,56 @@ import type {
 } from '@/types/quote.types';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
+
+// --- useQuoteStats ---
+
+export interface QuoteStatsNormalized {
+  total: number;
+  draft: number;
+  sent: number;
+  accepted: number;
+  rejected: number;
+  expired: number;
+  converted: number;
+  monthlyCounts: Array<{ month: string; count: number }>;
+}
+
+export function useQuoteStats() {
+  const { user } = useAuth();
+  const [stats, setStats] = useState<QuoteStatsNormalized | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchStats = useCallback(async () => {
+    if (!user?.token) return;
+    setLoading(true);
+    try {
+      const raw = await quotesIpc.getStats();
+      setStats({
+        total: Number(raw.total),
+        draft: Number(raw.draft),
+        sent: Number(raw.sent),
+        accepted: Number(raw.accepted),
+        rejected: Number(raw.rejected),
+        expired: Number(raw.expired),
+        converted: Number(raw.converted),
+        monthlyCounts: raw.monthly_counts.map(m => ({
+          month: m.month,
+          count: Number(m.count),
+        })),
+      });
+    } catch {
+      // leave stale stats on error
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.token]);
+
+  useEffect(() => {
+    void fetchStats();
+  }, [fetchStats]);
+
+  return { stats, loading, refetch: fetchStats };
+}
 
 // --- useDuplicateQuote ---
 

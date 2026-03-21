@@ -1,4 +1,5 @@
 pub(crate) mod task;
+pub(crate) mod task_checklist_repository;
 pub(crate) mod task_client_integration;
 pub(crate) mod task_constants;
 pub(crate) mod task_creation;

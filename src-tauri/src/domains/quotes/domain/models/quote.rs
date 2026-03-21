@@ -63,6 +63,7 @@ pub trait IQuoteRepository: Send + Sync + std::fmt::Debug {
         req: &UpdateQuoteAttachmentRequest,
     ) -> RepoResult<()>;
     fn delete_attachment(&self, id: &str, quote_id: &str) -> RepoResult<bool>;
+    fn get_stats(&self) -> RepoResult<QuoteStats>;
 }
 
 /// Quote status enumeration
@@ -227,6 +228,30 @@ pub struct QuoteQuery {
     pub date_to: Option<String>,
     pub sort_by: Option<String>,
     pub sort_order: Option<String>,
+}
+
+/// Aggregate statistics for all quotes (not limited by pagination).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct QuoteStats {
+    pub total: i64,
+    pub draft: i64,
+    pub sent: i64,
+    pub accepted: i64,
+    pub rejected: i64,
+    pub expired: i64,
+    pub converted: i64,
+    /// Monthly counts for the last 6 months: each entry is (year_month, count).
+    pub monthly_counts: Vec<QuoteMonthlyCount>,
+}
+
+/// One month's quote count.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct QuoteMonthlyCount {
+    /// e.g. "2026-03"
+    pub month: String,
+    pub count: i64,
 }
 
 /// Quote list response with pagination

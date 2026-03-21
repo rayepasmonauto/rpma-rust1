@@ -93,6 +93,14 @@ impl QuotesFacade {
             .map_err(|_| AppError::Database("Failed to list quotes".to_string()))
     }
 
+    /// Return aggregate quote statistics (not paginated).
+    pub fn get_stats(&self, role: &UserRole) -> Result<QuoteStats, AppError> {
+        self.check_permission(role, "read")?;
+        self.quote_service
+            .get_quote_stats()
+            .map_err(|_| AppError::Database("Failed to get quote stats".to_string()))
+    }
+
     /// TODO: document
     pub fn update(
         &self,

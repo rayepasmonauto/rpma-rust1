@@ -541,6 +541,63 @@ impl TaskHistory {
     }
 }
 
+/// A single checklist item belonging to a task.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ChecklistItem {
+    pub id: String,
+    pub task_id: String,
+    pub description: String,
+    pub position: i32,
+    pub is_completed: bool,
+    #[serde(serialize_with = "serialize_optional_timestamp")]
+    #[ts(type = "string | null")]
+    pub completed_at: Option<i64>,
+    pub completed_by: Option<String>,
+    pub notes: Option<String>,
+    #[serde(serialize_with = "serialize_timestamp")]
+    #[ts(type = "string")]
+    pub created_at: i64,
+    #[serde(serialize_with = "serialize_timestamp")]
+    #[ts(type = "string")]
+    pub updated_at: i64,
+}
+
+impl ChecklistItem {
+    pub fn new(task_id: String, description: String, position: i32) -> Self {
+        let now = chrono::Utc::now().timestamp_millis();
+        Self {
+            id: crate::shared::utils::uuid::generate_uuid_string(),
+            task_id,
+            description,
+            position,
+            is_completed: false,
+            completed_at: None,
+            completed_by: None,
+            notes: None,
+            created_at: now,
+            updated_at: now,
+        }
+    }
+}
+
+/// Request to create a new checklist item for a task.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct CreateChecklistItemRequest {
+    pub task_id: String,
+    pub description: String,
+    pub position: Option<i32>,
+}
+
+/// Request to update the completion state of a checklist item.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct UpdateChecklistItemRequest {
+    pub is_completed: bool,
+    pub notes: Option<String>,
+}
+
 /// Response returned to the frontend after a bulk CSV import operation.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]

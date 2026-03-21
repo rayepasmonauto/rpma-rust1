@@ -7,7 +7,7 @@ import type { Client } from '@/types/client.types';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { computeQuoteStats } from '../utils/quote-stats';
 import { fetchClientMap } from '../services/quote-client-enrichment.service';
-import { useQuotesList } from './useQuotes';
+import { useQuotesList, useDeleteQuote, useDuplicateQuote, useQuoteExportPdf, useQuoteStats } from './useQuotes';
 
 export type ActiveTab = 'all' | QuoteStatus;
 
@@ -26,6 +26,10 @@ export function useQuotesPage() {
   const { quotes, total, loading, error, updateFilters } = useQuotesList({
     autoFetch: true,
   });
+  const { deleteQuote } = useDeleteQuote();
+  const { duplicateQuote } = useDuplicateQuote();
+  const { exportPdf } = useQuoteExportPdf();
+  const { stats: backendStats } = useQuoteStats();
 
   const loadClients = useCallback(async (clientIds: string[]) => {
     if (!user?.token || clientIds.length === 0) return;
@@ -75,7 +79,8 @@ export function useQuotesPage() {
     client: clientMap[q.client_id],
   }));
 
-  const stats = computeQuoteStats(quotes);
+  // Use backend stats for accurate counts across all pages; fall back to paginated local stats
+  const stats = backendStats ?? computeQuoteStats(quotes);
 
   const pieChartData = useMemo(() => {
     const statuses = [
@@ -96,6 +101,10 @@ export function useQuotesPage() {
   }, [stats]);
 
   const monthlyData = useMemo(() => {
+    if (backendStats) {
+      return backendStats.monthlyCounts.map(m => ({ month: m.month, count: m.count }));
+    }
+    // Fallback: compute from paginated quotes (inaccurate for large datasets)
     const months: Record<string, number> = {};
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
@@ -111,7 +120,7 @@ export function useQuotesPage() {
       }
     });
     return Object.entries(months).map(([month, count]) => ({ month, count }));
-  }, [quotes]);
+  }, [backendStats, quotes]);
 
   const trend = useMemo(() => {
     const now = new Date();
@@ -149,21 +158,37 @@ export function useQuotesPage() {
     updateFilters({ status: tab === 'all' ? undefined : (tab as QuoteStatus) });
   };
 
-  const handleDeleteQuote = (_quoteId: string) => {
-    toast.info('Fonctionnalité de suppression à venir');
-  };
+  const handleDeleteQuote = useCallback(async (quoteId: string) => {
+    const success = await deleteQuote(quoteId);
+    if (success) {
+      toast.success('Devis supprimé');
+    } else {
+      toast.error('Erreur lors de la suppression du devis');
+    }
+  }, [deleteQuote]);
 
   const handleViewQuote = (quoteId: string) => router.push(`/quotes/${quoteId}`);
   const handleEditQuote = (quoteId: string) => router.push(`/quotes/${quoteId}`);
   const handleConvertQuote = (quoteId: string) => router.push(`/quotes/${quoteId}`);
 
-  const handleDuplicateQuote = (_quoteId: string) => {
-    toast.info('Fonctionnalité de duplication à venir');
-  };
+  const handleDuplicateQuote = useCallback(async (quoteId: string) => {
+    const quote = await duplicateQuote(quoteId);
+    if (quote) {
+      toast.success('Devis dupliqué');
+      router.push(`/quotes/${quote.id}`);
+    } else {
+      toast.error('Erreur lors de la duplication du devis');
+    }
+  }, [duplicateQuote, router]);
 
-  const handleExportQuote = (_quoteId: string) => {
-    toast.info('Fonctionnalité d\'export PDF à venir');
-  };
+  const handleExportQuote = useCallback(async (quoteId: string) => {
+    const result = await exportPdf(quoteId);
+    if (result) {
+      toast.success('PDF exporté avec succès');
+    } else {
+      toast.error('Erreur lors de l\'export PDF');
+    }
+  }, [exportPdf]);
 
   return {
     searchQuery,

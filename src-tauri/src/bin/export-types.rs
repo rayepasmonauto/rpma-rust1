@@ -43,8 +43,9 @@ use rpma_ppf_intervention::domains::notifications::models::{
 use rpma_ppf_intervention::domains::quotes::domain::models::quote::{
     AttachmentType, ConvertQuoteToTaskResponse, CreateQuoteAttachmentRequest,
     CreateQuoteItemRequest, CreateQuoteRequest, Quote, QuoteAcceptResponse, QuoteAttachment,
-    QuoteExportResponse, QuoteItem, QuoteItemKind, QuoteListResponse, QuoteQuery, QuoteStatus,
-    TaskCreatedInfo, UpdateQuoteAttachmentRequest, UpdateQuoteItemRequest, UpdateQuoteRequest,
+    QuoteExportResponse, QuoteItem, QuoteItemKind, QuoteListResponse, QuoteMonthlyCount,
+    QuoteQuery, QuoteStats, QuoteStatus, TaskCreatedInfo, UpdateQuoteAttachmentRequest,
+    UpdateQuoteItemRequest, UpdateQuoteRequest,
 };
 use rpma_ppf_intervention::domains::settings::{
     AppSettings, AppearanceSettings, BackupSettings, CreateOrganizationRequest,
@@ -60,9 +61,10 @@ use rpma_ppf_intervention::domains::tasks::domain::models::status::{
 };
 use rpma_ppf_intervention::domains::tasks::domain::models::task::{
     AssignmentCheckResponse, AssignmentStatus, AvailabilityCheckResponse, AvailabilityStatus,
-    BulkImportResponse, CreateTaskRequest, DeleteTaskRequest, PaginationInfo, SortOrder, Task,
-    TaskHistory, TaskListResponse, TaskPhoto, TaskPriority, TaskQuery, TaskStatistics, TaskStatus,
-    TaskWithDetails, UpdateTaskRequest,
+    BulkImportResponse, ChecklistItem, CreateChecklistItemRequest, CreateTaskRequest,
+    DeleteTaskRequest, PaginationInfo, SortOrder, Task, TaskHistory, TaskListResponse, TaskPhoto,
+    TaskPriority, TaskQuery, TaskStatistics, TaskStatus, TaskWithDetails, UpdateChecklistItemRequest,
+    UpdateTaskRequest,
 };
 use rpma_ppf_intervention::shared::contracts::auth::{UserAccount, UserRole, UserSession};
 use rpma_ppf_intervention::shared::contracts::common::{
@@ -372,6 +374,19 @@ fn main() {
     );
     type_definitions.push_str("\n");
     type_definitions
+        .push_str(&ChecklistItem::export_to_string().expect("Failed to export ChecklistItem type"));
+    type_definitions.push_str("\n");
+    type_definitions.push_str(
+        &CreateChecklistItemRequest::export_to_string()
+            .expect("Failed to export CreateChecklistItemRequest type"),
+    );
+    type_definitions.push_str("\n");
+    type_definitions.push_str(
+        &UpdateChecklistItemRequest::export_to_string()
+            .expect("Failed to export UpdateChecklistItemRequest type"),
+    );
+    type_definitions.push_str("\n");
+    type_definitions
         .push_str(&TaskQuery::export_to_string().expect("Failed to export TaskQuery type"));
     type_definitions.push_str("\n");
     type_definitions
@@ -451,6 +466,14 @@ fn main() {
     type_definitions.push_str("\n");
     type_definitions.push_str(
         &QuoteListResponse::export_to_string().expect("Failed to export QuoteListResponse type"),
+    );
+    type_definitions.push_str("\n");
+    type_definitions.push_str(
+        &QuoteMonthlyCount::export_to_string().expect("Failed to export QuoteMonthlyCount type"),
+    );
+    type_definitions.push_str("\n");
+    type_definitions.push_str(
+        &QuoteStats::export_to_string().expect("Failed to export QuoteStats type"),
     );
     type_definitions.push_str("\n");
     type_definitions.push_str(
@@ -1003,6 +1026,9 @@ fn main() {
         "AvailabilityCheckResponse",
         "CreateTaskRequest",
         "UpdateTaskRequest",
+        "ChecklistItem",
+        "CreateChecklistItemRequest",
+        "UpdateChecklistItemRequest",
         "TaskQuery",
         "TaskPhoto",
         "SortOrder",

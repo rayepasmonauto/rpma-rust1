@@ -241,18 +241,19 @@ export interface PhotoMetadata {
 
 
 /**
- * Checklist item interface
+ * Checklist item interface — mirrors the backend ChecklistItem struct.
  */
 export interface ChecklistItem {
   id: string;
   task_id: string;
   description: string;
+  position: number;
   is_completed: boolean;
-  completed_at?: string; // ISO datetime
-  completed_by?: string;
-  notes?: string;
-  created_at: string; // ISO datetime
-  updated_at: string; // ISO datetime
+  completed_at: string | null;
+  completed_by: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 /**

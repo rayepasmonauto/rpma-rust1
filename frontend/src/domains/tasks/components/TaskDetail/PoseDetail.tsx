@@ -1,16 +1,17 @@
-import React, { useMemo, useCallback, memo, useState, useEffect } from 'react';
+import React, { useMemo, useCallback, memo, useState } from 'react';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { toast } from 'sonner';
-import type { UpdateTaskRequest } from '@/lib/backend';
+import type { UpdateTaskRequest, ChecklistItem } from '@/lib/backend';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import { useIntersectionObserver } from '@/shared/hooks/useIntersectionObserver';
 import { Skeleton, ErrorFallback } from '@/shared/ui';
 import { convertTimestamps, cn, convertNullsToUndefined } from '@/shared/utils';
-import { TaskWithDetails, TaskDisplay, ChecklistItem, TaskStatus } from '@/shared/types';
+import { TaskWithDetails, TaskDisplay, TaskStatus } from '@/shared/types';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useInterventionData, useInterventionActions } from '@/domains/interventions';
+import { useInterventionData } from '@/domains/interventions';
 import { useTaskMutations } from '../../hooks/useTaskMutations';
+import { useTaskChecklist } from '../../hooks/useTaskChecklist';
 import { ChecklistProgress } from '../TaskInfo/ChecklistProgress';
 
 // Subcomponents
@@ -53,7 +54,6 @@ const PoseDetail: React.FC<PoseDetailProps> = ({
   const debouncedIsExpanded = useDebounce(isExpanded, 300);
 
   const { updateTask } = useTaskMutations();
-  const { saveStepProgressMutation } = useInterventionActions({ taskId: task?.id });
 
   // Memoize task data
   const safeTask = useMemo((): TaskWithDetails | null => {
@@ -72,56 +72,7 @@ const PoseDetail: React.FC<PoseDetailProps> = ({
     };
   }, [task, currentStatus]);
 
-  const getChecklistStorageKey = useCallback((taskId: string) => `task-checklist:${taskId}`, []);
-
-  const loadChecklistOverrides = useCallback((taskId: string) => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const raw = window.localStorage.getItem(getChecklistStorageKey(taskId));
-      if (!raw) return null;
-      return JSON.parse(raw) as Record<string, boolean>;
-    } catch (error) {
-      console.warn('Failed to load checklist overrides', error);
-      return null;
-    }
-  }, [getChecklistStorageKey]);
-
-  const saveChecklistOverrides = useCallback((taskId: string, items: ChecklistItem[]) => {
-    if (typeof window === 'undefined') return;
-    try {
-      const map = items.reduce<Record<string, boolean>>((acc, item) => {
-        acc[item.id] = item.is_completed;
-        return acc;
-      }, {});
-      window.localStorage.setItem(getChecklistStorageKey(taskId), JSON.stringify(map));
-    } catch (error) {
-      console.warn('Failed to save checklist overrides', error);
-    }
-  }, [getChecklistStorageKey]);
-
-  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>(() => safeTask?.checklist_items || []);
-
-  useEffect(() => {
-    if (!safeTask?.id) {
-      setChecklistItems([]);
-      return;
-    }
-
-    const baseItems = safeTask.checklist_items || [];
-    const overrides = loadChecklistOverrides(safeTask.id);
-
-    if (!overrides) {
-      setChecklistItems(baseItems);
-      return;
-    }
-
-    const merged = baseItems.map(item => (
-      overrides[item.id] !== undefined
-        ? { ...item, is_completed: overrides[item.id] ?? false }
-        : item
-    ));
-    setChecklistItems(merged);
-  }, [safeTask?.id, safeTask?.checklist_items, loadChecklistOverrides]);
+  const { items: checklistItems, toggleItem: toggleChecklistItem } = useTaskChecklist(safeTask?.id ?? undefined);
 
   const { data: interventionData } = useInterventionData(safeTask?.id ?? '');
 
@@ -191,56 +142,10 @@ const PoseDetail: React.FC<PoseDetailProps> = ({
   }, [onStartTask, currentUserId, safeTask?.id, updateTask]);
 
   const handleChecklistItemUpdate = useCallback(async (itemId: string, completed: boolean) => {
-    if (!safeTask?.id || !user?.token) return;
-
-    try {
-      const updatedItems = checklistItems.map(item =>
-        item.id === itemId ? { ...item, is_completed: completed } : item
-      );
-      setChecklistItems(updatedItems);
-
-      if (interventionData && interventionData.steps) {
-        const currentStep = interventionData.steps.find((step) =>
-          step.collected_data && (step.collected_data.checklist || step.collected_data.qc_checklist)
-        );
-
-        if (currentStep) {
-          const updatedCollectedData = { ...currentStep.collected_data } as Record<string, Record<string, unknown>>;
-          if (updatedCollectedData.checklist && updatedCollectedData.checklist[itemId] !== undefined) {
-            updatedCollectedData.checklist[itemId] = completed;
-          } else if (updatedCollectedData.qc_checklist && updatedCollectedData.qc_checklist[itemId] !== undefined) {
-            updatedCollectedData.qc_checklist[itemId] = completed;
-          }
-
-          await saveStepProgressMutation.mutateAsync({
-            stepId: currentStep.id,
-            collectedData: updatedCollectedData,
-            notes: currentStep.notes ?? undefined,
-            photos: currentStep.photo_urls ?? undefined
-          });
-
-          saveChecklistOverrides(safeTask.id, updatedItems);
-          toast.success('Élément de checklist mis à jour');
-          return;
-        }
-      }
-
-      const totalItems = updatedItems.length;
-      const completedItems = updatedItems.filter(item => item.is_completed).length;
-      const newChecklistCompleted = totalItems > 0 && completedItems === totalItems;
-
-      await updateTask.mutateAsync({
-        taskId: safeTask.id,
-        data: { checklist_completed: newChecklistCompleted } as UpdateTaskRequest
-      });
-
-      saveChecklistOverrides(safeTask.id, updatedItems);
-      toast.success('Statut de checklist mis à jour');
-    } catch (error) {
-      console.error('Failed to update checklist item:', error);
-      toast.error('Erreur lors de la mise à jour de l\'élément de checklist');
-    }
-  }, [safeTask?.id, user?.token, interventionData, checklistItems, saveChecklistOverrides, updateTask, saveStepProgressMutation]);
+    if (!safeTask?.id) return;
+    await toggleChecklistItem(itemId, completed);
+    toast.success('Élément de checklist mis à jour');
+  }, [safeTask?.id, toggleChecklistItem]);
 
   if (isLoading) return <Skeleton className="h-96 w-full" />;
   if (error || !safeTask) return <ErrorFallback error={error || new Error('Task not found')} resetErrorBoundary={() => window.location.reload()} />;
