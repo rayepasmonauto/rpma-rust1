@@ -958,14 +958,15 @@ impl QuoteRepository {
         for row in rows {
             let (status, count) = row
                 .map_err(|e| RepoError::Database(format!("Failed to read status row: {}", e)))?;
-            match status.as_str() {
-                "draft" => draft = count,
-                "sent" => sent = count,
-                "accepted" => accepted = count,
-                "rejected" => rejected = count,
-                "expired" => expired = count,
-                "converted" => converted = count,
-                _ => {}
+            let Ok(qs) = status.parse::<QuoteStatus>() else { continue };
+            match qs {
+                QuoteStatus::Draft            => draft     = count,
+                QuoteStatus::Sent             => sent      = count,
+                QuoteStatus::Accepted         => accepted  = count,
+                QuoteStatus::Rejected         => rejected  = count,
+                QuoteStatus::Expired          => expired   = count,
+                QuoteStatus::Converted        => converted = count,
+                QuoteStatus::ChangesRequested => {}
             }
         }
 

@@ -221,14 +221,14 @@ export const taskIpc = {
   },
 
   draftSave: async (formData: string): Promise<void> => {
-    await safeInvoke<void>(IPC_COMMANDS.TASK_DRAFT_SAVE, { form_data: formData });
+    await safeInvoke<void>(IPC_COMMANDS.TASK_DRAFT_SAVE, { request: { form_data: formData } });
   },
 
   draftGet: async (): Promise<string | null> => {
-    return safeInvoke<string | null>(IPC_COMMANDS.TASK_DRAFT_GET, {});
+    return safeInvoke<string | null>(IPC_COMMANDS.TASK_DRAFT_GET, { request: {} });
   },
 
   draftDelete: async (): Promise<void> => {
-    await safeInvoke<void>(IPC_COMMANDS.TASK_DRAFT_DELETE, {});
+    await safeInvoke<void>(IPC_COMMANDS.TASK_DRAFT_DELETE, { request: {} });
   },
 };
