@@ -52,10 +52,13 @@ export function useTaskManager() {
       const convertedTasks = tasksResult.data.map((task) => convertTimestamps(task));
       const convertedClients = clientsResult.data.map((client) => convertTimestamps(client));
 
+      const clientNamesById = new Map(
+        convertedClients.map((client) => [client.id, client.name]),
+      );
+
       const tasksWithClients = convertedTasks.map((task) => ({
         ...task,
-        client_name:
-          convertedClients.find((client) => client.id === task.client_id)?.name || 'Client inconnu',
+        client_name: clientNamesById.get(task.client_id ?? '') || 'Client inconnu',
       })) as TaskWithClient[];
 
       setTasks(tasksWithClients);

@@ -131,6 +131,8 @@ export default function TaskManager() {
     try {
       await deleteTask(taskToDelete);
       toast.success('Tâche supprimée avec succès');
+    } catch {
+      // The hook already handles error reporting and toast messaging.
     } finally {
       setTaskToDelete(null);
     }

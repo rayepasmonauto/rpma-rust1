@@ -192,7 +192,7 @@ export const SecurityTab: React.FC<SecurityTabProps> = ({ user }) => {
               </SelectContent>
             </Select>
             <Button
-              onClick={() => void saveTimeout()}
+              onClick={() => saveTimeout()}
               disabled={isSavingTimeout}
               variant="outline"
               className="flex items-center gap-2"
@@ -219,7 +219,7 @@ export const SecurityTab: React.FC<SecurityTabProps> = ({ user }) => {
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => void revokeAllSessions()}
+                onClick={() => revokeAllSessions()}
                 disabled={isRevokingAll}
                 className="flex items-center gap-2"
               >
@@ -282,7 +282,7 @@ export const SecurityTab: React.FC<SecurityTabProps> = ({ user }) => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => void revokeSession(session.id)}
+                        onClick={() => revokeSession(session.id)}
                         disabled={isRevokingId === session.id}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
