@@ -227,9 +227,9 @@ impl EventHandler for TauriEmitter {
 
     fn interested_events(&self) -> Vec<&'static str> {
         vec![
-            "TaskStatusChanged",
-            "InterventionStarted",
-            "NotificationReceived",
+            DomainEvent::TASK_STATUS_CHANGED,
+            DomainEvent::INTERVENTION_STARTED,
+            DomainEvent::NOTIFICATION_RECEIVED,
             // TODO: ADD_MORE_EVENTS — add event type names here when extending handle()
         ]
     }
@@ -714,11 +714,17 @@ mod tests {
         assert_eq!(task_created.event_type(), DomainEvent::TASK_CREATED);
 
         let auth_success = event_factory::authentication_success("user-123".to_string());
-        assert_eq!(auth_success.event_type(), DomainEvent::AUTHENTICATION_SUCCESS);
+        assert_eq!(
+            auth_success.event_type(),
+            DomainEvent::AUTHENTICATION_SUCCESS
+        );
 
         let intervention_started =
             event_factory::intervention_started("int-123".to_string(), "task-123".to_string());
-        assert_eq!(intervention_started.event_type(), DomainEvent::INTERVENTION_STARTED);
+        assert_eq!(
+            intervention_started.event_type(),
+            DomainEvent::INTERVENTION_STARTED
+        );
 
         let intervention_finalized = event_factory::intervention_finalized(
             "int-999".to_string(),
@@ -726,7 +732,10 @@ mod tests {
             "tech-1".to_string(),
             Utc::now().timestamp_millis(),
         );
-        assert_eq!(intervention_finalized.event_type(), DomainEvent::INTERVENTION_FINALIZED);
+        assert_eq!(
+            intervention_finalized.event_type(),
+            DomainEvent::INTERVENTION_FINALIZED
+        );
 
         let material_consumed = event_factory::material_consumed(
             "mat-1".to_string(),
@@ -734,7 +743,10 @@ mod tests {
             1.5,
             "m²".to_string(),
         );
-        assert_eq!(material_consumed.event_type(), DomainEvent::MATERIAL_CONSUMED);
+        assert_eq!(
+            material_consumed.event_type(),
+            DomainEvent::MATERIAL_CONSUMED
+        );
 
         let quote_accepted = event_factory::quote_accepted(
             "quote-1".to_string(),
@@ -777,7 +789,10 @@ mod tests {
             "Quote".to_string(),
             "user-5".to_string(),
         );
-        assert_eq!(entity_hard_deleted.event_type(), DomainEvent::ENTITY_HARD_DELETED);
+        assert_eq!(
+            entity_hard_deleted.event_type(),
+            DomainEvent::ENTITY_HARD_DELETED
+        );
     }
 
     #[test]
