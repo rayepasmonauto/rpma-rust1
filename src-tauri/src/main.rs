@@ -120,6 +120,9 @@ fn main() {
             domains::tasks::ipc::task::check_task_availability,
             domains::tasks::ipc::task::get_task_history,
             domains::tasks::ipc::task::validate_task_assignment_change,
+            domains::tasks::ipc::task::task_checklist_items_get,
+            domains::tasks::ipc::task::task_checklist_item_update,
+            domains::tasks::ipc::task::task_checklist_item_create,
             domains::tasks::ipc::status::task_transition_status,
             domains::tasks::ipc::status::task_get_status_distribution,
             // ── Interventions ────────────────────────────────────────────
@@ -176,6 +179,7 @@ fn main() {
             // ── Quotes ───────────────────────────────────────────────────
             domains::quotes::ipc::quote::quote_create,
             domains::quotes::ipc::quote::quote_get,
+            domains::quotes::ipc::quote::quote_get_stats,
             domains::quotes::ipc::quote::quote_list,
             domains::quotes::ipc::quote::quote_update,
             domains::quotes::ipc::quote::quote_delete,

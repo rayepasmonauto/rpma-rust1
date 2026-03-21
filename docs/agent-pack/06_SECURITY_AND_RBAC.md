@@ -15,8 +15,8 @@ RPMA v2 uses a strict identity and access management system (**ADR-007**).
 
 | Role | Permissions |
 |------|-------------|
-| **Admin** | System configuration, user management, full access to all entities |
-| **Supervisor** | Manage tasks, clients, inventory; create quotes; view reports |
+| **Admin** | System configuration, user management, full access to all entities, hard delete |
+| **Supervisor** | Manage tasks, clients, inventory; create quotes; view reports; restore deleted items |
 | **Technician** | Execute assigned interventions; record materials; update task status |
 | **Viewer** | Read-only access to dashboards and reports |
 
@@ -38,11 +38,21 @@ let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin, UserRole::S
 ### RequestContext Structure
 
 ```rust
+// src-tauri/src/shared/context/request_context.rs
 pub struct RequestContext {
     pub auth: AuthContext,
     pub correlation_id: String,
 }
 
+impl RequestContext {
+    pub fn user_id(&self) -> &str { &self.auth.user_id }
+    pub fn role(&self) -> &UserRole { &self.auth.role }
+}
+```
+
+### AuthContext Structure
+
+```rust
 pub struct AuthContext {
     pub user_id: String,
     pub role: UserRole,
@@ -64,53 +74,74 @@ pub struct AuthContext {
 
 | Aspect | Implementation |
 |--------|---------------|
-| Database | Local SQLite with optional encryption |
+| Database | Local SQLite with optional encryption (RPMA_DB_KEY env var) |
 | PII | Scoped access via RBAC rules |
 | Input Sanitization | Centralized validation (**ADR-008**) |
 | Soft Delete | `deleted_at` prevents accidental data loss (**ADR-011**) |
 | Error Sanitization | Database and internal errors sanitized before frontend (**ADR-019**) |
+| Session Storage | In-memory `SessionStore` with UUID tokens |
+| Password Hashing | bcrypt |
 
 ## Authentication Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ 1. LOGIN                                                                    │
-│Frontend → auth_login(credentials)→ IPC Layer                                │
+│ Frontend → auth_login(credentials) → IPC Layer                              │
 └────────────────────────────────────┬────────────────────────────────────────┘
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ 2. VALIDATION                                                               │
 │ AuthService.login() → validates against users table                        │
 │ Creates session in memory (SessionStore)                                    │
-│ Returns session token                                                       │
+│ Returns session token (UUID)                                                │
 └────────────────────────────────────┬────────────────────────────────────────┘
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ 3. SESSION STORAGE                                                          │
 │ Frontend stores session state (Tauri manages cookie/header)                 │
+│ Session token injected via safeInvoke() for protected commands              │
 └────────────────────────────────────┬────────────────────────────────────────┘
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ 4. SUBSEQUENT REQUESTS                                                      │
-│ IPC call → resolve_context!() → validates session → creates RequestContext │
+│ IPC call → safeInvoke injects session_token                                 │
+│ Backend → resolve_context!() validates session → creates RequestContext      │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Session Management
 
-- Sessions are stored in memory via `SessionStore`.
-- Session tokens are validated on every IPC call.
-- Role is extracted from session and included in `RequestContext`.
+- Sessions stored in memory via `SessionStore` (`infrastructure/auth/session_store.rs`).
+- Session tokens are UUID strings.
+- Tokens validated on every IPC call.
+- Role extracted from session and included in `RequestContext`.
+
+### Public Commands
+
+Commands that don't require authentication:
+
+```typescript
+// frontend/src/lib/ipc/utils.ts
+export const PUBLIC_COMMANDS = new Set([
+  'auth_login', 'auth_create_account', 'auth_validate_session', 'auth_logout',
+  'has_admins', 'bootstrap_first_admin',
+  'ui_window_minimize', 'ui_window_maximize', 'ui_window_close',
+  'navigation_update', 'navigation_go_back', 'navigation_go_forward',
+  'get_app_info',
+]);
+```
 
 ## Security Constraints
 
 | Constraint | Enforcement |
 |------------|-------------|
-| No hardcoded secrets | Environment variables or config files |
+| No hardcoded secrets | Environment variables (`RPMA_DB_KEY`) or config files |
 | No logging passwords/PII | Explicit exclusion in logging |
 | Critical transitions validated | Domain layer checks (e.g., Task status changes) |
 | Session expiry | Handled by `SessionStore` |
 | Failed login tracking | `login_attempts` table (migration 057) |
+| CORS | Tauri IPC (no HTTP CORS needed) |
 
 ## Authorization Checks by Domain
 
@@ -126,12 +157,28 @@ pub struct AuthContext {
 | inventory (manage) | ✓ | ✓ | ✓ | — |
 | clients (manage) | ✓ | ✓ | — | — |
 | trash (restore) | ✓ | ✓ | — | — |
+| trash (hard delete) | ✓ | — | — | — |
+| settings (app) | ✓ | — | — | — |
+| settings (user) | ✓ | ✓ | ✓ | ✓ |
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `src-tauri/src/shared/auth/request_context.rs` | RequestContext definition |
-| `src-tauri/src/shared/auth/session_store.rs` | In-memory session storage |
+| `src-tauri/src/shared/context/request_context.rs` | RequestContext definition |
+| `src-tauri/src/shared/context/auth_context.rs` | AuthContext definition |
+| `src-tauri/src/infrastructure/auth/session_store.rs` | In-memory session storage |
 | `src-tauri/src/domains/auth/` | Authentication domain |
+| `src-tauri/src/shared/contracts/auth.rs` | UserRole enum |
 | `src-tauri/migrations/057_add_login_attempts_table.sql` | Failed login tracking |
+| `frontend/src/lib/ipc/utils.ts` | `PUBLIC_COMMANDS` set, session injection |
+
+## Security Events
+
+| Event | Logged |
+|-------|--------|
+| Successful login | `UserLoggedIn` |
+| Failed login | `AuthenticationFailed` |
+| Logout | `UserLoggedOut` |
+| User created | `UserCreated` |
+| User updated | `UserUpdated` |

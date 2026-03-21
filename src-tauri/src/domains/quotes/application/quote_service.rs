@@ -188,6 +188,11 @@ impl QuoteService {
         })
     }
 
+    /// Return aggregate statistics across all quotes (not paginated).
+    pub fn get_quote_stats(&self) -> Result<QuoteStats, String> {
+        self.repo.get_stats().map_err(|e| e.to_string())
+    }
+
     /// Update a quote (Draft only).
     pub fn update_quote(
         &self,

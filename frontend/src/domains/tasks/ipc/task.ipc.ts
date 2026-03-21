@@ -4,6 +4,7 @@ import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import { validateTask, validateTaskListResponse } from '@/lib/validation/backend-type-guards';
 import type {
   Task,
+  ChecklistItem,
   CreateTaskRequest,
   UpdateTaskRequest,
   TaskListResponse,
@@ -199,5 +200,33 @@ export const taskIpc = {
         }
       }
     );
+  },
+
+  checklistItemsGet: async (taskId: string): Promise<ChecklistItem[]> => {
+    return safeInvoke<ChecklistItem[]>(IPC_COMMANDS.TASK_CHECKLIST_ITEMS_GET, {
+      task_id: taskId,
+    });
+  },
+
+  checklistItemUpdate: async (
+    itemId: string,
+    taskId: string,
+    data: { is_completed: boolean; notes?: string }
+  ): Promise<ChecklistItem> => {
+    return safeInvoke<ChecklistItem>(IPC_COMMANDS.TASK_CHECKLIST_ITEM_UPDATE, {
+      item_id: itemId,
+      task_id: taskId,
+      data,
+    });
+  },
+
+  checklistItemCreate: async (
+    taskId: string,
+    description: string,
+    position?: number
+  ): Promise<ChecklistItem> => {
+    return safeInvoke<ChecklistItem>(IPC_COMMANDS.TASK_CHECKLIST_ITEM_CREATE, {
+      data: { task_id: taskId, description, position: position ?? null },
+    });
   },
 };

@@ -18,7 +18,7 @@ RPMA v2 provides a robust set of tools for development and verification.
 | Command | Purpose |
 |---------|---------|
 | `npm run dev` | Full app development (Tauri + Next.js) |
-| `npm run dev:types` | App dev with automatic type watch |
+| `npm run dev:types` | App dev with automatic type sync |
 | `npm run dev:strict` | Full type check before Tauri dev |
 | `npm run build` | Production build (syncs types first) |
 | `npm run frontend:dev` | Next.js only (browser mode) |
@@ -39,7 +39,7 @@ RPMA v2 provides a robust set of tools for development and verification.
 | `npm run backend:check` | Cargo check |
 | `npm run backend:clippy` | Run Clippy linter |
 | `npm run backend:fmt` | Format Rust code |
-| `npm run backend:architecture-check` | Enforce ADR-001/002/005|
+| `npm run backend:architecture-check` | Enforce ADR-001/002/005 |
 
 ### Frontend
 
@@ -126,7 +126,7 @@ npm run types:drift-check
 | Script | Purpose |
 |--------|---------|
 | `scaffold-domain.ts` | Generate new domain boilerplate |
-| `write-types.js` | Write Rust types to `backend.ts` |
+| `write-types.js` | Write Rust types to frontend |
 | `record-types-sync.js` | Record sync timestamp |
 | `validate-types.js` | Check for duplicate types |
 | `backend-architecture-check.js` | Enforce ADR-001/002/005 |
@@ -134,6 +134,8 @@ npm run types:drift-check
 | `audit-adrs.ts` | Audit ADRs for stale references |
 | `generate-docs-index.js` | Rebuild docs/README.md |
 | `git-workflow.js` | Git workflow helpers |
+| `detect-schema-drift.js` | Schema drift detection |
+| `validate-migration-system.js` | Migration validation |
 
 ## CI/CD Pipeline
 
@@ -164,6 +166,8 @@ GitHub Actions (`.github/workflows/`) handles:
 | Next.js issues | Clear `.next` folder and restart |
 | Slow Rust compile | Exclude `target/` from antivirus |
 | Drift detected | Run `node scripts/detect-schema-drift.js` |
+| Clippy warnings | Run `cargo clippy --fix` |
+| Test failures | Check test database isolation |
 
 ## Key Files
 
@@ -174,3 +178,29 @@ GitHub Actions (`.github/workflows/`) handles:
 | `Makefile` | Build/test targets |
 | `scripts/` | Automation utilities |
 | `src-tauri/Cargo.toml` | Rust dependencies |
+| `AGENTS.md` | Agent instructions |
+
+## Development Environment Setup
+
+1. **Prerequisites**
+   - Node.js 18+
+   - Rust 1.85+ (edition 2021)
+   - pnpm or npm
+
+2. **Initial Setup**
+   ```bash
+   npm install
+   npm run types:sync
+   ```
+
+3. **Run Development**
+   ```bash
+   npm run dev:types
+   ```
+
+4. **Before Pushing**
+   ```bash
+   npm run backend:check && npm run backend:clippy && make test
+   npm run frontend:lint && npm run frontend:type-check
+   npm run types:sync
+   ```

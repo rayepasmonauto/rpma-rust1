@@ -1,13 +1,13 @@
 //! Quote CRUD commands — create, get, list, update, delete, duplicate
 
 use crate::commands::{ApiResponse, AppError, AppState};
-use crate::domains::quotes::domain::models::quote::{Quote, QuoteListResponse};
+use crate::domains::quotes::domain::models::quote::{Quote, QuoteListResponse, QuoteStats};
 use crate::domains::quotes::QuotesFacade;
 use tracing::{debug, error, info, instrument, Span};
 
 use crate::domains::quotes::application::{
     QuoteCreateRequest, QuoteDeleteRequest, QuoteDuplicateRequest, QuoteGetRequest,
-    QuoteListRequest, QuoteUpdateRequest,
+    QuoteGetStatsRequest, QuoteListRequest, QuoteUpdateRequest,
 };
 use crate::resolve_context;
 
@@ -134,6 +134,29 @@ pub async fn quote_delete(
         }
         Err(e) => {
             error!("Failed to delete quote: {}", e);
+            Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
+        }
+    }
+}
+
+/// Return aggregate quote statistics (status counts + monthly trend).
+#[tauri::command]
+#[instrument(skip(state))]
+pub async fn quote_get_stats(
+    request: QuoteGetStatsRequest,
+    state: AppState<'_>,
+) -> Result<ApiResponse<QuoteStats>, AppError> {
+    debug!("quote_get_stats command received");
+    let ctx = resolve_context!(&state, &request.correlation_id);
+    let correlation_id = ctx.correlation_id.clone();
+    let facade = QuotesFacade::new(state.quote_service.clone());
+
+    match facade.get_stats(&ctx.auth.role) {
+        Ok(stats) => {
+            Ok(ApiResponse::success(stats).with_correlation_id(Some(correlation_id.clone())))
+        }
+        Err(e) => {
+            error!("Failed to get quote stats: {}", e);
             Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id.clone())))
         }
     }

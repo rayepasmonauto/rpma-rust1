@@ -16,6 +16,6 @@ pub use contracts::{
     QuoteAttachmentCreateRequest, QuoteAttachmentDeleteRequest, QuoteAttachmentOpenRequest,
     QuoteAttachmentUpdateRequest, QuoteAttachmentsGetRequest, QuoteConvertToTaskRequest,
     QuoteCreateRequest, QuoteDeleteRequest, QuoteDuplicateRequest, QuoteGetRequest,
-    QuoteItemAddRequest, QuoteItemDeleteRequest, QuoteItemUpdateRequest, QuoteListRequest,
-    QuoteStatusRequest, QuoteUpdateRequest,
+    QuoteGetStatsRequest, QuoteItemAddRequest, QuoteItemDeleteRequest, QuoteItemUpdateRequest,
+    QuoteListRequest, QuoteStatusRequest, QuoteUpdateRequest,
 };

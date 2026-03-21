@@ -13,5 +13,6 @@ export { useQuotesList, useQuote, useCreateQuote, useUpdateQuote, useDeleteQuote
 export type { UseQuotesListOptions } from './useQuotesCrud';
 export { useQuoteItems } from './useQuoteItems';
 export { useQuoteStatus } from './useQuoteStatus';
-export { useDuplicateQuote, useQuoteExportPdf, useConvertQuoteToTask } from './useQuoteOperations';
+export { useDuplicateQuote, useQuoteExportPdf, useConvertQuoteToTask, useQuoteStats } from './useQuoteOperations';
+export type { QuoteStatsNormalized } from './useQuoteOperations';
 export { useQuoteAttachments, useQuoteAttachmentActions } from './useQuoteAttachments';

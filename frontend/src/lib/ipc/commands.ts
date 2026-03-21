@@ -35,6 +35,9 @@ export const IPC_COMMANDS = {
   IMPORT_TASKS_BULK: 'import_tasks_bulk',
   TASK_TRANSITION_STATUS: 'task_transition_status',
   TASK_GET_STATUS_DISTRIBUTION: 'task_get_status_distribution',
+  TASK_CHECKLIST_ITEMS_GET: 'task_checklist_items_get',
+  TASK_CHECKLIST_ITEM_UPDATE: 'task_checklist_item_update',
+  TASK_CHECKLIST_ITEM_CREATE: 'task_checklist_item_create',
 
   // Client commands
   CLIENT_CRUD: 'client_crud',

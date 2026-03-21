@@ -21,14 +21,14 @@ Every domain in `src-tauri/src/domains/` MUST follow (**ADR-001**):
 | Domain | IPC | Application | Domain | Infrastructure | Notes |
 |--------|:---:|:-----------:|:------:|:--------------:|-------|
 | auth | ✓ | ✓ | ✓ | ✓ | Full compliance |
-| interventions | ✓ | ✓ | ✓ | ✓ | Full compliance |
+| tasks | ✓ | ✓ | ✓ | ✓ | Full compliance |
+| clients | ✓ | ✓ | ✓ | ✓ | Full compliance |
+| interventions | ✓ | ✓ | ✓ | ✓ | Full + sub-services |
 | inventory | ✓ | ✓ | ✓ | ✓ | Full compliance |
 | quotes | ✓ | ✓ | ✓ | ✓ | Full compliance |
-| tasks | ✓ | ✓ | ✓ | ✓ | Full compliance |
 | trash | ✓ | ✓ | ✓ | ✓ | Full compliance |
 | users | ✓ | ✓ | ✓ | ✓ | Full compliance |
 | calendar | ✓ | — | — | — | Handler-based |
-| clients | ✓ | — | — | — | Handler-based |
 | documents | ✓ | — | — | — | Flat structure |
 | notifications | ✓ | — | — | — | Handler-based |
 | settings | ✓ | — | — | — | Flat structure |
@@ -74,12 +74,25 @@ pub async fn material_create(
 - **Repository implementations** (**ADR-005**).
 - **SQL queries** using SQLite via `rusqlite`.
 
+## Intervention Sub-Services
+
+The Interventions domain has specialized sub-services:
+
+| Service | Location | Purpose |
+|---------|----------|---------|
+| `InterventionService` | `infrastructure/intervention.rs` | Main coordinator |
+| `InterventionStepService` | `infrastructure/intervention_step_service.rs` | Step progression |
+| `PhotoValidationService` | `infrastructure/photo_validation_service.rs` | Photo validation |
+| `InterventionScoringService` | `infrastructure/intervention_scoring_service.rs` | Quality scoring |
+| `MaterialConsumptionService` | `infrastructure/material_consumption_service.rs` | Material tracking |
+| `InterventionWorkflowService` | `infrastructure/intervention_workflow.rs` | Workflow orchestration |
+
 ## Facade Pattern
 
 Domains expose a simplified public API via a Facade:
 
 ```rust
-// domains/tasks/application/facade.rs
+// domains/tasks/facade.rs
 pub struct TasksFacade {
     task_service: Arc<TaskService>,
     event_bus: Arc<dyn DomainEventBus>,
@@ -92,32 +105,80 @@ impl TasksFacade {
 }
 ```
 
-Facades are used for cross-domain access via `shared/services/cross_domain.rs`.
+Facades are used for cross-domain access via `shared/services/`.
 
 ## Service Builder (**ADR-004**)
 
 All services are wired in `src-tauri/src/service_builder.rs`:
 
 ```rust
-pub struct Services {
-    pub auth: Arc<AuthService>,
-    pub tasks: Arc<TaskService>,
-    pub clients: Arc<ClientService>,
-    pub interventions: Arc<InterventionService>,
-    pub inventory: Arc<MaterialService>,
-    pub quotes: Arc<QuoteService>,
-    pub users: Arc<UserService>,
-    // ...
+pub struct ServiceBuilder {
+    db: Arc<Database>,
+    repositories: Arc<Repositories>,
+    app_data_dir: PathBuf,
 }
 
-pub fn build_services(db: Arc<Database>, event_bus: Arc<dyn DomainEventBus>) -> Services {
-    // Repositories first
-    let task_repo = Arc::new(SqliteTaskRepository::new(db.clone()));
+impl ServiceBuilder {
+    pub fn build(self) -> Result<AppStateType, Box<dyn std::error::Error>> {
+        // Initialize in dependency order:
+        let task_service = Arc::new(TaskService::new(self.db.clone()));
+        let event_bus = Arc::new(InMemoryEventBus::new());
+        
+        let client_service = Arc::new(ClientService::new(
+            self.repositories.client.clone(),
+            event_bus.clone(),
+        ));
+        
+        // Intervention sub-services
+        let intervention_step_service = Arc::new(InterventionStepService::new(self.db.clone()));
+        // ... other sub-services
+        
+        let intervention_service = Arc::new(InterventionService::with_services(
+            self.db.clone(),
+            intervention_step_service,
+            photo_validation_service,
+            intervention_scoring_service,
+            material_consumption_service,
+        ));
+        
+        // Register event handlers
+        event_bus.register_handler(audit_log_handler);
+        register_handler(inventory_service.intervention_finalized_handler());
+        
+        Ok(AppStateType { /* ... */ })
+    }
+}
+```
 
-    // Services in dependency order
-    let task_service = Arc::new(TaskService::new(task_repo, event_bus.clone()));
+## App State (`AppStateType`)
 
-    Services { tasks: task_service, ... }
+```rust
+pub struct AppStateType {
+    pub db: Arc<Database>,
+    pub async_db: Arc<AsyncDatabase>,
+    pub repositories: Arc<Repositories>,
+    pub task_service: Arc<TaskService>,
+    pub client_service: Arc<ClientService>,
+    pub task_import_service: Arc<TaskImportService>,
+    pub calendar_service: Arc<CalendarService>,
+    pub intervention_service: Arc<InterventionService>,
+    pub intervention_creator: Arc<dyn InterventionCreator>,
+    pub material_service: Arc<MaterialService>,
+    pub inventory_service: Arc<InventoryFacade>,
+    pub message_service: Arc<MessageService>,
+    pub photo_service: Arc<PhotoService>,
+    pub quote_service: Arc<QuoteService>,
+    pub auth_service: Arc<AuthService>,
+    pub session_service: Arc<SessionService>,
+    pub session_store: Arc<SessionStore>,
+    pub settings_repository: Arc<SettingsRepository>,
+    pub user_settings_repository: Arc<UserSettingsRepository>,
+    pub user_service: Arc<UserService>,
+    pub cache_service: Arc<CacheService>,
+    pub event_bus: Arc<InMemoryEventBus>,
+    pub app_config: Arc<AppConfig>,
+    pub trash_service: Arc<TrashService>,
+    pub global_search_service: Arc<GlobalSearchService>,
 }
 ```
 
@@ -147,7 +208,19 @@ impl From<AppError> for ApiResponse<Value> {
 
 - **Centralized Auth**: `resolve_context!` macro handles session validation and RBAC.
 - **RequestContext**: Flows through the system; raw tokens never leave the IPC layer.
-- **Location**: `src-tauri/src/shared/auth/request_context.rs`
+- **Location**: `src-tauri/src/shared/context/request_context.rs`
+
+```rust
+pub struct RequestContext {
+    pub auth: AuthContext,
+    pub correlation_id: String,
+}
+
+impl RequestContext {
+    pub fn user_id(&self) -> &str { &self.auth.user_id }
+    pub fn role(&self) -> &UserRole { &self.auth.role }
+}
+```
 
 ## Database & Persistence
 
@@ -155,17 +228,20 @@ impl From<AppError> for ApiResponse<Value> {
 |--------|---------|
 | Migrations | Numbered SQL files in `src-tauri/migrations/` (**ADR-010**) |
 | WAL Mode | Enabled by default for performance (**ADR-009**) |
+| Async DB | `AsyncDatabase` wrapper for non-blocking operations |
 | Repository Pattern | Abstract data access (**ADR-005**) |
 | Soft Delete | `deleted_at` timestamp (**ADR-011**) |
 | Timestamps | i64 Unix milliseconds (**ADR-012**) |
+| Streaming | `ChunkedQuery` for large result sets |
+| Cache | `PreparedStatementCache`, `QueryPerformanceMonitor` |
 
 ## Cross-Domain Coordination
 
 | Mechanism | Location | Use Case |
 |-----------|----------|----------|
 | Event Bus | `shared/event_bus/` | Async cross-domain reactions |
-| Facade Pattern | `domains/*/application/facade.rs` | Controlled cross-domain access |
-| Cross-Domain Re-exports | `shared/services/cross_domain.rs` | Sync service access |
+| Facade Pattern | `domains/*/facade.rs` | Controlled cross-domain access |
+| Service Builder | `service_builder.rs` | Centralized DI |
 
 ## Command Registration
 
@@ -173,10 +249,21 @@ Commands are registered in `src-tauri/src/main.rs`:
 
 ```rust
 .invoke_handler(tauri::generate_handler![
+    // Auth
     domains::auth::ipc::auth::auth_login,
     domains::auth::ipc::auth::auth_create_account,
-    domains::tasks::ipc::task::task_crud,
-    domains::inventory::ipc::material::material_create,
+    domains::auth::ipc::auth::auth_logout,
+    domains::auth::ipc::auth::auth_validate_session,
+    
+    // Tasks
+    domains::tasks::ipc::task::task_create,
+    domains::tasks::ipc::task::task_get,
+    domains::tasks::ipc::task::task_update,
+    // ... 200+ commands
+    
+    // System
+    commands::system::health_check,
+    commands::ui::ui_window_minimize,
     // ...
 ])
 ```

@@ -26,6 +26,7 @@ mod scaffold {
         ("quote_duplicate", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
         ("quote_export_pdf", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
         ("quote_get", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
+        ("quote_get_stats", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: true }),
         ("quote_item_add", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
         ("quote_item_delete", PermissionExpectation { admin: true, supervisor: false, technician: false, viewer: false }),
         ("quote_item_update", PermissionExpectation { admin: true, supervisor: true, technician: true, viewer: false }),
@@ -56,6 +57,7 @@ mod scaffold {
         "quote_duplicate",
         "quote_export_pdf",
         "quote_get",
+        "quote_get_stats",
         "quote_item_add",
         "quote_item_delete",
         "quote_item_update",
@@ -138,6 +140,12 @@ mod scaffold {
     #[ignore = "Scaffold placeholder: verify role-by-role access for `quote_get` against ADR-007 matrix"]
     fn test_quote_get_rbac_matrix_enforcement() {
         panic!("Scaffold placeholder for IPC RBAC command `quote_get`");
+    }
+
+    #[test]
+    #[ignore = "Scaffold placeholder: verify role-by-role access for `quote_get_stats` against ADR-007 matrix"]
+    fn test_quote_get_stats_rbac_matrix_enforcement() {
+        panic!("Scaffold placeholder for IPC RBAC command `quote_get_stats`");
     }
 
     #[test]

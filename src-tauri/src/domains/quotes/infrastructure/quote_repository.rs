@@ -6,7 +6,8 @@
 use crate::db::Database;
 use crate::domains::quotes::domain::models::quote::{
     AttachmentType, CreateQuoteAttachmentRequest, IQuoteRepository, Quote, QuoteAttachment,
-    QuoteItem, QuoteQuery, QuoteStatus, UpdateQuoteAttachmentRequest, UpdateQuoteRequest,
+    QuoteItem, QuoteMonthlyCount, QuoteQuery, QuoteStats, QuoteStatus, UpdateQuoteAttachmentRequest,
+    UpdateQuoteRequest,
 };
 use crate::shared::repositories::base::{RepoError, RepoResult};
 use crate::shared::repositories::cache::{ttl, Cache, CacheKeyBuilder};
@@ -136,6 +137,10 @@ impl IQuoteRepository for QuoteRepository {
 
     fn delete_attachment(&self, id: &str, quote_id: &str) -> RepoResult<bool> {
         self.delete_attachment(id, quote_id)
+    }
+
+    fn get_stats(&self) -> RepoResult<QuoteStats> {
+        self.get_stats()
     }
 }
 
@@ -916,6 +921,98 @@ impl QuoteRepository {
         Ok(rows > 0)
     }
 
+    /// Aggregate quote counts by status + monthly trend (last 6 months).
+    pub fn get_stats(&self) -> RepoResult<QuoteStats> {
+        let conn = self.db.get_connection()
+            .map_err(|e| RepoError::Database(format!("Failed to get connection: {}", e)))?;
+
+        let total: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM quotes WHERE deleted_at IS NULL",
+                [],
+                |row| row.get(0),
+            )
+            .map_err(|e| RepoError::Database(format!("Failed to count quotes: {}", e)))?;
+
+        let mut stmt = conn
+            .prepare(
+                "SELECT status, COUNT(*) FROM quotes WHERE deleted_at IS NULL GROUP BY status",
+            )
+            .map_err(|e| RepoError::Database(format!("Failed to prepare stats: {}", e)))?;
+
+        let mut draft = 0i64;
+        let mut sent = 0i64;
+        let mut accepted = 0i64;
+        let mut rejected = 0i64;
+        let mut expired = 0i64;
+        let mut converted = 0i64;
+
+        let rows = stmt
+            .query_map([], |row| {
+                let status: String = row.get(0)?;
+                let count: i64 = row.get(1)?;
+                Ok((status, count))
+            })
+            .map_err(|e| RepoError::Database(format!("Failed to query stats: {}", e)))?;
+
+        for row in rows {
+            let (status, count) = row
+                .map_err(|e| RepoError::Database(format!("Failed to read status row: {}", e)))?;
+            match status.as_str() {
+                "draft" => draft = count,
+                "sent" => sent = count,
+                "accepted" => accepted = count,
+                "rejected" => rejected = count,
+                "expired" => expired = count,
+                "converted" => converted = count,
+                _ => {}
+            }
+        }
+
+        // Monthly counts — last 6 months (strftime on millisecond timestamp)
+        let mut monthly_stmt = conn
+            .prepare(
+                r#"
+                SELECT
+                    strftime('%Y-%m', created_at / 1000, 'unixepoch') AS month,
+                    COUNT(*) AS count
+                FROM quotes
+                WHERE deleted_at IS NULL
+                  AND created_at >= (strftime('%s', 'now', '-6 months') * 1000)
+                GROUP BY month
+                ORDER BY month ASC
+                "#,
+            )
+            .map_err(|e| RepoError::Database(format!("Failed to prepare monthly stats: {}", e)))?;
+
+        let monthly_rows = monthly_stmt
+            .query_map([], |row| {
+                Ok(QuoteMonthlyCount {
+                    month: row.get(0)?,
+                    count: row.get(1)?,
+                })
+            })
+            .map_err(|e| RepoError::Database(format!("Failed to query monthly stats: {}", e)))?;
+
+        let mut monthly_counts = Vec::new();
+        for row in monthly_rows {
+            monthly_counts.push(
+                row.map_err(|e| RepoError::Database(format!("Failed to read monthly row: {}", e)))?,
+            );
+        }
+
+        Ok(QuoteStats {
+            total,
+            draft,
+            sent,
+            accepted,
+            rejected,
+            expired,
+            converted,
+            monthly_counts,
+        })
+    }
+
     // --- Helpers ---
 
     fn build_where_clause(&self, query: &QuoteQuery) -> (String, Vec<rusqlite::types::Value>) {
@@ -1176,5 +1273,31 @@ mod tests {
             .expect("read total");
 
         assert_eq!((subtotal, tax_total, total), (0, 0, 0));
+    }
+
+    #[tokio::test]
+    async fn test_get_stats_counts_by_status() {
+        let db = Arc::new(setup_test_db().await);
+        let cache = Arc::new(Cache::new(100));
+        let repo = QuoteRepository::new(db.clone(), cache);
+
+        insert_test_client(&db, "client-stats");
+
+        // Create 2 draft and 1 sent quote
+        let q1 = make_test_quote("qs1", "client-stats");
+        let q2 = make_test_quote("qs2", "client-stats");
+        let mut q3 = make_test_quote("qs3", "client-stats");
+        q3.status = QuoteStatus::Sent;
+
+        repo.create(&q1).unwrap();
+        repo.create(&q2).unwrap();
+        repo.create(&q3).unwrap();
+
+        let stats = repo.get_stats().expect("get_stats should succeed");
+
+        assert_eq!(stats.total, 3);
+        assert_eq!(stats.draft, 2);
+        assert_eq!(stats.sent, 1);
+        assert_eq!(stats.accepted, 0);
     }
 }

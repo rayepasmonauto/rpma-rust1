@@ -13,7 +13,6 @@ import { userIpc } from '@/domains/users/ipc/users.ipc';
 import { settingsIpc } from '@/domains/settings/ipc/settings.ipc';
 import { notificationsIpc } from '@/domains/notifications/ipc/notifications.ipc';
 import { bootstrapIpc } from '@/domains/bootstrap/ipc/bootstrap.ipc';
-import { calendarIpc } from '@/domains/calendar/ipc/calendar.ipc';
 import { adminIpc } from '@/domains/admin/ipc/admin.ipc';
 import { auditIpc } from '@/domains/admin/ipc/audit.ipc';
 import { organizationIpc } from '@/domains/admin/ipc/organization.ipc';
@@ -46,7 +45,6 @@ export const ipcClient = {
   bootstrap: bootstrapIpc,
   admin: adminIpc,
   audit: auditIpc,
-  calendar: calendarIpc,
   material: materialIpc,
   inventory: inventoryIpc,
   quotes: quotesIpc,

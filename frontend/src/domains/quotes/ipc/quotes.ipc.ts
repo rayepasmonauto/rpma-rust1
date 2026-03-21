@@ -3,9 +3,14 @@ import { IPC_COMMANDS } from '@/lib/ipc/commands';
 import { signalMutation } from '@/lib/data-freshness';
 import { validateQuote, validateQuoteList, validateQuoteAcceptResponse } from '@/lib/validation/backend-type-guards';
 import type { Quote, QuoteListResponse, QuoteAcceptResponse } from '@/types/quote.types';
+import type { QuoteStats } from '@/lib/backend';
 import type { JsonObject, JsonValue } from '@/types/json';
 
 export const quotesIpc = {
+  getStats: async (): Promise<QuoteStats> => {
+    return safeInvoke<QuoteStats>('quote_get_stats', {});
+  },
+
   create: async (data: JsonObject): Promise<Quote> => {
     const result = await safeInvoke<Quote>('quote_create', {
       request: { data }
