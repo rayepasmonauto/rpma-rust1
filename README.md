@@ -15,7 +15,7 @@
 <br/>
 
 > **Application de bureau offline-first** pour la gestion des interventions PPF (Paint Protection Film)  
-> conçue pour les ateliers automobiles
+
 <br/>
 
 
