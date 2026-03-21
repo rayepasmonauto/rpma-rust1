@@ -2,7 +2,6 @@
 -- ADR-010: fresh databases are initialized from this file, then additive changes run from
 -- `src-tauri/migrations/002+`. Keep this file aligned with applied migrations, but make all
 -- new schema changes in numbered migrations instead of editing historical structure in place.
--- SUMMARY: 31 CREATE TABLE statements, 181 CREATE INDEX statements, 8 CREATE TRIGGER statements.
 -- GROUPS:
 --   - Core Auth: users, sessions, login_attempts, user_settings, user_consent
 --   - Tasks & Workflow: interventions, intervention_steps, photos, tasks, task_history, sync_queue
@@ -17,7 +16,9 @@
 --   user_consent, message_templates, messages, notification_preferences, suppliers,
 --   material_categories, materials, material_consumption, inventory_transactions,
 --   calendar_events, notifications, schema_version
--- DO NOT MODIFY: use numbered migrations in `src-tauri/migrations/002+` for schema changes,
+-- Refresh this table list whenever the bootstrap schema is audited or new tables are folded into it.
+-- DO NOT MODIFY: use numbered migrations in `src-tauri/migrations/` (starting from 002)
+-- for schema changes
 -- then update this bootstrap snapshot only as needed to keep fresh-database initialization in sync.
 --
 -- Configuration SQLite pour performance optimale
