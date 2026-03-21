@@ -17,21 +17,29 @@ To provide a reliable, offline-first (via local SQLite) platform for technicians
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS, shadcn/ui.
-- **Backend**: Rust + Tauri.
-- **Database**: SQLite with WAL (Write-Ahead Logging) mode and encryption support.
-- **Communication**: Tauri IPC (Inter-Process Communication) with typed contracts via `ts-rs`.
-- **State Management**: TanStack Query (Server state), Zustand (UI state).
+| Layer | Technology | Version/Mode |
+|-------|------------|---------------|
+| Desktop shell | Tauri | `2.1` |
+| Backend language | Rust | Edition `2021`, rust-version `1.85` |
+| Frontend framework | Next.js | `^14.2.35` (App Router) |
+| UI runtime | React | `^18.3.1` |
+| Frontend language | TypeScript | `^5.3.0` (strict mode) |
+| Database | SQLite | WAL mode (ADR-009) |
+| Server state | TanStack Query | `^5.90.2` |
+| UI local state | Zustand | `^5.0.8` |
+| Styling | Tailwind CSS | `^3.4.0` + shadcn/ui |
+| Type generation | ts-rs | `10.1` (Rust → TS) |
 
 ## Top-Level Modules (Domains)
 
 ### Backend Domains (`src-tauri/src/domains/`)
+
 | Domain | Purpose | Layer Compliance |
-|--------|---------|------------------|
-| **auth** | Authentication, login, session management | Full4-layer |
-| **tasks** | Job lifecycle from creation to completion | Full4-layer |
-| **clients** | Client profiles and history | Flat (handler-based) |
-| **interventions** | Core workflow engine for PPF execution | Full 4-layer |
+|--------|---------|-------------------|
+| **auth** | Authentication, login, session management | Full 4-layer |
+| **tasks** | Job lifecycle from creation to completion | Full 4-layer |
+| **clients** | Client profiles and history | Full 4-layer |
+| **interventions** | Core workflow engine for PPF execution | Full 4-layer + sub-services |
 | **inventory** | Material tracking and stock management | Full 4-layer |
 | **quotes** | Estimating and converting to tasks | Full 4-layer |
 | **users** | User management and profiles | Full 4-layer |
@@ -42,7 +50,39 @@ To provide a reliable, offline-first (via local SQLite) platform for technicians
 | **trash** | Soft-deleted entity recovery | Full 4-layer |
 
 ### Frontend Domains (`frontend/src/domains/`)
-16 domains mirror backend with additions: **admin**, **bootstrap**, **dashboard**, **performance**, **reports**.
+
+Mirrors backend domains plus: **admin**, **bootstrap**, **dashboard**, **performance**, **reports**, **staff**.
+
+## AppState Services
+
+The application state (`AppStateType`) includes:
+
+| Service | Purpose |
+|---------|---------|
+| `db` / `async_db` | Synchronous and async database access |
+| `repositories` | Cached repository instances |
+| `task_service` | Task lifecycle management |
+| `client_service` | Client CRUD and events |
+| `intervention_service` | Intervention workflow coordination |
+| `intervention_creator` | Intervention creation interface |
+| `material_service` | Material/inventory management |
+| `inventory_service` | Inventory facade |
+| `quote_service` | Quote lifecycle |
+| `auth_service` | Authentication and sessions |
+| `session_service` | Session management backend |
+| `session_store` | In-memory session cache |
+| `user_service` | User management |
+| `message_service` | Messaging system |
+| `photo_service` | Photo storage |
+| `settings_repository` | Settings persistence |
+| `user_settings_repository` | User preferences |
+| `calendar_service` | Calendar/scheduling |
+| `task_import_service` | Bulk task import |
+| `cache_service` | In-memory cache |
+| `event_bus` | In-memory domain events |
+| `trash_service` | Soft-delete recovery |
+| `global_search_service` | Cross-domain search |
+| `app_config` | Application configuration |
 
 ## Golden Paths (Start Here)
 
@@ -54,50 +94,108 @@ To provide a reliable, offline-first (via local SQLite) platform for technicians
 ## Repository Layout
 
 ```
-frontend/                  # Next.js App Router application
-  src/
-    app/                   # Routes and layouts
-    domains/               # Feature modules (mirrored from backend)
-      [domain]/
-        api/               # TanStack Query hooks
-        components/        # Domain-specific UI
-        hooks/             # React hooks
-        ipc/               # typed invoke wrappers
-        services/          # Frontend business logic
-        stores/            # Zustand stores (where needed)
-        __tests__/         # Domain tests
-    lib/                   # IPC client, utilities
-    types/                 # AUTO-GENERATED — DO NOT EDIT
-
-src-tauri/
-  src/
-    domains/               # Backend bounded contexts
-      [domain]/
-        ipc/               # Tauri command handlers (thin)
-        application/       # Use cases, orchestration
-        domain/            # Pure business rules, entities
-        infrastructure/    # Repositories, SQL
-        tests/             # Unit, integration, validation
-    shared/                 # Cross-domain services
-      services/            # EventBus, validation, cross-domain
-      contracts/           # Shared type definitions
-      ipc/                 # ApiResponse, error handling
-    main.rs                # Tauri builder, command registration
-  migrations/              # Numbered SQL migrations
-  Cargo.toml
-
-docs/
-  adr/                     # Architectural Decision Records
-  agent-pack/              # This onboarding documentation
-
-scripts/                   # Type sync, validation, scaffolding
-Makefile                   # Centralized task runner
+rpma-rust/
+├── README.md                          # Project overview
+├── Makefile                           # Canonical backend build/test/lint commands
+├── package.json                       # Root task runner (frontend/backend/types scripts)
+├── Cargo.toml                         # Workspace manifest
+├── docs/                              # Architecture + ADR documentation
+│   ├── README.md                      # Generated docs index and ADR quick links
+│   └── adr/                           # Formal Architecture Decision Records (001-020)
+├── scripts/                           # Validation, type sync, scaffolding utilities
+├── frontend/                          # Next.js 14 frontend app
+│   ├── package.json                   # Frontend toolchain/test scripts
+│   └── src/
+│       ├── app/                       # App Router pages/layouts
+│       ├── components/               # Shared UI components (shadcn/ui)
+│       ├── domains/                   # Frontend bounded contexts/features
+│       │   ├── admin/
+│       │   ├── auth/
+│       │   ├── bootstrap/
+│       │   ├── calendar/
+│       │   ├── clients/
+│       │   ├── dashboard/
+│       │   ├── interventions/
+│       │   ├── inventory/
+│       │   ├── notifications/
+│       │   ├── performance/
+│       │   ├── quotes/
+│       │   ├── reports/
+│       │   ├── settings/
+│       │   ├── staff/
+│       │   ├── tasks/
+│       │   ├── trash/
+│       │   └── users/
+│       ├── lib/
+│       │   ├── ipc/                   # IPC client, adapters, utilities
+│       │   │   ├── client.ts           # ipcClient aggregation object
+│       │   │   ├── commands.ts          # IPC_COMMANDS constant
+│       │   │   ├── utils.ts             # safeInvoke with session injection
+│       │   │   ├── core/                # Response handlers, types
+│       │   │   ├── domains/             # Domain-specific IPC wrappers
+│       │   │   ├── mock/                # Test adapters and fixtures
+│       │   │   └── types/               # IPC-related type definitions
+│       │   └── query-keys.ts           # Centralized TanStack query key factories
+│       ├── shared/                     # Shared frontend contracts/utilities
+│       └── types/                      # AUTO-GENERATED TS types (never hand edit)
+└── src-tauri/                         # Rust backend + Tauri app host
+    ├── Cargo.toml                      # Backend dependencies
+    ├── migrations/                     # Numbered SQL migrations (002-061)
+    └── src/
+        ├── main.rs                     # Tauri app bootstrap, command registration
+        ├── lib.rs                      # Library entry point
+        ├── service_builder.rs           # Centralized service initialization (ADR-004)
+        ├── commands/                    # Cross-domain/system command modules
+        ├── db/                          # DB bootstrap, WAL, migrations
+        ├── domains/                     # Backend bounded contexts
+        │   ├── auth/
+        │   ├── calendar/
+        │   ├── clients/
+        │   ├── documents/
+        │   ├── interventions/
+        │   ├── inventory/
+        │   ├── notifications/
+        │   ├── quotes/
+        │   ├── settings/
+        │   ├── tasks/
+        │   ├── trash/
+        │   └── users/
+        ├── shared/                      # Cross-domain shared kernel
+        │   ├── context/                  # RequestContext + AuthContext
+        │   ├── contracts/                # Shared enums (UserRole, TaskStatus, etc.)
+        │   ├── db/                       # Shared DB-level helpers
+        │   ├── error/                     # Shared error types
+        │   ├── event_bus/                 # In-memory event bus primitives
+        │   ├── ipc/                       # IPC boundary result/error adapters
+        │   ├── logging/                   # Tracing + correlation ID
+        │   ├── policies/                  # Shared policy definitions
+        │   ├── repositories/              # Repository abstractions + factory
+        │   ├── services/                  # Cross-domain services (EventBus, Validation)
+        │   └── utils/                    # Shared backend utilities
+        └── infrastructure/               # Cross-cutting infrastructure (auth, etc.)
 ```
 
 ## Key ADRs
 
-- **ADR-001**: Four-Layer Architecture Pattern
-- **ADR-002**: Bounded Context Domains
-- **ADR-004**: Centralized Service Builder Pattern
-- **ADR-006**: RequestContext Pattern for Authentication
-- **ADR-015**: Type Generation via ts-rs
+| ADR | Title |
+|-----|-------|
+| ADR-001 | Four-Layer Architecture Pattern |
+| ADR-002 | Bounded Context Domains |
+| ADR-003 | Cross-Domain Communication Channels |
+| ADR-004 | Centralized Service Builder Pattern |
+| ADR-005 | Repository Pattern for Data Access |
+| ADR-006 | RequestContext Pattern for Authentication |
+| ADR-007 | Role-Based Access Control Hierarchy |
+| ADR-008 | Centralized Validation Service |
+| ADR-009 | SQLite with WAL Mode for Persistence |
+| ADR-010 | Numbered SQL Migrations with Rust Data Migrations |
+| ADR-011 | Soft Delete Pattern |
+| ADR-012 | Timestamp as Milliseconds |
+| ADR-013 | IPC Wrapper Pattern for Frontend |
+| ADR-014 | TanStack Query for Server State |
+| ADR-015 | Type Generation via ts-rs |
+| ADR-016 | In-Memory Event Bus for Decoupled Coordination |
+| ADR-017 | Domain Event Types and Factory Pattern |
+| ADR-018 | Tauri Command Handlers (Thin IPC Layer) |
+| ADR-019 | Error Handling at Boundary with thiserror and anyhow |
+| ADR-020 | Correlation IDs for Distributed Tracing |
