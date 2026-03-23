@@ -26,6 +26,11 @@ impl TaskQueriesService {
         Self { db }
     }
 
+    // DEBT: Long function with duplicated logic — `get_tasks_sync` is 143 lines because
+    // it embeds a full 49-column inline `Task` row-mapping closure *and* rebuilds the same
+    // filter SQL twice (once for the data query, once for the COUNT query).
+    // Rationale: any column add/rename must be updated in three places; hard to test mapping in isolation.
+    // Next step: extract `fn map_task_row(row: &Row) -> rusqlite::Result<Task>` and reuse it for both queries.
     /// Get tasks with complex filtering and pagination (sync version)
     pub fn get_tasks_sync(&self, query: TaskQuery) -> Result<TaskListResponse, String> {
         let mut sql = format!(

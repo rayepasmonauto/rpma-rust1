@@ -203,6 +203,11 @@ impl ServiceBuilder {
     ///
     /// # Returns
     /// * `Result<AppStateType, Box<dyn std::error::Error>>` - The complete application state
+    // DEBT: High constructor/dependency count — single `build()` method initialises 24+ services
+    // in 232 lines; adding any service forces touching this function even if unrelated.
+    // Rationale: violates open/closed principle; merge conflicts here are common.
+    // Next step: split into private helpers grouped by dependency tier
+    // (e.g. `build_core_services`, `build_workflow_services`, `build_audit_services`).
     pub fn build(self) -> Result<AppStateType, Box<dyn std::error::Error>> {
         let db_instance = (*self.db).clone();
 

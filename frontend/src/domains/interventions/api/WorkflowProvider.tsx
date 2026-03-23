@@ -102,6 +102,13 @@ interface WorkflowContextType {
 
 const WorkflowContext = createContext<WorkflowContextType | undefined>(undefined);
 
+// DEBT: Mixed responsibilities — WorkflowProvider is 653 lines with 57 callbacks handling
+// data fetching, local step navigation, timing, photos, signatures, and progress calculation
+// all inside a single React Context Provider.
+// Rationale: unrelated concerns (e.g. photo upload, step navigation) re-render the entire
+// context consumers whenever any piece of state changes; hard to unit-test individual slices.
+// Next step: extract data-loading + mutation logic into a `useWorkflowData(taskId)` hook,
+// leaving the Provider as a thin connector — no public API changes needed.
 export function WorkflowProvider({
   children,
   taskId,
