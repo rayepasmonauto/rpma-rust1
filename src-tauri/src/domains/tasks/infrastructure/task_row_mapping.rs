@@ -8,6 +8,12 @@ use crate::db::FromSqlRow;
 use crate::domains::tasks::domain::models::task::{Task, TaskHistory, TaskPriority, TaskStatus};
 use rusqlite::Row;
 
+/// Deserialize an `Option<String>` column that contains JSON into `Option<T>`.
+/// Returns `None` if the column is NULL or if parsing fails.
+fn parse_json_opt<T: serde::de::DeserializeOwned>(raw: Option<String>) -> Option<T> {
+    raw.and_then(|s| serde_json::from_str(&s).ok())
+}
+
 /// Map a `rusqlite::Row` to a full `Task` entity.
 impl FromSqlRow for Task {
     fn from_row(row: &Row) -> Result<Self, rusqlite::Error> {
@@ -21,12 +27,8 @@ impl FromSqlRow for Task {
             vehicle_year: row.get(6)?, // Keep as TEXT/string
             vehicle_make: row.get(7)?,
             vin: row.get(8)?,
-            ppf_zones: row
-                .get::<_, Option<String>>(9)?
-                .and_then(|s| serde_json::from_str(&s).ok()),
-            custom_ppf_zones: row
-                .get::<_, Option<String>>(10)?
-                .and_then(|s| serde_json::from_str(&s).ok()),
+            ppf_zones: parse_json_opt(row.get::<_, Option<String>>(9)?),
+            custom_ppf_zones: parse_json_opt(row.get::<_, Option<String>>(10)?),
             status: row
                 .get::<_, String>(11)?
                 .parse::<TaskStatus>()

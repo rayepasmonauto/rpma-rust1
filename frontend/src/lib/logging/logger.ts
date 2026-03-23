@@ -51,6 +51,15 @@ export class RPMAFrontendLogger {
           return;
         }
 
+        // Filter out Next.js internal redirect signal (not a real error)
+        if (
+          (event.error as { digest?: string } | null)?.digest?.startsWith('NEXT_REDIRECT') ||
+          event.message?.includes('NEXT_REDIRECT')
+        ) {
+          event.preventDefault();
+          return;
+        }
+
         this.error(LogDomain.SYSTEM, 'Uncaught error', {
           message: event.message,
           filename: event.filename,

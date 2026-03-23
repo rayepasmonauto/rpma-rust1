@@ -61,6 +61,12 @@ import {
   QuoteConvertDialog,
 } from './QuoteConvertDialog';
 
+// DEBT: Monolith component — QuoteDetailPageContent is 643 lines rendering five distinct tabs
+// (details, items, images, documents, history) plus multiple dialogs inline.
+// Rationale: unrelated tab content shares a single render function; any tab change causes a
+// full component rebuild and the file is a chronic merge-conflict hotspot.
+// Next step: extract each `<TabsContent>` block into its own component
+// (e.g. `QuoteItemsTab`, `QuoteDocumentsTab`) — no prop API changes required.
 export function QuoteDetailPageContent() {
   const params = useParams();
   const router = useRouter();

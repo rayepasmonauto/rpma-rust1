@@ -203,6 +203,11 @@ impl ServiceBuilder {
     ///
     /// # Returns
     /// * `Result<AppStateType, Box<dyn std::error::Error>>` - The complete application state
+    // DEBT: High constructor/dependency count — single `build()` method initialises 24+ services
+    // in 232 lines; adding any service forces touching this function even if unrelated.
+    // Rationale: violates open/closed principle; merge conflicts here are common.
+    // Next step: split into private helpers grouped by dependency tier
+    // (e.g. `build_core_services`, `build_workflow_services`, `build_audit_services`).
     pub fn build(self) -> Result<AppStateType, Box<dyn std::error::Error>> {
         let db_instance = (*self.db).clone();
 
@@ -339,7 +344,7 @@ impl ServiceBuilder {
 
         // Initialize Quote Service (depends on QuoteRepository)
         let quote_service = Arc::new(
-            crate::domains::quotes::infrastructure::quote::QuoteService::new(
+            crate::domains::quotes::application::quote_service::QuoteService::new(
                 self.repositories.quote.clone()
                     as Arc<dyn crate::domains::quotes::domain::models::quote::IQuoteRepository>,
                 quote_event_bus,
@@ -361,7 +366,7 @@ impl ServiceBuilder {
         if let Err(e) = audit_service.init() {
             tracing::warn!("Audit service init failed (non-fatal): {}", e);
         }
-        let audit_log_handler = AuditLogHandler::new(audit_service);
+        let audit_log_handler = AuditLogHandler::new(audit_service.clone());
         event_bus.register_handler(audit_log_handler);
 
         register_handler(inventory_service.intervention_finalized_handler());
@@ -432,6 +437,7 @@ impl ServiceBuilder {
             }),
             trash_service,
             global_search_service,
+            audit_service,
         })
     }
 }

@@ -398,6 +398,12 @@ impl Repository<Photo, String> for PhotoRepository {
     }
 
     async fn save(&self, entity: Photo) -> RepoResult<Photo> {
+        // DEBT: Duplicated SQL param lists — INSERT and UPDATE blocks each enumerate all 38 columns
+        // independently; adding a new column or reordering requires editing both lists.
+        // Rationale: easy to miss one branch; INSERT/UPDATE column lists have diverged subtly
+        // (e.g. `created_at` only in INSERT) making diffs hard to review.
+        // Next step: introduce `fn photo_bind_params(entity: &Photo) -> impl Params` helper
+        // and share it between INSERT and UPDATE (use `INSERT OR REPLACE` or `UPSERT` if SQLite version allows).
         let exists = self.exists_by_id(entity.id.clone()).await?;
 
         if exists {

@@ -31,6 +31,12 @@ impl AuditLogHandler {
             .map_err(|e| format!("Audit log write failed: {}", e))
     }
 
+    // DEBT: Repeated conditional tree — 284-line `match` with near-identical `AuditEvent { … }`
+    // construction for every DomainEvent variant.
+    // Rationale: adding a new event requires copy-pasting the same struct literal; any field rename
+    // silently misses variants that were hand-copied.
+    // Next step: extract `fn make_audit_event(id, user_id, action, resource_id, resource_type,
+    // description, timestamp, metadata) -> AuditEvent` and call it from each arm.
     /// Map a domain event to an audit event
     fn map_to_audit_event(&self, event: &DomainEvent) -> AuditEvent {
         match event {

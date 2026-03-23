@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Calendar, Clock, AlertCircle, CheckCircle } from 'lucide-react';
-import { formatDate } from '@/lib/date-utils';
+import { formatDate } from '@/shared/utils';
 import { TaskDisplay } from '@/types/task.types';
 
 interface ScheduleCardProps {

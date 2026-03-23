@@ -110,21 +110,31 @@ pub async fn bootstrap_first_admin(
 /// Check if any admin users exist in the system.
 ///
 /// This is a pre-authentication bootstrap check — no session is required.
-/// It calls the user service directly without a request context.
+/// Delegates to `UsersFacade` via `UsersCommand::HasAdmins`; the facade
+/// branch does not inspect the context, so an unauthenticated context is safe.
 #[tauri::command]
 #[instrument(skip(state))]
 pub async fn has_admins(
     state: AppState<'_>,
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<bool>, AppError> {
-    // TODO: ADR Violation (ADR-018) - has_admins skips resolve_context! and contains business logic.
-    // It should call resolve_context! (or a specific unauthenticated version if intended)
-    // and delegate to an application service.
     let corr = crate::commands::init_correlation_context(&correlation_id, None);
-    debug!("Checking if admin users exist");
-    let has_admin = state.user_service.has_admins().await?;
-    debug!("Admin check completed: has_admins={}", has_admin);
-    Ok(ApiResponse::success(has_admin).with_correlation_id(Some(corr)))
+    // Intentionally unauthenticated: this is a pre-login bootstrap check.
+    // UsersCommand::HasAdmins does not inspect the context.
+    let ctx = crate::shared::context::RequestContext::unauthenticated(corr.clone());
+    let facade = UsersFacade::new();
+    let services = UsersServices {
+        account_manager: state.auth_service.clone()
+            as std::sync::Arc<dyn crate::shared::contracts::user_account::UserAccountManager>,
+        user_service: state.user_service.clone(),
+        event_bus: state.event_bus.clone(),
+    };
+    match facade.execute(UsersCommand::HasAdmins, &ctx, &services).await? {
+        UsersDomainResponse::HasAdmins(v) => {
+            Ok(ApiResponse::success(v).with_correlation_id(Some(corr)))
+        }
+        _ => Err(AppError::Internal("Unexpected response from has_admins".to_string())),
+    }
 }
 
 /// TODO: document

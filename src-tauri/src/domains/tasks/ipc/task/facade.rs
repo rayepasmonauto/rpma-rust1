@@ -184,29 +184,7 @@ pub async fn edit_task(
     Ok(ApiResponse::success(updated_task).with_correlation_id(Some(ctx.correlation_id.clone())))
 }
 
-/// Validate status change - thin delegate to policy service.
-pub fn validate_status_change(
-    current: &crate::domains::tasks::domain::models::task::TaskStatus,
-    new: &crate::domains::tasks::domain::models::task::TaskStatus,
-) -> Result<(), AppError> {
-    task_policy_service::validate_status_change(current, new)
-}
 
-/// Check permissions for task operations - thin delegate to policy service.
-pub fn check_task_permissions(
-    auth: &crate::shared::context::AuthContext,
-    task: &Task,
-    operation: &str,
-) -> Result<(), AppError> {
-    task_policy_service::check_task_permissions(auth, task, operation)
-}
-
-/// Validate that a Technician is not attempting to change restricted fields.
-pub fn enforce_technician_field_restrictions(
-    req: &crate::domains::tasks::domain::models::task::UpdateTaskRequest,
-) -> Result<(), AppError> {
-    task_policy_service::enforce_technician_field_restrictions(req)
-}
 
 async fn handle_crud_create(
     data: crate::domains::tasks::domain::models::task::CreateTaskRequest,
@@ -482,6 +460,7 @@ pub async fn task_crud(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domains::tasks::application::services::task_policy_service;
     use crate::commands::AppError;
     use crate::domains::tasks::domain::models::task::{
         Task, TaskPriority, TaskStatus, UpdateTaskRequest,
@@ -567,28 +546,28 @@ mod tests {
     fn test_admin_can_edit_any_task() {
         let auth = make_auth("admin-1", UserRole::Admin);
         let task = make_task(Some("tech-1"), TaskStatus::InProgress);
-        assert!(check_task_permissions(&auth, &task, "edit").is_ok());
+        assert!(task_policy_service::check_task_permissions(&auth, &task, "edit").is_ok());
     }
 
     #[test]
     fn test_supervisor_can_edit_any_task() {
         let auth = make_auth("sup-1", UserRole::Supervisor);
         let task = make_task(Some("tech-1"), TaskStatus::InProgress);
-        assert!(check_task_permissions(&auth, &task, "edit").is_ok());
+        assert!(task_policy_service::check_task_permissions(&auth, &task, "edit").is_ok());
     }
 
     #[test]
     fn test_technician_can_edit_own_assigned_task() {
         let auth = make_auth("tech-1", UserRole::Technician);
         let task = make_task(Some("tech-1"), TaskStatus::InProgress);
-        assert!(check_task_permissions(&auth, &task, "edit").is_ok());
+        assert!(task_policy_service::check_task_permissions(&auth, &task, "edit").is_ok());
     }
 
     #[test]
     fn test_technician_cannot_edit_unassigned_task() {
         let auth = make_auth("tech-1", UserRole::Technician);
         let task = make_task(Some("tech-other"), TaskStatus::InProgress);
-        let result = check_task_permissions(&auth, &task, "edit");
+        let result = task_policy_service::check_task_permissions(&auth, &task, "edit");
         assert!(result.is_err());
         match result.unwrap_err() {
             AppError::Authorization(msg) => {
@@ -602,7 +581,7 @@ mod tests {
     fn test_viewer_cannot_edit_task() {
         let auth = make_auth("viewer-1", UserRole::Viewer);
         let task = make_task(None, TaskStatus::Pending);
-        let result = check_task_permissions(&auth, &task, "edit");
+        let result = task_policy_service::check_task_permissions(&auth, &task, "edit");
         assert!(result.is_err());
     }
 
@@ -610,7 +589,7 @@ mod tests {
     fn test_viewer_can_view_task() {
         let auth = make_auth("viewer-1", UserRole::Viewer);
         let task = make_task(None, TaskStatus::Pending);
-        assert!(check_task_permissions(&auth, &task, "view").is_ok());
+        assert!(task_policy_service::check_task_permissions(&auth, &task, "view").is_ok());
     }
 
     // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ enforce_technician_field_restrictions tests ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
@@ -624,7 +603,7 @@ mod tests {
             lot_film: Some("LOT-123".to_string()),
             ..Default::default()
         };
-        assert!(enforce_technician_field_restrictions(&req).is_ok());
+        assert!(task_policy_service::enforce_technician_field_restrictions(&req).is_ok());
     }
 
     #[test]
@@ -633,7 +612,7 @@ mod tests {
             title: Some("New Title".to_string()),
             ..Default::default()
         };
-        let result = enforce_technician_field_restrictions(&req);
+        let result = task_policy_service::enforce_technician_field_restrictions(&req);
         assert!(result.is_err());
         match result.unwrap_err() {
             AppError::Authorization(msg) => {
@@ -650,7 +629,7 @@ mod tests {
             technician_id: Some("other-tech".to_string()),
             ..Default::default()
         };
-        let result = enforce_technician_field_restrictions(&req);
+        let result = task_policy_service::enforce_technician_field_restrictions(&req);
         assert!(result.is_err());
         match result.unwrap_err() {
             AppError::Authorization(msg) => {
@@ -668,7 +647,7 @@ mod tests {
             vehicle_plate: Some("NEW-PLATE".to_string()),
             ..Default::default()
         };
-        let result = enforce_technician_field_restrictions(&req);
+        let result = task_policy_service::enforce_technician_field_restrictions(&req);
         assert!(result.is_err());
         match result.unwrap_err() {
             AppError::Authorization(msg) => {
@@ -683,19 +662,19 @@ mod tests {
     #[test]
     fn test_technician_empty_request_passes() {
         let req = UpdateTaskRequest::default();
-        assert!(enforce_technician_field_restrictions(&req).is_ok());
+        assert!(task_policy_service::enforce_technician_field_restrictions(&req).is_ok());
     }
 
     // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ validate_status_change tests ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
     #[test]
     fn test_validate_status_change_valid() {
-        assert!(validate_status_change(&TaskStatus::Draft, &TaskStatus::Pending).is_ok());
+        assert!(task_policy_service::validate_status_change(&TaskStatus::Draft, &TaskStatus::Pending).is_ok());
     }
 
     #[test]
     fn test_validate_status_change_invalid_returns_task_invalid_transition() {
-        let result = validate_status_change(&TaskStatus::Completed, &TaskStatus::Draft);
+        let result = task_policy_service::validate_status_change(&TaskStatus::Completed, &TaskStatus::Draft);
         assert!(result.is_err());
         match result.unwrap_err() {
             AppError::TaskInvalidTransition(_) => {}

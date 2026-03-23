@@ -8,7 +8,7 @@
 use std::sync::Arc;
 
 use crate::db::Database;
-use crate::domains::interventions::application::contracts::InterventionCreator;
+use crate::domains::interventions::domain::contracts::InterventionCreator;
 use crate::domains::interventions::infrastructure::intervention_data::InterventionDataService;
 use crate::domains::interventions::infrastructure::workflow_validation::WorkflowValidationService;
 

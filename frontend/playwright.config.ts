@@ -13,13 +13,10 @@ const defaultProjects = [
 
 export default defineConfig({
   testDir: './tests/e2e',
-  testIgnore: [
-    'client-lifecycle.spec.ts',
-    'configuration-smoke.spec.ts',
-    'connectivity-smoke.spec.ts',
-    'intervention-management.spec.ts',
-    'inventory-management.spec.ts',
-  ],
+  timeout: 120 * 1000,
+  expect: {
+    timeout: 15000,
+  },
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

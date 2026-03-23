@@ -7,7 +7,9 @@
 export const taskStatusLabels: Record<string, string> = {
   draft: "Brouillon",
   assigned: "Assignée",
+  scheduled: "Planifiée",
   in_progress: "En cours",
+  on_hold: "En attente",
   completed: "Terminée",
   cancelled: "Annulée",
   archived: "Archivée",
@@ -15,6 +17,7 @@ export const taskStatusLabels: Record<string, string> = {
   overdue: "En retard",
   paused: "En pause",
   pending: "En attente",
+  invalid: "Invalide",
 };
 
 // Task Priority Labels

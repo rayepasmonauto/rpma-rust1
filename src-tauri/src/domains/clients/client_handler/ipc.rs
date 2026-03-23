@@ -31,34 +31,11 @@ impl ClientsFacade {
     }
 
     pub fn validate_client_id(&self, client_id: &str) -> Result<(), IpcAppError> {
-        if client_id.trim().is_empty() {
-            return Err(IpcAppError::Validation("client_id is required".to_string()));
-        }
-        Ok(())
+        ClientService::validate_client_id(client_id)
     }
 
     pub fn map_service_error(&self, context: &str, error: &str) -> IpcAppError {
-        let normalized = error.to_lowercase();
-        if normalized.contains("not found") {
-            IpcAppError::NotFound(format!("{}: {}", context, error))
-        } else if normalized.contains("permission")
-            || normalized.contains("only update")
-            || normalized.contains("only delete")
-        {
-            IpcAppError::Authorization(error.to_string())
-        } else if normalized.contains("validation")
-            || normalized.contains("invalid")
-            || normalized.contains("required")
-            || normalized.contains("cannot")
-            || normalized.contains("must")
-            || normalized.contains("already exists")
-            || normalized.contains("too long")
-            || normalized.contains("duplicate")
-        {
-            IpcAppError::Validation(error.to_string())
-        } else {
-            IpcAppError::db_sanitized(context, error)
-        }
+        ClientService::map_service_error(context, error)
     }
 }
 
@@ -110,23 +87,7 @@ fn check_client_access(
     permission: &str,
 ) -> Result<(), AppError> {
     let rate_limiter = state.auth_service.rate_limiter();
-    let rate_limit_key = format!("client_ops:{}", user_id);
-    if !rate_limiter
-        .check_and_record(&rate_limit_key, 100, 60)
-        .map_err(|e| AppError::internal_sanitized("rate_limit_check", &e))?
-    {
-        return Err(AppError::Validation(
-            "Rate limit exceeded. Please try again later.".to_string(),
-        ));
-    }
-    if !crate::shared::auth_middleware::AuthMiddleware::can_perform_client_operation(role, permission)
-    {
-        return Err(AppError::Authorization(format!(
-            "Insufficient permissions to {} clients",
-            permission
-        )));
-    }
-    Ok(())
+    ClientService::check_client_access(&rate_limiter, user_id, role, permission)
 }
 
 /// Create a new client.

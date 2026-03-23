@@ -264,7 +264,7 @@ impl Intervention {
         let mut errors = Vec::new();
 
         // Task ID should be a valid UUID
-        if uuid::Uuid::parse_str(&self.task_id).is_err() {
+        if !crate::shared::utils::uuid::is_valid_uuid(&self.task_id) {
             errors.push("Invalid task_id format - must be a valid UUID".to_string());
         }
 

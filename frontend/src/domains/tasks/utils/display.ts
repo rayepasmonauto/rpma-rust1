@@ -1,4 +1,5 @@
 import { Task } from '@/lib/backend';
+import { taskPriorityLabels, taskStatusLabels } from '@/lib/i18n/status-labels';
 
 /**
  * Centralized utilities for consistent task display across the application
@@ -94,37 +95,14 @@ export const getDashboardTaskDisplayTitle = (task: {
  * Get localized status text for display
  */
 export const getTaskDisplayStatus = (status: Task['status']): string => {
-  const statusMap: Record<Task['status'], string> = {
-    draft: 'Brouillon',
-    scheduled: 'Planifiée',
-    in_progress: 'En cours',
-    completed: 'Terminée',
-    cancelled: 'Annulée',
-    on_hold: 'En attente',
-    pending: 'En attente',
-    invalid: 'Invalide',
-    archived: 'Archivée',
-    failed: 'Échouée',
-    overdue: 'En retard',
-    assigned: 'Assignée',
-    paused: 'En pause'
-  };
-
-  return statusMap[status] || status;
+  return taskStatusLabels[status] || status;
 };
 
 /**
  * Get priority display text
  */
 export const getTaskDisplayPriority = (priority: Task['priority']): string => {
-  const priorityMap: Record<Task['priority'], string> = {
-    low: 'Basse',
-    medium: 'Moyenne',
-    high: 'Haute',
-    urgent: 'Urgente'
-  };
-
-  return priorityMap[priority] || priority;
+  return taskPriorityLabels[priority] || priority;
 };
 
 /**
