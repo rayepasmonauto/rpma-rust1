@@ -219,6 +219,13 @@ impl TaskCreationService {
     /// treated as non-fatal (the transaction is committed anyway) to preserve
     /// offline-first semantics: the task is always created even if sync is
     /// temporarily unavailable.
+    // DEBT: Long function with mixed levels of abstraction — `persist_task` (144 lines)
+    // does JSON serialisation, 49-column INSERT, sync-queue INSERT, and transaction management
+    // all inline with no helpers.
+    // Rationale: sync-queue logic is buried inside a persistence function; difficult to test or
+    // reuse independently (e.g. for bulk imports).
+    // Next step: extract `fn enqueue_sync(tx: &Transaction, task_id: &str, payload: &str, user_id: &str)`
+    // to isolate sync-queue logic without changing the public API.
     fn persist_task(&self, task: &Task, user_id: &str) -> Result<(), AppError> {
         let status_str = task.status.to_string();
         let priority_str = task.priority.to_string();

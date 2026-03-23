@@ -11,6 +11,12 @@ import {
 } from '@/lib/validation/api-schemas';
 import type { TaskWithDetails } from '@/types/task.types';
 import type { ServiceResponse } from '@/types/unified.types';
+// DEBT: Cross-domain import — tasks service directly imports `interventionsIpc` from the
+// interventions domain, coupling two bounded contexts at the service layer.
+// Rationale: violates ADR-003 (cross-domain communication must go through the event bus or
+// shared contracts); prevents independent testing of each domain's service.
+// Next step: expose the needed intervention lookup via a shared contract or an event (ADR-016)
+// and remove this direct import.
 // ❌ CROSS-DOMAIN IMPORT
 import { interventionsIpc } from '@/domains/interventions';
 import { taskIpc } from '../ipc/task.ipc';

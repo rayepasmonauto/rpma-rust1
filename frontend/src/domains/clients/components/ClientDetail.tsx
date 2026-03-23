@@ -51,6 +51,13 @@ export function ClientDetail({
   onCreateTask
 }: ClientDetailProps) {
 
+  // DEBT: Duplicated helper logic — `getStatusIcon` and `getStatusLabel` are defined locally
+  // here and redefined in at least 15+ other files (InventoryManager, MonitoringTab,
+  // IntegrationCard, ConfigurationPageContent, TaskListTable, TaskListCard, CalendarTaskCard, …).
+  // Rationale: status colours/labels diverge silently across the UI; `STATUS_CONFIG` in
+  // `components/ui/status-badge.tsx` already centralises this mapping but is not used here.
+  // Next step: delete both local helpers and replace calls with `<StatusBadge status={…} />` or
+  // import `STATUS_CONFIG` from `@/components/ui/status-badge`.
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':

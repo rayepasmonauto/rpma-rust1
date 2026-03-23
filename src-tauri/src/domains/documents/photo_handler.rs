@@ -2,6 +2,13 @@
 //!
 //! This module provides the flattened implementation of photo management,
 //! combining service logic and Tauri IPC commands.
+//!
+// DEBT: Mixed responsibilities — 1297-line file bundles domain types, PhotoService,
+// image-compression logic, thumbnail generation, and Tauri IPC commands.
+// Rationale: violates single-responsibility; any change to image processing forces a
+// recompile of the IPC layer and vice-versa.
+// Next step: extract `PhotoService` into `infrastructure/photo_service.rs` (no API break needed)
+// and leave only thin `document_*` IPC wrappers here.
 
 use image::{GenericImageView, ImageEncoder, ImageFormat};
 use rusqlite::params;
