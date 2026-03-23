@@ -1,6 +1,6 @@
 ﻿import React, { memo } from 'react';
 import { Clock, Wrench } from 'lucide-react';
-import { formatDate } from '@/lib/date-utils';
+import { formatDate } from '@/shared/utils';
 import { TaskWithDetails } from '@/types/task.types';
 
 interface TaskHeaderProps {

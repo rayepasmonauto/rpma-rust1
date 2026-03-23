@@ -31,6 +31,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { formatDateTime } from '@/shared/utils/date-formatters';
+import { taskStatusLabels } from '@/lib/i18n/status-labels';
 
 interface ClientDetailProps {
   client: ClientWithTasks;
@@ -64,16 +65,7 @@ export function ClientDetail({
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'Terminée';
-      case 'in_progress':
-        return 'En cours';
-      case 'pending':
-        return 'En attente';
-      default:
-        return status;
-    }
+    return taskStatusLabels[status] || status;
   };
 
   if (loading) {

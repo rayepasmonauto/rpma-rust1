@@ -15,6 +15,7 @@ import { getUserFullName } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { TaskWithDetails } from '@/types/task.types';
 import { formatDate, formatTime } from '@/shared/utils/date-formatters';
+import { taskPriorityLabels } from '@/lib/i18n/status-labels';
 
 interface TaskOverviewProps {
   task: TaskWithDetails;
@@ -37,18 +38,7 @@ function getPriorityColor(priority: string): string {
 }
 
 function getPriorityLabel(priority: string): string {
-  switch (priority?.toLowerCase()) {
-    case 'urgent':
-      return 'Urgente';
-    case 'high':
-      return 'Haute';
-    case 'medium':
-      return 'Moyenne';
-    case 'low':
-      return 'Basse';
-    default:
-      return 'Non définie';
-  }
+  return taskPriorityLabels[priority?.toLowerCase()] || 'Non définie';
 }
 
 const SectionHeader = ({ icon: Icon, title }: { icon: React.ElementType; title: string }) => (

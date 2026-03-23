@@ -299,41 +299,6 @@ export interface Client {
 }
 
 /**
- * Get status display label
- */
-export function getStatusLabel(status: string): string {
-  const statusLabels: Record<string, string> = {
-    draft: 'Draft',
-    scheduled: 'Scheduled',
-    in_progress: 'In Progress',
-    on_hold: 'On Hold',
-    completed: 'Completed',
-    cancelled: 'Cancelled',
-    pending: 'Pending',
-    invalid: 'Invalid',
-    archived: 'Archived',
-    failed: 'Failed',
-    overdue: 'Overdue',
-    assigned: 'Assigned',
-    paused: 'Paused'
-  };
-  return statusLabels[status] || status;
-}
-
-/**
- * Get priority display label
- */
-export function getPriorityLabel(priority: string): string {
-  const priorityLabels: Record<string, string> = {
-    low: 'Low',
-    medium: 'Medium',
-    high: 'High',
-    urgent: 'Urgent'
-  };
-  return priorityLabels[priority] || priority;
-}
-
-/**
  * Check if task is overdue
  */
 export function isTaskOverdue(task: Task): boolean {
