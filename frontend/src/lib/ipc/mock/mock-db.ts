@@ -689,28 +689,66 @@ export async function handleInvoke(command: string, args?: JsonObject): Promise<
           return state.clients.filter(c => c.name.toLowerCase().includes(query));
         }
         case 'List': {
-          const page = action.filters?.page ?? 1;
-          const limit = action.filters?.limit ?? 20;
+          let data = state.clients.filter(c => !c.deleted_at);
+          const filters = action.filters || {};
+          if (filters.customer_type) {
+            data = data.filter(c => c.customer_type === filters.customer_type);
+          }
+          if (filters.search) {
+            const q = filters.search.toLowerCase();
+            data = data.filter(c => c.name.toLowerCase().includes(q));
+          }
+          
+          const page = filters.page ?? 1;
+          const limit = filters.limit ?? 20;
           const start = (page - 1) * limit;
-          const data = state.clients.slice(start, start + limit);
+          const slice = data.slice(start, start + limit);
           return {
             data: {
-              data,
+              data: slice,
               pagination: {
                 page,
                 limit,
-                total: BigInt(state.clients.length),
-                total_pages: Math.max(1, Math.ceil(state.clients.length / limit))
+                total: BigInt(data.length),
+                total_pages: Math.max(1, Math.ceil(data.length / limit))
               },
               statistics: null
             }
           };
         }
         case 'ListWithTasks': {
-          return state.clients.map(client => ({
+          let data = state.clients.filter(c => !c.deleted_at);
+          const filters = action.filters || {};
+          if (filters.customer_type) {
+            data = data.filter(c => c.customer_type === filters.customer_type);
+          }
+          if (filters.search) {
+            const q = filters.search.toLowerCase();
+            data = data.filter(c => c.name.toLowerCase().includes(q));
+          }
+          
+          const page = filters.page ?? 1;
+          const limit = filters.limit ?? 20;
+          const start = (page - 1) * limit;
+          const slice = data.slice(start, start + limit);
+          
+          const results = slice.map(client => ({
             ...client,
             tasks: state.tasks.filter(t => t.client_id === client.id)
           }));
+
+          return {
+            data: {
+              data: results,
+              pagination: {
+                page,
+                limit,
+                total: BigInt(data.length),
+                total_pages: Math.max(1, Math.ceil(data.length / limit))
+              },
+              statistics: null
+            }
+          };
         }
         case 'Stats': {
           const totalClients = BigInt(state.clients.length);
@@ -1354,6 +1392,9 @@ export async function handleInvoke(command: string, args?: JsonObject): Promise<
     }
     case 'get_business_hours': {
       return null;
+    }
+    case 'upload_user_avatar': {
+      return '/mock-avatar.png';
     }
 
     default:

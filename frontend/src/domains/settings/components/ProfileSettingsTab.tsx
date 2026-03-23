@@ -231,13 +231,15 @@ export function ProfileSettingsTab({ user, profile }: ProfileSettingsTabProps) {
         file.type
       );
 
-      setUserSettings((prev) => prev ? ({
-        ...prev,
-        profile: {
-          ...prev.profile,
-          avatar_url: avatarUrl,
-        },
-      }) : prev);
+      if (avatarUrl && typeof avatarUrl === 'string') {
+        setUserSettings((prev) => prev ? ({
+          ...prev,
+          profile: {
+            ...prev.profile,
+            avatar_url: avatarUrl,
+          },
+        }) : prev);
+      }
 
       logInfo('Avatar uploaded successfully', { userId: user.user_id, avatarUrl });
 
