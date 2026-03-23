@@ -50,7 +50,7 @@ impl InterventionValidationService {
         user_id: &str,
     ) -> InterventionResult<()> {
         // Validate task_id is a valid UUID
-        if uuid::Uuid::parse_str(&request.task_id).is_err() {
+        if !crate::shared::utils::uuid::is_valid_uuid(&request.task_id) {
             return Err(InterventionError::Validation(format!(
                 "Invalid task_id format: {} - must be a valid UUID",
                 request.task_id

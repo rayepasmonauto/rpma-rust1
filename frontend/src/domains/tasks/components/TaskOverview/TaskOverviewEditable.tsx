@@ -26,6 +26,7 @@ import {
 } from '@/shared/ui/inline-edit';
 import { TaskWithDetails } from '@/types/task.types';
 import { useInlineEditTask } from '../../hooks/useInlineEditTask';
+import { taskPriorityLabels } from '@/lib/i18n/status-labels';
 
 interface TaskOverviewEditableProps {
   task: TaskWithDetails;
@@ -48,18 +49,7 @@ function getPriorityColor(priority: string): string {
 }
 
 function getPriorityLabel(priority: string): string {
-  switch (priority?.toLowerCase()) {
-    case 'urgent':
-      return 'Urgente';
-    case 'high':
-      return 'Haute';
-    case 'medium':
-      return 'Moyenne';
-    case 'low':
-      return 'Basse';
-    default:
-      return 'Non définie';
-  }
+  return taskPriorityLabels[priority?.toLowerCase()] || 'Non définie';
 }
 
 const PRIORITY_OPTIONS = [

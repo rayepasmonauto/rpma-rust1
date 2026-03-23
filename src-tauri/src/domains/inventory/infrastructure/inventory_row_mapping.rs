@@ -7,6 +7,12 @@ use crate::domains::inventory::domain::models::material::{
 };
 use rusqlite::Row;
 
+/// Deserialize an `Option<String>` column that contains JSON into `Option<T>`.
+/// Returns `None` if the column is NULL or if parsing fails.
+fn parse_json_opt<T: serde::de::DeserializeOwned>(raw: Option<String>) -> Option<T> {
+    raw.and_then(|s| serde_json::from_str(&s).ok())
+}
+
 fn parse_material_type(material_type: &str) -> rusqlite::Result<MaterialType> {
     match material_type {
         "ppf_film" => Ok(MaterialType::PpfFilm),
@@ -76,9 +82,7 @@ impl FromSqlRow for Material {
             },
             brand: row.get("brand")?,
             model: row.get("model")?,
-            specifications: row
-                .get::<_, Option<String>>("specifications")?
-                .and_then(|s| serde_json::from_str(&s).ok()),
+            specifications: parse_json_opt(row.get::<_, Option<String>>("specifications")?),
             unit_of_measure: parse_unit_of_measure(&unit_str),
             current_stock: row.get("current_stock")?,
             minimum_stock: row.get("minimum_stock")?,
@@ -93,9 +97,7 @@ impl FromSqlRow for Material {
             certification: row.get("certification")?,
             expiry_date: row.get("expiry_date")?,
             batch_number: row.get("batch_number")?,
-            serial_numbers: row
-                .get::<_, Option<String>>("serial_numbers")?
-                .and_then(|s| serde_json::from_str(&s).ok()),
+            serial_numbers: parse_json_opt(row.get::<_, Option<String>>("serial_numbers")?),
             is_active: row.get::<_, i32>("is_active")? != 0,
             is_discontinued: row.get::<_, i32>("is_discontinued")? != 0,
             is_expired: false,
