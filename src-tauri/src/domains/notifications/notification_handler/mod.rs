@@ -77,6 +77,7 @@ fn notifications_facade(state: &AppState<'_>) -> super::facade::NotificationsFac
         state.db.clone(),
         state.repositories.cache.clone(),
         state.message_service.clone(),
+        state.event_bus.clone(),
     )
 }
 
@@ -317,7 +318,6 @@ pub async fn create_notification(
         notification_id = %created.id,
         "Notification created"
     );
-    helpers::publish_notification_event(&state.event_bus, &created);
     Ok(ApiResponse::success(created).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -356,37 +356,5 @@ pub async fn send_notification(
         notification_id = %created.id,
         "Notification sent"
     );
-    helpers::publish_notification_event(&state.event_bus, &created);
     Ok(ApiResponse::success(created).with_correlation_id(Some(ctx.correlation_id)))
-}
-
-// ── Private helpers ──────────────────────────────────────────────────────────
-
-mod helpers {
-    use super::super::models::Notification;
-    use crate::shared::services::event_bus::{event_factory, EventPublisher, InMemoryEventBus};
-    use std::sync::Arc;
-
-    /// Build and publish a `NotificationReceived` domain event.
-    ///
-    /// Extracted from `create_notification` / `send_notification` to eliminate
-    /// duplication.  When the domain gains a full application layer
-    /// (TODO(ADR-001)) this should move there.
-    pub(super) fn publish_notification_event(
-        event_bus: &Arc<InMemoryEventBus>,
-        notification: &Notification,
-    ) {
-        let notif_event = event_factory::notification_received(
-            notification.id.clone(),
-            notification.user_id.clone(),
-            notification.message.clone(),
-        );
-        if let Err(e) = event_bus.publish(notif_event) {
-            tracing::warn!(
-                notification_id = %notification.id,
-                "Failed to publish NotificationReceived event: {}",
-                e
-            );
-        }
-    }
 }

@@ -1,99 +1,82 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { notificationKeys } from "@/lib/query-keys";
+import { notificationApi } from "@/lib/ipc/notification";
 import { useAuth } from "@/shared/hooks/useAuth";
 // ❌ CROSS-DOMAIN IMPORT — TODO(ADR-002): Move to shared/ or use public index
 import { useSettings } from "@/domains/settings/api/useSettings";
 import type { Notification } from "../api/notificationTypes";
-import { getNotifications } from "../services/notificationActions";
 import { isInQuietHoursAt } from "../services/quietHours";
+
+const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 export function useNotificationUpdates() {
   const { user } = useAuth();
   const { settings } = useSettings();
-  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const mountedRef = useRef(true);
 
-  const [knownNotificationIds, setKnownNotificationIds] = useState<Set<string>>(
-    new Set(),
-  );
+  // Keep a ref of previously-known notification IDs so we can detect new ones
+  // across refetches without causing re-renders or stale closure issues.
+  const knownIdsRef = useRef<Set<string>>(new Set());
+  const initializedRef = useRef(false);
 
+  const { data } = useQuery({
+    queryKey: notificationKeys.lists(),
+    queryFn: async () => {
+      const result = await notificationApi.get();
+      return result;
+    },
+    enabled: !!user?.token,
+    refetchInterval: POLL_INTERVAL,
+    // Only refetch when the tab is visible (mirrors the old visibilityState check)
+    refetchIntervalInBackground: false,
+    staleTime: 60_000,
+  });
+
+  // Side-effect: show toasts for newly-discovered notifications
   useEffect(() => {
-    mountedRef.current = true;
+    if (!data?.notifications) return;
 
-    // Fetch initial notifications
-    if (user?.token) {
-      getNotifications().then((result) => {
-        if (!mountedRef.current) return;
-        if (result.success && result.data) {
-          setKnownNotificationIds(
-            new Set(
-              result.data.notifications.map(
-                (notification: Notification) => notification.id,
-              ),
-            ),
-          );
-        }
-      });
+    const currentIds = new Set(
+      data.notifications.map((n: Notification) => n.id),
+    );
+
+    if (!initializedRef.current) {
+      // First load — seed known IDs without toasting
+      knownIdsRef.current = currentIds;
+      initializedRef.current = true;
+      return;
     }
 
-    function startPolling() {
-      if (!mountedRef.current || !user?.token) return;
+    const notificationSettings = settings?.notifications;
 
-      // Polling is a 5-minute fallback only — real-time updates arrive via the
-      // Tauri `notification:received` event (useTauriEvent.ts → notificationKeys.all).
-      pollTimerRef.current = setInterval(async () => {
-        if (!mountedRef.current) return;
-        if (document.visibilityState !== "visible") return;
+    data.notifications.forEach((notification: Notification) => {
+      if (knownIdsRef.current.has(notification.id)) return;
 
-        const result = await getNotifications();
-        if (result.success && result.data) {
-          setKnownNotificationIds((prevIds) => {
-            const newIds = new Set(prevIds);
-            const newNotifications = result.data.notifications.filter(
-              (notification: Notification) => !prevIds.has(notification.id),
-            );
+      const shouldSuppressToast =
+        !notificationSettings?.in_app_enabled ||
+        !!notification.read ||
+        !notificationSettings ||
+        isInQuietHoursAt(
+          notificationSettings,
+          new Date(notification.created_at).getTime(),
+        );
 
-            // Show toast for new unread notifications
-            newNotifications.forEach((notification: Notification) => {
-              const notificationSettings = settings?.notifications;
-              const shouldSuppressToast =
-                !notificationSettings?.in_app_enabled ||
-                !!notification.read ||
-                !notificationSettings ||
-                isInQuietHoursAt(
-                  notificationSettings,
-                  new Date(notification.created_at).getTime(),
-                );
-
-              if (!shouldSuppressToast) {
-                toast(notification.title, {
-                  description: notification.message,
-                  action: {
-                    label: "View",
-                    onClick: () => {
-                      window.location.href = notification.entity_url;
-                    },
-                  },
-                });
-              }
-              newIds.add(notification.id);
-            });
-
-            return newIds;
-          });
-        }
-      }, 300000); // fallback poll — real-time path: Tauri event → useTauriEvent.ts
-    }
-
-    startPolling();
-
-    return () => {
-      mountedRef.current = false;
-      if (pollTimerRef.current) {
-        clearInterval(pollTimerRef.current);
+      if (!shouldSuppressToast) {
+        toast(notification.title, {
+          description: notification.message,
+          action: {
+            label: "View",
+            onClick: () => {
+              window.location.href = notification.entity_url;
+            },
+          },
+        });
       }
-    };
-  }, [settings?.notifications, user?.token]);
+    });
+
+    knownIdsRef.current = currentIds;
+  }, [data, settings?.notifications]);
 }

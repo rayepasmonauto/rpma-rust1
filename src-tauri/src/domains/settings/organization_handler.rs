@@ -6,7 +6,6 @@
 
 use tracing::instrument;
 
-use super::application::SettingsService;
 use super::models::*;
 use crate::commands::{init_correlation_context, ApiResponse, AppError, AppState};
 use crate::resolve_context;
@@ -28,8 +27,7 @@ pub async fn get_onboarding_status(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<OnboardingStatus>, AppError> {
     let correlation_id = init_correlation_context(&correlation_id, None);
-    let service = SettingsService::new(state.db.clone());
-    let status = service.get_onboarding_status()?;
+    let status = state.settings_service.get_onboarding_status()?;
     Ok(ApiResponse::success(status).with_correlation_id(Some(correlation_id)))
 }
 
@@ -41,8 +39,7 @@ pub async fn complete_onboarding(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<Organization>, AppError> {
     let correlation_id = init_correlation_context(&correlation_id, None);
-    let service = SettingsService::new(state.db.clone());
-    let organization = service.complete_onboarding(&data)?;
+    let organization = state.settings_service.complete_onboarding(&data)?;
     Ok(ApiResponse::success(organization).with_correlation_id(Some(correlation_id)))
 }
 
@@ -53,8 +50,7 @@ pub async fn get_organization(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<Organization>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
-    let service = SettingsService::new(state.db.clone());
-    let organization = service.get_organization(&ctx)?;
+    let organization = state.settings_service.get_organization(&ctx)?;
     Ok(ApiResponse::success(organization).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -66,8 +62,7 @@ pub async fn update_organization(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<Organization>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let service = SettingsService::new(state.db.clone());
-    let organization = service.update_organization(&ctx, &data)?;
+    let organization = state.settings_service.update_organization(&ctx, &data)?;
     Ok(ApiResponse::success(organization).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -78,14 +73,13 @@ pub async fn upload_logo(
     state: AppState<'_>,
 ) -> Result<ApiResponse<Organization>, AppError> {
     let ctx = resolve_context!(&state, &request.correlation_id, UserRole::Admin);
-    let service = SettingsService::new(state.db.clone());
     // TODO(ADR-001): extract business logic to application/
     let update_request = UpdateOrganizationRequest {
         logo_url: request.file_path,
         logo_data: request.base64_data,
         ..Default::default()
     };
-    let organization = service.update_organization(&ctx, &update_request)?;
+    let organization = state.settings_service.update_organization(&ctx, &update_request)?;
     Ok(ApiResponse::success(organization).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -96,8 +90,7 @@ pub async fn get_organization_settings(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<OrganizationSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
-    let service = SettingsService::new(state.db.clone());
-    let settings = service.get_organization_settings(&ctx)?;
+    let settings = state.settings_service.get_organization_settings(&ctx)?;
     Ok(ApiResponse::success(settings).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -109,7 +102,6 @@ pub async fn update_organization_settings(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<OrganizationSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let service = SettingsService::new(state.db.clone());
-    let settings = service.update_organization_settings(&ctx, &data)?;
+    let settings = state.settings_service.update_organization_settings(&ctx, &data)?;
     Ok(ApiResponse::success(settings).with_correlation_id(Some(ctx.correlation_id)))
 }

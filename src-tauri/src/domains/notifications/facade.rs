@@ -11,6 +11,8 @@ use crate::shared::services::cross_domain::{UserSettings, UserSettingsRepository
 use crate::shared::ipc::errors::AppError;
 use crate::shared::repositories::cache::Cache;
 
+use crate::shared::services::event_bus::{event_factory, EventPublisher, InMemoryEventBus};
+
 use super::models::{
     Message, MessageListResponse, MessageQuery, MessageTemplate, Notification,
     NotificationPreferences, SendMessageRequest, UpdateNotificationPreferencesRequest,
@@ -30,15 +32,22 @@ pub struct NotificationsFacade {
     db: Arc<Database>,
     cache: Arc<Cache>,
     message_service: Arc<MessageService>,
+    event_bus: Arc<InMemoryEventBus>,
 }
 
 impl NotificationsFacade {
     /// Create a new facade.
-    pub fn new(db: Arc<Database>, cache: Arc<Cache>, message_service: Arc<MessageService>) -> Self {
+    pub fn new(
+        db: Arc<Database>,
+        cache: Arc<Cache>,
+        message_service: Arc<MessageService>,
+        event_bus: Arc<InMemoryEventBus>,
+    ) -> Self {
         Self {
             db,
             cache,
             message_service,
+            event_bus,
         }
     }
 
@@ -88,16 +97,33 @@ impl NotificationsFacade {
             .map_err(|e| AppError::Database(format!("Failed to delete notification: {}", e)))
     }
 
-    /// Persist a new in-app notification.
+    /// Persist a new in-app notification and publish a domain event.
     pub async fn create_notification(
         &self,
         notification: Notification,
     ) -> Result<Notification, AppError> {
         use crate::shared::repositories::base::Repository;
-        self.notification_repo()
+        let saved = self
+            .notification_repo()
             .save(notification)
             .await
-            .map_err(|e| AppError::Database(format!("Failed to create notification: {}", e)))
+            .map_err(|e| AppError::Database(format!("Failed to create notification: {}", e)))?;
+
+        // ADR-016: Publish domain event so the frontend is notified in real-time
+        let event = event_factory::notification_received(
+            saved.id.clone(),
+            saved.user_id.clone(),
+            saved.message.clone(),
+        );
+        if let Err(e) = self.event_bus.publish(event) {
+            tracing::warn!(
+                notification_id = %saved.id,
+                "Failed to publish NotificationReceived event: {}",
+                e
+            );
+        }
+
+        Ok(saved)
     }
 
     // ── Messages ──────────────────────────────────────────────────────────────

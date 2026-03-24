@@ -8,6 +8,7 @@
 
 mod harness;
 
+use std::sync::Arc;
 use chrono::Utc;
 use rpma_ppf_intervention::domains::settings::UserSettingsRepository;
 use rpma_ppf_intervention::shared::contracts::auth::UserRole;

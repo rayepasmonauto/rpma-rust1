@@ -18,7 +18,6 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::domains::settings::application::settings_service::SettingsService;
     use crate::domains::settings::models::GeneralSettings;
     use crate::shared::contracts::auth::UserRole;
     use crate::shared::ipc::errors::AppError;
@@ -33,7 +32,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Admin));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let result = service.get_app_settings(&ctx);
         assert!(result.is_ok(), "Admin should read app settings: {:?}", result);
     }
@@ -44,7 +43,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Supervisor));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let result = service.get_app_settings(&ctx);
         assert!(matches!(result, Err(AppError::Authorization(_))),
             "Supervisor should not read app settings, got: {:?}", result);
@@ -56,7 +55,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Technician));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let result = service.get_app_settings(&ctx);
         assert!(matches!(result, Err(AppError::Authorization(_))),
             "Technician should not read app settings, got: {:?}", result);
@@ -68,7 +67,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Viewer));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let result = service.get_app_settings(&ctx);
         assert!(matches!(result, Err(AppError::Authorization(_))),
             "Viewer should not read app settings, got: {:?}", result);
@@ -82,7 +81,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Admin));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let result = service.update_general_settings(&ctx, GeneralSettings::default());
         assert!(result.is_ok(), "Admin should update general settings: {:?}", result);
     }
@@ -93,7 +92,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Supervisor));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let result = service.update_general_settings(&ctx, GeneralSettings::default());
         assert!(matches!(result, Err(AppError::Authorization(_))),
             "Supervisor should not update general settings, got: {:?}", result);
@@ -105,7 +104,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Technician));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let result = service.update_general_settings(&ctx, GeneralSettings::default());
         assert!(matches!(result, Err(AppError::Authorization(_))),
             "Technician should not update general settings, got: {:?}", result);
@@ -117,7 +116,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Viewer));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let result = service.update_general_settings(&ctx, GeneralSettings::default());
         assert!(matches!(result, Err(AppError::Authorization(_))),
             "Viewer should not update general settings, got: {:?}", result);
@@ -135,7 +134,7 @@ mod tests {
             state.session_store.set(make_test_session(role.clone()));
             let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-            let service = SettingsService::new(state.db.clone());
+            let service = state.settings_service.clone();
             // RBAC: all roles are permitted; any error must NOT be Authorization.
             let result = service.get_user_settings(&ctx);
             assert!(
@@ -154,7 +153,7 @@ mod tests {
             state.session_store.set(make_test_session(role.clone()));
             let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-            let service = SettingsService::new(state.db.clone());
+            let service = state.settings_service.clone();
             let result = service.get_organization_settings(&ctx);
             assert!(result.is_ok(), "Role {:?} should read org settings: {:?}", role, result);
         }
@@ -168,7 +167,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Admin));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let req = crate::domains::settings::models::UpdateOrganizationSettingsRequest {
             settings: std::collections::HashMap::new(),
         };
@@ -182,7 +181,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Supervisor));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let req = crate::domains::settings::models::UpdateOrganizationSettingsRequest {
             settings: std::collections::HashMap::new(),
         };
@@ -197,7 +196,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Viewer));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let req = crate::domains::settings::models::UpdateOrganizationSettingsRequest {
             settings: std::collections::HashMap::new(),
         };
@@ -206,4 +205,3 @@ mod tests {
             "Viewer should not update org settings, got: {:?}", result);
     }
 }
-

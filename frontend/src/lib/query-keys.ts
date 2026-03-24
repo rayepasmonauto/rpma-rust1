@@ -1,5 +1,14 @@
 // ─── Existing key factories (kept verbatim) ────────────────────────────────
 
+/** User domain query keys */
+export const userKeys = {
+  all: ["users"] as const,
+  lists: () => [...userKeys.all, "list"] as const,
+  list: (limit: number, offset: number) =>
+    [...userKeys.lists(), limit, offset] as const,
+  detail: (id: string) => [...userKeys.all, "detail", id] as const,
+};
+
 export const interventionKeys = {
   all: ["interventions"],
   byTask: (taskId: string) => [...interventionKeys.all, "task", taskId],
@@ -41,6 +50,15 @@ export const taskKeys = {
   lists: () => [...taskKeys.all, "list"],
   byId: (taskId: string) => [...taskKeys.all, taskId],
   history: (taskId: string) => [...taskKeys.all, taskId, "history"],
+  checklist: (taskId: string) => [...taskKeys.all, taskId, "checklist"],
+  assignment: (taskId: string, userId: string) => [
+    ...taskKeys.all,
+    taskId,
+    "assignment",
+    userId,
+  ],
+  availability: (taskId: string) => [...taskKeys.all, taskId, "availability"],
+  statusDistribution: () => [...taskKeys.all, "status-distribution"],
 };
 
 export const quoteKeys = {
@@ -83,6 +101,8 @@ export const inventoryKeys = {
   suppliers: () => [...inventoryKeys.all, "suppliers"],
   reports: () => [...inventoryKeys.all, "reports"],
   dashboard: () => [...inventoryKeys.all, "dashboard"],
+  interventionConsumption: (interventionId: string) =>
+    [...inventoryKeys.all, "intervention-consumption", interventionId] as const,
 };
 
 // ─── New key factories ──────────────────────────────────────────────────────
@@ -148,4 +168,17 @@ export const adminKeys = {
   /** System-level configurations (AdminConfiguration[]) */
   configuration: (category?: string) =>
     [...adminKeys.all, "configuration", category ?? ""] as const,
+};
+
+/** System / health-check query keys */
+export const systemKeys = {
+  all: ["system"] as const,
+  health: () => [...systemKeys.all, "health"] as const,
+};
+
+/** Security settings query keys (settings domain security tab) */
+export const securityKeys = {
+  all: ["security"] as const,
+  sessions: () => [...securityKeys.all, "sessions"] as const,
+  timeoutConfig: () => [...securityKeys.all, "timeout-config"] as const,
 };

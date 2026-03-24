@@ -1,36 +1,60 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import { useHealthCheck } from '../useHealthCheck';
+import React from "react";
+import { renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useHealthCheck } from "../useHealthCheck";
 
 const mockSafeInvoke = jest.fn();
 
-jest.mock('@/lib/ipc', () => ({
+jest.mock("@/lib/ipc", () => ({
   safeInvoke: (...args: unknown[]) => mockSafeInvoke(...args),
-  IPC_COMMANDS: { SYSTEM_HEALTH_CHECK: 'system_health_check' },
+  IPC_COMMANDS: { SYSTEM_HEALTH_CHECK: "system_health_check" },
 }));
 
-describe('useHealthCheck', () => {
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+
+  Wrapper.displayName = "QueryWrapper";
+
+  return Wrapper;
+};
+
+describe("useHealthCheck", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('returns a healthy status when the database check succeeds', async () => {
-    mockSafeInvoke.mockResolvedValue({ db: true, version: '0.1.0' });
+  it("returns a healthy status when the database check succeeds", async () => {
+    mockSafeInvoke.mockResolvedValue({ db: true, version: "0.1.0" });
 
-    const { result } = renderHook(() => useHealthCheck());
+    const { result } = renderHook(() => useHealthCheck(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isHealthy).toBe(true);
     });
 
-    expect(result.current.status).toEqual({ db: true, version: '0.1.0' });
+    expect(result.current.status).toEqual({ db: true, version: "0.1.0" });
     expect(result.current.hasFailed).toBe(false);
-    expect(mockSafeInvoke).toHaveBeenCalledWith('system_health_check');
+    expect(mockSafeInvoke).toHaveBeenCalledWith("system_health_check");
   });
 
-  it('marks the banner state as failed when the database check errors', async () => {
-    mockSafeInvoke.mockRejectedValue(new Error('Database unavailable'));
+  it("marks the banner state as failed when the database check errors", async () => {
+    mockSafeInvoke.mockRejectedValue(new Error("Database unavailable"));
 
-    const { result } = renderHook(() => useHealthCheck());
+    const { result } = renderHook(() => useHealthCheck(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.hasFailed).toBe(true);
@@ -40,8 +64,10 @@ describe('useHealthCheck', () => {
     expect(result.current.status).toBeNull();
   });
 
-  it('does not run when disabled', async () => {
-    const { result } = renderHook(() => useHealthCheck({ enabled: false }));
+  it("does not run when disabled", async () => {
+    const { result } = renderHook(() => useHealthCheck({ enabled: false }), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.hasFailed).toBe(false);

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { InterventionStep, StepType } from "@/lib/backend";
-import { interventionKeys } from "@/lib/query-keys";
+import { interventionKeys, taskKeys, inventoryKeys } from "@/lib/query-keys";
 import type { MaterialConsumption } from "@/shared/types/inventory.types";
 import type { Intervention } from "@/shared/types";
 import { useTranslation } from "@/shared/hooks";
@@ -33,7 +33,7 @@ import {
   printCompletedInterventionReport,
   saveCompletedInterventionReport,
 } from "../services/completed-task-report.service";
-import { taskGateway } from "../api/taskGateway";
+import { taskIpc } from "../ipc/task.ipc";
 import { useCustomerDisplayName, useCustomerInfo } from "./useNormalizedTask";
 
 export function useCompletedTaskPage() {
@@ -44,10 +44,25 @@ export function useCompletedTaskPage() {
   const queryClient = useQueryClient();
   const { session } = useAuth();
 
-  const [task, setTask] = useState<TaskWithDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [materials, setMaterials] = useState<MaterialConsumption[]>([]);
+  // ✅ ADR-014: Server state via useQuery instead of useState + useEffect
+  const {
+    data: taskData,
+    isLoading: taskLoading,
+    error: taskError,
+    refetch: refetchTask,
+  } = useQuery({
+    queryKey: taskKeys.byId(taskId),
+    queryFn: async () => {
+      const result = await taskIpc.get(taskId);
+      if (!result) throw new Error("Task not found");
+      return result as TaskWithDetails;
+    },
+    enabled: !!taskId,
+  });
+  // Map to TaskWithDetails | null for backward-compatible return type
+  const task = taskData ?? null;
+
+  // UI-only state (ADR-014: useState is correct for local UI state)
   const [expandedWorkflowSteps, setExpandedWorkflowSteps] = useState<
     Set<string>
   >(new Set());
@@ -61,6 +76,18 @@ export function useCompletedTaskPage() {
   const { data: interventionData } = useInterventionData(taskId);
   const workflowSteps = useWorkflowStepData(interventionData || null);
   const fullInterventionData = interventionData as Intervention | null;
+
+  // ✅ ADR-014: Dependent query for materials consumption
+  const { data: materials = [] } = useQuery<MaterialConsumption[]>({
+    queryKey: inventoryKeys.interventionConsumption(interventionData?.id ?? ""),
+    queryFn: () =>
+      inventoryIpc.getInterventionConsumption(interventionData!.id),
+    enabled: !!interventionData?.id && !!session?.token,
+  });
+
+  // Derive loading/error for backward-compatible return interface
+  const loading = taskLoading;
+  const error = taskError?.message ?? null;
 
   const workflowStepsArray = useMemo(
     () =>
@@ -83,52 +110,12 @@ export function useCompletedTaskPage() {
     [workflowSteps],
   );
 
-  const fetchTask = useCallback(async () => {
-    if (!taskId) {
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const result = await taskGateway.getTaskById(taskId);
-      if (result.error) {
-        throw new Error(result.error);
-      }
-
-      setTask(result.data || null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch task");
-      console.error("Error fetching task:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [taskId]);
-
-  useEffect(() => {
-    void fetchTask();
-  }, [fetchTask]);
-
   // Redirect if the intervention is loaded but not yet completed
   useEffect(() => {
     if (interventionData && interventionData.status !== "completed") {
       router.push(`/tasks/${taskId}/workflow/ppf`);
     }
   }, [interventionData, router, taskId]);
-
-  // Fetch materials consumption when an intervention ID is known
-  useEffect(() => {
-    if (!interventionData?.id || !session?.token) return;
-
-    inventoryIpc
-      .getInterventionConsumption(interventionData.id)
-      .then(setMaterials)
-      .catch((err) => {
-        console.error("Failed to load materials consumption:", err);
-        setMaterials([]);
-      });
-  }, [interventionData?.id, session?.token]);
 
   const handleSaveReport = useCallback(async () => {
     if (!task || !fullInterventionData?.id) {
@@ -363,6 +350,6 @@ export function useCompletedTaskPage() {
     handleEditStep,
     handleDownloadStepData,
     toggleWorkflowStep,
-    refetchTask: fetchTask,
+    refetchTask,
   };
 }

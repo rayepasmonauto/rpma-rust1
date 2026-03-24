@@ -1,66 +1,53 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import { structuredLogger as logger, LogDomain } from '@/shared/utils';
+import { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { structuredLogger as logger, LogDomain } from "@/shared/utils";
+import { useOnboardingStatus } from "../api/useOnboarding";
 
-const ONBOARDING_ROUTE = '/onboarding';
-const SKIP_ONBOARDING_ROUTES = [ONBOARDING_ROUTE, '/login', '/signup', '/bootstrap-admin'];
+const ONBOARDING_ROUTE = "/onboarding";
+const SKIP_ONBOARDING_ROUTES = [
+  ONBOARDING_ROUTE,
+  "/login",
+  "/signup",
+  "/bootstrap-admin",
+];
 
 export function useOnboardingCheck(
   user: { user_id: string } | null,
   authLoading: boolean,
-  isAuthenticating: boolean
+  isAuthenticating: boolean,
 ) {
   const router = useRouter();
   const pathname = usePathname();
-  const [checking, setChecking] = useState(false);
+
+  const shouldSkip =
+    authLoading ||
+    isAuthenticating ||
+    !user ||
+    SKIP_ONBOARDING_ROUTES.includes(pathname);
+
+  const { data: status, isLoading: checking } = useOnboardingStatus();
 
   useEffect(() => {
-    if (authLoading || isAuthenticating || !user) return;
+    if (shouldSkip || !status) return;
 
-    const check = async () => {
-      if (SKIP_ONBOARDING_ROUTES.includes(pathname)) {
-        return;
-      }
+    logger.debug(LogDomain.AUTH, "Onboarding check result", {
+      completed: status.completed,
+      has_organization: status.has_organization,
+      has_admin_user: status.has_admin_user,
+      pathname,
+      user_id: user!.user_id,
+    });
 
-      setChecking(true);
-      logger.debug(LogDomain.AUTH, 'Onboarding check started', {
+    if (!status.completed && pathname !== ONBOARDING_ROUTE) {
+      logger.info(LogDomain.AUTH, "Redirecting to onboarding", {
         pathname,
-        user_id: user.user_id,
+        user_id: user!.user_id,
       });
-
-      try {
-        const { ipcClient } = await import('@/lib/ipc/client');
-        const status = await ipcClient.organization.getOnboardingStatus();
-
-        logger.debug(LogDomain.AUTH, 'Onboarding check result', {
-          completed: status.completed,
-          has_organization: status.has_organization,
-          has_admin_user: status.has_admin_user,
-          pathname,
-          user_id: user.user_id,
-        });
-
-        if (!status.completed && pathname !== ONBOARDING_ROUTE) {
-          logger.info(LogDomain.AUTH, 'Redirecting to onboarding', {
-            pathname,
-            user_id: user.user_id,
-          });
-          router.push(ONBOARDING_ROUTE);
-        }
-      } catch (error) {
-        logger.error(LogDomain.AUTH, 'Failed to check onboarding status', error, {
-          pathname,
-          user_id: user.user_id,
-        });
-      } finally {
-        setChecking(false);
-      }
-    };
-
-    check();
-  }, [user, authLoading, isAuthenticating, pathname, router]);
+      router.push(ONBOARDING_ROUTE);
+    }
+  }, [shouldSkip, status, pathname, router, user]);
 
   return { checking };
 }

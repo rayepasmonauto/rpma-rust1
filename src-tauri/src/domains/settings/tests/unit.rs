@@ -5,7 +5,6 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::domains::settings::application::settings_service::SettingsService;
     use crate::domains::settings::models::{GeneralSettings, SecuritySettings};
     use crate::shared::contracts::auth::UserRole;
     use crate::test_utils::{build_test_app_state, make_test_session};
@@ -19,7 +18,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Admin));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let result = service.get_app_settings(&ctx);
 
         assert!(result.is_ok(), "get_app_settings should return seeded defaults: {:?}", result);
@@ -31,7 +30,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Admin));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
 
         let mut new_general = GeneralSettings::default();
         new_general.language = "en".to_string();
@@ -47,7 +46,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Admin));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
 
         let mut sec = SecuritySettings::default();
         sec.session_timeout = 120;
@@ -66,7 +65,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Admin));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let result = service.get_user_settings(&ctx);
         assert!(result.is_ok(), "get_user_settings should return defaults: {:?}", result);
     }
@@ -78,7 +77,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Admin));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
 
         let mut profile = crate::domains::settings::models::UserProfileSettings::default();
         profile.full_name = "Alice Dupont".to_string();
@@ -96,7 +95,7 @@ mod tests {
         state.session_store.set(make_test_session(UserRole::Viewer));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let result = service.get_organization_settings(&ctx);
         assert!(result.is_ok(), "get_organization_settings should succeed: {:?}", result);
     }
@@ -104,7 +103,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_onboarding_status_returns_incomplete_before_onboarding() {
         let state = build_test_app_state().await;
-        let service = SettingsService::new(state.db.clone());
+        let service = state.settings_service.clone();
         let status = service.get_onboarding_status().expect("get onboarding status");
         assert!(!status.completed, "Onboarding should not be complete in fresh DB");
     }
@@ -112,28 +111,27 @@ mod tests {
     #[tokio::test]
     async fn test_complete_onboarding_promotes_first_user_to_admin() {
         let state = build_test_app_state().await;
-        
+
         let conn = state.db.get_connection().expect("db conn");
         conn.execute(
-            "INSERT INTO users (id, email, username, first_name, last_name, full_name, password_hash, role, is_active, created_at, updated_at) 
+            "INSERT INTO users (id, email, username, first_name, last_name, full_name, password_hash, role, is_active, created_at, updated_at)
              VALUES ('user1', 'first@example.com', 'first_user', 'First', 'User', 'First User', 'hash', 'viewer', 1, 100, 100)",
             [],
         ).expect("Insert user failed");
-        
+
         let org_request = crate::domains::settings::models::CreateOrganizationRequest {
             name: "Test Org".to_string(),
             ..Default::default()
         };
-        
-        let service = SettingsService::new(state.db.clone());
+
+        let service = state.settings_service.clone();
         let result = service.complete_onboarding(&crate::domains::settings::models::OnboardingData {
             organization: org_request,
         });
-        
+
         assert!(result.is_ok());
-        
+
         let role: String = conn.query_row("SELECT role FROM users WHERE id = 'user1'", [], |row| row.get(0)).expect("Query user");
         assert_eq!(role, "admin");
     }
 }
-

@@ -14,6 +14,7 @@ use crate::domains::quotes::domain::models::quote::*;
 use crate::domains::quotes::infrastructure::quote_repository::QuoteRepository;
 use crate::domains::quotes::infrastructure::quote_validation;
 use crate::shared::contracts::auth::UserRole;
+use crate::shared::contracts::notification::NotificationSender;
 use chrono::Utc;
 use std::sync::Arc;
 use tracing::{info, warn};
@@ -22,6 +23,7 @@ use tracing::{info, warn};
 pub struct QuoteService {
     pub(super) repo: Arc<dyn IQuoteRepository>,
     pub(super) event_bus: Arc<crate::shared::services::event_bus::InMemoryEventBus>,
+    pub(super) notification_sender: Arc<dyn NotificationSender>,
 }
 
 impl QuoteService {
@@ -29,8 +31,13 @@ impl QuoteService {
     pub fn new(
         repo: Arc<dyn IQuoteRepository>,
         event_bus: Arc<crate::shared::services::event_bus::InMemoryEventBus>,
+        notification_sender: Arc<dyn NotificationSender>,
     ) -> Self {
-        Self { repo, event_bus }
+        Self {
+            repo,
+            event_bus,
+            notification_sender,
+        }
     }
 
     // ------------------------------------------------------------------

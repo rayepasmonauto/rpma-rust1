@@ -1,46 +1,39 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useState } from 'react';
-import { ipcClient } from '@/lib/ipc';
-import { useAuth } from '@/shared/hooks/useAuth';
-import type { UserAccount, UseUsersResult } from './types';
+import { useQuery } from "@tanstack/react-query";
+import { userKeys } from "@/lib/query-keys";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { userIpc } from "../ipc/users.ipc";
+import type { UseUsersResult } from "./types";
 
-export function useUsers(limit: number = 50, offset: number = 0): UseUsersResult {
+export function useUsers(
+  limit: number = 50,
+  offset: number = 0,
+): UseUsersResult {
   const { user } = useAuth();
-  const [users, setUsers] = useState<UserAccount[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const isAuthenticated = !!user?.token;
 
-  const refetch = useCallback(async () => {
-    if (!user?.token) {
-      setUsers([]);
-      setError('Authentication required');
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await ipcClient.users.list(limit, offset);
-      setUsers((response?.data ?? []) as UserAccount[]);
-    } catch (err) {
-      setUsers([]);
-      setError(err instanceof Error ? err.message : 'Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  }, [limit, offset, user?.token]);
-
-  useEffect(() => {
-    void refetch();
-  }, [refetch]);
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: userKeys.list(limit, offset),
+    queryFn: async () => {
+      const response = await userIpc.list(limit, offset);
+      return response?.data ?? [];
+    },
+    enabled: isAuthenticated,
+  });
 
   return {
-    users,
-    loading,
-    error,
-    refetch,
+    users: data ?? [],
+    loading: isLoading,
+    error: !isAuthenticated
+      ? "Authentication required"
+      : error
+        ? error instanceof Error
+          ? error.message
+          : "Failed to load users"
+        : null,
+    refetch: async () => {
+      await refetch();
+    },
   };
 }

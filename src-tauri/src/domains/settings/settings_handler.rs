@@ -4,22 +4,11 @@
 //! delegates all business logic — including RBAC enforcement — to
 //! [`SettingsService`].  Handlers must remain thin adapters (ADR-018).
 //!
-// TODO(ADR-004):
-//   **Problem**: Every handler instantiates `SettingsService::new(state.db.clone())`
-//   per request instead of using a pre-built service from `AppState`. This
-//   bypasses the service builder pattern and causes redundant allocations.
-//   **ADRs violated**: ADR-004 (Service Builder Pattern)
-//   **Proposed split**:
-//     - `service_builder.rs` — register `SettingsService` in `AppState`
-//     - `settings_handler.rs` — use `state.settings_service` instead of
-//       constructing per-call
-//   **Patch**: add `settings_service: Arc<SettingsService>` to `AppState`,
-//   wire in `service_builder.rs`, update each handler to `state.settings_service.method()`.
-//   **Compile check**: cargo check --lib passes after wiring.
+//! ADR-004: SettingsService is pre-built by `service_builder` and stored
+//! in `AppState` — handlers use `state.settings_service` directly.
 
 use tracing::instrument;
 
-use super::application::SettingsService;
 use super::models::*;
 use crate::commands::{ApiResponse, AppError, AppState};
 use crate::resolve_context;
@@ -33,8 +22,7 @@ pub async fn get_app_settings(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let service = SettingsService::new(state.db.clone());
-    let settings = service.get_app_settings(&ctx)?;
+    let settings = state.settings_service.get_app_settings(&ctx)?;
     Ok(ApiResponse::success(settings).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -46,8 +34,7 @@ pub async fn update_general_settings(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let service = SettingsService::new(state.db.clone());
-    let updated = service.update_general_settings(&ctx, settings)?;
+    let updated = state.settings_service.update_general_settings(&ctx, settings)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -59,8 +46,7 @@ pub async fn update_security_settings(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let service = SettingsService::new(state.db.clone());
-    let updated = service.update_security_settings(&ctx, settings)?;
+    let updated = state.settings_service.update_security_settings(&ctx, settings)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -72,8 +58,7 @@ pub async fn update_notification_settings(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let service = SettingsService::new(state.db.clone());
-    let updated = service.update_notification_settings(&ctx, settings)?;
+    let updated = state.settings_service.update_notification_settings(&ctx, settings)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -87,8 +72,7 @@ pub async fn update_business_rules(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let service = SettingsService::new(state.db.clone());
-    let updated = service.update_business_rules(&ctx, rules)?;
+    let updated = state.settings_service.update_business_rules(&ctx, rules)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -100,8 +84,7 @@ pub async fn update_security_policies(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let service = SettingsService::new(state.db.clone());
-    let updated = service.update_security_policies(&ctx, policies)?;
+    let updated = state.settings_service.update_security_policies(&ctx, policies)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -113,8 +96,7 @@ pub async fn update_integrations(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let service = SettingsService::new(state.db.clone());
-    let updated = service.update_integrations(&ctx, integrations)?;
+    let updated = state.settings_service.update_integrations(&ctx, integrations)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -126,8 +108,7 @@ pub async fn update_performance_configs(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let service = SettingsService::new(state.db.clone());
-    let updated = service.update_performance_configs(&ctx, configs)?;
+    let updated = state.settings_service.update_performance_configs(&ctx, configs)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -139,7 +120,6 @@ pub async fn update_business_hours(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let service = SettingsService::new(state.db.clone());
-    let updated = service.update_business_hours(&ctx, hours)?;
+    let updated = state.settings_service.update_business_hours(&ctx, hours)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
