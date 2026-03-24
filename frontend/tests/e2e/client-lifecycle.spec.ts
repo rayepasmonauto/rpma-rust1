@@ -70,7 +70,7 @@ test.describe("Client Lifecycle Management", () => {
   };
 
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(90000); // Extended timeout for cold-start Next.js compilation
+    test.setTimeout(120000); // Extended timeout for cold-start Next.js compilation
     await loginAsTestUser(page);
   });
 
