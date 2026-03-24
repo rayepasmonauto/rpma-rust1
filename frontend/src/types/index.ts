@@ -9,13 +9,18 @@ import type { UserAccount, Task, Client, ClientWithTasks } from '@/lib/types';
 export type { UserAccount, Task, Client, ClientWithTasks };
 
 // Import core backend types for re-export
-import {
+import type {
   Intervention,
   SyncOperation,
   SyncStatus,
   Photo,
   PhotoType,
-  PhotoCategory
+  PhotoCategory,
+  TaskStatistics,
+  TaskListResponse,
+  ClientListResponse,
+  UserListResponse,
+  UserResponse,
 } from '@/lib/backend';
 
 // Re-export core backend types for backward compatibility
@@ -25,7 +30,12 @@ export type {
   SyncStatus,
   Photo,
   PhotoType,
-  PhotoCategory
+  PhotoCategory,
+  TaskStatistics,
+  TaskListResponse,
+  ClientListResponse,
+  UserListResponse,
+  UserResponse,
 };
 
 
@@ -65,41 +75,7 @@ export interface ApiResponse<T = unknown> {
 
 // Auth interfaces are now defined in auth.types.ts
 
-// User CRUD response types
-export interface UserListResponse {
-  data: UserAccount[];
-}
-
-export type UserResponse =
-  | { type: 'Created'; data: UserAccount }
-  | { type: 'Found'; data: UserAccount }
-  | { type: 'Updated'; data: UserAccount }
-  | { type: 'Deleted' }
-  | { type: 'NotFound' }
-  | { type: 'List'; data: UserListResponse };
-
-// Task statistics interface
-export interface TaskStatistics {
-  total_tasks: number;
-  draft_tasks: number;
-  scheduled_tasks: number;
-  in_progress_tasks: number;
-  completed_tasks: number;
-  cancelled_tasks: number;
-}
-
-// Task CRUD response types
-export interface TaskListResponse {
-  data: Task[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    total_pages: number;
-  };
-  statistics?: TaskStatistics;
-}
-
+// Task CRUD response types (not yet generated from Rust — kept for compatibility)
 export type TaskResponse =
   | { type: 'Created'; data: Task }
   | { type: 'Found'; data: Task }
@@ -109,17 +85,7 @@ export type TaskResponse =
   | { type: 'List'; data: TaskListResponse }
   | { type: 'Statistics'; data: TaskStatistics };
 
-// Client CRUD response types
-export interface ClientListResponse {
-  data: Client[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    total_pages: number;
-  };
-}
-
+// Client CRUD response types (not yet generated from Rust — kept for compatibility)
 export type ClientResponse =
   | { type: 'Created'; data: Client }
   | { type: 'Found'; data: Client }
