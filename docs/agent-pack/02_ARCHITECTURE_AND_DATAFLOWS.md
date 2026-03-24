@@ -66,42 +66,98 @@ pub async fn task_crud(
 | calendar | ✓ | — | — | — | Handler-based |
 | documents | ✓ | — | — | — | Flat structure |
 | notifications | ✓ | — | — | — | Handler-based |
-| settings | ✓ | — | — | — | Flat structure |
+| settings | ✓ | — | — | — | Handler + repositories |
 
 ## Service Builder Pattern (**ADR-004**)
 
 All services are wired centrally in `src-tauri/src/service_builder.rs`:
 
+### Dependency Graph
+
+```
+ROOTS (no dependencies):
+├── Database
+├── Repositories.{client, user, quote, message, cache}
+└── AppDataDir
+
+LAYER 1 (depend on roots):
+├── TaskService                     ← Database
+├── ClientService                   ← Repositories.client + EventBus
+├── InterventionStepService         ← Database
+├── PhotoValidationService          ← Database
+├── InterventionScoringService      ← Database
+├── MaterialConsumptionService      ← Database
+├── InterventionService             ← Database + sub-services
+├── InterventionWorkflowService     ← Database
+├── SettingsService                 ← Repositories (settings, user_settings, organization)
+├── TaskImportService               ← Database
+├── AuthService                     ← Database (+ init)
+├── UserService                     ← Repositories.user + SessionRepository
+├── CacheService                    ← (self-contained)
+├── SessionService                  ← Database
+├── SessionStore                    ← (self-contained)
+└── PhotoService                    ← Database + AppDataDir
+
+LAYER 2 (depend on Layer 1):
+├── MaterialService                 ← Database
+├── InventoryFacade                 ← Database + MaterialService
+├── QuoteEventBus                   ← (self-contained)
+├── EventBus                        ← (self-contained)
+├── QuoteService                    ← Repositories.quote + Database + QuoteEventBus
+└── MessageService                  ← Repositories.message + Database + EventBus
+
+LAYER 3 (depend on Layer 2):
+├── AsyncDatabase                   ← Database
+└── AuditService                    ← Database (+ init)
+
+LAYER 4 (depend on Layer 3 + event bus):
+├── AuditLogHandler                 ← AuditService + EventBus
+├── InterventionFinalizedHandler    ← InventoryFacade + EventBus
+├── QuoteAcceptedHandler            ← InterventionWorkflowService + EventBus
+├── QuoteConvertedHandler           ← InterventionWorkflowService + EventBus
+└── NotificationEventHandler        ← Database + Repositories + EventBus
+
+AFTER BUILD:
+├── GlobalSearchService             ← Repositories
+└── TrashService                     ← Database
+```
+
+### Code Example
+
 ```rust
 pub fn build(self) -> Result<AppStateType, Box<dyn std::error::Error>> {
-    // 1. Core services (no dependencies or only DB)
+    // Initialize core services (Layer 1)
     let task_service = Arc::new(TaskService::new(self.db.clone()));
     let event_bus = Arc::new(InMemoryEventBus::new());
+    set_global_event_bus(event_bus.clone());
     
-    // 2. Domain services (in dependency order)
+    // Initialize domain services (Layer 2)
     let client_service = Arc::new(ClientService::new(
         self.repositories.client.clone(),
         event_bus.clone(),
     ));
     
-    // 3. Intervention sub-services
-    let intervention_step_service = Arc::new(InterventionStepService::new(db.clone()));
-    let photo_validation_service = Arc::new(PhotoValidationService::new(db.clone()));
-    let intervention_scoring_service = Arc::new(InterventionScoringService::new(db.clone()));
-    let material_consumption_service = Arc::new(MaterialConsumptionService::new(db.clone()));
+    // Intervention sub-services
+    let intervention_step_service = Arc::new(InterventionStepService::new(self.db.clone()));
+    // ... other sub-services
     
-    // 4. Composite services
     let intervention_service = Arc::new(InterventionService::with_services(
-        db.clone(),
+        self.db.clone(),
         intervention_step_service,
         photo_validation_service,
         intervention_scoring_service,
         material_consumption_service,
     ));
     
-    // 5. Register event handlers
+    // Layer 3: Audit
+    let audit_service = Arc::new(AuditService::new(self.db.clone()));
+    let audit_log_handler = AuditLogHandler::new(audit_service.clone());
     event_bus.register_handler(audit_log_handler);
+    
+    // Layer 4: Event handlers
     register_handler(inventory_service.intervention_finalized_handler());
+    register_handler(Arc::new(quote_accepted_handler));
+    register_handler(Arc::new(quote_converted_handler));
     
     Ok(AppStateType { /* ... */ })
 }
@@ -126,17 +182,17 @@ Facades are used for cross-domain access and simplify testing.
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ FRONTEND                                                                     │
-│ TaskForm.tsx → taskIpc.create(data) → invoke('task_create', {...})          │
+│ TaskForm.tsx → taskIpc.create(data) → invoke('task_create', {...})         │
 └────────────────────────────────────┬────────────────────────────────────────┘
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ IPC LAYER                                                                    │
-│ resolve_context!() → validates session, checks RBAC → RequestContext       │
-│ task_create() delegates to TaskService                                       │
+│ resolve_context!() → validates session, checks RBAC → RequestContext      │
+│ task_create() delegates to TaskService                                      │
 └────────────────────────────────────┬────────────────────────────────────────┘
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ APPLICATION LAYER                                                            │
+│ APPLICATION LAYER                                                           │
 │ TaskService.create_task(request, ctx)                                        │
 │   → validates business rules                                                │
 │   → calls repository                                                        │
@@ -144,13 +200,13 @@ Facades are used for cross-domain access and simplify testing.
 └────────────────────────────────────┬────────────────────────────────────────┘
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ INFRASTRUCTURE LAYER                                                         │
-│ SqliteTaskRepository.insert(task) → INSERT INTO tasks (...)                 │
+│ INFRASTRUCTURE LAYER                                                        │
+│ SqliteTaskRepository.insert(task) → INSERT INTO tasks (...)                │
 └────────────────────────────────────┬────────────────────────────────────────┘
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ EVENT BUS                                                                    │
-│ DomainEvent::TaskCreated → subscribers (audit, notifications)                │
+│ EVENT BUS                                                                   │
+│ DomainEvent::TaskCreated → subscribers (audit, notifications)               │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -165,7 +221,7 @@ Facades are used for cross-domain access and simplify testing.
 ## Dependency Rules
 
 1. **Inner layers cannot depend on outer layers.**
-2. **Domain Layer has zero dependencies.**
+2. **Domain Layer has zero dependencies on frameworks.**
 3. **Cross-domain calls MUST go through**:
    - `shared/services/` (synchronous)
    - `shared/event_bus/` (asynchronous)

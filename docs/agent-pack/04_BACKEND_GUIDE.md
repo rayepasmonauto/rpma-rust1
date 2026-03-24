@@ -31,7 +31,7 @@ Every domain in `src-tauri/src/domains/` MUST follow (**ADR-001**):
 | calendar | ✓ | — | — | — | Handler-based |
 | documents | ✓ | — | — | — | Flat structure |
 | notifications | ✓ | — | — | — | Handler-based |
-| settings | ✓ | — | — | — | Flat structure |
+| settings | ✓ | — | — | — | Handler + repositories |
 
 ## Layer Details
 
@@ -116,14 +116,20 @@ pub struct ServiceBuilder {
     db: Arc<Database>,
     repositories: Arc<Repositories>,
     app_data_dir: PathBuf,
+    #[cfg(not(test))]
+    app_handle: Option<tauri::AppHandle>,
 }
 
 impl ServiceBuilder {
     pub fn build(self) -> Result<AppStateType, Box<dyn std::error::Error>> {
-        // Initialize in dependency order:
+        // Initialize in dependency order (see ADR-004 for full graph):
+        
+        // Layer 1: Core services
         let task_service = Arc::new(TaskService::new(self.db.clone()));
         let event_bus = Arc::new(InMemoryEventBus::new());
+        set_global_event_bus(event_bus.clone());
         
+        // Layer 2: Domain services
         let client_service = Arc::new(ClientService::new(
             self.repositories.client.clone(),
             event_bus.clone(),
@@ -141,9 +147,19 @@ impl ServiceBuilder {
             material_consumption_service,
         ));
         
-        // Register event handlers
+        // Layer 3: Audit
+        let audit_service = Arc::new(AuditService::new(self.db.clone()));
+        
+        // Layer 4: Event handlers
+        let audit_log_handler = AuditLogHandler::new(audit_service.clone());
         event_bus.register_handler(audit_log_handler);
         register_handler(inventory_service.intervention_finalized_handler());
+        register_handler(Arc::new(quote_accepted_handler));
+        register_handler(Arc::new(quote_converted_handler));
+        
+        // Final services
+        let global_search_service = Arc::new(GlobalSearchService::new(self.repositories.clone()));
+        let trash_service = Arc::new(TrashService::new(self.db.clone()));
         
         Ok(AppStateType { /* ... */ })
     }
@@ -173,12 +189,14 @@ pub struct AppStateType {
     pub session_store: Arc<SessionStore>,
     pub settings_repository: Arc<SettingsRepository>,
     pub user_settings_repository: Arc<UserSettingsRepository>,
+    pub settings_service: Arc<SettingsService>,
     pub user_service: Arc<UserService>,
     pub cache_service: Arc<CacheService>,
     pub event_bus: Arc<InMemoryEventBus>,
     pub app_config: Arc<AppConfig>,
     pub trash_service: Arc<TrashService>,
     pub global_search_service: Arc<GlobalSearchService>,
+    pub audit_service: Arc<AuditService>,
 }
 ```
 
@@ -219,6 +237,21 @@ pub struct RequestContext {
 impl RequestContext {
     pub fn user_id(&self) -> &str { &self.auth.user_id }
     pub fn role(&self) -> &UserRole { &self.auth.role }
+    
+    /// Create a minimal context for pre-authentication (bootstrap)
+    pub fn unauthenticated(correlation_id: String) -> Self { /* ... */ }
+}
+```
+
+### AuthContext Structure
+
+```rust
+pub struct AuthContext {
+    pub user_id: String,
+    pub role: UserRole,
+    pub session_id: String,
+    pub username: String,
+    pub email: String,
 }
 ```
 
@@ -227,6 +260,7 @@ impl RequestContext {
 | Aspect | Details |
 |--------|---------|
 | Migrations | Numbered SQL files in `src-tauri/migrations/` (**ADR-010**) |
+| Migration Range | `002` through `063` |
 | WAL Mode | Enabled by default for performance (**ADR-009**) |
 | Async DB | `AsyncDatabase` wrapper for non-blocking operations |
 | Repository Pattern | Abstract data access (**ADR-005**) |
@@ -240,8 +274,10 @@ impl RequestContext {
 | Mechanism | Location | Use Case |
 |-----------|----------|----------|
 | Event Bus | `shared/event_bus/` | Async cross-domain reactions |
+| QuoteEventBus | `service_builder.rs` | Quote-specific events |
 | Facade Pattern | `domains/*/facade.rs` | Controlled cross-domain access |
 | Service Builder | `service_builder.rs` | Centralized DI |
+| Global Search | `shared/services/global_search.rs` | Cross-domain search |
 
 ## Command Registration
 
@@ -249,17 +285,23 @@ Commands are registered in `src-tauri/src/main.rs`:
 
 ```rust
 .invoke_handler(tauri::generate_handler![
-    // Auth
+    // Auth (4 commands)
     domains::auth::ipc::auth::auth_login,
     domains::auth::ipc::auth::auth_create_account,
     domains::auth::ipc::auth::auth_logout,
     domains::auth::ipc::auth::auth_validate_session,
     
-    // Tasks
-    domains::tasks::ipc::task::task_create,
-    domains::tasks::ipc::task::task_get,
-    domains::tasks::ipc::task::task_update,
-    // ... 200+ commands
+    // Security audit (4 commands)
+    domains::auth::ipc::audit_security_ipc::get_security_metrics,
+    domains::auth::ipc::audit_security_ipc::get_security_events,
+    domains::auth::ipc::audit_security_ipc::get_security_alerts,
+    domains::auth::ipc::audit_security_ipc::acknowledge_security_alert,
+    
+    // Users (8 commands)
+    domains::users::ipc::user::user_crud,
+    domains::users::ipc::user::bootstrap_first_admin,
+    domains::users::ipc::user::has_admins,
+    // ... ~240+ commands total
     
     // System
     commands::system::health_check,

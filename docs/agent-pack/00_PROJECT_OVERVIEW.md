@@ -64,7 +64,7 @@ The application state (`AppStateType`) includes:
 | `task_service` | Task lifecycle management |
 | `client_service` | Client CRUD and events |
 | `intervention_service` | Intervention workflow coordination |
-| `intervention_creator` | Intervention creation interface |
+| `intervention_creator` | Intervention creation interface (trait) |
 | `material_service` | Material/inventory management |
 | `inventory_service` | Inventory facade |
 | `quote_service` | Quote lifecycle |
@@ -76,12 +76,14 @@ The application state (`AppStateType`) includes:
 | `photo_service` | Photo storage |
 | `settings_repository` | Settings persistence |
 | `user_settings_repository` | User preferences |
+| `settings_service` | Settings coordination |
 | `calendar_service` | Calendar/scheduling |
 | `task_import_service` | Bulk task import |
 | `cache_service` | In-memory cache |
 | `event_bus` | In-memory domain events |
 | `trash_service` | Soft-delete recovery |
 | `global_search_service` | Cross-domain search |
+| `audit_service` | Security audit logging |
 | `app_config` | Application configuration |
 
 ## Golden Paths (Start Here)
@@ -89,7 +91,7 @@ The application state (`AppStateType`) includes:
 1. [Domain Model](./01_DOMAIN_MODEL.md) — Understand the entities and their relationships.
 2. [Architecture](./02_ARCHITECTURE_AND_DATAFLOWS.md) — How data moves from React to Rust to SQLite.
 3. [IPC API](./05_IPC_API_AND_CONTRACTS.md) — The contract between the two worlds.
-4. [Testing Guide](./10_TESTING_GUIDE.md) — Mandatory testing requirements.
+4. [Backend Guide](./04_BACKEND_GUIDE.md) — Backend development patterns.
 
 ## Repository Layout
 
@@ -100,7 +102,7 @@ rpma-rust/
 ├── package.json                       # Root task runner (frontend/backend/types scripts)
 ├── Cargo.toml                         # Workspace manifest
 ├── docs/                              # Architecture + ADR documentation
-│   ├── README.md                      # Generated docs index and ADR quick links
+│   ├── README.md                      # Generated docs index
 │   └── adr/                           # Formal Architecture Decision Records (001-020)
 ├── scripts/                           # Validation, type sync, scaffolding utilities
 ├── frontend/                          # Next.js 14 frontend app
@@ -129,7 +131,7 @@ rpma-rust/
 │       ├── lib/
 │       │   ├── ipc/                   # IPC client, adapters, utilities
 │       │   │   ├── client.ts           # ipcClient aggregation object
-│       │   │   ├── commands.ts          # IPC_COMMANDS constant
+│       │   │   ├── commands.ts          # IPC_COMMANDS constant (~275 commands)
 │       │   │   ├── utils.ts             # safeInvoke with session injection
 │       │   │   ├── core/                # Response handlers, types
 │       │   │   ├── domains/             # Domain-specific IPC wrappers
@@ -140,7 +142,7 @@ rpma-rust/
 │       └── types/                      # AUTO-GENERATED TS types (never hand edit)
 └── src-tauri/                         # Rust backend + Tauri app host
     ├── Cargo.toml                      # Backend dependencies
-    ├── migrations/                     # Numbered SQL migrations (002-061)
+    ├── migrations/                     # Numbered SQL migrations (002-063)
     └── src/
         ├── main.rs                     # Tauri app bootstrap, command registration
         ├── lib.rs                      # Library entry point
@@ -163,7 +165,7 @@ rpma-rust/
         ├── shared/                      # Cross-domain shared kernel
         │   ├── context/                  # RequestContext + AuthContext
         │   ├── contracts/                # Shared enums (UserRole, TaskStatus, etc.)
-        │   ├── db/                       # Shared DB-level helpers
+        │   ├── db/                       # Shared DB-level contracts/helpers
         │   ├── error/                     # Shared error types
         │   ├── event_bus/                 # In-memory event bus primitives
         │   ├── ipc/                       # IPC boundary result/error adapters
@@ -172,7 +174,7 @@ rpma-rust/
         │   ├── repositories/              # Repository abstractions + factory
         │   ├── services/                  # Cross-domain services (EventBus, Validation)
         │   └── utils/                    # Shared backend utilities
-        └── infrastructure/               # Cross-cutting infrastructure (auth, etc.)
+        └── infrastructure/               # Cross-cutting infrastructure (auth session store)
 ```
 
 ## Key ADRs
