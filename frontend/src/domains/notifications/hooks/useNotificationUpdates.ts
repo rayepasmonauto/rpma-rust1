@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { useSettings } from '@/domains/settings/api/useSettings';
-import type { Notification } from '../api/notificationTypes';
-import { getNotifications } from '../services/notificationActions';
-import { isInQuietHoursAt } from '../services/quietHours';
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { useAuth } from "@/shared/hooks/useAuth";
+// ❌ CROSS-DOMAIN IMPORT — TODO(ADR-002): Move to shared/ or use public index
+import { useSettings } from "@/domains/settings/api/useSettings";
+import type { Notification } from "../api/notificationTypes";
+import { getNotifications } from "../services/notificationActions";
+import { isInQuietHoursAt } from "../services/quietHours";
 
 export function useNotificationUpdates() {
   const { user } = useAuth();
@@ -14,7 +15,9 @@ export function useNotificationUpdates() {
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
 
-  const [knownNotificationIds, setKnownNotificationIds] = useState<Set<string>>(new Set());
+  const [knownNotificationIds, setKnownNotificationIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   useEffect(() => {
     mountedRef.current = true;
@@ -24,7 +27,13 @@ export function useNotificationUpdates() {
       getNotifications().then((result) => {
         if (!mountedRef.current) return;
         if (result.success && result.data) {
-          setKnownNotificationIds(new Set(result.data.notifications.map((notification: Notification) => notification.id)));
+          setKnownNotificationIds(
+            new Set(
+              result.data.notifications.map(
+                (notification: Notification) => notification.id,
+              ),
+            ),
+          );
         }
       });
     }
@@ -36,7 +45,7 @@ export function useNotificationUpdates() {
       // Tauri `notification:received` event (useTauriEvent.ts → notificationKeys.all).
       pollTimerRef.current = setInterval(async () => {
         if (!mountedRef.current) return;
-        if (document.visibilityState !== 'visible') return;
+        if (document.visibilityState !== "visible") return;
 
         const result = await getNotifications();
         if (result.success && result.data) {
@@ -62,7 +71,7 @@ export function useNotificationUpdates() {
                 toast(notification.title, {
                   description: notification.message,
                   action: {
-                    label: 'View',
+                    label: "View",
                     onClick: () => {
                       window.location.href = notification.entity_url;
                     },
@@ -88,4 +97,3 @@ export function useNotificationUpdates() {
     };
   }, [settings?.notifications, user?.token]);
 }
-

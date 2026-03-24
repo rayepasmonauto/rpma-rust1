@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { listen } from '@tauri-apps/api/event';
-import { useQueryClient } from '@tanstack/react-query';
-import { interventionKeys, notificationKeys, taskKeys } from '@/lib/query-keys';
+import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { listenToEvent } from "@/lib/ipc/platform";
+import { interventionKeys, notificationKeys, taskKeys } from "@/lib/query-keys";
 
 /**
  * Mounts real-time Tauri event listeners that invalidate TanStack Query caches
@@ -18,43 +18,29 @@ export function useTauriEvent(): void {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const internals = (
-      window as Window & {
-        __TAURI_INTERNALS__?: { transformCallback?: unknown; invoke?: unknown };
-      }
-    ).__TAURI_INTERNALS__;
-
-    // In tests and non-Tauri contexts, event APIs may be unavailable.
-    if (
-      !internals ||
-      typeof internals.invoke !== 'function' ||
-      typeof internals.transformCallback !== 'function'
-    ) {
-      return;
-    }
-
     const unlistenPromises = [
-      listen('task:status_changed', () => {
+      listenToEvent("task:status_changed", () => {
         void queryClient.invalidateQueries({ queryKey: taskKeys.all });
       }),
 
-      listen('intervention:started', () => {
+      listenToEvent("intervention:started", () => {
         void queryClient.invalidateQueries({ queryKey: interventionKeys.all });
       }),
 
-      listen('notification:received', () => {
+      listenToEvent("notification:received", () => {
         void queryClient.invalidateQueries({ queryKey: notificationKeys.all });
       }),
 
-      // TODO: ADD_MORE_EVENTS — add listen() calls here for additional Tauri events
+      // TODO: ADD_MORE_EVENTS — add listenToEvent() calls here for additional Tauri events
     ];
 
     return () => {
       for (const p of unlistenPromises) {
         p.then((unlisten) => unlisten()).catch((err) => {
-          console.debug('[useTauriEvent] Failed to remove event listener:', err);
+          console.debug(
+            "[useTauriEvent] Failed to remove event listener:",
+            err,
+          );
         });
       }
     };
