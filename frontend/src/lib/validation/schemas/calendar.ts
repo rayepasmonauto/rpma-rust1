@@ -1,8 +1,11 @@
 /**
  * Zod schemas for Calendar types
  *
- * These schemas mirror the TypeScript types in `@/types/calendar` and are used to
- * validate IPC responses and form inputs at runtime.
+ * These schemas validate IPC responses and form inputs at runtime.
+ * The canonical type definitions come from the generated `@/lib/backend`
+ * types (ADR-015).  The schemas here intentionally accept `number` for
+ * timestamp fields because JSON serialisation (Tauri IPC) delivers JS
+ * numbers, even though ts-rs maps Rust i64 to `bigint`.
  */
 
 import { z } from 'zod';
@@ -10,18 +13,14 @@ import type {
   CalendarEvent,
   CreateEventInput,
   UpdateEventInput,
-  EventParticipant,
-  EventType,
-  EventStatus,
-  ParticipantStatus,
 } from '@/types/calendar';
 
 export const ParticipantStatusSchema = z.enum([
   'accepted',
   'declined',
   'tentative',
-  'needsAction',
-]) satisfies z.ZodType<ParticipantStatus>;
+  'needsaction',
+]);
 
 export const EventTypeSchema = z.enum([
   'meeting',
@@ -29,25 +28,25 @@ export const EventTypeSchema = z.enum([
   'task',
   'reminder',
   'other',
-]) satisfies z.ZodType<EventType>;
+]);
 
 export const EventStatusSchema = z.enum([
   'confirmed',
   'tentative',
   'cancelled',
-]) satisfies z.ZodType<EventStatus>;
+]);
 
 export const EventParticipantSchema = z.object({
   id: z.string(),
   name: z.string(),
-  email: z.string().optional(),
+  email: z.string().nullable(),
   status: ParticipantStatusSchema,
-}) satisfies z.ZodType<EventParticipant>;
+});
 
 export const CalendarEventSchema = z.object({
   id: z.string(),
   title: z.string(),
-  description: z.string().optional(),
+  description: z.string().nullable(),
 
   // Temporal
   startDatetime: z.string(),
@@ -57,16 +56,16 @@ export const CalendarEventSchema = z.object({
 
   // Type and category
   eventType: EventTypeSchema,
-  category: z.string().optional(),
+  category: z.string().nullable(),
 
   // Relations
-  taskId: z.string().optional(),
-  clientId: z.string().optional(),
-  technicianId: z.string().optional(),
+  taskId: z.string().nullable(),
+  clientId: z.string().nullable(),
+  technicianId: z.string().nullable(),
 
   // Meeting details
-  location: z.string().optional(),
-  meetingLink: z.string().optional(),
+  location: z.string().nullable(),
+  meetingLink: z.string().nullable(),
   isVirtual: z.boolean(),
 
   // Participants
@@ -74,78 +73,79 @@ export const CalendarEventSchema = z.object({
 
   // Recurrence
   isRecurring: z.boolean(),
-  recurrenceRule: z.string().optional(),
-  parentEventId: z.string().optional(),
+  recurrenceRule: z.string().nullable(),
+  parentEventId: z.string().nullable(),
 
   // Reminders (minutes before event)
   reminders: z.array(z.number()),
 
   // Status and metadata
   status: EventStatusSchema,
-  color: z.string().optional(),
+  color: z.string().nullable(),
   tags: z.array(z.string()),
-  notes: z.string().optional(),
+  notes: z.string().nullable(),
 
-  // Sync and audit
+  // Sync and audit — accept number (JSON) even though TS type is bigint
   synced: z.boolean(),
-  lastSyncedAt: z.number().optional(),
+  lastSyncedAt: z.number().nullable(),
   createdAt: z.number(),
   updatedAt: z.number(),
-  createdBy: z.string().optional(),
-  updatedBy: z.string().optional(),
-  deletedAt: z.number().optional(),
-  deletedBy: z.string().optional(),
-}) satisfies z.ZodType<CalendarEvent>;
+  createdBy: z.string().nullable(),
+  updatedBy: z.string().nullable(),
+  deletedAt: z.number().nullable(),
+  deletedBy: z.string().nullable(),
+});
 
 export const CreateEventInputSchema = z.object({
   title: z.string(),
-  description: z.string().optional(),
+  description: z.string().nullable(),
   startDatetime: z.string(),
   endDatetime: z.string(),
-  allDay: z.boolean().optional(),
-  timezone: z.string().optional(),
-  eventType: EventTypeSchema.optional(),
-  category: z.string().optional(),
-  taskId: z.string().optional(),
-  clientId: z.string().optional(),
-  location: z.string().optional(),
-  meetingLink: z.string().optional(),
-  isVirtual: z.boolean().optional(),
-  participants: z.array(EventParticipantSchema).optional(),
-  reminders: z.array(z.number()).optional(),
-  color: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  notes: z.string().optional(),
-}) satisfies z.ZodType<CreateEventInput>;
+  allDay: z.boolean().nullable(),
+  timezone: z.string().nullable(),
+  eventType: EventTypeSchema.nullable(),
+  category: z.string().nullable(),
+  taskId: z.string().nullable(),
+  clientId: z.string().nullable(),
+  technicianId: z.string().nullable(),
+  location: z.string().nullable(),
+  meetingLink: z.string().nullable(),
+  isVirtual: z.boolean().nullable(),
+  participants: z.array(EventParticipantSchema).nullable(),
+  reminders: z.array(z.number()).nullable(),
+  color: z.string().nullable(),
+  tags: z.array(z.string()).nullable(),
+  notes: z.string().nullable(),
+});
 
 export const UpdateEventInputSchema = z.object({
-  title: z.string().optional(),
-  description: z.string().optional(),
-  startDatetime: z.string().optional(),
-  endDatetime: z.string().optional(),
-  allDay: z.boolean().optional(),
-  timezone: z.string().optional(),
-  eventType: EventTypeSchema.optional(),
-  category: z.string().optional(),
-  taskId: z.string().optional(),
-  clientId: z.string().optional(),
-  location: z.string().optional(),
-  meetingLink: z.string().optional(),
-  isVirtual: z.boolean().optional(),
-  participants: z.array(EventParticipantSchema).optional(),
-  status: EventStatusSchema.optional(),
-  reminders: z.array(z.number()).optional(),
-  color: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  notes: z.string().optional(),
-}) satisfies z.ZodType<UpdateEventInput>;
+  title: z.string().nullable(),
+  description: z.string().nullable(),
+  startDatetime: z.string().nullable(),
+  endDatetime: z.string().nullable(),
+  allDay: z.boolean().nullable(),
+  timezone: z.string().nullable(),
+  eventType: EventTypeSchema.nullable(),
+  category: z.string().nullable(),
+  taskId: z.string().nullable(),
+  clientId: z.string().nullable(),
+  location: z.string().nullable(),
+  meetingLink: z.string().nullable(),
+  isVirtual: z.boolean().nullable(),
+  participants: z.array(EventParticipantSchema).nullable(),
+  status: EventStatusSchema.nullable(),
+  reminders: z.array(z.number()).nullable(),
+  color: z.string().nullable(),
+  tags: z.array(z.string()).nullable(),
+  notes: z.string().nullable(),
+});
 
 /**
  * Validates a CalendarEvent from an IPC response payload.
  * Throws a ZodError if the data does not match the expected shape.
  */
 export function validateCalendarEvent(data: unknown): CalendarEvent {
-  return CalendarEventSchema.parse(data);
+  return CalendarEventSchema.parse(data) as unknown as CalendarEvent;
 }
 
 /**
@@ -153,7 +153,7 @@ export function validateCalendarEvent(data: unknown): CalendarEvent {
  * Throws a ZodError if the data does not match the expected shape.
  */
 export function validateCalendarEventList(data: unknown): CalendarEvent[] {
-  return z.array(CalendarEventSchema).parse(data);
+  return z.array(CalendarEventSchema).parse(data) as unknown as CalendarEvent[];
 }
 
 /**
@@ -161,7 +161,7 @@ export function validateCalendarEventList(data: unknown): CalendarEvent[] {
  * Throws a ZodError if the input does not match the expected shape.
  */
 export function validateCreateEventInput(data: unknown): CreateEventInput {
-  return CreateEventInputSchema.parse(data);
+  return CreateEventInputSchema.parse(data) as unknown as CreateEventInput;
 }
 
 /**
@@ -169,5 +169,5 @@ export function validateCreateEventInput(data: unknown): CreateEventInput {
  * Throws a ZodError if the input does not match the expected shape.
  */
 export function validateUpdateEventInput(data: unknown): UpdateEventInput {
-  return UpdateEventInputSchema.parse(data);
+  return UpdateEventInputSchema.parse(data) as unknown as UpdateEventInput;
 }
