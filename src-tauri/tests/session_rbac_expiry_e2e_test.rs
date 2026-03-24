@@ -7,6 +7,32 @@ use rpma_ppf_intervention::shared::services::cross_domain::{
     QuotesFacade, UserRole,
 };
 use rpma_ppf_intervention::shared::services::event_bus::InMemoryEventBus;
+use rpma_ppf_intervention::shared::contracts::notification::{NotificationSender, SentMessage};
+use rpma_ppf_intervention::shared::ipc::errors::AppError;
+use async_trait::async_trait;
+
+struct DummyNotificationSender;
+
+#[async_trait]
+impl NotificationSender for DummyNotificationSender {
+    async fn send_message_raw(
+        &self,
+        _message_type: String,
+        _notification_kind: Option<String>,
+        _recipient_id: Option<String>,
+        _recipient_email: Option<String>,
+        _recipient_phone: Option<String>,
+        _subject: Option<String>,
+        _body: String,
+        _task_id: Option<String>,
+        _client_id: Option<String>,
+        _priority: Option<String>,
+        _scheduled_at: Option<i64>,
+        _correlation_id: Option<String>,
+    ) -> Result<SentMessage, AppError> {
+        Ok(SentMessage { id: "dummy".to_string() })
+    }
+}
 
 async fn setup_db() -> Arc<Database> {
     Arc::new(Database::new_in_memory().await.expect("in-memory db"))
@@ -20,6 +46,7 @@ async fn session_creation_rbac_enforcement_and_expiry_are_enforced() {
     let quote_service = Arc::new(QuoteService::new(
         repos.quote.clone(),
         Arc::new(InMemoryEventBus::new()),
+        Arc::new(DummyNotificationSender),
     ));
     let quotes = QuotesFacade::new(quote_service);
 

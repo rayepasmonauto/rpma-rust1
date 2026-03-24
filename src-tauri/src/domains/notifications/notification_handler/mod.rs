@@ -1,6 +1,7 @@
 //! Unified notifications handler: repositories, services, helpers, and IPC commands.
 
 pub mod helper;
+pub mod event_handler;
 pub mod message_repository;
 pub mod message_service;
 pub mod notification_repository;
@@ -9,6 +10,7 @@ pub mod preferences_repository;
 pub mod template_repository;
 
 pub use helper::*;
+pub use event_handler::*;
 pub use message_repository::*;
 pub use message_service::*;
 pub use notification_repository::*;

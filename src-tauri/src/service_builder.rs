@@ -392,6 +392,14 @@ impl ServiceBuilder {
 
         register_handler(inventory_service.intervention_finalized_handler());
 
+        let notification_event_handler = crate::domains::notifications::NotificationEventHandler::new(
+            self.db.clone(),
+            self.repositories.cache.clone(),
+            message_service.clone(),
+            event_bus.clone(),
+        );
+        register_handler(Arc::new(notification_event_handler));
+
         // Register Quote Event Handlers
         let quote_accepted_handler = crate::domains::interventions::application::quote_event_handlers::QuoteAcceptedHandler::new(
             intervention_workflow_service.clone() as Arc<dyn crate::domains::interventions::application::InterventionCreator>,
