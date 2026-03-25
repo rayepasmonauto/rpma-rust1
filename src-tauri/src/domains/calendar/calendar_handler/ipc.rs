@@ -4,6 +4,7 @@ use super::*;
 use crate::commands::{ApiResponse, AppError, AppState};
 use crate::resolve_context;
 use crate::shared::context::RequestContext;
+
 use tracing::{info, instrument};
 
 fn calendar_context(
@@ -15,10 +16,9 @@ fn calendar_context(
 }
 
 fn facade(state: &AppState<'_>) -> CalendarFacade {
-    let service = CalendarService::new(state.db.clone());
     CalendarFacade::new(
-        std::sync::Arc::new(service),
-        state.db.clone(),
+        state.calendar_service.clone(),
+        state.calendar_event_repository.clone(),
         state.auth_service.rate_limiter(),
     )
 }

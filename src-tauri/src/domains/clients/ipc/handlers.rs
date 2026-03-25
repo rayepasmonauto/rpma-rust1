@@ -40,7 +40,7 @@ pub async fn client_create(
         .client_service
         .create_client_async(sanitized, ctx.user_id())
         .await
-        .map_err(|e| ClientService::map_service_error("create_client", &e))?;
+        .map_err(|e| ClientService::map_service_error("create_client", e.as_str()))?;
     Ok(ApiResponse::success_with_correlation(
         client,
         Some(ctx.correlation_id),
@@ -62,7 +62,7 @@ pub async fn client_get(
         .client_service
         .get_client_async(&id)
         .await
-        .map_err(|e| ClientService::map_service_error("get_client", &e))?;
+        .map_err(|e| ClientService::map_service_error("get_client", e.as_str()))?;
     Ok(ApiResponse::success_with_correlation(
         client,
         Some(ctx.correlation_id),
@@ -111,7 +111,7 @@ pub async fn client_update(
         .client_service
         .update_client_async(sanitized, ctx.user_id())
         .await
-        .map_err(|e| ClientService::map_service_error("update_client", &e))?;
+        .map_err(|e| ClientService::map_service_error("update_client", e.as_str()))?;
     Ok(ApiResponse::success_with_correlation(
         client,
         Some(ctx.correlation_id),
@@ -133,7 +133,7 @@ pub async fn client_delete(
         .client_service
         .delete_client_async(&id, ctx.user_id())
         .await
-        .map_err(|e| ClientService::map_service_error("delete_client", &e))?;
+        .map_err(|e| ClientService::map_service_error("delete_client", e.as_str()))?;
     Ok(ApiResponse::success_with_correlation(
         (),
         Some(ctx.correlation_id),
@@ -154,7 +154,7 @@ pub async fn client_list(
         .client_service
         .get_clients_async(filters)
         .await
-        .map_err(|e| ClientService::map_service_error("list_clients", &e))?;
+        .map_err(|e| ClientService::map_service_error("list_clients", e.as_str()))?;
     Ok(ApiResponse::success_with_correlation(
         clients,
         Some(ctx.correlation_id),
@@ -201,7 +201,7 @@ pub async fn client_search(
         .client_service
         .search_clients_async(&query, 1, limit)
         .await
-        .map_err(|e| ClientService::map_service_error("search_clients", &e))?;
+        .map_err(|e| ClientService::map_service_error("search_clients", e.as_str()))?;
     Ok(ApiResponse::success_with_correlation(
         clients,
         Some(ctx.correlation_id),
@@ -221,7 +221,7 @@ pub async fn client_get_stats(
         .client_service
         .get_client_stats_async()
         .await
-        .map_err(|e| ClientService::map_service_error("get_client_stats", &e))?;
+        .map_err(|e| ClientService::map_service_error("get_client_stats", e.as_str()))?;
     Ok(ApiResponse::success_with_correlation(
         stats,
         Some(ctx.correlation_id),

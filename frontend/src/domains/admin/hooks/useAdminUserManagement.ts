@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { CreateUserRequest, UserAccount } from "@/lib/backend";
 import { adminKeys } from "@/lib/query-keys";
-import { ipcClient, convertTimestamps } from "@/shared/utils";
 import { useDebounce } from "@/shared/hooks/useDebounce";
-import type { CreateUserRequest, UserAccount } from "@/shared/types";
 import { useAuth } from "@/shared/hooks/useAuth";
+import { convertTimestamps } from "@/shared/utils";
+import { useUserActions } from "@/domains/users/api/useUserActions";
+import { userIpc } from "@/domains/users/ipc/users.ipc";
 
 export interface UseAdminUserManagementReturn {
   users: UserAccount[];
@@ -31,6 +33,12 @@ export interface UseAdminUserManagementReturn {
 export function useAdminUserManagement(): UseAdminUserManagementReturn {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const {
+    createUser,
+    deleteUser: removeUser,
+    banUser,
+    unbanUser,
+  } = useUserActions();
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -40,7 +48,7 @@ export function useAdminUserManagement(): UseAdminUserManagementReturn {
   const usersQuery = useQuery({
     queryKey: adminKeys.usersFiltered(debouncedSearch, roleFilter),
     queryFn: async () => {
-      const result = await ipcClient.users.list(
+      const result = await userIpc.list(
         50,
         0,
         debouncedSearch || undefined,
@@ -58,8 +66,13 @@ export function useAdminUserManagement(): UseAdminUserManagementReturn {
     queryClient.invalidateQueries({ queryKey: adminKeys.users() });
 
   const addUserMutation = useMutation({
-    mutationFn: (userData: CreateUserRequest) =>
-      ipcClient.users.create(userData),
+    mutationFn: async (userData: CreateUserRequest) => {
+      const created = await createUser(userData);
+      if (!created) {
+        throw new Error("Failed to add user");
+      }
+      return created;
+    },
     onSuccess: () => {
       setShowAddModal(false);
       void invalidateUsers();
@@ -68,22 +81,35 @@ export function useAdminUserManagement(): UseAdminUserManagementReturn {
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (userId: string) => ipcClient.users.delete(userId),
+    mutationFn: async (userId: string) => {
+      const deleted = await removeUser(userId);
+      if (!deleted) {
+        throw new Error("Failed to delete user");
+      }
+      return deleted;
+    },
     onSuccess: () => void invalidateUsers(),
     onError: (error) => console.error("Failed to delete user:", error),
   });
 
   const updateUserStatusMutation = useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       userId,
       isActive,
     }: {
       userId: string;
       isActive: boolean;
-    }) =>
-      isActive
-        ? ipcClient.users.unbanUser(userId)
-        : ipcClient.users.banUser(userId),
+    }) => {
+      const updated = isActive
+        ? await unbanUser(userId)
+        : await banUser(userId);
+
+      if (!updated) {
+        throw new Error("Failed to update user status");
+      }
+
+      return updated;
+    },
     onSuccess: () => void invalidateUsers(),
     onError: (error) => console.error("Failed to update user status:", error),
   });

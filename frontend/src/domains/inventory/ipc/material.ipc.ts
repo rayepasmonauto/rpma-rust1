@@ -1,6 +1,6 @@
 import { safeInvoke } from "@/lib/ipc/core";
 import { IPC_COMMANDS } from "@/lib/ipc/commands";
-import { runWithMutationEffects } from "@/lib/ipc/utils";
+import { runWithMutationEffects } from "@/lib/ipc/utils/mutation-effects";
 import type { JsonObject, JsonValue } from "@/types/json";
 
 const compactJsonObject = (
@@ -132,10 +132,14 @@ export const materialIpc = {
    * @returns Promise resolving to updated material
    */
   update: (id: string, data: MaterialUpdateRequest) =>
-    runWithMutationEffects(() => safeInvoke(IPC_COMMANDS.MATERIAL_UPDATE, {
-      id,
-      request: compactJsonObject({ ...data }),
-    }), materialMutationEffects),
+    runWithMutationEffects(
+      () =>
+        safeInvoke(IPC_COMMANDS.MATERIAL_UPDATE, {
+          id,
+          request: compactJsonObject({ ...data }),
+        }),
+      materialMutationEffects,
+    ),
 
   /**
    * Gets a material by ID
@@ -161,9 +165,13 @@ export const materialIpc = {
    * @returns Promise resolving to updated material with current stock
    */
   updateStock: (data: StockUpdateRequest) =>
-    runWithMutationEffects(() => safeInvoke(IPC_COMMANDS.MATERIAL_UPDATE_STOCK, {
-      request: compactJsonObject({ ...data }),
-    }), materialMutationEffects),
+    runWithMutationEffects(
+      () =>
+        safeInvoke(IPC_COMMANDS.MATERIAL_UPDATE_STOCK, {
+          request: compactJsonObject({ ...data }),
+        }),
+      materialMutationEffects,
+    ),
 
   /**
    * Adjusts material stock with correction reason
@@ -181,9 +189,13 @@ export const materialIpc = {
    * @returns Promise resolving to consumption record
    */
   recordConsumption: (data: ConsumptionRecordRequest) =>
-    runWithMutationEffects(() => safeInvoke(IPC_COMMANDS.MATERIAL_RECORD_CONSUMPTION, {
-      request: compactJsonObject({ ...data }),
-    }), materialMutationEffects),
+    runWithMutationEffects(
+      () =>
+        safeInvoke(IPC_COMMANDS.MATERIAL_RECORD_CONSUMPTION, {
+          request: compactJsonObject({ ...data }),
+        }),
+      materialMutationEffects,
+    ),
 
   /**
    * Gets consumption history for a material
@@ -207,9 +219,13 @@ export const materialIpc = {
    * @returns Promise resolving to created transaction
    */
   createInventoryTransaction: (data: InventoryTransactionRequest) =>
-    runWithMutationEffects(() => safeInvoke(IPC_COMMANDS.MATERIAL_CREATE_INVENTORY_TRANSACTION, {
-      request: compactJsonObject({ ...data }),
-    }), materialMutationEffects),
+    runWithMutationEffects(
+      () =>
+        safeInvoke(IPC_COMMANDS.MATERIAL_CREATE_INVENTORY_TRANSACTION, {
+          request: compactJsonObject({ ...data }),
+        }),
+      materialMutationEffects,
+    ),
 
   /**
    * Gets transaction history for a material

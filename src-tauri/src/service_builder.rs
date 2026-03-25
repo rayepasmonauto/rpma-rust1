@@ -438,14 +438,21 @@ impl ServiceBuilder {
         );
 
         // Build and return AppStateType
+        let db = self.db.clone();
+
         Ok(AppStateType {
-            db: self.db,
+            db,
             async_db,
             repositories: self.repositories,
             task_service,
             client_service,
             task_import_service,
-            calendar_service,
+            calendar_service: calendar_service.clone(),
+            calendar_event_repository: Arc::new(
+                crate::domains::calendar::calendar_handler::CalendarEventRepository::new(
+                    self.db.clone(),
+                ),
+            ),
             intervention_service,
             intervention_creator: intervention_workflow_service
                 as Arc<dyn crate::domains::interventions::application::InterventionCreator>,

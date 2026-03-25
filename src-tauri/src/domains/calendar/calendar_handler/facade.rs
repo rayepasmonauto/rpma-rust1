@@ -1,10 +1,9 @@
 //! CalendarFacade — command/response enums and facade orchestration.
 
 use super::*;
-use crate::db::Database;
 use crate::domains::auth::infrastructure::rate_limiter::RateLimiterService;
-use crate::domains::calendar::infrastructure::{CalendarEventQueries, CalendarRepository};
 use crate::shared::context::RequestContext;
+use crate::shared::repositories::CalendarEventRepositoryContract;
 use crate::shared::ipc::errors::AppError as IpcAppError;
 use crate::shared::repositories::base::Repository;
 use std::sync::Arc;
@@ -101,7 +100,7 @@ mod helpers {
 /// Facade for the Calendar bounded context.
 pub struct CalendarFacade {
     pub(super) calendar_service: Arc<CalendarService>,
-    pub(super) db: Arc<Database>,
+    pub(super) calendar_event_repository: Arc<dyn CalendarEventRepositoryContract>,
     rate_limiter: Option<Arc<RateLimiterService>>,
 }
 
@@ -114,12 +113,12 @@ impl std::fmt::Debug for CalendarFacade {
 impl CalendarFacade {
     pub fn new(
         calendar_service: Arc<CalendarService>,
-        db: Arc<Database>,
+        calendar_event_repository: Arc<dyn CalendarEventRepositoryContract>,
         rate_limiter: Arc<RateLimiterService>,
     ) -> Self {
         Self {
             calendar_service,
-            db,
+            calendar_event_repository,
             rate_limiter: Some(rate_limiter),
         }
     }
@@ -128,11 +127,11 @@ impl CalendarFacade {
     #[cfg(test)]
     pub fn new_without_rate_limiter(
         calendar_service: Arc<CalendarService>,
-        db: Arc<Database>,
+        calendar_event_repository: Arc<dyn CalendarEventRepositoryContract>,
     ) -> Self {
         Self {
             calendar_service,
-            db,
+            calendar_event_repository,
             rate_limiter: None,
         }
     }
@@ -190,8 +189,8 @@ impl CalendarFacade {
                 Ok(CalendarResponse::Tasks(tasks))
             }
             CalendarCommand::GetEventById { id } => {
-                let repo = CalendarEventRepository::new(self.db.clone());
-                let event = repo
+                let event = self
+                    .calendar_event_repository
                     .find_by_id(id)
                     .await
                     .map_err(|e| IpcAppError::internal_sanitized("get_calendar_event", &e))?;
@@ -209,8 +208,8 @@ impl CalendarFacade {
                         "Event start time must be before end time".to_string(),
                     ));
                 }
-                let repo = CalendarEventRepository::new(self.db.clone());
-                let event = repo
+                let event = self
+                    .calendar_event_repository
                     .create(event_data, Some(ctx.auth.user_id.clone()))
                     .await
                     .map_err(|e| IpcAppError::internal_sanitized("create_calendar_event", &e))?;
@@ -227,32 +226,32 @@ impl CalendarFacade {
                         ));
                     }
                 }
-                let repo = CalendarEventRepository::new(self.db.clone());
-                let event = repo
+                let event = self
+                    .calendar_event_repository
                     .update(&id, event_data, Some(ctx.auth.user_id.clone()))
                     .await
                     .map_err(|e| IpcAppError::internal_sanitized("update_calendar_event", &e))?;
                 Ok(CalendarResponse::OptionalEvent(event))
             }
             CalendarCommand::DeleteEvent { id } => {
-                let repo = CalendarEventRepository::new(self.db.clone());
-                let deleted = repo
+                let deleted = self
+                    .calendar_event_repository
                     .delete_by_id(id)
                     .await
                     .map_err(|e| IpcAppError::internal_sanitized("delete_calendar_event", &e))?;
                 Ok(CalendarResponse::Deleted(deleted))
             }
             CalendarCommand::GetEventsForTechnician { technician_id } => {
-                let repo = CalendarEventRepository::new(self.db.clone());
-                let events = repo
+                let events = self
+                    .calendar_event_repository
                     .find_by_technician(&technician_id)
                     .await
                     .map_err(|e| IpcAppError::internal_sanitized("get_technician_events", &e))?;
                 Ok(CalendarResponse::Events(events))
             }
             CalendarCommand::GetEventsForTask { task_id } => {
-                let repo = CalendarEventRepository::new(self.db.clone());
-                let events = repo
+                let events = self
+                    .calendar_event_repository
                     .find_by_task(&task_id)
                     .await
                     .map_err(|e| IpcAppError::internal_sanitized("get_task_events", &e))?;
@@ -264,11 +263,11 @@ impl CalendarFacade {
                 technician_id,
             } => {
                 self.validate_date_range(&start_date, &end_date)?;
-                let repo = CalendarRepository::new(self.db.clone());
                 let from = helpers::date_str_to_epoch_ms(&start_date, false);
                 let to = helpers::date_str_to_epoch_ms(&end_date, true);
                 let tech_id = technician_id.as_deref();
-                let events = repo
+                let events = self
+                    .calendar_event_repository
                     .find_events_in_range(from, to, tech_id)
                     .await
                     .map_err(|e| IpcAppError::internal_sanitized("get_events", &e))?;

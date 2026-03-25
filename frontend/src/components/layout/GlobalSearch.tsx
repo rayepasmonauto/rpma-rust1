@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { User, ClipboardList, Package, FileText, Loader2 } from "lucide-react";
-import { ipcClient } from "@/lib/ipc";
+import { systemOperations } from "@/lib/ipc/domains/system";
 import type { GlobalSearchResult } from "@/lib/backend";
 import {
   CommandDialog,
@@ -35,7 +35,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
 
   const { data, isFetching } = useQuery({
     queryKey: ["global-search", debouncedQuery],
-    queryFn: () => ipcClient.system.globalSearch(debouncedQuery),
+    queryFn: () => systemOperations.globalSearch(debouncedQuery),
     enabled: open && debouncedQuery.length >= 2,
     staleTime: 30_000,
     placeholderData: (prev) => prev,
