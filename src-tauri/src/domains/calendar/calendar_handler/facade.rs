@@ -2,6 +2,7 @@
 
 use super::*;
 use crate::db::Database;
+use crate::domains::auth::infrastructure::rate_limiter::RateLimiterService;
 use crate::domains::calendar::infrastructure::{CalendarEventQueries, CalendarRepository};
 use crate::shared::context::RequestContext;
 use crate::shared::ipc::errors::AppError as IpcAppError;
@@ -101,6 +102,7 @@ mod helpers {
 pub struct CalendarFacade {
     pub(super) calendar_service: Arc<CalendarService>,
     pub(super) db: Arc<Database>,
+    rate_limiter: Option<Arc<RateLimiterService>>,
 }
 
 impl std::fmt::Debug for CalendarFacade {
@@ -110,10 +112,28 @@ impl std::fmt::Debug for CalendarFacade {
 }
 
 impl CalendarFacade {
-    pub fn new(calendar_service: Arc<CalendarService>, db: Arc<Database>) -> Self {
+    pub fn new(
+        calendar_service: Arc<CalendarService>,
+        db: Arc<Database>,
+        rate_limiter: Arc<RateLimiterService>,
+    ) -> Self {
         Self {
             calendar_service,
             db,
+            rate_limiter: Some(rate_limiter),
+        }
+    }
+
+    /// Create a facade without a rate limiter (use in unit tests only).
+    #[cfg(test)]
+    pub fn new_without_rate_limiter(
+        calendar_service: Arc<CalendarService>,
+        db: Arc<Database>,
+    ) -> Self {
+        Self {
+            calendar_service,
+            db,
+            rate_limiter: None,
         }
     }
 
@@ -145,6 +165,17 @@ impl CalendarFacade {
         command: CalendarCommand,
         ctx: &RequestContext,
     ) -> Result<CalendarResponse, IpcAppError> {
+        if let Some(rl) = &self.rate_limiter {
+            let rate_limit_key = format!("calendar_ops:{}", ctx.auth.user_id);
+            if !rl
+                .check_and_record(&rate_limit_key, 200, 60)
+                .map_err(|e| IpcAppError::internal_sanitized("rate_limit_check", &e))?
+            {
+                return Err(IpcAppError::Validation(
+                    "Rate limit exceeded. Please try again later.".to_string(),
+                ));
+            }
+        }
         match command {
             CalendarCommand::GetTasks {
                 date_range,
@@ -277,6 +308,15 @@ impl CalendarFacade {
                     )
                     .await
                     .map_err(|e| IpcAppError::internal_sanitized("schedule_task", &e))?;
+                if result.has_conflict {
+                    let msg = result.message.clone().unwrap_or_else(|| {
+                        format!(
+                            "Scheduling conflict: {} task(s) overlap",
+                            result.conflicting_tasks.len()
+                        )
+                    });
+                    return Err(IpcAppError::Validation(msg));
+                }
                 Ok(CalendarResponse::Conflict(result))
             }
         }

@@ -474,6 +474,21 @@ impl SettingsService {
         Ok(org)
     }
 
+    /// Update only the organization's logo fields.  Requires Admin.
+    pub fn update_logo(
+        &self,
+        ctx: &RequestContext,
+        logo_url: Option<String>,
+        logo_data: Option<String>,
+    ) -> Result<Organization, AppError> {
+        let request = UpdateOrganizationRequest {
+            logo_url,
+            logo_data,
+            ..Default::default()
+        };
+        self.update_organization(ctx, &request)
+    }
+
     /// Retrieve all organization key-value settings.  Requires at least Viewer.
     pub fn get_organization_settings(
         &self,

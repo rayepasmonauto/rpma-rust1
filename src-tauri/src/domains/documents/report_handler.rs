@@ -173,13 +173,8 @@ pub async fn reports_get_capabilities(
 ) -> Result<ApiResponse<ReportCapabilities>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
     debug!("Getting report capabilities");
-
-    let capabilities = ReportCapabilities {
-        version: "1.0.0".to_string(),
-        status: "active".to_string(),
-        available_exports: vec!["intervention_pdf".to_string(), "csv".to_string()],
-    };
-
+    let capabilities = DocumentsFacade::new(state.photo_service.clone(), state.db.clone())
+        .get_capabilities();
     Ok(ApiResponse::success(capabilities).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -191,77 +186,20 @@ pub async fn report_generate(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<InterventionReport>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Technician);
-    let current_user = ctx.auth.to_user_session();
-    let facade = DocumentsFacade::new(state.photo_service.clone(), state.db.clone());
-
-    // TODO(ADR-001): extract business logic to application/
-    // 1. Fetch intervention data
-    let intervention_data = report_export_service::get_intervention_with_details(
-        &intervention_id,
-        &state.db,
-        Some(&state.intervention_service),
-        Some(&state.client_service),
-    )
-    .await?;
-
-    // 2. Check export permissions
-    report_export_service::check_intervention_export_permissions(
-        intervention_data.intervention.technician_id.clone(),
-        &current_user,
-    )?;
-
-    // 3. Generate report number
-    let report_number = facade.generate_report_number()?;
-
-    // 4. Generate PDF file
-    let file_name = DocumentStorageService::generate_filename(
-        &format!("report_{}", report_number.replace('-', "_")),
-        "pdf",
+    let svc = crate::domains::documents::application::ReportApplicationService::new(
+        state.db.clone(),
+        state.intervention_service.clone(),
+        state.client_service.clone(),
+        state.photo_service.clone(),
     );
-    let output_path = DocumentStorageService::get_document_path(&state.app_config.app_data_dir, &file_name);
-
-    let pdf_report = InterventionPdfReport::new(
-        intervention_data.intervention.clone(),
-        intervention_data.workflow_steps.clone(),
-        intervention_data.photos.clone(),
-        Vec::new(),
-        intervention_data.client.clone(),
-    );
-    pdf_report.generate(&output_path).await?;
-
-    // 5. Get file size
-    let file_size = tokio::fs::metadata(&output_path)
-        .await
-        .map(|m| m.len())
-        .ok();
-
-    // 6. Create report entity
-    let now_millis = chrono::Utc::now().timestamp_millis();
-    let report = InterventionReport {
-        id: crate::shared::utils::uuid::generate_uuid_string(),
-        intervention_id: intervention_id.to_string(),
-        report_number: report_number.clone(),
-        generated_at: now_millis,
-        technician_id: current_user.user_id.clone().into(),
-        technician_name: current_user.username.clone().into(),
-        file_path: Some(output_path.to_string_lossy().to_string()),
-        file_name: Some(file_name),
-        file_size,
-        format: "pdf".to_string(),
-        status: "generated".to_string(),
-        created_at: now_millis,
-        updated_at: now_millis,
-    };
-
-    // 7. Persist to database
-    facade.save_report(&report)?;
-
+    let report = svc
+        .generate_report(&intervention_id, &ctx.auth.to_user_session(), &state.app_config.app_data_dir)
+        .await?;
     info!(
         report_number = %report.report_number,
         intervention_id = %intervention_id,
         "Intervention report generated"
     );
-
     Ok(ApiResponse::success(report).with_correlation_id(Some(ctx.correlation_id)))
 }
 

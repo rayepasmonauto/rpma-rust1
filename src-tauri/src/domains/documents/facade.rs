@@ -94,4 +94,13 @@ impl DocumentsFacade {
     pub fn save_report(&self, report: &InterventionReport) -> Result<(), AppError> {
         super::report_handler::ReportRepository::new(self.db.clone()).save(report)
     }
+
+    /// Return the static report capabilities for this application.
+    pub fn get_capabilities(&self) -> super::models::ReportCapabilities {
+        super::models::ReportCapabilities {
+            version: "1.0.0".to_string(),
+            status: "active".to_string(),
+            available_exports: vec!["intervention_pdf".to_string(), "csv".to_string()],
+        }
+    }
 }
