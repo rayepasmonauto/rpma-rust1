@@ -26,7 +26,7 @@ pub struct QuoteGetRequest {
 
 /// TODO: document
 #[derive(Deserialize, Debug, TS)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 #[ts(export)]
 pub struct QuoteListRequest {
     #[serde(default)]
@@ -166,7 +166,7 @@ pub struct QuoteAttachmentOpenRequest {
 
 /// Request to fetch aggregate quote statistics.
 #[derive(Deserialize, Debug, TS)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
 #[ts(export)]
 pub struct QuoteGetStatsRequest {
     #[serde(default)]

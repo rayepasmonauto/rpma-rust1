@@ -218,8 +218,11 @@ pub struct QuoteItem {
 
 /// Quote query parameters for listing and filtering
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
 pub struct QuoteQuery {
     /// Shared pagination params (page, page_size, sort_by, sort_order).
+    #[serde(default)]
     pub pagination: crate::shared::repositories::base::PaginationParams,
     pub search: Option<String>,
     pub client_id: Option<String>,

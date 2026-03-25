@@ -8,7 +8,7 @@ import type { JsonObject, JsonValue } from '@/types/json';
 
 export const quotesIpc = {
   getStats: async (): Promise<QuoteStats> => {
-    return safeInvoke<QuoteStats>(IPC_COMMANDS.QUOTE_GET_STATS, {});
+    return safeInvoke<QuoteStats>(IPC_COMMANDS.QUOTE_GET_STATS, { request: {} });
   },
 
   create: async (data: JsonObject): Promise<Quote> => {
@@ -29,8 +29,23 @@ export const quotesIpc = {
   },
 
   list: async (filters: JsonObject): Promise<QuoteListResponse> => {
+    // Map flat filters to nested pagination expected by backend QuoteQuery
+    const { page, limit, sort_by, sort_order, ...queryFilters } = filters;
+
+    const request = {
+      filters: {
+        ...queryFilters,
+        pagination: {
+          page: page || 1,
+          page_size: limit || 20,
+          sort_by: sort_by || "created_at",
+          sort_order: sort_order || "desc",
+        },
+      },
+    };
+
     return safeInvoke<QuoteListResponse>(IPC_COMMANDS.QUOTE_LIST, {
-      request: { filters }
+      request
     }, validateQuoteList);
   },
 

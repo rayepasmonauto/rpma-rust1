@@ -100,10 +100,10 @@ function scheduleSyncToBackend(currentView: CalendarViewMode, filters: CalendarS
   if (_syncTimer) clearTimeout(_syncTimer);
   _syncTimer = setTimeout(() => {
     ipcClient.settings.updateUserPreferences({
-      calendar_view: currentView,
-      calendar_show_my_events_only: filters.showMyEventsOnly,
-      calendar_filter_statuses: filters.statuses as string[],
-      calendar_filter_priorities: filters.priorities as string[],
+      calendarView: currentView,
+      calendarShowMyEventsOnly: filters.showMyEventsOnly,
+      calendarFilterStatuses: filters.statuses as string[],
+      calendarFilterPriorities: filters.priorities as string[],
     } as Partial<UserPreferences>).catch(() => {
       // Sync failure is non-critical — localStorage still holds the preference.
     });
@@ -124,14 +124,14 @@ useCalendarStore.subscribe((state) => {
  */
 export function hydrateCalendarFromPreferences(prefs: UserPreferences): void {
   const store = useCalendarStore.getState();
-  if (prefs.calendar_view) {
-    store.setCurrentView(prefs.calendar_view as CalendarViewMode);
+  if (prefs.calendarView) {
+    store.setCurrentView(prefs.calendarView as CalendarViewMode);
   }
-  if (prefs.calendar_filter_statuses || prefs.calendar_filter_priorities || prefs.calendar_show_my_events_only !== undefined) {
+  if (prefs.calendarFilterStatuses || prefs.calendarFilterPriorities || prefs.calendarShowMyEventsOnly !== undefined) {
     store.setFilters({
-      ...(prefs.calendar_filter_statuses && { statuses: prefs.calendar_filter_statuses as TaskStatus[] }),
-      ...(prefs.calendar_filter_priorities && { priorities: prefs.calendar_filter_priorities as TaskPriority[] }),
-      ...(prefs.calendar_show_my_events_only != null && { showMyEventsOnly: prefs.calendar_show_my_events_only }),
+      ...(prefs.calendarFilterStatuses && { statuses: prefs.calendarFilterStatuses as TaskStatus[] }),
+      ...(prefs.calendarFilterPriorities && { priorities: prefs.calendarFilterPriorities as TaskPriority[] }),
+      ...(prefs.calendarShowMyEventsOnly != null && { showMyEventsOnly: prefs.calendarShowMyEventsOnly }),
     });
   }
 }

@@ -9,4 +9,4 @@ export type QuoteQuery = {
 /**
  * Shared pagination params (page, page_size, sort_by, sort_order).
  */
-pagination: PaginationParams, search: string | null, client_id: string | null, status: QuoteStatus | null, date_from: string | null, date_to: string | null, };
+pagination: PaginationParams, search: string | null, clientId: string | null, status: QuoteStatus | null, dateFrom: string | null, dateTo: string | null, };

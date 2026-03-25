@@ -9,8 +9,8 @@ import { useAuth } from "@/shared/hooks/useAuth";
 const DEFAULT_PREFERENCES = {
   theme: "system",
   language: "fr",
-  compact_view: false,
-  show_notifications: true,
+  compactView: false,
+  showNotifications: true,
 };
 
 const DEFAULT_ACCESSIBILITY = {

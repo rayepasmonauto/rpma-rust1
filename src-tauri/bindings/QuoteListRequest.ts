@@ -4,4 +4,4 @@ import type { QuoteQuery } from "./QuoteQuery";
 /**
  * TODO: document
  */
-export type QuoteListRequest = { filters: QuoteQuery, correlation_id: string | null, };
+export type QuoteListRequest = { filters: QuoteQuery, correlationId: string | null, };
