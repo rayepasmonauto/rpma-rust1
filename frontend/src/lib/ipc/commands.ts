@@ -42,7 +42,6 @@ export const IPC_COMMANDS = {
   TASK_CHECKLIST_ITEM_CREATE: "task_checklist_item_create",
 
   // Client commands
-  CLIENT_CRUD: "client_crud",
   CLIENT_CREATE: "client_create",
   CLIENT_GET: "client_get",
   CLIENT_GET_WITH_TASKS: "client_get_with_tasks",
@@ -111,6 +110,7 @@ export const IPC_COMMANDS = {
   INTERVENTION_DELETE: "intervention_delete",
   INTERVENTION_FINALIZE: "intervention_finalize",
   INTERVENTION_ADVANCE_STEP: "intervention_advance_step",
+  INTERVENTION_LIST: "intervention_list",
 
   // Notification commands
   INITIALIZE_NOTIFICATION_SERVICE: "initialize_notification_service",

@@ -1038,37 +1038,150 @@ export async function handleInvoke(command: string, args?: JsonObject): Promise<
           return { type: 'NotFound' };
       }
     }
+    // ── Individual intervention commands (post-refactor) ─────────────────────
+    case 'intervention_start': {
+      const req = (args?.request ?? {}) as AnyRecord;
+      const task = state.tasks.find(t => t.id === req.task_id) || normalizeTask({ id: req.task_id });
+      const intervention = normalizeIntervention(task, { status: 'in_progress' });
+      const steps = buildInterventionSteps(intervention.id);
+      state.interventions.push(intervention);
+      state.interventionSteps.push(...steps);
+      syncInterventionProgress(intervention.id);
+      return { intervention, steps };
+    }
+    case 'intervention_get': {
+      const intervention = state.interventions.find(i => i.id === args?.id);
+      return intervention ? { intervention } : null;
+    }
+    case 'intervention_update': {
+      const index = state.interventions.findIndex(i => i.id === args?.id);
+      if (index === -1) return null;
+      const current = state.interventions[index]!;
+      state.interventions[index] = {
+        ...current,
+        ...((args?.data as AnyRecord) ?? {}),
+        updated_at: nowIso()
+      } as MockIntervention;
+      return { intervention: state.interventions[index] };
+    }
+    case 'intervention_delete': {
+      const idx = state.interventions.findIndex(i => i.id === args?.id);
+      if (idx !== -1) state.interventions.splice(idx, 1);
+      return null;
+    }
+    case 'intervention_finalize': {
+      const req = (args?.request ?? {}) as AnyRecord;
+      const index = state.interventions.findIndex(i => i.id === req.intervention_id);
+      if (index === -1) return null;
+      const now = nowIso();
+      state.interventionSteps = state.interventionSteps.map(step =>
+        step.intervention_id === req.intervention_id
+          ? { ...step, step_status: 'completed', completed_at: now, updated_at: now }
+          : step
+      );
+      state.interventions[index] = {
+        ...state.interventions[index]!,
+        status: 'completed',
+        completion_percentage: 100,
+        completed_at: now,
+        customer_satisfaction: req.customer_satisfaction ?? null,
+        quality_score: req.quality_score ?? null,
+        final_observations: req.final_observations ?? null,
+        customer_signature: req.customer_signature ?? null,
+        customer_comments: req.customer_comments ?? null,
+        updated_at: now
+      };
+      return {
+        intervention: state.interventions[index],
+        metrics: {
+          total_duration_minutes: 60,
+          efficiency_score: null,
+          quality_score: req.quality_score ?? null,
+          certificates_generated: false
+        }
+      };
+    }
+    case 'intervention_advance_step': {
+      const stepIndex = state.interventionSteps.findIndex(step => step.id === args?.step_id);
+      if (stepIndex === -1) return null;
+      const now = nowIso();
+      const step = state.interventionSteps[stepIndex]!;
+      const nextPhotos = (args?.photos as string[] | undefined) ?? step.photo_urls ?? [];
+      const updatedStep = {
+        ...step,
+        collected_data: args?.collected_data ?? step.collected_data,
+        notes: args?.notes ?? step.notes,
+        photo_urls: nextPhotos,
+        photo_count: nextPhotos.length,
+        required_photos_completed: nextPhotos.length >= step.min_photos_required,
+        step_status: 'completed',
+        completed_at: now,
+        updated_at: now
+      };
+      state.interventionSteps[stepIndex] = updatedStep as MockInterventionStep;
+      const nextStepIndex = state.interventionSteps.findIndex(
+        s => s.intervention_id === step.intervention_id && s.step_number === step.step_number + 1
+      );
+      let nextStep: MockInterventionStep | null = null;
+      if (nextStepIndex !== -1) {
+        const next = state.interventionSteps[nextStepIndex]!;
+        nextStep = {
+          ...next,
+          step_status: next.step_status === 'pending' ? 'in_progress' : next.step_status,
+          started_at: next.started_at ?? now,
+          updated_at: now
+        } as MockInterventionStep;
+        state.interventionSteps[nextStepIndex] = nextStep;
+      }
+      syncInterventionProgress(step.intervention_id);
+      const progress = buildProgress(step.intervention_id, state.interventionSteps.filter(s => s.intervention_id === step.intervention_id));
+      return { step: updatedStep, next_step: nextStep, progress_percentage: progress.completion_percentage };
+    }
+    case 'intervention_list': {
+      const req = (args?.request ?? {}) as AnyRecord;
+      let interventions = [...state.interventions];
+      if (req.status) interventions = interventions.filter(i => i.status === req.status);
+      if (req.technician_id) interventions = interventions.filter(i => i.technician_id === req.technician_id);
+      const limit = typeof req.limit === 'number' ? req.limit : undefined;
+      const offset = typeof req.offset === 'number' ? req.offset : 0;
+      const paginated = limit !== undefined ? interventions.slice(offset, offset + limit) : interventions.slice(offset);
+      return { interventions: paginated, total: interventions.length };
+    }
+    // ── Individual intervention query commands ────────────────────────────────
     case 'intervention_get_active_by_task': {
       const taskId = args?.task_id ?? args?.taskId;
       const intervention = state.interventions.find(i => i.task_id === taskId && i.status !== 'completed') || null;
-      return { intervention };
+      // Return as array to match InterventionWorkflowResponse::ActiveByTask { interventions }
+      return { interventions: intervention ? [intervention] : [] };
     }
     case 'intervention_get_latest_by_task': {
-      const taskId = args?.taskId ?? args?.task_id;
-      const intervention = state.interventions.find(i => i.task_id === taskId) || null;
-      return { data: intervention };
+      const taskId = args?.task_id ?? args?.taskId;
+      // Return intervention directly (ApiResponse<Option<Intervention>> unwrapped by safeInvoke)
+      return state.interventions.find(i => i.task_id === taskId) || null;
     }
     case 'intervention_get_progress': {
       const interventionId = (args?.intervention_id ?? '') as string;
       const steps = state.interventionSteps.filter(step => step.intervention_id === interventionId);
       const progress = buildProgress(interventionId, steps);
-      return { steps, progress_percentage: progress.completion_percentage };
+      // Return { progress, steps } to match interventionsIpc.getProgress expectation
+      return { progress, steps };
     }
     case 'intervention_get_step': {
       const stepId = args?.step_id;
       return state.interventionSteps.find(step => step.id === stepId) || null;
     }
     case 'intervention_save_step_progress': {
-      const request = (args?.request ?? {}) as AnyRecord;
-      const stepIndex = state.interventionSteps.findIndex(step => step.id === request.step_id);
+      // interventionsIpc sends { data: stepData, correlation_id } (not { request: ... })
+      const req = (args?.data ?? args?.request ?? {}) as AnyRecord;
+      const stepIndex = state.interventionSteps.findIndex(step => step.id === req.step_id);
       if (stepIndex === -1) return null;
       const now = nowIso();
       const step = state.interventionSteps[stepIndex]!;
-      const nextPhotos = request.photos ?? step.photo_urls ?? [];
+      const nextPhotos = (req.photos as string[] | undefined) ?? step.photo_urls ?? [];
       const updatedStep = {
         ...step,
-        collected_data: request.collected_data ?? step.collected_data,
-        notes: request.notes ?? step.notes,
+        collected_data: req.collected_data ?? step.collected_data,
+        notes: req.notes ?? step.notes,
         photo_urls: nextPhotos,
         photo_count: nextPhotos.length,
         required_photos_completed: nextPhotos.length >= step.min_photos_required,

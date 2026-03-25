@@ -91,8 +91,7 @@ fn main() {
             domains::users::ipc::user::update_user,
             domains::users::ipc::user::update_user_status,
             domains::users::ipc::user::delete_user,
-            // ── Clients ──────────────────────────────────────────────────
-            domains::clients::client_handler::client_crud,
+            // Client domain
             domains::clients::client_handler::client_create,
             domains::clients::client_handler::client_get,
             domains::clients::client_handler::client_get_with_tasks,
@@ -130,9 +129,6 @@ fn main() {
             domains::tasks::ipc::status::task_transition_status,
             domains::tasks::ipc::status::task_get_status_distribution,
             // ── Interventions ────────────────────────────────────────────
-            domains::interventions::ipc::intervention::intervention_workflow,
-            domains::interventions::ipc::intervention::intervention_progress,
-            domains::interventions::ipc::intervention::intervention_management,
             domains::interventions::ipc::intervention::intervention_start,
             domains::interventions::ipc::intervention::intervention_get,
             domains::interventions::ipc::intervention::intervention_get_active_by_task,
@@ -144,6 +140,7 @@ fn main() {
             domains::interventions::ipc::intervention::intervention_save_step_progress,
             domains::interventions::ipc::intervention::intervention_get_progress,
             domains::interventions::ipc::intervention::intervention_get_step,
+            domains::interventions::ipc::intervention::intervention_list,
             // ── Inventory ────────────────────────────────────────────────
             domains::inventory::ipc::material::material_create,
             domains::inventory::ipc::material::material_get,
