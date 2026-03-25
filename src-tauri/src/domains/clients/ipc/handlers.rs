@@ -1,15 +1,15 @@
 //! Client IPC handlers — thin Tauri command entry points (ADR-018).
 
+use crate::commands::{ApiResponse, AppError, AppState};
 use crate::domains::clients::application::client_input_validator::{
     sanitize_create_request, sanitize_update_request,
 };
-use crate::domains::clients::application::ClientOrchestrator;
 use crate::domains::clients::application::client_service::{ClientService, ClientStats};
+use crate::domains::clients::application::ClientOrchestrator;
 use crate::domains::clients::domain::models::{
     Client, ClientListResponse, ClientQuery, ClientWithTasks, CreateClientRequest,
     UpdateClientRequest,
 };
-use crate::commands::{ApiResponse, AppError, AppState};
 use tracing::{instrument, warn};
 
 // ── Individual thin handlers (ADR-018) ────────────────────────────────────────
@@ -41,7 +41,10 @@ pub async fn client_create(
         .create_client_async(sanitized, ctx.user_id())
         .await
         .map_err(|e| ClientService::map_service_error("create_client", &e))?;
-    Ok(ApiResponse::success(client).with_correlation_id(Some(ctx.correlation_id.clone())))
+    Ok(ApiResponse::success_with_correlation(
+        client,
+        Some(ctx.correlation_id),
+    ))
 }
 
 /// Get a single client by ID.
@@ -60,7 +63,10 @@ pub async fn client_get(
         .get_client_async(&id)
         .await
         .map_err(|e| ClientService::map_service_error("get_client", &e))?;
-    Ok(ApiResponse::success(client).with_correlation_id(Some(ctx.correlation_id.clone())))
+    Ok(ApiResponse::success_with_correlation(
+        client,
+        Some(ctx.correlation_id),
+    ))
 }
 
 /// Get a single client with its associated tasks.
@@ -74,14 +80,18 @@ pub async fn client_get_with_tasks(
     let ctx = crate::resolve_context!(&state, &correlation_id);
     check_client_access(&state, ctx.user_id(), &ctx.auth.role, "read")?;
     ClientService::validate_client_id(&id)?;
-    
-    let orchestrator = ClientOrchestrator::new(state.client_service.clone(), state.task_service.clone());
+
+    let orchestrator =
+        ClientOrchestrator::new(state.client_service.clone(), state.task_service.clone());
     let client_with_tasks = orchestrator
         .get_client_with_tasks(&id)
         .await
         .map_err(|e| ClientService::map_service_error("get_client_with_tasks", &e))?;
-        
-    Ok(ApiResponse::success(client_with_tasks).with_correlation_id(Some(ctx.correlation_id.clone())))
+
+    Ok(ApiResponse::success_with_correlation(
+        client_with_tasks,
+        Some(ctx.correlation_id),
+    ))
 }
 
 /// Update an existing client.
@@ -102,7 +112,10 @@ pub async fn client_update(
         .update_client_async(sanitized, ctx.user_id())
         .await
         .map_err(|e| ClientService::map_service_error("update_client", &e))?;
-    Ok(ApiResponse::success(client).with_correlation_id(Some(ctx.correlation_id.clone())))
+    Ok(ApiResponse::success_with_correlation(
+        client,
+        Some(ctx.correlation_id),
+    ))
 }
 
 /// Delete a client by ID.
@@ -121,7 +134,10 @@ pub async fn client_delete(
         .delete_client_async(&id, ctx.user_id())
         .await
         .map_err(|e| ClientService::map_service_error("delete_client", &e))?;
-    Ok(ApiResponse::success(()).with_correlation_id(Some(ctx.correlation_id.clone())))
+    Ok(ApiResponse::success_with_correlation(
+        (),
+        Some(ctx.correlation_id),
+    ))
 }
 
 /// List clients with optional filters and pagination.
@@ -139,7 +155,10 @@ pub async fn client_list(
         .get_clients_async(filters)
         .await
         .map_err(|e| ClientService::map_service_error("list_clients", &e))?;
-    Ok(ApiResponse::success(clients).with_correlation_id(Some(ctx.correlation_id.clone())))
+    Ok(ApiResponse::success_with_correlation(
+        clients,
+        Some(ctx.correlation_id),
+    ))
 }
 
 /// List clients with their associated tasks.
@@ -153,14 +172,18 @@ pub async fn client_list_with_tasks(
 ) -> Result<ApiResponse<Vec<ClientWithTasks>>, AppError> {
     let ctx = crate::resolve_context!(&state, &correlation_id);
     check_client_access(&state, ctx.user_id(), &ctx.auth.role, "read")?;
-    
-    let orchestrator = ClientOrchestrator::new(state.client_service.clone(), state.task_service.clone());
+
+    let orchestrator =
+        ClientOrchestrator::new(state.client_service.clone(), state.task_service.clone());
     let clients_with_tasks = orchestrator
         .get_clients_with_tasks(filters, limit_tasks)
         .await
         .map_err(|e| ClientService::map_service_error("list_clients_with_tasks", &e))?;
-        
-    Ok(ApiResponse::success(clients_with_tasks).with_correlation_id(Some(ctx.correlation_id.clone())))
+
+    Ok(ApiResponse::success_with_correlation(
+        clients_with_tasks,
+        Some(ctx.correlation_id),
+    ))
 }
 
 /// Search clients by query string.
@@ -179,7 +202,10 @@ pub async fn client_search(
         .search_clients_async(&query, 1, limit)
         .await
         .map_err(|e| ClientService::map_service_error("search_clients", &e))?;
-    Ok(ApiResponse::success(clients).with_correlation_id(Some(ctx.correlation_id.clone())))
+    Ok(ApiResponse::success_with_correlation(
+        clients,
+        Some(ctx.correlation_id),
+    ))
 }
 
 /// Get client statistics (counts by type, etc.).
@@ -196,5 +222,8 @@ pub async fn client_get_stats(
         .get_client_stats_async()
         .await
         .map_err(|e| ClientService::map_service_error("get_client_stats", &e))?;
-    Ok(ApiResponse::success(stats).with_correlation_id(Some(ctx.correlation_id.clone())))
+    Ok(ApiResponse::success_with_correlation(
+        stats,
+        Some(ctx.correlation_id),
+    ))
 }
