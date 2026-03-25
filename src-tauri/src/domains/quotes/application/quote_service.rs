@@ -14,6 +14,7 @@ use crate::domains::quotes::domain::models::quote::*;
 use crate::domains::quotes::infrastructure::quote_repository::QuoteRepository;
 use crate::domains::quotes::infrastructure::quote_validation;
 use crate::shared::contracts::auth::UserRole;
+use crate::shared::contracts::notification::NotificationSender;
 use chrono::Utc;
 use std::sync::Arc;
 use tracing::{info, warn};
@@ -22,6 +23,7 @@ use tracing::{info, warn};
 pub struct QuoteService {
     pub(super) repo: Arc<dyn IQuoteRepository>,
     pub(super) event_bus: Arc<crate::shared::services::event_bus::InMemoryEventBus>,
+    pub(super) notification_sender: Arc<dyn NotificationSender>,
 }
 
 impl QuoteService {
@@ -29,8 +31,13 @@ impl QuoteService {
     pub fn new(
         repo: Arc<dyn IQuoteRepository>,
         event_bus: Arc<crate::shared::services::event_bus::InMemoryEventBus>,
+        notification_sender: Arc<dyn NotificationSender>,
     ) -> Self {
-        Self { repo, event_bus }
+        Self {
+            repo,
+            event_bus,
+            notification_sender,
+        }
     }
 
     // ------------------------------------------------------------------
@@ -165,6 +172,7 @@ impl QuoteService {
             .map_err(|_| "Impossible de récupérer le devis après création.".to_string())?
             .ok_or_else(|| "Devis introuvable après création.".to_string())?;
 
+        self.emit_quote_created(&quote, user_id);
         info!(quote_id = %id, "Quote created: {}", quote.quote_number);
         Ok(quote)
     }
@@ -198,6 +206,7 @@ impl QuoteService {
         &self,
         id: &str,
         req: UpdateQuoteRequest,
+        user_id: &str,
         role: &UserRole,
     ) -> Result<Quote, String> {
         Self::check_quote_permission(role, "update")?;
@@ -218,11 +227,13 @@ impl QuoteService {
         // Recalculate totals after updating discount
         self.recalculate_totals(id)?;
 
-        self.fetch_quote(id)
+        let updated = self.fetch_quote(id)?;
+        self.emit_quote_updated(&updated, user_id);
+        Ok(updated)
     }
 
     /// Soft-delete a quote (Draft only).
-    pub fn delete_quote(&self, id: &str, role: &UserRole) -> Result<bool, String> {
+    pub fn delete_quote(&self, id: &str, user_id: &str, role: &UserRole) -> Result<bool, String> {
         Self::check_quote_permission(role, "delete")?;
         let quote = self.fetch_quote(id)?;
 
@@ -230,7 +241,9 @@ impl QuoteService {
             return Err("Only draft quotes can be deleted".to_string());
         }
 
-        self.repo.delete(id).map_err(Self::map_repo_error)
+        let result = self.repo.delete(id).map_err(Self::map_repo_error)?;
+        self.emit_quote_deleted(&quote, user_id);
+        Ok(result)
     }
 
     /// Duplicate a quote: create a new Draft with copies of all items.
@@ -309,6 +322,7 @@ impl QuoteService {
 
         let result = self.fetch_quote(&new_id)?;
 
+        self.emit_quote_duplicated(&source, &result, user_id);
         info!(source_id = %id, new_id = %new_id, "Quote duplicated: {}", result.quote_number);
         Ok(result)
     }

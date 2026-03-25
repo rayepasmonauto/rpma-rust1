@@ -3,4 +3,4 @@
 /**
  * Request to fetch aggregate quote statistics.
  */
-export type QuoteGetStatsRequest = { correlation_id: string | null, };
+export type QuoteGetStatsRequest = { correlationId: string | null, };

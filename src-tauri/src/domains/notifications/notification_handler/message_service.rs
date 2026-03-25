@@ -9,11 +9,12 @@ use crate::db::Database;
 use crate::domains::notifications::models::{
     Message, MessageListResponse, MessageQuery, MessageStatus, Notification, SendMessageRequest,
 };
-use crate::domains::settings::models::UserNotificationSettings;
-use crate::domains::settings::UserSettingsRepository;
+use crate::shared::services::cross_domain::{UserNotificationSettings, UserSettingsRepository};
 use crate::shared::contracts::notification::{NotificationSender, SentMessage};
 use crate::shared::repositories::base::Repository;
 use crate::shared::repositories::cache::Cache;
+
+use crate::shared::services::event_bus::{event_factory, EventPublisher, InMemoryEventBus};
 
 use super::message_repository::{MessageRepoQuery, MessageRepository};
 use super::notification_repository::NotificationRepository;
@@ -23,14 +24,21 @@ pub struct MessageService {
     repository: Arc<MessageRepository>,
     db: Arc<Database>,
     cache: Arc<Cache>,
+    event_bus: Arc<InMemoryEventBus>,
 }
 
 impl MessageService {
-    pub fn new(repository: Arc<MessageRepository>, db: Arc<Database>, cache: Arc<Cache>) -> Self {
+    pub fn new(
+        repository: Arc<MessageRepository>,
+        db: Arc<Database>,
+        cache: Arc<Cache>,
+        event_bus: Arc<InMemoryEventBus>,
+    ) -> Self {
         Self {
             repository,
             db,
             cache,
+            event_bus,
         }
     }
 
@@ -44,7 +52,7 @@ impl MessageService {
         notification_kind: Option<&str>,
     ) -> Result<Message, AppError> {
         let id = format!("{:x}", rand::random::<u128>());
-        let now = chrono::Utc::now().timestamp();
+        let now = chrono::Utc::now().timestamp_millis();
         let message = Message {
             id,
             message_type: request.message_type.clone(),
@@ -126,13 +134,27 @@ impl MessageService {
             entity_url,
         );
 
-        NotificationRepository::new(self.db.clone(), self.cache.clone())
+        let saved = NotificationRepository::new(self.db.clone(), self.cache.clone())
             .save(notification)
             .await
             .map_err(|e| {
                 error!("Failed to save in-app notification: {}", e);
                 AppError::Database("Failed to save in-app notification".to_string())
             })?;
+
+        // ADR-016: Publish domain event so the frontend is notified in real-time
+        let event = event_factory::notification_received(
+            saved.id.clone(),
+            saved.user_id.clone(),
+            saved.message.clone(),
+        );
+        if let Err(e) = self.event_bus.publish(event) {
+            tracing::warn!(
+                notification_id = %saved.id,
+                "Failed to publish NotificationReceived event: {}",
+                e
+            );
+        }
 
         Ok(())
     }
@@ -336,7 +358,7 @@ impl NotificationSender for MessageService {
 mod tests {
     use super::{is_quiet_hours_at, should_store_notification};
     use chrono::{TimeZone, Utc};
-    use crate::domains::settings::models::UserNotificationSettings;
+    use crate::shared::services::cross_domain::UserNotificationSettings;
 
     #[test]
     fn test_should_store_notification_honors_global_in_app_toggle() {

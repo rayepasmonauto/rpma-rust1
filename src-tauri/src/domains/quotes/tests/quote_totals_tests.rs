@@ -5,12 +5,13 @@ use crate::shared::contracts::auth::UserRole;
 use crate::shared::repositories::cache::Cache;
 use std::sync::Arc;
 
-fn setup_service() -> (QuoteService, Arc<crate::db::Database>) {
-    let db = Arc::new(crate::test_utils::setup_test_db_sync());
+async fn setup_service_async() -> (QuoteService, Arc<crate::db::Database>) {
+    let db = Arc::new(crate::db::Database::new_in_memory().await.expect("db"));
     let cache = Arc::new(Cache::new(100));
     let repo = Arc::new(QuoteRepository::new(db.clone(), cache));
     let event_bus = Arc::new(crate::shared::services::event_bus::InMemoryEventBus::new());
-    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus);
+    let notification_sender = Arc::new(crate::test_utils::DummyNotificationSender);
+    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus, notification_sender);
 
     let now = chrono::Utc::now().timestamp_millis();
     db.execute(
@@ -36,10 +37,10 @@ fn make_item_req(unit_price: i64, qty: f64, tax_rate: f64) -> CreateQuoteItemReq
     }
 }
 
-#[test]
-fn test_rounding_line_total() {
+#[tokio::test]
+async fn test_rounding_line_total() {
     // qty=1.5, unit_price=333 cents → exact = 499.5 → rounded = 500
-    let (service, _db) = setup_service();
+    let (service, _db) = setup_service_async().await;
     let req = CreateQuoteRequest {
         client_id: "client-totals".to_string(),
         task_id: None,
@@ -72,9 +73,9 @@ fn test_rounding_line_total() {
     assert_eq!(quote.subtotal, 500);
 }
 
-#[test]
-fn test_percentage_discount_rounds_correctly() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_percentage_discount_rounds_correctly() {
+    let (service, _db) = setup_service_async().await;
     let req = CreateQuoteRequest {
         client_id: "client-totals".to_string(),
         task_id: None,
@@ -111,6 +112,7 @@ fn test_percentage_discount_rounds_correctly() {
                 vehicle_year: None,
                 vehicle_vin: None,
             },
+            "test_user",
             &UserRole::Admin,
         )
         .unwrap();
@@ -118,9 +120,9 @@ fn test_percentage_discount_rounds_correctly() {
     assert_eq!(updated.subtotal, 10001 - 1000);
 }
 
-#[test]
-fn test_fixed_discount_capped_at_subtotal() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_fixed_discount_capped_at_subtotal() {
+    let (service, _db) = setup_service_async().await;
     let req = CreateQuoteRequest {
         client_id: "client-totals".to_string(),
         task_id: None,
@@ -157,6 +159,7 @@ fn test_fixed_discount_capped_at_subtotal() {
                 vehicle_year: None,
                 vehicle_vin: None,
             },
+            "test_user",
             &UserRole::Admin,
         )
         .unwrap();
@@ -164,9 +167,9 @@ fn test_fixed_discount_capped_at_subtotal() {
     assert_eq!(updated.total, 0);
 }
 
-#[test]
-fn test_zero_items_all_totals_zero() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_zero_items_all_totals_zero() {
+    let (service, _db) = setup_service_async().await;
     let req = CreateQuoteRequest {
         client_id: "client-totals".to_string(),
         task_id: None,

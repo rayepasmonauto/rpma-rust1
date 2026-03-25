@@ -13,7 +13,7 @@ describe('Settings defaults', () => {
   it('DEFAULT_PREFERENCES has expected language default', () => {
     expect(DEFAULT_PREFERENCES.language).toBe('fr');
     expect(DEFAULT_PREFERENCES.theme).toBe('system');
-    expect(DEFAULT_PREFERENCES.date_format).toBe('DD/MM/YYYY');
+    expect(DEFAULT_PREFERENCES.dateFormat).toBe('DD/MM/YYYY');
   });
 
   it('DEFAULT_SECURITY has expected session_timeout', () => {

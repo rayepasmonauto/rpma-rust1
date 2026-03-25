@@ -1,58 +1,84 @@
-import { useState, useEffect, useCallback } from 'react';
-import { toast } from 'sonner';
-import { taskIpc } from '../ipc/task.ipc';
-import type { ChecklistItem } from '@/lib/backend';
+import { useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { taskKeys } from "@/lib/query-keys";
+import type { ChecklistItem } from "@/lib/backend";
+import { taskIpc } from "../ipc/task.ipc";
 
 /**
  * Loads and manages checklist items for a task via backend IPC.
- * Replaces the previous localStorage-based workaround.
+ *
+ * ADR-014 compliant: uses TanStack Query for server state instead of
+ * manual useState + useEffect.  The toggle mutation uses optimistic
+ * updates with automatic rollback on error.
  */
 export function useTaskChecklist(taskId: string | undefined) {
-  const [items, setItems] = useState<ChecklistItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!taskId) {
-      setItems([]);
-      return;
-    }
+  const queryKey = [...taskKeys.byId(taskId ?? ""), "checklist"];
 
-    let cancelled = false;
-    setIsLoading(true);
+  const { data: items = [], isLoading } = useQuery<ChecklistItem[]>({
+    queryKey,
+    queryFn: () => taskIpc.checklistItemsGet(taskId!),
+    enabled: !!taskId,
+  });
 
-    taskIpc.checklistItemsGet(taskId)
-      .then((data) => {
-        if (!cancelled) setItems(data ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setItems([]);
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
+  const toggleMutation = useMutation({
+    mutationFn: async ({
+      itemId,
+      completed,
+    }: {
+      itemId: string;
+      completed: boolean;
+    }) => {
+      return taskIpc.checklistItemUpdate(itemId, taskId!, {
+        is_completed: completed,
       });
+    },
 
-    return () => { cancelled = true; };
-  }, [taskId]);
+    // Optimistic update — immediately flip the checkbox in the cache
+    onMutate: async ({ itemId, completed }) => {
+      await queryClient.cancelQueries({ queryKey });
 
-  const toggleItem = useCallback(async (itemId: string, completed: boolean) => {
-    if (!taskId) return;
+      const previous = queryClient.getQueryData<ChecklistItem[]>(queryKey);
 
-    // Optimistic update
-    setItems(prev => prev.map(item =>
-      item.id === itemId ? { ...item, is_completed: completed } : item
-    ));
+      queryClient.setQueryData<ChecklistItem[]>(queryKey, (old) =>
+        (old ?? []).map((item) =>
+          item.id === itemId ? { ...item, is_completed: completed } : item,
+        ),
+      );
 
-    try {
-      const updated = await taskIpc.checklistItemUpdate(itemId, taskId, { is_completed: completed });
-      setItems(prev => prev.map(item => item.id === itemId ? updated : item));
-    } catch {
-      // Rollback
-      setItems(prev => prev.map(item =>
-        item.id === itemId ? { ...item, is_completed: !completed } : item
-      ));
-      toast.error('Erreur lors de la mise à jour de la checklist');
-    }
-  }, [taskId]);
+      return { previous };
+    },
+
+    // Replace the optimistically-updated item with the authoritative backend response
+    onSuccess: (updated) => {
+      queryClient.setQueryData<ChecklistItem[]>(queryKey, (old) =>
+        (old ?? []).map((item) => (item.id === updated.id ? updated : item)),
+      );
+    },
+
+    // Rollback on error
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKey, context.previous);
+      }
+      toast.error("Erreur lors de la mise à jour de la checklist");
+    },
+
+    // Always reconcile with the server after settling
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  const toggleItem = useCallback(
+    async (itemId: string, completed: boolean) => {
+      if (!taskId) return;
+      toggleMutation.mutate({ itemId, completed });
+    },
+    [taskId, toggleMutation],
+  );
 
   return { items, isLoading, toggleItem };
 }

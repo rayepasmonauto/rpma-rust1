@@ -51,6 +51,7 @@ impl Database {
     pub fn with_transaction<F, T>(&self, f: F) -> DbResult<T>;
     pub fn get_pool_health(&self) -> PoolHealth;
     pub fn get_performance_stats(&self) -> QueryStatsSummary;
+    pub fn health_check(&self) -> DbResult<()>;
 }
 ```
 
@@ -62,7 +63,7 @@ impl Database {
 ### Naming Convention
 Numbered SQL files: `NNN_description.sql`
 
-### Current Migrations (002-061)
+### Current Migrations (002-063)
 
 | Range | Category |
 |-------|----------|
@@ -72,8 +73,21 @@ Numbered SQL files: `NNN_description.sql`
 | 042-049 | Indexes, fixes, quotes |
 | 050-058 | Soft deletes, optimization |
 | 059-061 | Performance indexes, checklist |
+| 062-063 | Task drafts, user preferences |
 
 **Note**: No `001_initial_schema.sql` — schema bootstrapped historically.
+
+### Key Recent Migrations
+
+| Migration | Purpose |
+|-----------|---------|
+| `057_add_login_attempts_table` | Failed login tracking |
+| `058_add_deleted_by_columns` | Track who deleted entities |
+| `059_performance_indexes` | Query optimization |
+| `060_add_deleted_at_missing_tables` | Soft delete columns |
+| `061_task_checklist_items` | Task checklists |
+| `062_task_drafts` | Draft task storage |
+| `063_user_preferences_calendar` | User calendar preferences |
 
 ### Migration Lifecycle
 
@@ -91,16 +105,6 @@ impl Database {
     }
 }
 ```
-
-### Key Migrations
-
-| Migration | Purpose |
-|-----------|---------|
-| `057_add_login_attempts_table` | Failed login tracking |
-| `058_add_deleted_by_columns` | Track who deleted entities |
-| `059_performance_indexes` | Query optimization |
-| `060_add_deleted_at_missing_tables` | Soft delete columns |
-| `061_task_checklist_items` | Task checklists |
 
 ## Repository Pattern (**ADR-005**)
 
@@ -184,7 +188,7 @@ impl AsyncDatabase {
 
 ```bash
 # 1. Create migration file
-echo "-- Migration: Add new column" > src-tauri/migrations/062_add_column.sql
+echo "-- Migration: Add new column" > src-tauri/migrations/064_add_column.sql
 
 # 2. Test on fresh DB
 npm run backend:migration:fresh-db-test
@@ -265,7 +269,7 @@ fn setup() {
 | `src-tauri/src/db/mod.rs` | Database struct, AsyncDatabase |
 | `src-tauri/src/db/connection.rs` | Pool initialization, WAL config |
 | `src-tauri/src/db/migrations.rs` | Migration runner |
-| `src-tauri/migrations/` | Migration SQL files |
+| `src-tauri/migrations/` | Migration SQL files (002-063) |
 | `scripts/detect-schema-drift.js` | Schema drift detection |
 | `scripts/validate-migration-system.js` | Migration validation |
 | `src-tauri/src/shared/repositories/` | Repository abstractions |

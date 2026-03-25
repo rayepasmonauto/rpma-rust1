@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import {
   Send,
   CheckCircle,
@@ -18,24 +18,24 @@ import {
   Image,
   History,
   ArrowRight,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { formatCents } from '@/lib/format';
-import { PageShell } from '@/shared/ui/layout/PageShell';
-import { PageHeader } from '@/shared/ui';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+} from "lucide-react";
+import { toast } from "sonner";
+import { formatCents } from "@/lib/format";
+import { PageShell } from "@/shared/ui/layout/PageShell";
+import { PageHeader } from "@/shared/ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,21 +45,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
-import { ErrorState, LoadingState } from '@/shared/ui/facade';
-import type { QuoteItemKind } from '@/shared/types';
-import { FadeIn } from '@/shared/ui/animations/FadeIn';
-import { formatDate } from '@/shared/utils/date-formatters';
-import type { ActiveTab } from '../hooks/useQuoteDetailPage';
-import { useMemo } from 'react';
-import { PPF_ZONES } from '@/domains/tasks';
-import { useQuoteDetailPage } from '../hooks/useQuoteDetailPage';
-import { QuoteWorkflowPanel } from './QuoteWorkflowPanel';
-import { QuoteStatusBadge } from './QuoteStatusBadge';
-import {
-  QuoteConvertDialog,
-} from './QuoteConvertDialog';
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { ErrorState, LoadingState } from "@/shared/ui/facade";
+import type { QuoteItemKind } from "@/shared/types";
+import { FadeIn } from "@/shared/ui/animations/FadeIn";
+import { formatDate } from "@/shared/utils/date-formatters";
+import type { ActiveTab } from "../hooks/useQuoteDetailPage";
+import { useMemo } from "react";
+// ❌ CROSS-DOMAIN IMPORT — TODO(ADR-002): Move to shared/ or use public index
+import { PPF_ZONES } from "@/domains/tasks";
+import { useQuoteDetailPage } from "../hooks/useQuoteDetailPage";
+import { QuoteWorkflowPanel } from "./QuoteWorkflowPanel";
+import { QuoteStatusBadge } from "./QuoteStatusBadge";
+import { QuoteConvertDialog } from "./QuoteConvertDialog";
 
 // DEBT: Monolith component — QuoteDetailPageContent is 643 lines rendering five distinct tabs
 // (details, items, images, documents, history) plus multiple dialogs inline.
@@ -118,14 +117,23 @@ export function QuoteDetailPageContent() {
     refetch,
   } = useQuoteDetailPage(quoteId);
 
-  const convertVehicleInfo = useMemo(() => ({
-    plate: quote?.vehicle_plate || '',
-    make: quote?.vehicle_make || '',
-    model: quote?.vehicle_model || '',
-    year: quote?.vehicle_year || '',
-    vin: quote?.vehicle_vin || '',
-    ppfZones: [],
-  }), [quote?.vehicle_plate, quote?.vehicle_make, quote?.vehicle_model, quote?.vehicle_year, quote?.vehicle_vin]);
+  const convertVehicleInfo = useMemo(
+    () => ({
+      plate: quote?.vehicle_plate || "",
+      make: quote?.vehicle_make || "",
+      model: quote?.vehicle_model || "",
+      year: quote?.vehicle_year || "",
+      vin: quote?.vehicle_vin || "",
+      ppfZones: [],
+    }),
+    [
+      quote?.vehicle_plate,
+      quote?.vehicle_make,
+      quote?.vehicle_model,
+      quote?.vehicle_year,
+      quote?.vehicle_vin,
+    ],
+  );
 
   if (loading && !quote) {
     return (
@@ -138,7 +146,10 @@ export function QuoteDetailPageContent() {
   if (error || !quote) {
     return (
       <PageShell>
-        <ErrorState message={error?.message || 'Devis introuvable'} onRetry={() => void refetch()} />
+        <ErrorState
+          message={error?.message || "Devis introuvable"}
+          onRetry={() => void refetch()}
+        />
       </PageShell>
     );
   }
@@ -148,11 +159,7 @@ export function QuoteDetailPageContent() {
   const statusActions = (
     <>
       {isDraft && (
-        <Button
-          onClick={handleMarkSent}
-          disabled={statusLoading}
-          size="sm"
-        >
+        <Button onClick={handleMarkSent} disabled={statusLoading} size="sm">
           <Send className="mr-2 h-4 w-4" />
           Envoyer
         </Button>
@@ -239,11 +246,7 @@ export function QuoteDetailPageContent() {
         title={quote.quote_number}
         subtitle={`Créé le ${formatDate(quote.created_at)}`}
         icon={<Quote className="h-6 w-6 text-muted-foreground" />}
-        actions={
-          <div className="flex items-center gap-2">
-            {statusActions}
-          </div>
-        }
+        actions={<div className="flex items-center gap-2">{statusActions}</div>}
       >
         <div className="flex items-center gap-2 mt-2">
           <QuoteStatusBadge status={quote.status} showIcon={false} />
@@ -282,7 +285,10 @@ export function QuoteDetailPageContent() {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ActiveTab)}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as ActiveTab)}
+      >
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="details" className="gap-2">
             <FileText className="h-4 w-4" />
@@ -321,29 +327,45 @@ export function QuoteDetailPageContent() {
                   <CardContent>
                     <dl className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <dt className="text-muted-foreground text-xs">Client ID</dt>
+                        <dt className="text-muted-foreground text-xs">
+                          Client ID
+                        </dt>
                         <dd className="font-medium">{quote.client_id}</dd>
                       </div>
                       {quote.task_id && (
                         <div>
-                          <dt className="text-muted-foreground text-xs">Tâche liée</dt>
+                          <dt className="text-muted-foreground text-xs">
+                            Tâche liée
+                          </dt>
                           <dd className="font-medium">
-                            <Link href={`/tasks/${quote.task_id}`} className="text-blue-600 hover:underline">
+                            <Link
+                              href={`/tasks/${quote.task_id}`}
+                              className="text-blue-600 hover:underline"
+                            >
                               {quote.task_id.slice(0, 8)}...
                             </Link>
                           </dd>
                         </div>
                       )}
                       <div>
-                        <dt className="text-muted-foreground text-xs">Statut</dt>
-                        <dd><QuoteStatusBadge status={quote.status} showIcon={false} /></dd>
+                        <dt className="text-muted-foreground text-xs">
+                          Statut
+                        </dt>
+                        <dd>
+                          <QuoteStatusBadge
+                            status={quote.status}
+                            showIcon={false}
+                          />
+                        </dd>
                       </div>
                       <div>
                         <dt className="text-muted-foreground text-xs flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           Date de création
                         </dt>
-                        <dd className="font-medium">{formatDate(quote.created_at)}</dd>
+                        <dd className="font-medium">
+                          {formatDate(quote.created_at)}
+                        </dd>
                       </div>
                       {quote.valid_until && (
                         <div>
@@ -351,7 +373,9 @@ export function QuoteDetailPageContent() {
                             <Clock className="h-3 w-3" />
                             Valide jusqu&apos;au
                           </dt>
-                          <dd className="font-medium">{formatDate(quote.valid_until)}</dd>
+                          <dd className="font-medium">
+                            {formatDate(quote.valid_until)}
+                          </dd>
                         </div>
                       )}
                     </dl>
@@ -369,32 +393,44 @@ export function QuoteDetailPageContent() {
                     <dl className="grid grid-cols-2 gap-4 text-sm">
                       {quote.vehicle_plate && (
                         <div>
-                          <dt className="text-muted-foreground text-xs">Plaque</dt>
-                          <dd className="font-medium font-mono">{quote.vehicle_plate}</dd>
+                          <dt className="text-muted-foreground text-xs">
+                            Plaque
+                          </dt>
+                          <dd className="font-medium font-mono">
+                            {quote.vehicle_plate}
+                          </dd>
                         </div>
                       )}
                       {quote.vehicle_make && (
                         <div>
-                          <dt className="text-muted-foreground text-xs">Marque</dt>
+                          <dt className="text-muted-foreground text-xs">
+                            Marque
+                          </dt>
                           <dd className="font-medium">{quote.vehicle_make}</dd>
                         </div>
                       )}
                       {quote.vehicle_model && (
                         <div>
-                          <dt className="text-muted-foreground text-xs">Modèle</dt>
+                          <dt className="text-muted-foreground text-xs">
+                            Modèle
+                          </dt>
                           <dd className="font-medium">{quote.vehicle_model}</dd>
                         </div>
                       )}
                       {quote.vehicle_year && (
                         <div>
-                          <dt className="text-muted-foreground text-xs">Année</dt>
+                          <dt className="text-muted-foreground text-xs">
+                            Année
+                          </dt>
                           <dd className="font-medium">{quote.vehicle_year}</dd>
                         </div>
                       )}
                       {quote.vehicle_vin && (
                         <div className="col-span-2">
                           <dt className="text-muted-foreground text-xs">VIN</dt>
-                          <dd className="font-mono text-xs">{quote.vehicle_vin}</dd>
+                          <dd className="font-mono text-xs">
+                            {quote.vehicle_vin}
+                          </dd>
                         </div>
                       )}
                     </dl>
@@ -413,13 +449,19 @@ export function QuoteDetailPageContent() {
                       {quote.notes && (
                         <div>
                           <h3 className="text-sm font-medium mb-2">Notes</h3>
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{quote.notes}</p>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                            {quote.notes}
+                          </p>
                         </div>
                       )}
                       {quote.terms && (
                         <div>
-                          <h3 className="text-sm font-medium mb-2">Conditions</h3>
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{quote.terms}</p>
+                          <h3 className="text-sm font-medium mb-2">
+                            Conditions
+                          </h3>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                            {quote.terms}
+                          </p>
                         </div>
                       )}
                     </CardContent>
@@ -437,23 +479,33 @@ export function QuoteDetailPageContent() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Sous-total HT</span>
-                      <span className="font-semibold">{formatCents(quote.subtotal)}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Sous-total HT
+                      </span>
+                      <span className="font-semibold">
+                        {formatCents(quote.subtotal)}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">TVA</span>
-                      <span className="font-semibold">{formatCents(quote.tax_total)}</span>
+                      <span className="font-semibold">
+                        {formatCents(quote.tax_total)}
+                      </span>
                     </div>
                     {quote.discount_amount && quote.discount_amount > 0 && (
                       <div className="flex justify-between items-center text-green-600">
                         <span className="text-sm font-medium">Remise</span>
-                        <span className="font-semibold">-{formatCents(quote.discount_amount)}</span>
+                        <span className="font-semibold">
+                          -{formatCents(quote.discount_amount)}
+                        </span>
                       </div>
                     )}
                     <div className="h-px bg-border my-2" />
                     <div className="flex justify-between items-center">
                       <span className="font-medium">Total TTC</span>
-                      <span className="text-2xl font-bold text-primary">{formatCents(quote.total)}</span>
+                      <span className="text-2xl font-bold text-primary">
+                        {formatCents(quote.total)}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -477,10 +529,10 @@ export function QuoteDetailPageContent() {
               </div>
             </div>
           </TabsContent>
-          </FadeIn>
+        </FadeIn>
 
-          <FadeIn>
-            <TabsContent value="items" className="space-y-6 mt-6">
+        <FadeIn>
+          <TabsContent value="items" className="space-y-6 mt-6">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -499,15 +551,29 @@ export function QuoteDetailPageContent() {
               <CardContent className="space-y-6">
                 {showAddItem && canEdit && (
                   <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-4">
-                    <h3 className="text-sm font-medium text-blue-900">Nouvel article</h3>
+                    <h3 className="text-sm font-medium text-blue-900">
+                      Nouvel article
+                    </h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       <div className="col-span-2 md:col-span-3">
                         <Label htmlFor="newLabel">Libellé *</Label>
-                        <Input id="newLabel" value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="Ex: PPF Capot" />
+                        <Input
+                          id="newLabel"
+                          value={newLabel}
+                          onChange={(e) => setNewLabel(e.target.value)}
+                          placeholder="Ex: PPF Capot"
+                        />
                       </div>
                       <div>
                         <Label htmlFor="newKind">Type</Label>
-                        <select id="newKind" value={newKind} onChange={e => setNewKind(e.target.value as QuoteItemKind)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                        <select
+                          id="newKind"
+                          value={newKind}
+                          onChange={(e) =>
+                            setNewKind(e.target.value as QuoteItemKind)
+                          }
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        >
                           <option value="service">Service</option>
                           <option value="labor">Main d&apos;œuvre</option>
                           <option value="material">Matériel</option>
@@ -516,20 +582,58 @@ export function QuoteDetailPageContent() {
                       </div>
                       <div>
                         <Label htmlFor="newQty">Quantité</Label>
-                        <Input id="newQty" type="number" min="0.01" step="0.01" value={newQty} onChange={e => setNewQty(parseFloat(e.target.value) || 0)} />
+                        <Input
+                          id="newQty"
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={newQty}
+                          onChange={(e) =>
+                            setNewQty(parseFloat(e.target.value) || 0)
+                          }
+                        />
                       </div>
                       <div>
                         <Label htmlFor="newUnitPrice">Prix unitaire (€)</Label>
-                        <Input id="newUnitPrice" type="number" min="0" step="0.01" value={newUnitPrice} onChange={e => setNewUnitPrice(parseFloat(e.target.value) || 0)} />
+                        <Input
+                          id="newUnitPrice"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={newUnitPrice}
+                          onChange={(e) =>
+                            setNewUnitPrice(parseFloat(e.target.value) || 0)
+                          }
+                        />
                       </div>
                     </div>
                     <div>
                       <Label htmlFor="newDescription">Description</Label>
-                      <Textarea id="newDescription" value={newDescription} onChange={e => setNewDescription(e.target.value)} placeholder="Description optionnelle de l'article" rows={2} />
+                      <Textarea
+                        id="newDescription"
+                        value={newDescription}
+                        onChange={(e) => setNewDescription(e.target.value)}
+                        placeholder="Description optionnelle de l'article"
+                        rows={2}
+                      />
                     </div>
                     <div className="flex gap-2 justify-end">
-                      <Button type="button" variant="outline" onClick={() => { setShowAddItem(false); setNewLabel(''); setNewDescription(''); }}>Annuler</Button>
-                      <Button type="button" onClick={handleAddItem} disabled={!newLabel.trim()}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setShowAddItem(false);
+                          setNewLabel("");
+                          setNewDescription("");
+                        }}
+                      >
+                        Annuler
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleAddItem}
+                        disabled={!newLabel.trim()}
+                      >
                         <Plus className="mr-2 h-4 w-4" />
                         Ajouter
                       </Button>
@@ -540,9 +644,13 @@ export function QuoteDetailPageContent() {
                 {quoteItems.length === 0 ? (
                   <div className="text-center py-12 border-2 border-dashed border-border rounded-lg">
                     <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
-                    <p className="mt-4 text-sm text-muted-foreground">Aucun article</p>
+                    <p className="mt-4 text-sm text-muted-foreground">
+                      Aucun article
+                    </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {canEdit ? 'Ajoutez votre premier article' : 'Ce devis ne contient aucun article'}
+                      {canEdit
+                        ? "Ajoutez votre premier article"
+                        : "Ce devis ne contient aucun article"}
                     </p>
                   </div>
                 ) : (
@@ -550,28 +658,57 @@ export function QuoteDetailPageContent() {
                     <table className="w-full">
                       <thead className="bg-muted/50">
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Article</th>
-                          <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-muted-foreground">Description</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">Type</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Qté</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">P.U.</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">Total</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                            Article
+                          </th>
+                          <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                            Description
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
+                            Type
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">
+                            Qté
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">
+                            P.U.
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">
+                            Total
+                          </th>
                           {canEdit && <th className="px-4 py-3" />}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
                         {quote.items.map((item) => {
-                          const lineTotal = Math.round(item.qty * item.unit_price);
+                          const lineTotal = Math.round(
+                            item.qty * item.unit_price,
+                          );
                           return (
                             <tr key={item.id} className="hover:bg-muted/50">
-                              <td className="px-4 py-3 text-sm font-medium">{item.label}</td>
-                              <td className="hidden md:table-cell px-4 py-3 text-sm text-muted-foreground">{item.description || '-'}</td>
-                              <td className="px-4 py-3">
-                                <Badge variant="outline" className="text-xs normal-case">{item.kind}</Badge>
+                              <td className="px-4 py-3 text-sm font-medium">
+                                {item.label}
                               </td>
-                              <td className="px-4 py-3 text-right text-sm text-muted-foreground">{item.qty}</td>
-                              <td className="px-4 py-3 text-right text-sm">{formatCents(item.unit_price)}</td>
-                              <td className="px-4 py-3 text-right text-sm font-semibold">{formatCents(lineTotal)}</td>
+                              <td className="hidden md:table-cell px-4 py-3 text-sm text-muted-foreground">
+                                {item.description || "-"}
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs normal-case"
+                                >
+                                  {item.kind}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3 text-right text-sm text-muted-foreground">
+                                {item.qty}
+                              </td>
+                              <td className="px-4 py-3 text-right text-sm">
+                                {formatCents(item.unit_price)}
+                              </td>
+                              <td className="px-4 py-3 text-right text-sm font-semibold">
+                                {formatCents(lineTotal)}
+                              </td>
                               {canEdit && (
                                 <td className="px-4 py-3 text-right">
                                   <Button
@@ -595,25 +732,33 @@ export function QuoteDetailPageContent() {
                 {quoteItems.length > 0 && (
                   <div className="border-t pt-4 space-y-2 text-right">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Sous-total HT</span>
-                      <span className="font-semibold">{formatCents(quote.subtotal)}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Sous-total HT
+                      </span>
+                      <span className="font-semibold">
+                        {formatCents(quote.subtotal)}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">TVA</span>
-                      <span className="font-semibold">{formatCents(quote.tax_total)}</span>
+                      <span className="font-semibold">
+                        {formatCents(quote.tax_total)}
+                      </span>
                     </div>
                     <div className="h-px bg-border my-2" />
                     <div className="flex justify-between items-center">
                       <span className="font-medium">Total TTC</span>
-                      <span className="text-xl font-bold text-primary">{formatCents(quote.total)}</span>
+                      <span className="text-xl font-bold text-primary">
+                        {formatCents(quote.total)}
+                      </span>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
-          </FadeIn>
-        </Tabs>
+        </FadeIn>
+      </Tabs>
 
       <QuoteConvertDialog
         quoteId={quote.id}
@@ -622,7 +767,7 @@ export function QuoteDetailPageContent() {
         open={showConvertDialog}
         onOpenChange={setShowConvertDialog}
         onSuccess={(taskId) => {
-          toast.success('Tâche créée avec succès');
+          toast.success("Tâche créée avec succès");
           router.push(`/tasks/${taskId}`);
         }}
         availableZones={PPF_ZONES}
@@ -633,12 +778,17 @@ export function QuoteDetailPageContent() {
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer le devis</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer le devis <strong>{quote.quote_number}</strong> ? Cette action est irréversible.
+              Êtes-vous sûr de vouloir supprimer le devis{" "}
+              <strong>{quote.quote_number}</strong> ? Cette action est
+              irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
               Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>

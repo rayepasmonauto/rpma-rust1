@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { TaskStatus, TaskPriority } from '@/lib/backend';
-import { useMutationCounter } from '@/lib/data-freshness';
-import { ApiError } from '@/lib/api-error';
-import { logger } from '@/lib/logger';
-import type { TaskWithDetails } from '@/types/task.types';
-import { taskService } from '../services/task.service';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { TaskStatus, TaskPriority } from "@/lib/backend";
+import { taskKeys } from "@/lib/query-keys";
+import { useMutationCounter } from "@/lib/data-freshness";
+import { logger } from "@/lib/logger";
+import type { TaskWithDetails } from "@/types/task.types";
+import { taskIpc } from "../ipc/task.ipc";
 
 interface TaskFilters {
-  status: TaskStatus | 'all';
-  priority: TaskPriority | 'all';
+  status: TaskStatus | "all";
+  priority: TaskPriority | "all";
   search: string;
   assignedTo?: string;
   vehicleId?: string;
@@ -28,11 +29,24 @@ interface UseTaskSyncProps {
   filters: TaskFilters;
   pageSize: number;
   autoFetch?: boolean;
-  onTasksLoaded?: (tasks: TaskWithDetails[], pagination: TaskPagination) => void;
+  onTasksLoaded?: (
+    tasks: TaskWithDetails[],
+    pagination: TaskPagination,
+  ) => void;
   onLoadingChange?: (loading: boolean) => void;
   onError?: (error: Error | null) => void;
 }
 
+/**
+ * Task list synchronisation hook — ADR-014 compliant.
+ *
+ * Replaces the previous `useEffect` + imperative `fetchTasks()` approach with
+ * a declarative `useQuery` that reacts to filter / page / mutation changes.
+ *
+ * Backward-compatible bridge: the existing callback props (`onTasksLoaded`,
+ * `onLoadingChange`, `onError`) are forwarded via lightweight effects so that
+ * `useTasks` (the main consumer) keeps working without changes.
+ */
 export function useTaskSync({
   userToken,
   filters,
@@ -42,169 +56,120 @@ export function useTaskSync({
   onLoadingChange,
   onError,
 }: UseTaskSyncProps) {
-  const fetchInProgressRef = useRef(false);
-  const tasksMutations = useMutationCounter('tasks');
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const tasksMutations = useMutationCounter("tasks");
 
-  const fetchTasks = useCallback(async (page = 1, newFilters = filters) => {
-    // Prevent duplicate fetches
-    if (fetchInProgressRef.current) {
-      logger.debug('useTaskSync: Fetch already in progress, skipping', {
-        page,
-        filters: newFilters,
-      });
-      return null;
+  // ── Stable callback refs (avoid stale closures & infinite effect loops) ──
+  const callbacksRef = useRef({ onTasksLoaded, onLoadingChange, onError });
+  useEffect(() => {
+    callbacksRef.current = { onTasksLoaded, onLoadingChange, onError };
+  });
+
+  // ── Reset to page 1 when filters change ──────────────────────────────────
+  const filtersRef = useRef(filters);
+  useEffect(() => {
+    if (filtersRef.current !== filters) {
+      filtersRef.current = filters;
+      setPage(1);
     }
-    const requestId = Math.random().toString(36).substring(7);
-    logger.debug('useTaskSync: fetchTasks called', {
+  }, [filters]);
+
+  // ── Invalidate list queries when a mutation is signalled ──────────────────
+  useEffect(() => {
+    if (tasksMutations > 0) {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    }
+  }, [tasksMutations, queryClient]);
+
+  // ── Build query params from filters + page ────────────────────────────────
+  const queryParams = useMemo(
+    () => ({
       page,
-      filters: newFilters,
-      requestId,
-    });
+      limit: pageSize,
+      status: filters.status !== "all" ? filters.status : undefined,
+      search: filters.search || undefined,
+      technician_id: filters.assignedTo || undefined,
+      from_date: filters.startDate || undefined,
+      to_date: filters.endDate || undefined,
+    }),
+    [page, pageSize, filters],
+  );
 
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    try {
-      // Check if user is authenticated
-      if (!userToken) {
-        logger.warn('useTaskSync: User not authenticated, skipping fetch', {
-          requestId,
-        });
-        fetchInProgressRef.current = false;
-        onLoadingChange?.(false);
-        onError?.(new Error('Authentication required'));
-        return null;
-      }
+  // ── ADR-014: useQuery replaces useState + useEffect + manual fetch ────────
+  const {
+    data,
+    isLoading,
+    error: queryError,
+    refetch: queryRefetch,
+  } = useQuery({
+    queryKey: [...taskKeys.lists(), queryParams],
+    queryFn: () => {
+      logger.info("useTaskSync: fetching tasks via useQuery", { queryParams });
+      return taskIpc.list(queryParams);
+    },
+    enabled: autoFetch && !!userToken,
+  });
 
-      fetchInProgressRef.current = true;
-      onLoadingChange?.(true);
-      onError?.(null);
+  // ── Bridge effects: forward query state to legacy callbacks ───────────────
 
-      // Build query parameters
-      const queryParams = {
-        page,
-        limit: pageSize,
-        status: newFilters.status !== 'all' ? newFilters.status : undefined,
-        search: newFilters.search || undefined,
-        technician_id: newFilters.assignedTo || undefined,
-        from_date: newFilters.startDate || undefined,
-        to_date: newFilters.endDate || undefined,
-        sort_by: 'created_at',
-        sort_order: 'desc',
-      };
+  useEffect(() => {
+    callbacksRef.current.onLoadingChange?.(isLoading);
+  }, [isLoading]);
 
-      // Filter out undefined values
-      const cleanParams = Object.fromEntries(
-        Object.entries(queryParams).filter(([_key, value]) => value !== undefined && value !== null && value !== '')
-      );
-
-      logger.info('useTaskSync: calling taskService.getTasks', {
-        filters: cleanParams,
-        requestId,
-      });
-
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 second timeout
-      });
-
-      const result = await Promise.race([
-        taskService.getTasks(cleanParams),
-        timeoutPromise
-      ]) as { success?: boolean; data?: { data: TaskWithDetails[]; pagination?: Record<string, unknown> }; error?: Error | null };
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
-      }
-
-      logger.debug('useTaskSync: TaskService result received', {
-        success: result.success,
-        hasData: !!result.data,
-        hasError: !!result.error,
-        requestId,
-      });
-
-      if (result.error) {
-        logger.error('useTaskSync: TaskService returned error', {
-          error: result.error,
-          requestId,
-        });
-        throw result.error;
-      }
-
-      const data = result.data!;
-      logger.info('useTaskSync: tasks fetched successfully', {
-        taskCount: data.data?.length || 0,
-        total: data.pagination?.total || 0,
-        page: data.pagination?.page,
-        requestId,
-      });
-
-      const paginationSource = data.pagination as Record<string, unknown> | undefined;
-      const pagination: TaskPagination = {
-        page: (paginationSource?.page as number) ?? page,
-        total: Number(paginationSource?.total ?? 0),
-        totalPages: (paginationSource?.totalPages as number) ?? (paginationSource?.total_pages as number) ?? 1,
-        limit: (paginationSource?.pageSize as number) ?? (paginationSource?.limit as number) ?? pageSize,
-      };
-
-      onTasksLoaded?.(data.data, pagination);
-
-      return { tasks: data.data, pagination };
-    } catch (err) {
-      logger.error('useTaskSync: failed to fetch tasks', {
-        error: err instanceof Error ? err.message : String(err),
-        errorType: err instanceof Error ? err.name : typeof err,
-        requestId,
-      });
-
-      // Handle different error types
-      let errorMessage = 'Failed to fetch tasks';
-      if (err instanceof ApiError) {
-        errorMessage = err.message;
-
-        // Show user-friendly toast based on error status
-        if (err.status === 401) {
-          // Toast handled by parent component
-        } else if (err.status === 403) {
-          // Toast handled by parent component
-        } else if (err instanceof ApiError && err.status != null && err.status >= 500) {
-          // Toast handled by parent component
-        } else {
-          // Toast handled by parent component
-        }
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-
-      onError?.(err instanceof Error ? err : new Error(errorMessage));
-      return null;
-    } finally {
-      // Ensure timeout is cleared in all cases to avoid open handles
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      fetchInProgressRef.current = false;
-      onLoadingChange?.(false);
-      logger.debug('useTaskSync: fetchTasks completed', {
-        requestId,
-      });
+  useEffect(() => {
+    if (queryError) {
+      const error =
+        queryError instanceof Error
+          ? queryError
+          : new Error(String(queryError));
+      logger.error("useTaskSync: query error", { error: error.message });
+      callbacksRef.current.onError?.(error);
+    } else {
+      callbacksRef.current.onError?.(null);
     }
-    }, [userToken, pageSize, onTasksLoaded, onLoadingChange, onError, filters]);
+  }, [queryError]);
+
+  useEffect(() => {
+    if (data) {
+      const tasks = (data.data as TaskWithDetails[]) ?? [];
+      const pagination: TaskPagination = {
+        page: data.pagination.page,
+        total: Number(data.pagination.total),
+        totalPages: data.pagination.total_pages,
+        limit: data.pagination.limit,
+      };
+      logger.info("useTaskSync: tasks loaded", {
+        taskCount: tasks.length,
+        total: pagination.total,
+        page: pagination.page,
+      });
+      callbacksRef.current.onTasksLoaded?.(tasks, pagination);
+    }
+  }, [data]);
+
+  // ── Public API (same return shape for backward compatibility) ──────────────
+
+  const fetchTasks = useCallback(
+    async (requestedPage = 1, _newFilters = filters) => {
+      setPage(requestedPage);
+      // useQuery will auto-refetch when the page key changes
+      return null;
+    },
+    [filters],
+  );
 
   const refetch = useCallback(async () => {
-    return await fetchTasks(1);
-  }, [fetchTasks]);
+    setPage(1);
+    await queryRefetch();
+    return null;
+  }, [queryRefetch]);
 
-  const goToPage = useCallback(async (page: number) => {
-    return await fetchTasks(page);
-  }, [fetchTasks]);
-
-  // Combined fetch effect - handles both initial load and filter changes
-  useEffect(() => {
-    if (autoFetch && userToken) {
-      fetchTasks(1, filters);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoFetch, userToken, filters, tasksMutations]); // Only depends on actual trigger values
+  const goToPage = useCallback(async (newPage: number) => {
+    setPage(newPage);
+    // useQuery will auto-refetch when the page key changes
+    return null;
+  }, []);
 
   return {
     fetchTasks,

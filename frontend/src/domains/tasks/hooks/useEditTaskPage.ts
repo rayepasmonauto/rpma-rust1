@@ -1,54 +1,61 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { toast } from 'sonner';
-import { useTranslation } from '@/shared/hooks';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { taskGateway } from '../api/taskGateway';
-import type { TaskFormData } from '../components/TaskForm/types';
-import type { Task } from '../api/types';
+import { useRouter, useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { taskKeys } from "@/lib/query-keys";
+import { useTranslation } from "@/shared/hooks";
+import { useAuth } from "@/shared/hooks/useAuth";
+import { taskIpc } from "../ipc/task.ipc";
+import type { TaskFormData } from "../components/TaskForm/types";
+import type { Task } from "../api/types";
 
 export function useEditTaskPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const params = useParams();
   const { user } = useAuth();
-  const [taskData, setTaskData] = useState<Task | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const taskId = params.id as string;
 
-  useEffect(() => {
-    const fetchTask = async () => {
-      if (!taskId || !user?.token) return;
-
-      try {
-        setLoading(true);
-        const task = await taskGateway.getTask(taskId);
-        setTaskData(task);
-      } catch (err) {
-        console.error('Failed to fetch task:', err);
-        setError(t('errors.taskLoadError'));
-        toast.error(t('errors.taskLoadError'));
-      } finally {
-        setLoading(false);
+  const {
+    data: taskData = null,
+    isLoading: loading,
+    error: queryError,
+  } = useQuery<Task | null>({
+    queryKey: taskKeys.byId(taskId),
+    queryFn: async () => {
+      const task = await taskIpc.get(taskId);
+      if (!task) {
+        throw new Error(t("errors.taskLoadError"));
       }
-    };
+      return task as Task;
+    },
+    enabled: !!taskId && !!user?.token,
+  });
 
-    fetchTask();
-  }, [taskId, user?.token, t]);
+  // Derive error string from query error to preserve the original return type
+  const error: string | null = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : t("errors.taskLoadError")
+    : null;
+
+  // Show toast on error (useQuery deduplicates so this only fires once per error)
+  if (error) {
+    // Toast is idempotent for the same message in sonner
+    toast.error(error);
+  }
 
   const handleSuccess = (updatedTask?: { id: string }) => {
     if (updatedTask?.id) {
-      toast.success(t('tasks.taskUpdated'));
+      toast.success(t("tasks.taskUpdated"));
       router.push(`/tasks/${updatedTask.id}`);
     }
   };
 
   const handleCancel = () => {
-    router.push('/tasks');
+    router.push("/tasks");
   };
 
   return {

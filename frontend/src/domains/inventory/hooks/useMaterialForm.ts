@@ -1,22 +1,33 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import type { JsonValue } from '@/types/json';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { inventoryIpc } from '../ipc/inventory.ipc';
-import type { Material, MaterialType, UnitOfMeasure } from '../api/types';
-import type { CreateMaterialRequest } from '../server';
+import { useState, useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { inventoryKeys } from "@/lib/query-keys";
+import { useAuth } from "@/shared/hooks/useAuth";
+import type { JsonValue } from "@/types/json";
+import { inventoryIpc } from "../ipc/inventory.ipc";
+import type { Material, MaterialType, UnitOfMeasure } from "../api/types";
+import type { CreateMaterialRequest } from "../server";
 
 // Must stay in sync with the Rust UnitOfMeasure enum in src-tauri/src/models
-const VALID_UNITS: UnitOfMeasure[] = ['piece', 'meter', 'liter', 'gram', 'roll'];
+const VALID_UNITS: UnitOfMeasure[] = [
+  "piece",
+  "meter",
+  "liter",
+  "gram",
+  "roll",
+];
 
-export function normalizeMaterialRequest<T extends { unit_of_measure?: UnitOfMeasure | string }>(
-  data: T
-): Omit<T, 'unit_of_measure'> & { unit_of_measure?: UnitOfMeasure } {
+export function normalizeMaterialRequest<
+  T extends { unit_of_measure?: UnitOfMeasure | string },
+>(data: T): Omit<T, "unit_of_measure"> & { unit_of_measure?: UnitOfMeasure } {
   const unit = data.unit_of_measure;
   return {
     ...data,
-    unit_of_measure: (unit && VALID_UNITS.includes(unit as UnitOfMeasure) ? unit as UnitOfMeasure : undefined),
+    unit_of_measure:
+      unit && VALID_UNITS.includes(unit as UnitOfMeasure)
+        ? (unit as UnitOfMeasure)
+        : undefined,
   };
 }
 
@@ -50,26 +61,56 @@ interface MaterialFormData {
   is_active: boolean;
 }
 
+/** Builds the normalized request payload from form data. */
+function buildRequestData(formData: MaterialFormData) {
+  return normalizeMaterialRequest({
+    ...formData,
+    minimum_stock: formData.minimum_stock ?? undefined,
+    maximum_stock: formData.maximum_stock ?? undefined,
+    reorder_point: formData.reorder_point ?? undefined,
+    unit_cost: formData.unit_cost ?? undefined,
+    supplier_id: formData.supplier_id || undefined,
+    supplier_name: formData.supplier_name || undefined,
+    supplier_sku: formData.supplier_sku || undefined,
+    quality_grade: formData.quality_grade || undefined,
+    certification: formData.certification || undefined,
+    expiry_date: formData.expiry_date || undefined,
+    batch_number: formData.batch_number || undefined,
+    storage_location: formData.storage_location || undefined,
+    warehouse_id: formData.warehouse_id || undefined,
+    category_id: formData.category_id || undefined,
+    specifications: formData.specifications ?? undefined,
+  });
+}
+
+interface SaveMaterialParams {
+  formData: MaterialFormData;
+  initialMaterial: Material | null | undefined;
+  token: string;
+}
+
 export function useMaterialForm(initialMaterial?: Material | null) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
   const [formData, setFormData] = useState<MaterialFormData>({
-    sku: '',
-    name: '',
-    description: '',
-    material_type: 'ppf_film',
-    category: '',
-    subcategory: '',
+    sku: "",
+    name: "",
+    description: "",
+    material_type: "ppf_film",
+    category: "",
+    subcategory: "",
     category_id: undefined,
-    brand: '',
-    model: '',
+    brand: "",
+    model: "",
     specifications: undefined,
-    unit_of_measure: 'piece',
+    unit_of_measure: "piece",
     current_stock: 0,
     minimum_stock: undefined,
     maximum_stock: undefined,
     reorder_point: undefined,
     unit_cost: undefined,
-    currency: 'EUR',
+    currency: "EUR",
     supplier_id: undefined,
     supplier_name: undefined,
     supplier_sku: undefined,
@@ -82,29 +123,26 @@ export function useMaterialForm(initialMaterial?: Material | null) {
     is_active: true,
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     if (initialMaterial) {
       setFormData({
-        sku: initialMaterial.sku || '',
-        name: initialMaterial.name || '',
-        description: initialMaterial.description || '',
-        material_type: initialMaterial.material_type || 'ppf_film',
-        category: initialMaterial.category || '',
-        subcategory: initialMaterial.subcategory || '',
+        sku: initialMaterial.sku || "",
+        name: initialMaterial.name || "",
+        description: initialMaterial.description || "",
+        material_type: initialMaterial.material_type || "ppf_film",
+        category: initialMaterial.category || "",
+        subcategory: initialMaterial.subcategory || "",
         category_id: initialMaterial.category_id,
-        brand: initialMaterial.brand || '',
-        model: initialMaterial.model || '',
+        brand: initialMaterial.brand || "",
+        model: initialMaterial.model || "",
         specifications: initialMaterial.specifications as JsonValue | undefined,
-        unit_of_measure: initialMaterial.unit_of_measure || 'piece',
+        unit_of_measure: initialMaterial.unit_of_measure || "piece",
         current_stock: initialMaterial.current_stock ?? 0,
         minimum_stock: initialMaterial.minimum_stock,
         maximum_stock: initialMaterial.maximum_stock,
         reorder_point: initialMaterial.reorder_point,
         unit_cost: initialMaterial.unit_cost,
-        currency: initialMaterial.currency || 'EUR',
+        currency: initialMaterial.currency || "EUR",
         supplier_id: initialMaterial.supplier_id,
         supplier_name: initialMaterial.supplier_name,
         supplier_sku: initialMaterial.supplier_sku,
@@ -119,69 +157,91 @@ export function useMaterialForm(initialMaterial?: Material | null) {
     }
   }, [initialMaterial]);
 
-  const updateFormData = (field: keyof MaterialFormData, value: MaterialFormData[keyof MaterialFormData]) => {
-    setFormData(prev => ({
+  // Track client-side validation errors separately from mutation errors,
+  // because these are caught before the mutation fires.
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: async ({
+      formData: fd,
+      initialMaterial: mat,
+    }: SaveMaterialParams) => {
+      const requestData = buildRequestData(fd);
+
+      if (mat) {
+        const materialId = mat.id;
+        if (!materialId) {
+          throw new Error("Invalid material id");
+        }
+        await inventoryIpc.material.update(materialId, requestData);
+      } else {
+        await inventoryIpc.material.create(
+          requestData as CreateMaterialRequest,
+        );
+      }
+    },
+    onSuccess: () => {
+      // Invalidate all inventory queries so lists/dashboard refresh
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+    },
+  });
+
+  const updateFormData = (
+    field: keyof MaterialFormData,
+    value: MaterialFormData[keyof MaterialFormData],
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
+    // Clear validation error when user changes form data
+    if (validationError) {
+      setValidationError(null);
+    }
   };
 
   const saveMaterial = async (): Promise<boolean> => {
     if (!user?.token) {
-      setError('Authentication required');
+      setValidationError("Authentication required");
       return false;
     }
 
     // Guard: show user-facing error and abort early (required for create path where unit is mandatory).
     // normalizeMaterialRequest below provides defense-in-depth for the update path.
-    if (!formData.unit_of_measure || !VALID_UNITS.includes(formData.unit_of_measure)) {
-      setError('Unit of measure is required');
+    if (
+      !formData.unit_of_measure ||
+      !VALID_UNITS.includes(formData.unit_of_measure)
+    ) {
+      setValidationError("Unit of measure is required");
       return false;
     }
+
+    // Clear any previous validation error before attempting the mutation
+    setValidationError(null);
 
     try {
-      setLoading(true);
-      setError(null);
-
-      const requestData = normalizeMaterialRequest({
-        ...formData,
-        minimum_stock: formData.minimum_stock ?? undefined,
-        maximum_stock: formData.maximum_stock ?? undefined,
-        reorder_point: formData.reorder_point ?? undefined,
-        unit_cost: formData.unit_cost ?? undefined,
-        supplier_id: formData.supplier_id || undefined,
-        supplier_name: formData.supplier_name || undefined,
-        supplier_sku: formData.supplier_sku || undefined,
-        quality_grade: formData.quality_grade || undefined,
-        certification: formData.certification || undefined,
-        expiry_date: formData.expiry_date || undefined,
-        batch_number: formData.batch_number || undefined,
-        storage_location: formData.storage_location || undefined,
-        warehouse_id: formData.warehouse_id || undefined,
-        category_id: formData.category_id || undefined,
-        specifications: formData.specifications ?? undefined,
+      await mutation.mutateAsync({
+        formData,
+        initialMaterial,
+        token: user.token,
       });
-
-      if (initialMaterial) {
-        const materialId = initialMaterial.id;
-        if (!materialId) {
-          setError('Invalid material id');
-          return false;
-        }
-
-        await inventoryIpc.material.update(materialId, requestData);
-      } else {
-        await inventoryIpc.material.create(requestData as CreateMaterialRequest);
-      }
-
       return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch {
+      // Error is captured by mutation.error — no need to re-throw
       return false;
-    } finally {
-      setLoading(false);
     }
   };
+
+  // Derive loading and error from the mutation state, falling back to
+  // client-side validation errors that fire before the mutation.
+  const loading = mutation.isPending;
+  const error =
+    validationError ??
+    (mutation.error
+      ? mutation.error instanceof Error
+        ? mutation.error.message
+        : String(mutation.error)
+      : null);
 
   return {
     formData,

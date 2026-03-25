@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { listen } from '@tauri-apps/api/event';
-import { ROUTES } from '@/constants/routes';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { listenToEvent } from "@/lib/ipc/platform";
+import { ROUTES } from "@/constants/routes";
 
 export function useMenuEvents() {
   const router = useRouter();
@@ -11,19 +11,8 @@ export function useMenuEvents() {
     let unlistenAction: (() => void) | null = null;
 
     const setupListeners = async () => {
-      if (typeof window === 'undefined') return;
-
-      const internals = (window as Window & {
-        __TAURI_INTERNALS__?: { transformCallback?: unknown; invoke?: unknown }
-      }).__TAURI_INTERNALS__;
-
-      // In tests and non-Tauri contexts, event APIs may be unavailable.
-      if (!internals || typeof internals.invoke !== 'function' || typeof internals.transformCallback !== 'function') {
-        return;
-      }
-
       try {
-        unlistenNav = await listen<string>('menu-navigate', (event) => {
+        unlistenNav = await listenToEvent<string>("menu-navigate", (event) => {
           const view = event.payload;
           const pathMap: Record<string, string> = {
             dashboard: ROUTES.DASHBOARD,
@@ -38,12 +27,12 @@ export function useMenuEvents() {
           }
         });
 
-        unlistenAction = await listen<string>('menu-action', (event) => {
+        unlistenAction = await listenToEvent<string>("menu-action", (event) => {
           const action = event.payload;
           handleMenuAction(action);
         });
       } catch (error) {
-        console.warn('Menu event listeners could not be initialized', error);
+        console.warn("Menu event listeners could not be initialized", error);
       }
     };
 
@@ -66,74 +55,74 @@ export function useMenuEvents() {
 
 function handleMenuAction(action: string) {
   switch (action) {
-    case 'new_task':
-      window.location.href = '/tasks/new';
+    case "new_task":
+      window.location.href = "/tasks/new";
       break;
-    case 'new_client':
-      window.location.href = '/clients/new';
+    case "new_client":
+      window.location.href = "/clients/new";
       break;
-    case 'start_intervention':
+    case "start_intervention":
       // Emit event for intervention modal
-      window.dispatchEvent(new CustomEvent('open-intervention-modal'));
+      window.dispatchEvent(new CustomEvent("open-intervention-modal"));
       break;
-    case 'resume_intervention':
+    case "resume_intervention":
       // Emit event for resuming intervention
-      window.dispatchEvent(new CustomEvent('resume-intervention-modal'));
+      window.dispatchEvent(new CustomEvent("resume-intervention-modal"));
       break;
-    case 'photo_capture':
+    case "photo_capture":
       // Emit event for photo capture
-      window.dispatchEvent(new CustomEvent('open-photo-capture'));
+      window.dispatchEvent(new CustomEvent("open-photo-capture"));
       break;
-    case 'material_usage':
+    case "material_usage":
       // Emit event for material usage
-      window.dispatchEvent(new CustomEvent('open-material-usage'));
+      window.dispatchEvent(new CustomEvent("open-material-usage"));
       break;
-    case 'quality_check':
+    case "quality_check":
       // Emit event for quality check
-      window.dispatchEvent(new CustomEvent('open-quality-check'));
+      window.dispatchEvent(new CustomEvent("open-quality-check"));
       break;
-    case 'sync_now':
+    case "sync_now":
       // Trigger sync - this will be handled by existing sync service
-      window.dispatchEvent(new CustomEvent('trigger-sync'));
+      window.dispatchEvent(new CustomEvent("trigger-sync"));
       break;
-    case 'sync_status':
+    case "sync_status":
       // Open sync status dialog
-      window.dispatchEvent(new CustomEvent('open-sync-status'));
+      window.dispatchEvent(new CustomEvent("open-sync-status"));
       break;
-    case 'db_status':
+    case "db_status":
       // Open database status dialog
-      window.dispatchEvent(new CustomEvent('open-db-status'));
+      window.dispatchEvent(new CustomEvent("open-db-status"));
       break;
-    case 'vacuum_db':
+    case "vacuum_db":
       // Trigger database vacuum
-      window.dispatchEvent(new CustomEvent('vacuum-database'));
+      window.dispatchEvent(new CustomEvent("vacuum-database"));
       break;
-    case 'dev_tools':
+    case "dev_tools":
       // Open developer tools
-      window.dispatchEvent(new CustomEvent('open-dev-tools'));
+      window.dispatchEvent(new CustomEvent("open-dev-tools"));
       break;
-    case 'go_back':
+    case "go_back":
       window.history.back();
       break;
-    case 'go_forward':
+    case "go_forward":
       window.history.forward();
       break;
-    case 'search':
+    case "search":
       // Focus search input
-      window.dispatchEvent(new CustomEvent('focus-search'));
+      window.dispatchEvent(new CustomEvent("focus-search"));
       break;
-    case 'quick_actions':
+    case "quick_actions":
       // Open quick actions modal
-      window.dispatchEvent(new CustomEvent('open-quick-actions'));
+      window.dispatchEvent(new CustomEvent("open-quick-actions"));
       break;
-    case 'refresh':
+    case "refresh":
       window.location.reload();
       break;
-    case 'toggle_sidebar':
+    case "toggle_sidebar":
       // Emit event for sidebar toggle
-      window.dispatchEvent(new CustomEvent('toggle-sidebar'));
+      window.dispatchEvent(new CustomEvent("toggle-sidebar"));
       break;
-    case 'toggle_fullscreen':
+    case "toggle_fullscreen":
       // Toggle fullscreen
       if (document.fullscreenElement) {
         document.exitFullscreen();
@@ -141,35 +130,35 @@ function handleMenuAction(action: string) {
         document.documentElement.requestFullscreen();
       }
       break;
-    case 'documentation':
+    case "documentation":
       // Open documentation
-      window.open('https://opencode.ai/docs', '_blank');
+      window.open("https://opencode.ai/docs", "_blank");
       break;
-    case 'keyboard_shortcuts':
+    case "keyboard_shortcuts":
       // Open keyboard shortcuts help
-      window.dispatchEvent(new CustomEvent('open-keyboard-shortcuts'));
+      window.dispatchEvent(new CustomEvent("open-keyboard-shortcuts"));
       break;
-    case 'check_updates':
+    case "check_updates":
       // Check for updates
-      window.dispatchEvent(new CustomEvent('check-updates'));
+      window.dispatchEvent(new CustomEvent("check-updates"));
       break;
-    case 'about':
+    case "about":
       // Open about dialog
-      window.dispatchEvent(new CustomEvent('open-about'));
+      window.dispatchEvent(new CustomEvent("open-about"));
       break;
-    case 'report_issue':
+    case "report_issue":
       // Open issue reporting
-      window.open('https://github.com/sst/opencode/issues', '_blank');
+      window.open("https://github.com/sst/opencode/issues", "_blank");
       break;
-    case 'export_report':
+    case "export_report":
       // Open export report dialog
-      window.dispatchEvent(new CustomEvent('open-export-report'));
+      window.dispatchEvent(new CustomEvent("open-export-report"));
       break;
-    case 'import_data':
+    case "import_data":
       // Open import data dialog
-      window.dispatchEvent(new CustomEvent('open-import-data'));
+      window.dispatchEvent(new CustomEvent("open-import-data"));
       break;
     default:
-      console.warn('Unhandled menu action:', action);
+      console.warn("Unhandled menu action:", action);
   }
 }

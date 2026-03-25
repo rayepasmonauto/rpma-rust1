@@ -42,34 +42,46 @@ This guide defines how users interact with RPMA v2 and the standards for UI/UX.
 | Create task | `/tasks/new` | `task_create` |
 | View task | `/tasks/[id]` | `task_get`, `task_checklist_items_get` |
 | Edit task | `/tasks/[id]/edit` | `edit_task` |
+| Save draft | — | `task_draft_save`, `task_draft_get`, `task_draft_delete` |
 | Delay task | — | `delay_task` |
 | Change status | — | `task_transition_status` |
 | View history | — | `get_task_history` |
 | Export CSV | — | `export_tasks_csv` |
 | Bulk import | — | `import_tasks_bulk` |
+| Task checklist | — | `task_checklist_item_create`, `task_checklist_item_update` |
 
 ### 4. Quote to Task Flow
 
 | Step | Route | Commands |
 |------|-------|----------|
-| List quotes | `/quotes` | `quote_list` |
+| List quotes | `/quotes` | `quote_list`, `quote_get_stats` |
 | Create quote | `/quotes/new` | `quote_create` |
 | View quote | `/quotes/[id]` | `quote_get` |
 | Add items | — | `quote_item_add`, `quote_item_update` |
 | Mark sent | — | `quote_mark_sent` |
 | Accept quote | — | `quote_mark_accepted` |
+| Request changes | — | `quote_mark_changes_requested` |
+| Reopen quote | — | `quote_reopen` |
+| Duplicate quote | — | `quote_duplicate` |
 | Convert to task | — | `quote_convert_to_task` |
 | Reject quote | — | `quote_mark_rejected` |
+| Mark expired | — | `quote_mark_expired` |
 | Export PDF | — | `quote_export_pdf` |
+| Attachments | — | `quote_attachments_get`, `quote_attachment_create` |
 
 ### 5. Intervention Execution Flow
 
 | Step | Route | Commands |
 |------|-------|----------|
-| View assigned | `/interventions`, `/tasks/[id]` | `intervention_get`, `intervention_get_active_by_task` |
+| View assigned | `/interventions`, `/tasks/[id]` | `intervention_get`, `intervention_get_active_by_task`, `intervention_get_latest_by_task` |
 | Start intervention | — | `intervention_start` |
 | View workflow | `/tasks/[id]/workflow/ppf/` | `intervention_get_progress` |
 | Progress steps | — | `intervention_advance_step`, `intervention_save_step_progress` |
+| View step details | `/tasks/[id]/workflow/ppf/steps/[step]/` | `intervention_get_step` |
+| Preparation step | `/tasks/[id]/workflow/ppf/steps/preparation/` | — |
+| Installation step | `/tasks/[id]/workflow/ppf/steps/installation/` | — |
+| Inspection step | `/tasks/[id]/workflow/ppf/steps/inspection/` | — |
+| Finalization step | `/tasks/[id]/workflow/ppf/steps/finalization/` | — |
 | Record materials | — | `material_record_consumption` |
 | Take photos | — | `document_store_photo`, `document_get_photos` |
 | Finalize | — | `intervention_finalize` |
@@ -84,8 +96,10 @@ This guide defines how users interact with RPMA v2 and the standards for UI/UX.
 | Update stock | — | `material_update_stock`, `material_adjust_stock` |
 | View consumption | — | `material_get_consumption_history` |
 | Low stock alerts | — | `material_get_low_stock_materials` |
+| Expired materials | — | `material_get_expired_materials` |
 | Categories | — | `material_list_categories`, `material_create_category` |
 | Suppliers | — | `material_list_suppliers`, `material_create_supplier` |
+| Movement summary | — | `material_get_inventory_movement_summary` |
 
 ### 7. Calendar & Dashboard Flow
 
@@ -93,8 +107,12 @@ This guide defines how users interact with RPMA v2 and the standards for UI/UX.
 |------|-------|----------|
 | Calendar view | `/`, `/schedule` | `calendar_get_tasks`, `get_events` |
 | Dashboard | `/dashboard` | `dashboard_get_stats`, `get_entity_counts` |
+| Event by ID | — | `get_event_by_id` |
+| Events for technician | — | `get_events_for_technician` |
+| Events for task | — | `get_events_for_task` |
 | Check conflicts | — | `calendar_check_conflicts` |
 | Schedule task | — | `calendar_schedule_task` |
+| Recent activities | — | `get_recent_activities` |
 
 ### 8. Administration Flow
 
@@ -104,8 +122,10 @@ This guide defines how users interact with RPMA v2 and the standards for UI/UX.
 | Organization | `/settings/organization` | `get_organization`, `update_organization`, `upload_logo` |
 | App settings | `/settings/system` | `get_app_settings`, `update_general_settings` |
 | Security policies | `/settings/security-policies` | `update_security_policies` |
+| Security audit | `/admin` | `get_security_metrics`, `get_security_events`, `get_security_alerts` |
 | User profile | `/settings/profile` | `get_user_settings`, `update_user_profile` |
 | User preferences | `/settings/preferences` | `update_user_preferences` |
+| User security | `/settings/security` | `get_active_sessions`, `revoke_session`, `update_user_security` |
 | Trash | `/trash` | `list_trash`, `restore_entity`, `hard_delete_entity`, `empty_trash` |
 
 ### 9. Settings Flow
@@ -118,6 +138,18 @@ This guide defines how users interact with RPMA v2 and the standards for UI/UX.
 | Integrations | `/settings/integrations` | `update_integrations` |
 | Performance | `/settings/performance` | `update_performance_configs` |
 | Monitoring | `/settings/monitoring` | System metrics |
+| Observability | `/settings/observability` | — |
+| Organization | `/settings/organization` | `get_organization`, `update_organization` |
+| Profile | `/settings/profile` | `update_user_profile`, `upload_user_avatar` |
+| Preferences | `/settings/preferences` | `update_user_preferences` |
+| Data consent | — | `get_data_consent`, `update_data_consent` |
+| Delete account | — | `delete_user_account`, `export_user_data` |
+
+### 10. Global Search Flow
+
+| Step | Route | Commands |
+|------|-------|----------|
+| Search all entities | — | `global_search` |
 
 ## Design System Rules
 

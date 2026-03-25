@@ -1,12 +1,11 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useState } from 'react';
-import { convertTimestamps } from '@/lib/types';
-import { PAGINATION } from '@/lib/constants';
-import { logger, LogContext } from '@/shared/utils';
-import type { UserAccount } from '@/types';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { userService } from '../services';
+import { useQuery } from "@tanstack/react-query";
+import { PAGINATION } from "@/lib/constants";
+import { userKeys } from "@/lib/query-keys";
+import { useAuth } from "@/shared/hooks/useAuth";
+import type { UserAccount } from "@/types";
+import { userIpc } from "../ipc/users.ipc";
 
 export interface UseUserListReturn {
   users: UserAccount[];
@@ -16,59 +15,38 @@ export interface UseUserListReturn {
 }
 
 /**
- * Load the full user list with automatic timestamp conversion.
+ * Load the full user list via TanStack Query (ADR-014 compliant).
+ *
+ * Replaces the legacy useState+useEffect implementation with useQuery,
+ * calling the IPC wrapper directly. The return shape is kept identical
+ * so existing consumers (e.g. useUsersPage) continue to work unchanged.
  */
-export function useUserList(limit = PAGINATION.USER_LIST_SIZE, offset = 0): UseUserListReturn {
+export function useUserList(
+  limit = PAGINATION.USER_LIST_SIZE,
+  offset = 0,
+): UseUserListReturn {
   const { user } = useAuth();
-  const [users, setUsers] = useState<UserAccount[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const isAuthenticated = !!user?.token;
 
-  const refetch = useCallback(async () => {
-    if (!user?.token) {
-      setUsers([]);
-      setError('Authentication required');
-      setLoading(false);
-      return;
-    }
+  const query = useQuery({
+    queryKey: userKeys.list(limit, offset),
+    queryFn: async () => {
+      const response = await userIpc.list(limit, offset);
+      return (response?.data ?? []) as UserAccount[];
+    },
+    enabled: isAuthenticated,
+  });
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      logger.debug(LogContext.API, 'useUserList: fetching users');
-      const response = await userService.getUsers({ page: Math.floor(offset / limit) + 1, pageSize: limit });
-      
-      if (response.success && response.data) {
-        const converted = response.data.map((u) =>
-          convertTimestamps({
-            id: u.id,
-            email: u.email,
-            first_name: u.firstName,
-            last_name: u.lastName,
-            role: u.role,
-            is_active: u.isActive,
-            created_at: '',
-            updated_at: '',
-          }),
-        ) as unknown as UserAccount[];
-        setUsers(converted);
-      } else {
-        setUsers([]);
-        setError(response.error || 'Failed to load users');
-      }
-    } catch (err) {
-      logger.error(LogContext.API, 'useUserList: error', { error: err });
-      setUsers([]);
-      setError(err instanceof Error ? err.message : 'Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  }, [limit, offset, user?.token]);
-
-  useEffect(() => {
-    void refetch();
-  }, [refetch]);
-
-  return { users, loading, error, refetch };
+  return {
+    users: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error
+      ? query.error instanceof Error
+        ? query.error.message
+        : "Failed to load users"
+      : null,
+    refetch: async () => {
+      await query.refetch();
+    },
+  };
 }

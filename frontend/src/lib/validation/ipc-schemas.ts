@@ -396,12 +396,12 @@ export const QuoteListResponseSchema = z.object({
 
 // ─── User domain ─────────────────────────────────────────────────────────────
 
+// ADR-007: roles must match backend enum exactly — lowercase, no phantom roles
 export const UserRoleSchema = z.enum([
-  "Admin",
-  "Supervisor",
-  "Technician",
-  "Viewer",
-  "Manager",
+  "admin",
+  "supervisor",
+  "technician",
+  "viewer",
 ]);
 
 export const CreateUserRequestSchema = z.object({

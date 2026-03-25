@@ -9,11 +9,39 @@ use crate::domains::clients::client_handler::*;
 use crate::domains::interventions::domain::models::intervention::*;
 use crate::domains::interventions::domain::models::step::*;
 use crate::domains::tasks::domain::models::task::*;
+use crate::shared::contracts::notification::{NotificationSender, SentMessage};
+use crate::shared::ipc::errors::AppError;
 
+use async_trait::async_trait;
 use chrono::Utc;
 use rusqlite::params;
 use std::sync::Arc;
 use tempfile::TempDir;
+
+pub struct DummyNotificationSender;
+
+#[async_trait]
+impl NotificationSender for DummyNotificationSender {
+    async fn send_message_raw(
+        &self,
+        _message_type: String,
+        _notification_kind: Option<String>,
+        _recipient_id: Option<String>,
+        _recipient_email: Option<String>,
+        _recipient_phone: Option<String>,
+        _subject: Option<String>,
+        _body: String,
+        _task_id: Option<String>,
+        _client_id: Option<String>,
+        _priority: Option<String>,
+        _scheduled_at: Option<i64>,
+        _correlation_id: Option<String>,
+    ) -> Result<SentMessage, AppError> {
+        Ok(SentMessage {
+            id: "dummy-id".to_string(),
+        })
+    }
+}
 
 /// Test database fixture that provides a clean in-memory database for each test
 pub struct TestDatabase {

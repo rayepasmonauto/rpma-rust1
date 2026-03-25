@@ -26,7 +26,7 @@
 //! 5d. MaterialConsumptionService     <- Database
 //! 5. InterventionService             <- Database + InterventionStepService + PhotoValidationService + InterventionScoringService + MaterialConsumptionService
 //! 6. InterventionWorkflowService     <- Database
-//! 7. SettingsService                 <- Database
+//! 7. SettingsService                 <- SettingsRepository + UserSettingsRepository + OrganizationRepository
 //! 8. TaskImportService               <- Database
 //! 9. AuthService                     <- Database (plus init)
 //! 10. UserService                    <- Repositories.user
@@ -96,6 +96,8 @@ const DOCUMENTED_SERVICE_INIT_ORDER: &[&str] = &[
     "InterventionFinalizedHandler",
     "QuoteAcceptedHandler",
     "QuoteConvertedHandler",
+    "TrashService",
+    "GlobalSearchService",
 ];
 
 #[cfg(test)]
@@ -119,7 +121,7 @@ const DOCUMENTED_SERVICE_DEPENDENCIES: &[(&str, &[&str])] = &[
         ],
     ),
     ("InterventionWorkflowService", &["Database"]),
-    ("SettingsService", &["Database"]),
+    ("SettingsService", &["SettingsRepository", "UserSettingsRepository", "OrganizationRepository"]),
     ("TaskImportService", &["Database"]),
     ("AuthService", &["Database"]),
     ("UserService", &["Repositories.user", "SessionRepository"]),
@@ -149,6 +151,8 @@ const DOCUMENTED_SERVICE_DEPENDENCIES: &[(&str, &[&str])] = &[
         "QuoteConvertedHandler",
         &["InterventionWorkflowService", "EventBus"],
     ),
+    ("TrashService", &["Database"]),
+    ("GlobalSearchService", &["Repositories"]),
 ];
 
 /// Service Builder
@@ -271,6 +275,21 @@ impl ServiceBuilder {
         let user_settings_repository = Arc::new(
             crate::domains::settings::UserSettingsRepository::new(self.db.clone()),
         );
+        let organization_repository = Arc::new(
+            crate::domains::settings::OrganizationRepository::new(self.db.clone()),
+        );
+
+        // ADR-005: inject repository trait objects — SettingsService no longer holds a Database handle.
+        let settings_service = Arc::new(
+            crate::domains::settings::application::settings_service::SettingsService::new(
+                settings_repository.clone()
+                    as Arc<dyn crate::domains::settings::application::settings_service::AppSettingsRepository>,
+                user_settings_repository.clone()
+                    as Arc<dyn crate::domains::settings::application::settings_service::UserSettingsPort>,
+                organization_repository
+                    as Arc<dyn crate::domains::settings::application::settings_service::SettingsRepository>,
+            ),
+        );
         let task_import_service = Arc::new(
             crate::domains::tasks::infrastructure::task_import::TaskImportService::new(
                 self.db.clone(),
@@ -342,21 +361,23 @@ impl ServiceBuilder {
             material_service.clone(),
         ));
 
+        // Initialize Message Service (depends on MessageRepository)
+        let message_service = Arc::new(crate::domains::notifications::MessageService::new(
+            self.repositories.message.clone(),
+            self.db.clone(),
+            self.repositories.cache.clone(),
+            event_bus.clone(),
+        ));
+
         // Initialize Quote Service (depends on QuoteRepository)
         let quote_service = Arc::new(
             crate::domains::quotes::application::quote_service::QuoteService::new(
                 self.repositories.quote.clone()
                     as Arc<dyn crate::domains::quotes::domain::models::quote::IQuoteRepository>,
                 quote_event_bus,
+                message_service.clone(),
             ),
         );
-
-        // Initialize Message Service (depends on MessageRepository)
-        let message_service = Arc::new(crate::domains::notifications::MessageService::new(
-            self.repositories.message.clone(),
-            self.db.clone(),
-            self.repositories.cache.clone(),
-        ));
 
         // Create async database wrapper
         let async_db = Arc::new(self.db.as_async());
@@ -370,6 +391,14 @@ impl ServiceBuilder {
         event_bus.register_handler(audit_log_handler);
 
         register_handler(inventory_service.intervention_finalized_handler());
+
+        let notification_event_handler = crate::domains::notifications::NotificationEventHandler::new(
+            self.db.clone(),
+            self.repositories.cache.clone(),
+            message_service.clone(),
+            event_bus.clone(),
+        );
+        register_handler(Arc::new(notification_event_handler));
 
         // Register Quote Event Handlers
         let quote_accepted_handler = crate::domains::interventions::application::quote_event_handlers::QuoteAcceptedHandler::new(
@@ -429,6 +458,7 @@ impl ServiceBuilder {
             session_store,
             settings_repository,
             user_settings_repository,
+            settings_service,
             user_service,
             cache_service,
             event_bus,

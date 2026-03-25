@@ -1,9 +1,16 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { CalendarTask, ConflictDetection } from '@/lib/backend';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { getCalendarTasks, checkCalendarConflicts, scheduleTask, createCalendarFilter } from '../ipc/calendar';
+import { useState, useCallback, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { CalendarTask, ConflictDetection } from "@/lib/backend";
+import { calendarKeys } from "@/lib/query-keys";
+import { useAuth } from "@/shared/hooks/useAuth";
+import {
+  getCalendarTasks,
+  checkCalendarConflicts,
+  scheduleTask,
+  createCalendarFilter,
+} from "../ipc/calendar";
 
-export type CalendarViewMode = 'month' | 'week' | 'day' | 'agenda';
+export type CalendarViewMode = "month" | "week" | "day" | "agenda";
 
 export interface CalendarState {
   tasks: CalendarTask[];
@@ -21,199 +28,203 @@ export interface CalendarState {
 export interface UseCalendarReturn extends CalendarState {
   setCurrentDate: (date: Date) => void;
   setViewMode: (mode: CalendarViewMode) => void;
-  setFilters: (filters: CalendarState['filters']) => void;
+  setFilters: (filters: CalendarState["filters"]) => void;
   refreshTasks: () => Promise<void>;
-  checkConflicts: (taskId: string, newDate: string, newStart?: string, newEnd?: string) => Promise<ConflictDetection>;
+  checkConflicts: (
+    taskId: string,
+    newDate: string,
+    newStart?: string,
+    newEnd?: string,
+  ) => Promise<ConflictDetection>;
   rescheduleTaskWithConflictCheck: (
     taskId: string,
     newDate: string,
     newStart?: string,
     newEnd?: string,
-    reason?: string
+    reason?: string,
   ) => Promise<{ success: boolean; error?: string }>;
 }
 
-export function useCalendar(initialDate?: Date, initialViewMode?: CalendarViewMode): UseCalendarReturn {
+export function useCalendar(
+  initialDate?: Date,
+  initialViewMode?: CalendarViewMode,
+): UseCalendarReturn {
   const { user } = useAuth();
-  const [state, setState] = useState<CalendarState>({
-    tasks: [],
-    isLoading: false,
-    error: null,
-    currentDate: initialDate || new Date(),
-    viewMode: initialViewMode || 'month',
-    filters: {},
-  });
+  const queryClient = useQueryClient();
 
-  const getDateRangeForView = useCallback((date: Date, viewMode: CalendarViewMode): { start: string; end: string } => {
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const day = date.getDate();
+  // ── UI-only state (ADR-014: local state stays in useState) ──────────────
+  const [currentDate, setCurrentDate] = useState<Date>(
+    initialDate || new Date(),
+  );
+  const [viewMode, setViewMode] = useState<CalendarViewMode>(
+    initialViewMode || "month",
+  );
+  const [filters, setFilters] = useState<CalendarState["filters"]>({});
 
-    switch (viewMode) {
-      case 'month': {
-        const start = new Date(year, month, 1);
-        const end = new Date(year, month + 1, 0);
-        return {
-          start: start.toISOString().split('T')[0] ?? '',
-          end: end.toISOString().split('T')[0] ?? '',
-        };
-      }
-      case 'week': {
-        const startOfWeek = new Date(date);
-        startOfWeek.setDate(date.getDate() - date.getDay()); // Start of week (Sunday)
-        const endOfWeek = new Date(startOfWeek);
-        endOfWeek.setDate(startOfWeek.getDate() + 6); // End of week (Saturday)
-        return {
-          start: startOfWeek.toISOString().split('T')[0] ?? '',
-          end: endOfWeek.toISOString().split('T')[0] ?? '',
-        };
-      }
-      case 'day': {
-        const start = new Date(year, month, day);
-        const end = new Date(year, month, day);
-        return {
-          start: start.toISOString().split('T')[0] ?? '',
-          end: end.toISOString().split('T')[0] ?? '',
-        };
-      }
-      case 'agenda': {
-        const start = new Date(date);
-        const end = new Date(date);
-        end.setDate(date.getDate() + 30); // 30-day range for agenda
-        return {
-          start: start.toISOString().split('T')[0] ?? '',
-          end: end.toISOString().split('T')[0] ?? '',
-        };
-      }
-      default:
-        return {
-          start: date.toISOString().split('T')[0] ?? '',
-          end: date.toISOString().split('T')[0] ?? '',
-        };
-    }
-  }, []);
+  // ── Derived date range & filter (pure computation) ──────────────────────
+  const getDateRangeForView = useCallback(
+    (date: Date, vm: CalendarViewMode): { start: string; end: string } => {
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const day = date.getDate();
 
-  // Memoize date range to prevent unnecessary re-fetches
+      switch (vm) {
+        case "month": {
+          const start = new Date(year, month, 1);
+          const end = new Date(year, month + 1, 0);
+          return {
+            start: start.toISOString().split("T")[0] ?? "",
+            end: end.toISOString().split("T")[0] ?? "",
+          };
+        }
+        case "week": {
+          const startOfWeek = new Date(date);
+          startOfWeek.setDate(date.getDate() - date.getDay());
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(startOfWeek.getDate() + 6);
+          return {
+            start: startOfWeek.toISOString().split("T")[0] ?? "",
+            end: endOfWeek.toISOString().split("T")[0] ?? "",
+          };
+        }
+        case "day": {
+          const start = new Date(year, month, day);
+          const end = new Date(year, month, day);
+          return {
+            start: start.toISOString().split("T")[0] ?? "",
+            end: end.toISOString().split("T")[0] ?? "",
+          };
+        }
+        case "agenda": {
+          const start = new Date(date);
+          const end = new Date(date);
+          end.setDate(date.getDate() + 30);
+          return {
+            start: start.toISOString().split("T")[0] ?? "",
+            end: end.toISOString().split("T")[0] ?? "",
+          };
+        }
+        default:
+          return {
+            start: date.toISOString().split("T")[0] ?? "",
+            end: date.toISOString().split("T")[0] ?? "",
+          };
+      }
+    },
+    [],
+  );
+
   const dateRange = useMemo(() => {
-    return getDateRangeForView(state.currentDate, state.viewMode);
-  }, [state.currentDate, state.viewMode, getDateRangeForView]);
+    return getDateRangeForView(currentDate, viewMode);
+  }, [currentDate, viewMode, getDateRangeForView]);
 
-  // Memoize filter to prevent unnecessary re-fetches
   const calendarFilter = useMemo(() => {
     return createCalendarFilter(
       dateRange.start,
       dateRange.end,
-      state.filters.technicianIds,
-      state.filters.statuses
+      filters.technicianIds,
+      filters.statuses,
     );
-  }, [dateRange, state.filters.technicianIds, state.filters.statuses]);
+  }, [dateRange, filters.technicianIds, filters.statuses]);
 
-  const fetchTasks = useCallback(async () => {
-    if (!user?.token) {
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        tasks: [],
-        error: 'Authentication required to load calendar tasks',
-      }));
-      return;
-    }
+  // ── Server state via TanStack Query (ADR-014) ──────────────────────────
+  const tasksQuery = useQuery<CalendarTask[]>({
+    queryKey: calendarKeys.events(calendarFilter),
+    queryFn: () => getCalendarTasks(calendarFilter),
+    enabled: !!user?.token,
+  });
 
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const tasks = await getCalendarTasks(calendarFilter);
-      setState(prev => ({ ...prev, tasks, isLoading: false }));
-    } catch (error) {
-      console.error('Failed to fetch calendar tasks:', error);
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to load calendar tasks',
-      }));
-    }
-  }, [calendarFilter, user?.token]);
-
-  const setCurrentDate = useCallback((date: Date) => {
-    setState(prev => ({ ...prev, currentDate: date }));
-  }, []);
-
-  const setViewMode = useCallback((viewMode: CalendarViewMode) => {
-    setState(prev => ({ ...prev, viewMode }));
-  }, []);
-
-  const setFilters = useCallback((filters: CalendarState['filters']) => {
-    setState(prev => ({ ...prev, filters }));
-  }, []);
-
+  // ── Actions ─────────────────────────────────────────────────────────────
   const refreshTasks = useCallback(async () => {
-    await fetchTasks();
-  }, [fetchTasks]);
+    await queryClient.invalidateQueries({
+      queryKey: calendarKeys.events(calendarFilter),
+    });
+  }, [queryClient, calendarFilter]);
 
-  const checkConflicts = useCallback(async (
-    taskId: string,
-    newDate: string,
-    newStart?: string,
-    newEnd?: string
-  ): Promise<ConflictDetection> => {
-    if (!user?.token) {
-      return {
-        has_conflict: false,
-        conflict_type: null,
-        conflicting_tasks: [],
-        message: 'Authentication required to check conflicts',
-      };
-    }
-    return await checkCalendarConflicts(taskId, newDate, newStart, newEnd);
-  }, [user?.token]);
-
-  const rescheduleTaskWithConflictCheck = useCallback(async (
-    taskId: string,
-    newDate: string,
-    newStart?: string,
-    newEnd?: string,
-    _reason?: string
-  ): Promise<{ success: boolean; error?: string; conflicting_tasks?: CalendarTask[] }> => {
-    try {
+  const checkConflicts = useCallback(
+    async (
+      taskId: string,
+      newDate: string,
+      newStart?: string,
+      newEnd?: string,
+    ): Promise<ConflictDetection> => {
       if (!user?.token) {
         return {
-          success: false,
-          error: 'Authentication required to reschedule task',
+          has_conflict: false,
+          conflict_type: null,
+          conflicting_tasks: [],
+          message: "Authentication required to check conflicts",
         };
       }
+      return await checkCalendarConflicts(taskId, newDate, newStart, newEnd);
+    },
+    [user?.token],
+  );
 
-      // Use atomic schedule_task command that checks conflicts
-      // and updates both task + calendar_events in a single transaction
-      const result = await scheduleTask(taskId, newDate, newStart, newEnd);
+  const rescheduleTaskWithConflictCheck = useCallback(
+    async (
+      taskId: string,
+      newDate: string,
+      newStart?: string,
+      newEnd?: string,
+      _reason?: string,
+    ): Promise<{
+      success: boolean;
+      error?: string;
+      conflicting_tasks?: CalendarTask[];
+    }> => {
+      try {
+        if (!user?.token) {
+          return {
+            success: false,
+            error: "Authentication required to reschedule task",
+          };
+        }
 
-      if (result.has_conflict) {
+        // Use atomic schedule_task command that checks conflicts
+        // and updates both task + calendar_events in a single transaction
+        const result = await scheduleTask(taskId, newDate, newStart, newEnd);
+
+        if (result.has_conflict) {
+          return {
+            success: false,
+            error: result.message || "Scheduling conflict detected",
+            conflicting_tasks: result.conflicting_tasks,
+          };
+        }
+
+        // Refresh tasks after successful rescheduling
+        await refreshTasks();
+
+        return { success: true };
+      } catch (error) {
+        console.error("Failed to reschedule task:", error);
         return {
           success: false,
-          error: result.message || 'Scheduling conflict detected',
-          conflicting_tasks: result.conflicting_tasks,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to reschedule task",
         };
       }
+    },
+    [refreshTasks, user?.token],
+  );
 
-      // Refresh tasks after successful rescheduling
-      await refreshTasks();
-
-      return { success: true };
-    } catch (error) {
-      console.error('Failed to reschedule task:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Failed to reschedule task',
-      };
-    }
-  }, [refreshTasks, user?.token]);
-
-  // Fetch tasks when dependencies change
-  useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
-
+  // ── Compose return value matching CalendarState + actions ───────────────
   return {
-    ...state,
+    tasks: tasksQuery.data ?? [],
+    isLoading: tasksQuery.isLoading,
+    error: !user?.token
+      ? "Authentication required to load calendar tasks"
+      : tasksQuery.error instanceof Error
+        ? tasksQuery.error.message
+        : tasksQuery.error
+          ? "Failed to load calendar tasks"
+          : null,
+    currentDate,
+    viewMode,
+    filters,
     setCurrentDate,
     setViewMode,
     setFilters,

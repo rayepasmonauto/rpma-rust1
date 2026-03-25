@@ -90,7 +90,7 @@ Most domains follow the **4-layer pattern** (ADR-001):
 ## Cross-Domain Communication
 
 | Mechanism | Location | Purpose |
-|-----------|----------|---------|
+|-----------|----------|----------|
 | Shared Contracts | `src-tauri/src/shared/contracts/` | Common types across domains |
 | Event Bus | `src-tauri/src/shared/services/event_bus/` | Decoupled domain events (ADR-016) |
 | Domain Events | `src-tauri/src/shared/services/domain_event.rs` | Event type definitions (ADR-017) |
@@ -135,6 +135,10 @@ Most domains follow the **4-layer pattern** (ADR-001):
 ### Quote Events
 | Event | Trigger |
 |-------|---------|
+| `QuoteCreated` | New quote created |
+| `QuoteUpdated` | Quote modified |
+| `QuoteDeleted` | Quote soft deleted |
+| `QuoteDuplicated` | Quote copied |
 | `QuoteShared` | Quote sent to client |
 | `QuoteCustomerResponded` | Client response |
 | `QuoteAccepted` | Client accepts |
@@ -164,6 +168,15 @@ Most domains follow the **4-layer pattern** (ADR-001):
 |-------|---------|
 | `EntityRestored` | Soft delete reversed |
 | `EntityHardDeleted` | Permanent deletion |
+
+## Event Buses
+
+The system uses two event buses:
+
+| Event Bus | Purpose |
+|-----------|---------|
+| `InMemoryEventBus` (global) | Cross-domain events for audit, inventory, notifications |
+| `QuoteEventBus` (dedicated) | Quote-specific events for lifecycle management |
 
 ## Domain Rules
 

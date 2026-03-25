@@ -5,13 +5,21 @@
 //! - `task_draft_save`   — upsert draft JSON for the calling user
 //! - `task_draft_get`    — retrieve draft JSON (returns null if absent)
 //! - `task_draft_delete` — remove draft after successful submission
+//!
+//! ADR-018: Handlers delegate to the application-layer `TaskDraftService`
+//! and never access repositories directly.
 
 use serde::Deserialize;
 use tracing::{debug, instrument};
 
 use crate::commands::{ApiResponse, AppError, AppState};
-use crate::domains::tasks::infrastructure::task_draft_repository::TaskDraftRepository;
+use crate::domains::tasks::application::services::task_draft_service::TaskDraftService;
 use crate::resolve_context;
+
+/// Construct a per-request [`TaskDraftService`] from shared application state.
+fn draft_service(state: &AppState<'_>) -> TaskDraftService {
+    TaskDraftService::new(state.db.clone())
+}
 
 /// Request body for saving a draft.
 #[derive(Deserialize, Debug)]
@@ -43,8 +51,8 @@ pub async fn task_draft_save(
     let user_id = ctx.user_id().to_string();
 
     debug!(user_id = %user_id, "task_draft_save");
-    let repo = TaskDraftRepository::new(state.db.clone());
-    match repo.save(&user_id, &request.form_data) {
+    let service = draft_service(&state);
+    match service.save(&user_id, &request.form_data) {
         Ok(()) => Ok(ApiResponse::success(()).with_correlation_id(Some(correlation_id))),
         Err(e) => Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id))),
     }
@@ -62,8 +70,8 @@ pub async fn task_draft_get(
     let user_id = ctx.user_id().to_string();
 
     debug!(user_id = %user_id, "task_draft_get");
-    let repo = TaskDraftRepository::new(state.db.clone());
-    match repo.get(&user_id) {
+    let service = draft_service(&state);
+    match service.get(&user_id) {
         Ok(data) => Ok(ApiResponse::success(data).with_correlation_id(Some(correlation_id))),
         Err(e) => Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id))),
     }
@@ -81,8 +89,8 @@ pub async fn task_draft_delete(
     let user_id = ctx.user_id().to_string();
 
     debug!(user_id = %user_id, "task_draft_delete");
-    let repo = TaskDraftRepository::new(state.db.clone());
-    match repo.delete(&user_id) {
+    let service = draft_service(&state);
+    match service.delete(&user_id) {
         Ok(()) => Ok(ApiResponse::success(()).with_correlation_id(Some(correlation_id))),
         Err(e) => Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id))),
     }

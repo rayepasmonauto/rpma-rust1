@@ -3,6 +3,7 @@
 use crate::db::Database;
 use crate::domains::clients::application::client_service::ClientService;
 use crate::domains::inventory::InventoryFacade;
+use crate::domains::settings::application::settings_service::SettingsService;
 use crate::domains::tasks::infrastructure::task::TaskService;
 use crate::domains::users::infrastructure::user::UserService;
 use crate::infrastructure::auth::session_store::SessionStore;
@@ -47,6 +48,7 @@ pub struct AppStateType {
     pub session_store: Arc<SessionStore>,
     pub settings_repository: Arc<crate::domains::settings::SettingsRepository>,
     pub user_settings_repository: Arc<crate::domains::settings::UserSettingsRepository>,
+    pub settings_service: Arc<SettingsService>,
     pub user_service: Arc<UserService>,
     pub cache_service: Arc<crate::shared::services::cache::CacheService>,
     pub event_bus: Arc<crate::shared::services::event_bus::InMemoryEventBus>,

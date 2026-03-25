@@ -12,7 +12,8 @@ async fn quotes_facade_new_succeeds() {
     let cache = Arc::new(Cache::new(100));
     let repo = Arc::new(QuoteRepository::new(db.clone(), cache));
     let event_bus = Arc::new(InMemoryEventBus::new());
-    let service = Arc::new(QuoteService::new(repo, event_bus));
+    let notification_sender = Arc::new(crate::test_utils::DummyNotificationSender);
+    let service = Arc::new(QuoteService::new(repo, event_bus, notification_sender));
     let _facade = QuotesFacade::new(service);
     // Facade was created successfully
 }

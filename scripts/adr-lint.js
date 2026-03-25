@@ -138,7 +138,7 @@ function isCfgTestAttribute(line) {
 }
 
 function findNonTestUnwrapExpect(content, relPath) {
-  if (relPath.includes('/tests/') || relPath.endsWith('/tests.rs')) {
+  if (relPath.includes('/tests/') || relPath.endsWith('/tests.rs') || relPath.endsWith('/test_utils.rs')) {
     return [];
   }
   // bin/ utilities are build/dev tools, not production services — expect() is acceptable

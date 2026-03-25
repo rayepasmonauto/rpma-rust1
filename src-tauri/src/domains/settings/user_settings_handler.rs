@@ -6,7 +6,6 @@
 
 use tracing::instrument;
 
-use super::application::SettingsService;
 use super::models::*;
 use crate::commands::{ApiResponse, AppError, AppState};
 use crate::resolve_context;
@@ -19,8 +18,7 @@ pub async fn get_user_settings(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<UserSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
-    let service = SettingsService::new(state.db.clone());
-    let settings = service.get_user_settings(&ctx)?;
+    let settings = state.settings_service.get_user_settings(&ctx)?;
     Ok(ApiResponse::success(settings).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -32,8 +30,7 @@ pub async fn update_user_profile(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<UserSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
-    let service = SettingsService::new(state.db.clone());
-    let settings = service.update_user_profile(&ctx, profile)?;
+    let settings = state.settings_service.update_user_profile(&ctx, profile)?;
     Ok(ApiResponse::success(settings).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -45,8 +42,7 @@ pub async fn update_user_preferences(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<UserSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
-    let service = SettingsService::new(state.db.clone());
-    let settings = service.update_user_preferences(&ctx, preferences)?;
+    let settings = state.settings_service.update_user_preferences(&ctx, preferences)?;
     Ok(ApiResponse::success(settings).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -58,8 +54,7 @@ pub async fn update_user_security(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<UserSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
-    let service = SettingsService::new(state.db.clone());
-    let settings = service.update_user_security(&ctx, security)?;
+    let settings = state.settings_service.update_user_security(&ctx, security)?;
     Ok(ApiResponse::success(settings).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -71,8 +66,7 @@ pub async fn update_user_performance(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<UserSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
-    let service = SettingsService::new(state.db.clone());
-    let settings = service.update_user_performance(&ctx, performance)?;
+    let settings = state.settings_service.update_user_performance(&ctx, performance)?;
     Ok(ApiResponse::success(settings).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -84,8 +78,7 @@ pub async fn update_user_accessibility(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<UserSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
-    let service = SettingsService::new(state.db.clone());
-    let settings = service.update_user_accessibility(&ctx, accessibility)?;
+    let settings = state.settings_service.update_user_accessibility(&ctx, accessibility)?;
     Ok(ApiResponse::success(settings).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -97,8 +90,7 @@ pub async fn update_user_notifications(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<UserSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
-    let service = SettingsService::new(state.db.clone());
-    let settings = service.update_user_notifications(&ctx, notifications)?;
+    let settings = state.settings_service.update_user_notifications(&ctx, notifications)?;
     Ok(ApiResponse::success(settings).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -108,8 +100,7 @@ pub async fn get_data_consent(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<Option<DataConsent>>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
-    let service = SettingsService::new(state.db.clone());
-    let consent = service.get_data_consent(&ctx)?;
+    let consent = state.settings_service.get_data_consent(&ctx)?;
     Ok(ApiResponse::success(consent).with_correlation_id(Some(ctx.correlation_id)))
 }
 

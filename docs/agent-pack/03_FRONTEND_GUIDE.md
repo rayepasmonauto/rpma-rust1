@@ -43,8 +43,8 @@ The frontend is a **Next.js 14** application in `frontend/` using the App Router
 | Path | Purpose |
 |------|---------|
 | `client.ts` | `ipcClient` object aggregating all domain IPC modules |
-| `commands.ts` | `IPC_COMMANDS` constant (278+ commands) |
-| `utils.ts` | `safeInvoke<T>()` with session injection, timeout, error mapping |
+| `commands.ts` | `IPC_COMMANDS` constant (~275 commands) |
+| `utils.ts` | `safeInvoke<T>()` with session injection, timeout (15s), error mapping |
 | `core/` | `extractAndValidate`, `ResponseHandlers`, types |
 | `domains/` | Domain-specific typed IPC wrappers (e.g., `tasks.ts`, `settings.ts`) |
 | `mock/` | Test adapters and fixtures |
@@ -62,6 +62,7 @@ export const taskKeys = {
   lists: () => [...taskKeys.all, 'list'],
   byId: (taskId: string) => [...taskKeys.all, taskId],
   history: (taskId: string) => [...taskKeys.all, taskId, 'history'],
+  checklist: (taskId: string) => [...taskKeys.all, taskId, 'checklist'],
 };
 
 export const interventionKeys = {
@@ -101,14 +102,14 @@ export const IPC_COMMANDS = {
   AUTH_LOGOUT: 'auth_logout',
   AUTH_VALIDATE_SESSION: 'auth_validate_session',
   
-  // Task commands
+  // Task commands (~40 commands)
   TASK_CREATE: 'task_create',
   TASK_GET: 'task_get',
   TASK_UPDATE: 'task_update',
   TASK_DELETE: 'task_delete',
   TASK_LIST: 'task_list',
   TASK_TRANSITION_STATUS: 'task_transition_status',
-  // ... 278+ total commands
+  // ... ~275 total commands
 } as const;
 ```
 
@@ -135,6 +136,8 @@ export const ipcClient = {
   tasks: taskIpc,
   clients: clientIpc,
   interventions: interventionsIpc,
+  photos: photosIpc,
+  ppfWorkflow: ppfWorkflowIpc,
   material: materialIpc,
   inventory: inventoryIpc,
   quotes: quotesIpc,
@@ -143,12 +146,14 @@ export const ipcClient = {
   notifications: notificationsIpc,
   bootstrap: bootstrapIpc,
   admin: adminIpc,
+  audit: auditIpc,
   organization: organizationIpc,
   security: securityIpc,
   reports: reportsIpc,
   dashboard: dashboardIpc,
-  trash: trashIpc,
+  entityCounts: entityCountsIpc,
   system: systemOperations,
+  trash: trashIpc,
 } as const;
 ```
 
@@ -169,7 +174,9 @@ export const PUBLIC_COMMANDS = new Set([
   'has_admins', 'bootstrap_first_admin',
   'ui_window_minimize', 'ui_window_maximize', 'ui_window_close',
   'navigation_update', 'navigation_go_back', 'navigation_go_forward',
-  'get_app_info', // etc.
+  'navigation_get_current', 'navigation_add_to_history',
+  'shortcuts_register', 'ui_shell_open_url', 'ui_gps_get_current_position',
+  'get_app_info',
 ]);
 ```
 
@@ -190,25 +197,31 @@ export const PUBLIC_COMMANDS = new Set([
 | `/bootstrap-admin` | Initial admin setup |
 | `/admin` | Admin panel (Admin only) |
 | `/unauthorized` | Access denied |
-| `/clients/`, `/clients/[id]/`, `/clients/new/` | Client management |
+| `/clients/`, `/clients/[id]/`, `/clients/new/`, `/clients/[id]/edit/` | Client management |
 | `/dashboard/` | Dashboard |
 | `/interventions/` | Interventions |
 | `/inventory/` | Inventory |
 | `/quotes/`, `/quotes/new/`, `/quotes/[id]/` | Quotes |
 | `/schedule/` | Schedule |
-| `/settings/` | Settings (profile, preferences, security, organization, etc.) |
-| `/settings/organization/` | Organization settings |
+| `/settings/` | Settings root |
 | `/settings/profile/` | User profile |
 | `/settings/preferences/` | User preferences |
 | `/settings/security/` | Security settings |
+| `/settings/organization/` | Organization settings |
 | `/settings/system/` | System settings |
 | `/settings/business/` | Business rules |
 | `/settings/monitoring/` | Monitoring |
 | `/settings/performance/` | Performance configs |
 | `/settings/integrations/` | Integrations |
 | `/settings/security-policies/` | Security policies |
+| `/settings/observability/` | Observability |
 | `/tasks/`, `/tasks/[id]/`, `/tasks/new/` | Tasks |
 | `/tasks/[id]/workflow/ppf/` | PPF workflow |
+| `/tasks/[id]/workflow/ppf/steps/[step]/` | PPF steps |
+| `/tasks/[id]/workflow/ppf/steps/preparation/` | Preparation step |
+| `/tasks/[id]/workflow/ppf/steps/installation/` | Installation step |
+| `/tasks/[id]/workflow/ppf/steps/inspection/` | Inspection step |
+| `/tasks/[id]/workflow/ppf/steps/finalization/` | Finalization step |
 | `/tasks/[id]/completed/` | Completed task |
 | `/trash/` | Trash (soft-deleted items) |
 | `/users/` | User management |

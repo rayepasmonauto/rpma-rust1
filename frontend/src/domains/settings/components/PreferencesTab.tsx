@@ -103,7 +103,7 @@ export function PreferencesTab({ user, profile: _profile }: PreferencesSettingsT
                 <Label>Format de date</Label>
                 <Controller
                   control={control}
-                  name="preferences.date_format"
+                  name="preferences.dateFormat"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger>
@@ -123,7 +123,7 @@ export function PreferencesTab({ user, profile: _profile }: PreferencesSettingsT
                 <Label>Format d&apos;heure</Label>
                 <Controller
                   control={control}
-                  name="preferences.time_format"
+                  name="preferences.timeFormat"
                   render={({ field }) => (
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger>

@@ -387,6 +387,8 @@ impl Default for UserProfileSettings {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(rename_all = "camelCase")]
 pub struct UserPreferences {
     pub email_notifications: bool,
     pub push_notifications: bool,

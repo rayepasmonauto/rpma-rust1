@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { taskKeys } from "@/lib/query-keys";
 import { useTranslation } from "@/shared/hooks";
 import { bigintToNumber, handleError, LogDomain } from "@/shared/utils";
 import { useAuth } from "@/shared/hooks/useAuth";
-import { taskGateway } from "@/domains/tasks/api/taskGateway";
 // ❌ CROSS-DOMAIN IMPORT
 import { InterventionWorkflowService } from "@/domains/interventions";
 import type { TaskWithDetails } from "@/domains/tasks/api/types";
+import { taskIpc } from "../ipc/task.ipc";
 import {
   canStartIntervention,
   isActiveStatus,
@@ -30,133 +32,74 @@ export function useTaskDetailPage() {
   const { t } = useTranslation();
   const taskId = params.id as string;
 
-  const [task, setTask] = useState<TaskWithDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isAssignedToCurrentUser, setIsAssignedToCurrentUser] = useState(false);
-  const [isTaskAvailable, setIsTaskAvailable] = useState(true);
+  // ── Server state via TanStack Query (ADR-014) ──────────────────────────
+
+  const {
+    data: task = null,
+    isLoading: isTaskLoading,
+    error: taskQueryError,
+  } = useQuery<TaskWithDetails | null>({
+    queryKey: taskKeys.byId(taskId),
+    queryFn: async () => {
+      const result = await taskIpc.get(taskId);
+      if (!result) return null;
+      return result as TaskWithDetails;
+    },
+    enabled: !!taskId,
+  });
+
+  // Derive a user-facing error string from the query error
+  const error: string | null = taskQueryError
+    ? taskQueryError instanceof Error
+      ? taskQueryError.message
+      : t("errors.connectionError")
+    : null;
+
+  // Show toast once when a query error surfaces
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  // Assignment check — dependent on task being loaded
+  const { data: assignmentData } = useQuery({
+    queryKey: taskKeys.assignment(taskId, user?.user_id ?? ""),
+    queryFn: () => taskIpc.checkTaskAssignment(taskId, user!.user_id),
+    enabled: !!task && !!user?.token && !!user?.user_id,
+    retry: false,
+  });
+
+  // Availability check — dependent on task being loaded
+  const { data: availabilityData } = useQuery({
+    queryKey: taskKeys.availability(taskId),
+    queryFn: () => taskIpc.checkTaskAvailability(taskId),
+    enabled: !!task && !!user?.token,
+    retry: false,
+  });
+
+  const isAssignedToCurrentUser = assignmentData?.status === "assigned";
+  const isTaskAvailable = availabilityData
+    ? availabilityData.status === "available"
+    : true;
+
+  // Unified loading flag — mirrors the original `loading` boolean
+  const loading = isTaskLoading;
+
+  // ── UI-only state (ADR-014: useState is fine for these) ────────────────
+
   const [isStartingIntervention, setIsStartingIntervention] = useState(false);
   const [activeSection, setActiveSection] = useState<string>(
     QUICK_NAV_SECTIONS[0].id,
   );
+
+  // ── Derived state ──────────────────────────────────────────────────────
 
   const isInProgress = task?.status === "in_progress";
   const isCompleted = task?.status === "completed";
   // Single source of truth: delegates to ALLOWED_TRANSITIONS in task-transitions.ts
   // which mirrors task_state_machine.rs::allowed_transitions() (DEBT-21, ADR-001).
   const canStartTask = task ? canStartIntervention(task.status) : false;
-
-  useEffect(() => {
-    if (!taskId) return;
-
-    const fetchTask = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const result = await taskGateway.getTaskById(taskId);
-
-        if (result.error) {
-          if (result.status === 404) {
-            setError(t("tasks.notFound"));
-            toast.error(t("tasks.notFound"));
-          } else if (result.status === 403) {
-            setError(t("tasks.unauthorized"));
-            toast.error(t("tasks.unauthorized"));
-          } else {
-            const errorMessage = result.error || t("errors.loadFailed");
-            setError(errorMessage);
-            toast.error(errorMessage);
-          }
-          return;
-        }
-
-        setTask(result.data || null);
-
-        if (result.data && user?.token) {
-          try {
-            const assignmentCheck = await taskGateway.checkTaskAssignment(
-              result.data.id,
-              user.user_id,
-            );
-            setIsAssignedToCurrentUser(assignmentCheck.status === "assigned");
-
-            const availabilityCheck = await taskGateway.checkTaskAvailability(
-              result.data.id,
-            );
-            setIsTaskAvailable(availabilityCheck.status === "available");
-          } catch (validationErr) {
-            const validationError = validationErr as Error;
-            console.warn("Task validation failed:", {
-              taskId: result.data.id,
-              userId: user.user_id,
-              error: validationError.message,
-              code: (validationError as { code?: string }).code,
-              details: (validationError as { details?: unknown }).details,
-            });
-
-            if (
-              validationError.message?.includes("authentication") ||
-              validationError.message?.includes("token")
-            ) {
-              handleError(
-                new Error(t("errors.sessionExpired")),
-                "Authentication failed during task validation",
-                {
-                  domain: LogDomain.API,
-                  userId: user?.user_id,
-                  component: "TaskValidation",
-                  showToast: true,
-                },
-              );
-            } else if (
-              validationError.message?.includes("authorization") ||
-              validationError.message?.includes("permission")
-            ) {
-              handleError(
-                new Error(t("errors.permissionDenied")),
-                "Authorization failed during task validation",
-                {
-                  domain: LogDomain.API,
-                  userId: user?.user_id,
-                  component: "TaskValidation",
-                  showToast: true,
-                },
-              );
-            } else if (validationError.message?.includes("rate limit")) {
-              handleError(
-                new Error(t("errors.rateLimitExceeded")),
-                "Rate limit exceeded during task validation",
-                {
-                  domain: LogDomain.API,
-                  userId: user?.user_id,
-                  component: "TaskValidation",
-                  showToast: true,
-                },
-              );
-            } else {
-              console.warn(
-                "Task validation encountered an issue but continuing with defaults",
-              );
-            }
-          }
-        }
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : t("errors.connectionError");
-        setError(errorMessage);
-        handleError(err, "Failed to fetch task details", {
-          domain: LogDomain.TASK,
-          component: "TaskDetailPage",
-          showToast: false,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTask();
-  }, [taskId, user?.token, user?.user_id, t]);
 
   // Intersection observer for quick-nav highlighting
   useEffect(() => {
@@ -328,7 +271,6 @@ export function useTaskDetailPage() {
           );
         }
 
-        setTask((prev) => (prev ? { ...prev, status: "in_progress" } : prev));
         toast.success("Intervention démarrée avec succès");
         router.push(`/tasks/${taskId}/workflow/ppf`);
       } catch (err) {

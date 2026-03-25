@@ -10,7 +10,8 @@ fn make_facade(db: Arc<Database>) -> QuotesFacade {
     let cache = Arc::new(Cache::new(100));
     let repo = Arc::new(QuoteRepository::new(db.clone(), cache));
     let event_bus = Arc::new(crate::shared::services::event_bus::InMemoryEventBus::new());
-    let service = Arc::new(QuoteService::new(repo, event_bus));
+    let notification_sender = Arc::new(crate::test_utils::DummyNotificationSender);
+    let service = Arc::new(QuoteService::new(repo, event_bus, notification_sender));
     QuotesFacade::new(service)
 }
 

@@ -6,25 +6,6 @@ use crate::domains::quotes::infrastructure::quote_repository::QuoteRepository;
 use crate::shared::contracts::auth::UserRole;
 use crate::shared::repositories::cache::Cache;
 
-fn setup_service() -> (QuoteService, Arc<Database>) {
-    let db = Arc::new(crate::test_utils::setup_test_db_sync());
-    let cache = Arc::new(Cache::new(100));
-    let repo = Arc::new(QuoteRepository::new(db.clone(), cache));
-    let event_bus = Arc::new(crate::shared::services::event_bus::InMemoryEventBus::new());
-    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus);
-
-    // Insert test client
-    let now = chrono::Utc::now().timestamp_millis();
-    db.execute(
-        r#"INSERT INTO clients (id, name, email, customer_type, total_tasks, active_tasks, completed_tasks, created_at, updated_at, synced)
-           VALUES ('test-client', 'Test Client', 'test@example.com', 'individual', 0, 0, 0, ?, ?, 0)"#,
-        rusqlite::params![now, now],
-    )
-    .expect("insert test client");
-
-    (service, db)
-}
-
 async fn setup_service_async() -> (QuoteService, Arc<Database>) {
     let db = Arc::new(
         Database::new_in_memory()
@@ -34,7 +15,8 @@ async fn setup_service_async() -> (QuoteService, Arc<Database>) {
     let cache = Arc::new(Cache::new(100));
     let repo = Arc::new(QuoteRepository::new(db.clone(), cache));
     let event_bus = Arc::new(crate::shared::services::event_bus::InMemoryEventBus::new());
-    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus);
+    let notification_sender = Arc::new(crate::test_utils::DummyNotificationSender);
+    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus, notification_sender);
 
     let now = chrono::Utc::now().timestamp_millis();
     db.execute(
@@ -79,9 +61,9 @@ fn make_item(label: &str, unit_price: i64, qty: f64, tax_rate: f64) -> CreateQuo
     }
 }
 
-#[test]
-fn test_create_quote_with_items_calculates_totals() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_create_quote_with_items_calculates_totals() {
+    let (service, _db) = setup_service_async().await;
 
     let req = CreateQuoteRequest {
         client_id: "test-client".to_string(),
@@ -132,9 +114,9 @@ fn test_create_quote_with_items_calculates_totals() {
     assert_eq!(quote.total, 84000);
 }
 
-#[test]
-fn test_create_quote_with_missing_client_returns_validation() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_create_quote_with_missing_client_returns_validation() {
+    let (service, _db) = setup_service_async().await;
 
     let req = CreateQuoteRequest {
         client_id: "missing-client".to_string(),
@@ -158,9 +140,9 @@ fn test_create_quote_with_missing_client_returns_validation() {
     assert!(result.unwrap_err().contains("introuvable"));
 }
 
-#[test]
-fn test_create_quote_with_existing_client_succeeds() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_create_quote_with_existing_client_succeeds() {
+    let (service, _db) = setup_service_async().await;
 
     let req = make_quote_req("test-client");
     let quote = service
@@ -169,9 +151,9 @@ fn test_create_quote_with_existing_client_succeeds() {
     assert_eq!(quote.client_id, "test-client");
 }
 
-#[test]
-fn test_update_forbidden_when_not_draft() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_update_forbidden_when_not_draft() {
+    let (service, _db) = setup_service_async().await;
 
     let req = make_quote_req("test-client");
     let quote = service
@@ -206,6 +188,7 @@ fn test_update_forbidden_when_not_draft() {
             vehicle_year: None,
             vehicle_vin: None,
         },
+        "test_user",
         &UserRole::Admin,
     );
     assert!(result.is_err());
@@ -237,9 +220,9 @@ async fn test_mark_accepted_from_sent_succeeds() {
     assert_eq!(result.quote.status, QuoteStatus::Accepted);
 }
 
-#[test]
-fn test_status_transitions() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_status_transitions() {
+    let (service, _db) = setup_service_async().await;
 
     let req = make_quote_req("test-client");
     let quote = service
@@ -287,9 +270,9 @@ async fn test_mark_rejected_from_sent_succeeds() {
     assert_eq!(rejected.status, QuoteStatus::Rejected);
 }
 
-#[test]
-fn test_mark_sent_with_no_items_fails() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_mark_sent_with_no_items_fails() {
+    let (service, _db) = setup_service_async().await;
 
     let req = make_quote_req("test-client");
     let quote = service
@@ -302,9 +285,9 @@ fn test_mark_sent_with_no_items_fails() {
     assert!(result.unwrap_err().contains("sans lignes"));
 }
 
-#[test]
-fn test_mark_sent_with_zero_total_fails() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_mark_sent_with_zero_total_fails() {
+    let (service, _db) = setup_service_async().await;
 
     let req = CreateQuoteRequest {
         client_id: "test-client".to_string(),
@@ -340,9 +323,9 @@ fn test_mark_sent_with_zero_total_fails() {
     assert!(result.unwrap_err().contains("total nul"));
 }
 
-#[test]
-fn test_mark_expired_from_draft_succeeds() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_mark_expired_from_draft_succeeds() {
+    let (service, _db) = setup_service_async().await;
 
     let req = make_quote_req("test-client");
     let quote = service
@@ -377,9 +360,9 @@ async fn test_mark_expired_from_accepted_fails() {
     assert!(result.is_err());
 }
 
-#[test]
-fn test_soft_delete_preserves_data() {
-    let (service, db) = setup_service();
+#[tokio::test]
+async fn test_soft_delete_preserves_data() {
+    let (service, db) = setup_service_async().await;
 
     let req = make_quote_req("test-client");
     let quote = service
@@ -388,7 +371,7 @@ fn test_soft_delete_preserves_data() {
     let quote_id = quote.id.clone();
 
     // Delete (soft)
-    let deleted = service.delete_quote(&quote_id, &UserRole::Admin).unwrap();
+    let deleted = service.delete_quote(&quote_id, "test_user", &UserRole::Admin).unwrap();
     assert!(deleted);
 
     // Not visible via service
@@ -405,9 +388,9 @@ fn test_soft_delete_preserves_data() {
     assert_eq!(row_exists, 1);
 }
 
-#[test]
-fn test_duplicate_creates_new_draft_with_items() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_duplicate_creates_new_draft_with_items() {
+    let (service, _db) = setup_service_async().await;
 
     let req = CreateQuoteRequest {
         client_id: "test-client".to_string(),
@@ -446,9 +429,9 @@ fn test_duplicate_creates_new_draft_with_items() {
     assert!(dup.task_id.is_none()); // unlinked
 }
 
-#[test]
-fn test_list_filters() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_list_filters() {
+    let (service, _db) = setup_service_async().await;
 
     // Create 3 quotes
     for _ in 0..3 {
@@ -469,9 +452,9 @@ fn test_list_filters() {
     assert_eq!(list.data.len(), 3);
 }
 
-#[test]
-fn test_discount_calculation_percentage() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_discount_calculation_percentage() {
+    let (service, _db) = setup_service_async().await;
 
     let req = CreateQuoteRequest {
         client_id: "test-client".to_string(),
@@ -522,6 +505,7 @@ fn test_discount_calculation_percentage() {
                 vehicle_year: None,
                 vehicle_vin: None,
             },
+            "test_user",
             &UserRole::Admin,
         )
         .unwrap();
@@ -536,9 +520,9 @@ fn test_discount_calculation_percentage() {
     assert_eq!(updated.total, 10800);
 }
 
-#[test]
-fn test_discount_calculation_fixed() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_discount_calculation_fixed() {
+    let (service, _db) = setup_service_async().await;
 
     let req = CreateQuoteRequest {
         client_id: "test-client".to_string(),
@@ -589,6 +573,7 @@ fn test_discount_calculation_fixed() {
                 vehicle_year: None,
                 vehicle_vin: None,
             },
+            "test_user",
             &UserRole::Admin,
         )
         .unwrap();
@@ -603,9 +588,9 @@ fn test_discount_calculation_fixed() {
     assert_eq!(updated.total, 11400);
 }
 
-#[test]
-fn test_discount_validation_percentage_over_100() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_discount_validation_percentage_over_100() {
+    let (service, _db) = setup_service_async().await;
 
     let req = make_quote_req("test-client");
     let quote = service
@@ -628,6 +613,7 @@ fn test_discount_validation_percentage_over_100() {
             vehicle_year: None,
             vehicle_vin: None,
         },
+        "test_user",
         &UserRole::Admin,
     );
 
@@ -635,9 +621,9 @@ fn test_discount_validation_percentage_over_100() {
     assert!(result.unwrap_err().contains("exceed 100%"));
 }
 
-#[test]
-fn test_remove_discount() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_remove_discount() {
+    let (service, _db) = setup_service_async().await;
 
     let req = CreateQuoteRequest {
         client_id: "test-client".to_string(),
@@ -686,6 +672,7 @@ fn test_remove_discount() {
                 vehicle_year: None,
                 vehicle_vin: None,
             },
+            "test_user",
             &UserRole::Admin,
         )
         .unwrap();
@@ -710,6 +697,7 @@ fn test_remove_discount() {
                 vehicle_year: None,
                 vehicle_vin: None,
             },
+            "test_user",
             &UserRole::Admin,
         )
         .unwrap();
@@ -721,9 +709,9 @@ fn test_remove_discount() {
     assert_eq!(no_discount.total, 12000);
 }
 
-#[test]
-fn test_quote_number_uses_max_not_count() {
-    let (service, _db) = setup_service();
+#[tokio::test]
+async fn test_quote_number_uses_max_not_count() {
+    let (service, _db) = setup_service_async().await;
 
     // Create and delete (soft) a quote
     let req = make_quote_req("test-client");
@@ -732,7 +720,7 @@ fn test_quote_number_uses_max_not_count() {
         .unwrap();
     assert_eq!(q1.quote_number, "DEV-00001");
 
-    service.delete_quote(&q1.id, &UserRole::Admin).unwrap();
+    service.delete_quote(&q1.id, "test_user", &UserRole::Admin).unwrap();
 
     // Next quote should be DEV-00002, not DEV-00001 (COUNT vs MAX)
     let req2 = make_quote_req("test-client");
@@ -747,9 +735,9 @@ fn test_quote_number_uses_max_not_count() {
 /// Regression: `create_quote` must persist quote row AND items in a single
 /// atomic transaction.  After a successful call the quote and all its items
 /// must be readable from the database.
-#[test]
-fn test_create_quote_and_items_are_atomic() {
-    let (service, db) = setup_service();
+#[tokio::test]
+async fn test_create_quote_and_items_are_atomic() {
+    let (service, db) = setup_service_async().await;
 
     let req = CreateQuoteRequest {
         client_id: "test-client".to_string(),
@@ -911,7 +899,8 @@ async fn test_convert_to_task_emits_event_with_current_actor() {
     event_bus.register_handler(CaptureHandler {
         converted_by: captured_actor.clone(),
     });
-    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus);
+    let notification_sender = Arc::new(crate::test_utils::DummyNotificationSender);
+    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus, notification_sender);
 
     let now = chrono::Utc::now().timestamp_millis();
     db.execute(

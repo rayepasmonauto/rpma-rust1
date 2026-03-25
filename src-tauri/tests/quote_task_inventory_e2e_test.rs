@@ -13,6 +13,33 @@ use rpma_ppf_intervention::shared::services::cross_domain::{
 };
 use rpma_ppf_intervention::shared::services::event_bus::InMemoryEventBus;
 
+use rpma_ppf_intervention::shared::contracts::notification::{NotificationSender, SentMessage};
+use rpma_ppf_intervention::shared::ipc::errors::AppError;
+use async_trait::async_trait;
+
+struct DummyNotificationSender;
+
+#[async_trait]
+impl NotificationSender for DummyNotificationSender {
+    async fn send_message_raw(
+        &self,
+        _message_type: String,
+        _notification_kind: Option<String>,
+        _recipient_id: Option<String>,
+        _recipient_email: Option<String>,
+        _recipient_phone: Option<String>,
+        _subject: Option<String>,
+        _body: String,
+        _task_id: Option<String>,
+        _client_id: Option<String>,
+        _priority: Option<String>,
+        _scheduled_at: Option<i64>,
+        _correlation_id: Option<String>,
+    ) -> Result<SentMessage, AppError> {
+        Ok(SentMessage { id: "dummy".to_string() })
+    }
+}
+
 async fn setup_db() -> Arc<Database> {
     Arc::new(Database::new_in_memory().await.expect("in-memory db"))
 }
@@ -22,7 +49,11 @@ async fn quote_to_task_conversion_updates_inventory_and_audit() {
     let db = setup_db().await;
     let repos = Repositories::new(db.clone(), 64).await;
 
-    let quote_service = QuoteService::new(repos.quote.clone(), Arc::new(InMemoryEventBus::new()));
+    let quote_service = QuoteService::new(
+        repos.quote.clone(),
+        Arc::new(InMemoryEventBus::new()),
+        Arc::new(DummyNotificationSender),
+    );
     let task_service = TaskService::new(db.clone());
     let intervention_service = InterventionService::new(db.clone());
     let material_service = MaterialService::new(db.as_ref().clone());
