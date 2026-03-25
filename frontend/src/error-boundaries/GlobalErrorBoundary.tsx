@@ -239,6 +239,16 @@ export const GlobalErrorBoundary: React.FC<GlobalErrorBoundaryProps> = ({
   className
 }) => {
   const handleGlobalError = (error: Error, errorInfo: React.ErrorInfo) => {
+    // If it's a Next.js internal control-flow error, don't log it
+    const isNextJsControlError = (error as any)?.digest?.startsWith('NEXT_REDIRECT') || 
+                                (error as any)?.digest?.startsWith('NEXT_NOT_FOUND') ||
+                                error.message?.includes('NEXT_REDIRECT') ||
+                                error.message?.includes('NEXT_NOT_FOUND');
+    
+    if (isNextJsControlError) {
+      return;
+    }
+
     // Log global error with extensive context using the new logging system
     logger.fatal(LogDomain.SYSTEM, 'Global application error', error, {
       component_stack: errorInfo.componentStack,

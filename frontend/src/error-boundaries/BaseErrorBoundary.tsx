@@ -37,6 +37,16 @@ export class BaseErrorBoundary extends Component<BaseErrorBoundaryProps, ErrorBo
   }
 
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+    // If it's a Next.js internal control-flow error, don't catch it
+    const isNextJsControlError = (error as any)?.digest?.startsWith('NEXT_REDIRECT') || 
+                                (error as any)?.digest?.startsWith('NEXT_NOT_FOUND') ||
+                                error.message?.includes('NEXT_REDIRECT') ||
+                                error.message?.includes('NEXT_NOT_FOUND');
+    
+    if (isNextJsControlError) {
+      throw error; // Re-throw to let Next.js handle it
+    }
+
     // Update state so the next render will show the fallback UI
     return {
       hasError: true,
@@ -45,6 +55,16 @@ export class BaseErrorBoundary extends Component<BaseErrorBoundaryProps, ErrorBo
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // If it's a Next.js internal control-flow error, don't do anything
+    const isNextJsControlError = (error as any)?.digest?.startsWith('NEXT_REDIRECT') || 
+                                (error as any)?.digest?.startsWith('NEXT_NOT_FOUND') ||
+                                error.message?.includes('NEXT_REDIRECT') ||
+                                error.message?.includes('NEXT_NOT_FOUND');
+    
+    if (isNextJsControlError) {
+      return;
+    }
+
     // Update state with error details
     this.setState({
       error,
