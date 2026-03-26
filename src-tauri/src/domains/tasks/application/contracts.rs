@@ -112,3 +112,14 @@ pub struct TaskWithClient {
     pub client_name: String,
     pub client_id: String,
 }
+
+/// Enhanced task with client details — application-layer response type.
+#[derive(serde::Serialize, Debug)]
+pub struct TaskWithClientDetails {
+    pub task: crate::domains::tasks::domain::models::task::Task,
+    pub client_name: String,
+    pub client_contact: Option<String>,
+    pub client_region: Option<String>,
+    pub client_priority: Option<String>,
+    pub relationship_status: String,
+}

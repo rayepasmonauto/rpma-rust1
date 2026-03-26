@@ -8,6 +8,7 @@
 // (start_datetime, end_datetime) instead of i64 milliseconds.
 
 use crate::db::Database;
+use crate::domains::calendar::domain::repositories::CalendarEventQueries;
 use crate::domains::calendar::models::CalendarEvent;
 use crate::shared::repositories::base::{RepoError, RepoResult};
 use async_trait::async_trait;
@@ -25,25 +26,6 @@ const EVENT_SELECT: &str = r#"
         created_at, updated_at, created_by, updated_by, deleted_at, deleted_by
     FROM calendar_events
 "#;
-
-// ── Trait ─────────────────────────────────────────────────────────────────────
-
-/// Query contract for calendar-event range lookups.
-#[async_trait]
-pub trait CalendarEventQueries: Send + Sync {
-    /// Return all non-deleted events whose `start_datetime` falls at or after
-    /// `from` **and** whose `end_datetime` falls at or before `to`, where both
-    /// bounds are Unix epoch **milliseconds**.
-    ///
-    /// When `technician_id` is `Some`, only events assigned to that technician
-    /// are included.
-    async fn find_events_in_range(
-        &self,
-        from: i64,
-        to: i64,
-        technician_id: Option<&str>,
-    ) -> RepoResult<Vec<CalendarEvent>>;
-}
 
 // ── Concrete struct ───────────────────────────────────────────────────────────
 

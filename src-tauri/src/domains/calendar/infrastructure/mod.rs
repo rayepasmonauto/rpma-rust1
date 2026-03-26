@@ -2,4 +2,5 @@
 
 pub mod calendar_repository;
 
-pub use calendar_repository::{CalendarEventQueries, CalendarRepository};
+pub use crate::domains::calendar::domain::repositories::CalendarEventQueries;
+pub use calendar_repository::CalendarRepository;

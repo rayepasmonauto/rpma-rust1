@@ -16,7 +16,7 @@ use crate::domains::tasks::domain::models::task::{
 };
 use crate::domains::tasks::infrastructure::task::TaskService;
 use crate::domains::tasks::infrastructure::task_import::TaskImportService;
-use crate::domains::tasks::ipc::task_types::TaskFilter;
+use crate::domains::tasks::application::TaskFilter;
 use crate::domains::tasks::TasksFacade;
 use crate::shared::context::RequestContext;
 use crate::shared::contracts::notification::NotificationSender;

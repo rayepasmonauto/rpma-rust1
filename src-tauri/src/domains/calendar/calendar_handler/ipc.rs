@@ -4,6 +4,7 @@ use super::*;
 use crate::commands::{ApiResponse, AppError, AppState};
 use crate::resolve_context;
 use crate::shared::context::RequestContext;
+use crate::shared::contracts::rate_limiter::RateLimiterPort;
 
 use tracing::{info, instrument};
 
@@ -16,10 +17,11 @@ fn calendar_context(
 }
 
 fn facade(state: &AppState<'_>) -> CalendarFacade {
+    let rl: std::sync::Arc<dyn RateLimiterPort> = state.auth_service.rate_limiter();
     CalendarFacade::new(
         state.calendar_service.clone(),
         state.calendar_event_repository.clone(),
-        state.auth_service.rate_limiter(),
+        rl,
     )
 }
 

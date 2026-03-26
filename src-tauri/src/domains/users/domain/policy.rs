@@ -1,6 +1,6 @@
+use super::errors::UsersDomainError;
 use crate::domains::users::domain::UserAction;
 use crate::shared::contracts::auth::{UserRole, UserSession};
-use crate::shared::contracts::AppError;
 
 /// Role-based access policy for user management actions.
 #[derive(Debug, Clone, Copy, Default)]
@@ -41,13 +41,13 @@ impl UserAccessPolicy {
     pub fn ensure_role_specific_rules(
         current_user: &UserSession,
         action: &UserAction,
-    ) -> Result<(), AppError> {
+    ) -> Result<(), UsersDomainError> {
         match action {
             UserAction::Create { .. } | UserAction::List { .. } => {
                 if matches!(current_user.role, UserRole::Admin | UserRole::Supervisor) {
                     Ok(())
                 } else {
-                    Err(AppError::Authorization(
+                    Err(UsersDomainError::Authorization(
                         "Only admins and supervisors can perform this operation".to_string(),
                     ))
                 }
@@ -60,7 +60,7 @@ impl UserAccessPolicy {
                 if matches!(current_user.role, UserRole::Admin) {
                     Ok(())
                 } else {
-                    Err(AppError::Authorization(
+                    Err(UsersDomainError::Authorization(
                         "Only administrators can perform this operation".to_string(),
                     ))
                 }
@@ -73,7 +73,7 @@ impl UserAccessPolicy {
                 if privileged || current_user.user_id == *id {
                     Ok(())
                 } else {
-                    Err(AppError::Authorization(
+                    Err(UsersDomainError::Authorization(
                         "You can only manage your own profile".to_string(),
                     ))
                 }

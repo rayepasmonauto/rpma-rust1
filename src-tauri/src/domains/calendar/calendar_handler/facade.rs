@@ -1,7 +1,7 @@
 //! CalendarFacade — command/response enums and facade orchestration.
 
 use super::*;
-use crate::domains::auth::infrastructure::rate_limiter::RateLimiterService;
+use crate::shared::contracts::rate_limiter::RateLimiterPort;
 use crate::shared::context::RequestContext;
 use crate::shared::repositories::CalendarEventRepositoryContract;
 use crate::shared::ipc::errors::AppError as IpcAppError;
@@ -101,7 +101,7 @@ mod helpers {
 pub struct CalendarFacade {
     pub(super) calendar_service: Arc<CalendarService>,
     pub(super) calendar_event_repository: Arc<dyn CalendarEventRepositoryContract>,
-    rate_limiter: Option<Arc<RateLimiterService>>,
+    rate_limiter: Option<Arc<dyn RateLimiterPort>>,
 }
 
 impl std::fmt::Debug for CalendarFacade {
@@ -114,7 +114,7 @@ impl CalendarFacade {
     pub fn new(
         calendar_service: Arc<CalendarService>,
         calendar_event_repository: Arc<dyn CalendarEventRepositoryContract>,
-        rate_limiter: Arc<RateLimiterService>,
+        rate_limiter: Arc<dyn RateLimiterPort>,
     ) -> Self {
         Self {
             calendar_service,

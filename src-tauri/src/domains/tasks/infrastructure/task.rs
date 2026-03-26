@@ -573,7 +573,7 @@ impl TaskService {
     /// Apply role-based filters to task query
     pub fn apply_role_based_filters(
         &self,
-        filter: &mut crate::domains::tasks::ipc::task_types::TaskFilter,
+        filter: &mut crate::domains::tasks::application::TaskFilter,
         auth: &crate::shared::context::AuthContext,
     ) {
         use crate::shared::contracts::auth::UserRole;

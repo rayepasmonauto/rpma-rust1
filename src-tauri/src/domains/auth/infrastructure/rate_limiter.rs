@@ -28,7 +28,7 @@ impl RateLimiterService {
         let conn = self.db.get_connection()?;
 
         let result = conn.query_row(
-            "SELECT lock_until FROM login_attempts 
+            "SELECT lock_until FROM login_attempts
              WHERE identifier = ? AND is_locked = 1 ORDER BY last_attempt DESC LIMIT 1",
             [identifier],
             |row| {
@@ -80,7 +80,7 @@ impl RateLimiterService {
         };
 
         conn.execute(
-            "INSERT INTO login_attempts 
+            "INSERT INTO login_attempts
              (id, identifier, attempt_count, first_attempt, last_attempt, is_locked, lock_until, created_at, updated_at)
              VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?)",
             params![
@@ -128,8 +128,8 @@ impl RateLimiterService {
         let conn = self.db.get_connection()?;
 
         let result = conn.query_row(
-            "SELECT lock_until FROM login_attempts 
-             WHERE identifier = ? AND is_locked = 1 
+            "SELECT lock_until FROM login_attempts
+             WHERE identifier = ? AND is_locked = 1
              ORDER BY last_attempt DESC LIMIT 1",
             [identifier],
             |row| {
@@ -188,5 +188,16 @@ impl RateLimiterService {
         )
         .map_err(|e| format!("Failed to cleanup old login attempts: {}", e))?;
         Ok(())
+    }
+}
+
+impl crate::shared::contracts::rate_limiter::RateLimiterPort for RateLimiterService {
+    fn check_and_record(
+        &self,
+        identifier: &str,
+        max_requests: u32,
+        window_seconds: i64,
+    ) -> Result<bool, String> {
+        self.check_and_record(identifier, max_requests, window_seconds)
     }
 }

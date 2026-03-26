@@ -1,5 +1,5 @@
 use crate::domains::auth::domain::models::auth::UserSession;
-use crate::domains::auth::domain::AuthErrorPolicy;
+use crate::domains::auth::domain::{AuthDomainError, AuthErrorPolicy};
 use crate::shared::ipc::errors::AppError;
 
 /// Thin facade that maps raw infrastructure/domain results into IPC-ready
@@ -25,12 +25,12 @@ impl AuthFacade {
         &self,
         result: Result<UserSession, String>,
     ) -> Result<UserSession, AppError> {
-        result.map_err(|e| AuthErrorPolicy::authentication_error(&e))
+        result.map_err(|e| auth_domain_error_to_app(AuthErrorPolicy::authentication_error(&e)))
     }
 
     /// Map a raw signup error string into a typed `AppError`.
     pub fn map_signup_error(&self, raw_error: &str) -> AppError {
-        AuthErrorPolicy::signup_error(raw_error)
+        auth_domain_error_to_app(AuthErrorPolicy::signup_error(raw_error))
     }
 
     /// Return an error if `token` is empty or whitespace-only.
@@ -79,5 +79,14 @@ impl AuthFacade {
             role,
             &request.password,
         )
+    }
+}
+
+/// Convert an `AuthDomainError` to an IPC-boundary `AppError` (ADR-019).
+fn auth_domain_error_to_app(err: AuthDomainError) -> AppError {
+    match err {
+        AuthDomainError::InvalidCredentials(msg) => AppError::Authentication(msg),
+        AuthDomainError::Validation(msg) => AppError::Validation(msg),
+        AuthDomainError::Internal(_) => AppError::db_sanitized("create_account", "internal error"),
     }
 }
