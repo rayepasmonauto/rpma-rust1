@@ -123,6 +123,7 @@ export function AdminStaffView() {
             onUpdateUserStatus={handleUpdateUserStatus}
             onDeleteUser={handleDeleteUser}
             onViewActivity={handleViewUserActivity}
+            onReloadUsers={adminUserManagement.loadUsers}
           />
         </TabsContent>
 

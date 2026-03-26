@@ -66,7 +66,9 @@ export function AdminUsersTab({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = useState<AdminUser | null>(null);
+  const [resetPhase, setResetPhase] = useState<'confirm' | 'result' | 'error'>('confirm');
   const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const { isResetting, resetPassword } = useAdminPasswordReset();
 
@@ -83,14 +85,38 @@ export function AdminUsersTab({
     }
   }, [userToDelete, onDeleteUser]);
 
-  const handleResetPassword = useCallback(async (user: AdminUser) => {
+  const openResetConfirm = useCallback((user: AdminUser) => {
     setResetPasswordUser(user);
+    setResetPhase('confirm');
     setTempPassword(null);
+    setResetError(null);
     setCopied(false);
-    const pwd = await resetPassword(user.id);
-    setTempPassword(pwd);
-    onReloadUsers?.();
-  }, [onReloadUsers, resetPassword]);
+  }, []);
+
+  const handleConfirmReset = useCallback(async () => {
+    if (!resetPasswordUser) return;
+    try {
+      const pwd = await resetPassword(resetPasswordUser.id);
+      if (!pwd) {
+        setResetPhase('error');
+        setResetError('Échec de la réinitialisation. Vérifiez vos permissions.');
+        return;
+      }
+      setTempPassword(pwd);
+      setResetPhase('result');
+      onReloadUsers?.();
+    } catch (err) {
+      setResetPhase('error');
+      setResetError(err instanceof Error ? err.message : 'Une erreur est survenue.');
+    }
+  }, [resetPasswordUser, resetPassword, onReloadUsers]);
+
+  const handleCloseReset = useCallback(() => {
+    setResetPasswordUser(null);
+    setTempPassword(null);
+    setResetError(null);
+    setResetPhase('confirm');
+  }, []);
 
   const handleCopyPassword = useCallback(() => {
     if (tempPassword) {
@@ -194,7 +220,7 @@ export function AdminUsersTab({
                          <Button
                            variant="outline"
                            size="sm"
-                           onClick={() => handleResetPassword(user)}
+                           onClick={() => openResetConfirm(user)}
                            title="Réinitialiser le mot de passe"
                            className="border-border/60 text-muted-foreground hover:bg-border/20"
                          >
@@ -243,11 +269,23 @@ export function AdminUsersTab({
               {resetPasswordUser.first_name} {resetPasswordUser.last_name} — {resetPasswordUser.email}
             </p>
 
-            {isResetting && (
-              <p className="text-sm text-muted-foreground animate-pulse">Génération en cours…</p>
+            {resetPhase === 'confirm' && (
+              <>
+                <p className="text-sm text-foreground">
+                  Confirmer la réinitialisation du mot de passe ? Un mot de passe temporaire sera généré.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={handleCloseReset} disabled={isResetting}>
+                    Annuler
+                  </Button>
+                  <Button variant="destructive" onClick={handleConfirmReset} disabled={isResetting}>
+                    {isResetting ? 'Génération…' : 'Réinitialiser'}
+                  </Button>
+                </div>
+              </>
             )}
 
-            {tempPassword && (
+            {resetPhase === 'result' && tempPassword && (
               <div className="space-y-2">
                 <p className="text-xs text-amber-600 font-medium">
                   ⚠ Ce mot de passe temporaire ne sera affiché qu&apos;une seule fois.
@@ -265,20 +303,20 @@ export function AdminUsersTab({
                 <p className="text-xs text-muted-foreground">
                   Transmettez ce mot de passe à l&apos;utilisateur de manière sécurisée.
                 </p>
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={handleCloseReset}>Fermer</Button>
+                </div>
               </div>
             )}
 
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setResetPasswordUser(null);
-                  setTempPassword(null);
-                }}
-              >
-                Fermer
-              </Button>
-            </div>
+            {resetPhase === 'error' && (
+              <>
+                <p className="text-sm text-red-600">{resetError}</p>
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={handleCloseReset}>Fermer</Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

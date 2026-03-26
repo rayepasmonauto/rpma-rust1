@@ -50,3 +50,6 @@ clean:
 
 doctor:
 	npm run doctor
+
+test-frontend:
+	cd frontend && npm run test:ci && npm run test:e2e
