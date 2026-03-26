@@ -218,3 +218,10 @@ fn ms_to_rfc3339(ms: i64) -> String {
         .unwrap_or_else(Utc::now)
         .to_rfc3339()
 }
+
+impl crate::shared::contracts::session::SessionRevocationPort for SessionRepository {
+    fn delete_user_sessions(&self, user_id: &str) -> Result<usize, String> {
+        self.delete_user_sessions(user_id)
+            .map_err(|e| e.to_string())
+    }
+}

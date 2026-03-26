@@ -650,7 +650,7 @@ impl TaskAssignmentChecker for TaskService {
         &self,
         task_id: &str,
         user_id: &str,
-    ) -> Result<bool, crate::shared::ipc::errors::AppError> {
+    ) -> Result<bool, crate::shared::contracts::AppError> {
         self.validation
             .check_assignment_eligibility(task_id, user_id)
             .map_err(convert_to_app_error)
@@ -659,7 +659,7 @@ impl TaskAssignmentChecker for TaskService {
     async fn get_task_assignment(
         &self,
         task_id: &str,
-    ) -> Result<Option<TaskAssignmentInfo>, crate::shared::ipc::errors::AppError> {
+    ) -> Result<Option<TaskAssignmentInfo>, crate::shared::contracts::AppError> {
         let task = self
             .queries
             .get_task_async(task_id)

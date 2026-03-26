@@ -8,6 +8,7 @@ pub mod notification;
 pub mod photo;
 pub mod prediction;
 pub mod rate_limiter;
+pub mod session;
 pub mod sync;
 pub mod task_assignment;
 pub mod task_scheduler;

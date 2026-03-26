@@ -4,5 +4,6 @@
 //! Every method accepts a `&RequestContext` so that RBAC is enforced at the
 //! application layer — not only at the IPC boundary.
 
+pub mod avatar_validator;
 pub mod settings_service;
 pub use settings_service::SettingsService;
