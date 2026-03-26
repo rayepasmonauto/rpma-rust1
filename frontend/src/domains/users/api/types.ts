@@ -22,4 +22,5 @@ export interface UseUserActionsResult {
   banUser: (id: string) => Promise<boolean>;
   unbanUser: (id: string) => Promise<boolean>;
   changeRole: (id: string, role: string) => Promise<boolean>;
+  adminResetPassword: (id: string) => Promise<string | null>;
 }

@@ -1,15 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { ROUTES } from '@/constants';
 import { Button } from '@/components/ui/button';
 import { FormFeedback } from '@/components/ui/form-feedback';
 import { FadeIn } from '@/shared/ui/animations/FadeIn';
 import { UILoader } from '@/shared/ui/animations/UILoader';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useLoginForm } from '@/domains/auth';
 
 export default function LoginPage() {
   const { formData, error, loading, isSubmitting, handleChange, handleSubmit } = useLoginForm();
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--rpma-surface))] py-8 px-4 sm:px-6 lg:px-8">
@@ -109,7 +112,7 @@ export default function LoginPage() {
                 </Button>
 
                 {/* Alternative Actions */}
-                <div className="text-center">
+                <div className="text-center space-y-1">
                   <p className="text-muted-foreground text-sm">
                     Vous n&apos;avez pas de compte ?{' '}
                     <Link
@@ -118,6 +121,15 @@ export default function LoginPage() {
                     >
                       Créer un compte
                     </Link>
+                  </p>
+                  <p className="text-muted-foreground text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setForgotPasswordOpen(true)}
+                      className="font-semibold text-[hsl(var(--rpma-teal))] hover:text-[hsl(var(--rpma-teal))]/80 transition-colors duration-150"
+                    >
+                      Mot de passe oublié ?
+                    </button>
                   </p>
                 </div>
               </div>
@@ -135,6 +147,22 @@ export default function LoginPage() {
           </div>
         </div>
       </FadeIn>
+
+      <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mot de passe oublié</DialogTitle>
+            <DialogDescription>
+              Contactez votre administrateur système pour réinitialiser votre mot de passe. Il
+              générera un mot de passe temporaire qu&apos;il vous communiquera, que vous devrez
+              changer lors de votre prochaine connexion.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setForgotPasswordOpen(false)}>Compris</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

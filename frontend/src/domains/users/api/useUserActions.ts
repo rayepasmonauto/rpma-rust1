@@ -57,6 +57,11 @@ export function useUserActions(): UseUserActionsResult {
     return response !== null;
   }, [user?.token]);
 
+  const adminResetPassword = useCallback(async (id: string): Promise<string | null> => {
+    if (!user?.token) return null;
+    return ipcClient.users.adminResetPassword(id);
+  }, [user?.token]);
+
   return {
     createUser,
     updateUser,
@@ -64,5 +69,6 @@ export function useUserActions(): UseUserActionsResult {
     banUser,
     unbanUser,
     changeRole,
+    adminResetPassword,
   };
 }

@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useTranslation } from '@/shared/hooks/useTranslation';
 import { useUserActions } from '../api/useUserActions';
 import { ChangeRoleDialog } from './ChangeRoleDialog';
+import { ResetPasswordDialog } from './ResetPasswordDialog';
 
 interface UserListProps {
   users: UserAccount[];
@@ -48,6 +49,7 @@ export const UserList = memo(function UserList({ users, onEdit, onRefresh }: Use
     email: string;
     role: string;
   } | null>(null);
+  const [resetPasswordUser, setResetPasswordUser] = useState<{ id: string; name: string } | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserAccount | null>(null);
 
@@ -177,6 +179,12 @@ export const UserList = memo(function UserList({ users, onEdit, onRefresh }: Use
                         {t('users.changeRole')}
                      </button>
                      <button
+                       onClick={() => setResetPasswordUser({ id: user.id, name: `${user.first_name} ${user.last_name}` })}
+                       className="text-orange-600 hover:text-orange-900 mr-4"
+                     >
+                       Réinitialiser mdp
+                     </button>
+                     <button
                        onClick={() => confirmDeleteUser(user)}
                        disabled={deletingId === user.id}
                        className="text-red-600 hover:text-red-900 disabled:opacity-50"
@@ -205,6 +213,16 @@ export const UserList = memo(function UserList({ users, onEdit, onRefresh }: Use
           userEmail={roleChangeUser.email}
           open={!!roleChangeUser}
            onOpenChange={(open: boolean) => !open && setRoleChangeUser(null)}
+        />
+      )}
+
+      {resetPasswordUser && (
+        <ResetPasswordDialog
+          userId={resetPasswordUser.id}
+          userName={resetPasswordUser.name}
+          open={!!resetPasswordUser}
+          onOpenChange={(open) => !open && setResetPasswordUser(null)}
+          onRefresh={onRefresh}
         />
       )}
 
