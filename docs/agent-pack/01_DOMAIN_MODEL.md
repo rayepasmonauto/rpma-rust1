@@ -1,6 +1,6 @@
 ---
 title: "Domain Model"
-summary: "Detailed overview of core entities, their relations, and domain rules."
+summary: "Core entities, relationships, statuses, invariants, and storage locations."
 read_when:
   - "Designing new features"
   - "Understanding entity relationships"
@@ -9,183 +9,125 @@ read_when:
 
 # 01. DOMAIN MODEL
 
-The RPMA v2 domain model follows Bounded Context principles (**ADR-002**). Each domain is isolated in `src-tauri/src/domains/<name>/`.
+The backend is organized by bounded context under `src-tauri/src/domains/*`. Most business concepts map directly to a Rust domain model plus a SQLite table in `src-tauri/src/db/schema.sql` and incremental migrations in `src-tauri/migrations/*`.
 
-## Architecture Compliance
+## Main Entities
 
-Most domains follow the **4-layer pattern** (ADR-001):
-`IPC → Application → Domain ← Infrastructure`
+| Entity | Core shape | Storage to inspect |
+|---|---|---|
+| Task | Task request, scheduling, workflow, assignment, checklist, history | `tasks`, `task_history`, `task_checklist_items`, `task_drafts` |
+| Client | Customer/company profile and task history | `clients`, `client_statistics` view |
+| Intervention | PPF execution record linked to a task | `interventions`, `intervention_steps`, `intervention_reports` |
+| Material | Inventory item, stock, supplier, category, consumption | `materials`, `material_consumptions`, `inventory_transactions`, `material_categories`, `suppliers` |
+| Quote | Estimate with items and attachments | `quotes`, `quote_items`, `quote_attachments` |
+| User | Account, role, profile, settings, session links | `users`, `sessions`, `user_settings`, `login_attempts` |
+| CalendarEvent | Scheduling entry for tasks and technicians | `calendar_events` |
+| Notification / Message | User alerts and message inbox | `notifications`, `messages`, message template/preference tables |
+| Photo / Report | Intervention media and generated reports | `photos`, `intervention_reports` |
+| Trash entry | Soft-deleted entity metadata | Source tables with `deleted_at`, plus trash queries |
 
-**Domains with full layer compliance:**
-- `auth`, `clients`, `interventions`, `inventory`, `quotes`, `tasks`, `trash`, `users`
+## Statuses
 
-**Domains with flat/handler-based structure:**
-- `calendar`, `documents`, `notifications`, `settings`
+### Tasks
 
-## Core Entities
+Defined in `src-tauri/src/domains/tasks/domain/models/status.rs` and validated by the task state machine in `src-tauri/src/domains/tasks/domain/services/task_state_machine.rs`.
 
-### 1. Task (`tasks`)
-- **Location**: `src-tauri/src/domains/tasks/domain/models/task.rs`
-- **Purpose**: Represents a requested job.
-- **Status Flow**: `Draft` → `Scheduled` → `InProgress` → `Completed` | `Cancelled` | `Delayed`.
-- **Relations**: Belongs to a **Client**, assigned to a **User** (Technician).
-- **IPC Entry**: `domains::tasks::ipc::task::*`
+- `Draft`
+- `Scheduled`
+- `InProgress`
+- `Completed`
+- `Cancelled`
+- `OnHold`
+- `Pending`
+- `Invalid`
+- `Archived`
+- `Failed`
+- `Overdue`
+- `Assigned`
+- `Paused`
 
-### 2. Client (`clients`)
-- **Location**: `src-tauri/src/domains/clients/client_handler/`
-- **Purpose**: Individuals or organizations requesting service.
-- **Relations**: One client has many tasks.
-- **IPC Entry**: `domains::clients::client_handler::*`
+### Interventions
 
-### 3. Intervention (`interventions`)
-- **Location**: `src-tauri/src/domains/interventions/domain/models/intervention.rs`
-- **Purpose**: The execution phase of a task.
-- **Flow**: Start → Step Progression → Consumption Recording → Finalization.
-- **Relations**: 1:1 with **Task** (typically).
-- **Sub-Services**: `InterventionStepService`, `PhotoValidationService`, `InterventionScoringService`, `MaterialConsumptionService`, `InterventionWorkflowService`.
-- **IPC Entry**: `domains::interventions::ipc::*`
+Defined in `src-tauri/src/domains/interventions/domain/models/intervention.rs`.
 
-### 4. Material / Inventory (`inventory`)
-- **Location**: `src-tauri/src/domains/inventory/domain/models/material.rs`
-- **Purpose**: Consumables used during interventions.
-- **Relations**: Linked to interventions via consumption records.
-- **IPC Entry**: `domains::inventory::ipc::material::*`
+- `pending`
+- `in_progress`
+- `paused`
+- `completed`
+- `cancelled`
 
-### 5. User (`users`)
-- **Location**: `src-tauri/src/domains/users/domain/models/user.rs`
-- **Roles**: `Admin`, `Supervisor`, `Technician`, `Viewer` (**ADR-007**).
-- **IPC Entry**: `domains::users::ipc::user::*`
+### Intervention Steps
 
-### 6. Quote (`quotes`)
-- **Location**: `src-tauri/src/domains/quotes/domain/models/quote.rs`
-- **Lifecycle**: `Draft` → `Sent` → `Accepted` → `Converted to Task`.
-- **IPC Entry**: `domains::quotes::ipc::quote::*`
+Defined in `src-tauri/src/domains/interventions/domain/models/step.rs`.
 
-### 7. Auth Session (`auth`)
-- **Location**: `src-tauri/src/domains/auth/`
-- **Purpose**: Login, session management, token validation.
-- **Components**: `AuthService`, `SessionService`, `SessionStore` (in-memory).
-- **IPC Entry**: `domains::auth::ipc::*`
+- `pending`
+- `in_progress`
+- `paused`
+- `completed`
+- `failed`
+- `skipped`
+- `rework`
 
-### 8. Notification (`notifications`)
-- **Location**: `src-tauri/src/domains/notifications/notification_handler/`
-- **Purpose**: System and user-triggered alerts.
-- **IPC Entry**: `domains::notifications::notification_handler::*`
+### Quotes
 
-### 9. Trash (`trash`)
-- **Location**: `src-tauri/src/domains/trash/`
-- **Purpose**: Soft-deleted entity recovery.
-- **IPC Entry**: `domains::trash::ipc::*`
+Defined in `src-tauri/src/domains/quotes/domain/models/quote.rs`.
 
-## Storage & Implementation Patterns
+- `draft`
+- `sent`
+- `accepted`
+- `rejected`
+- `expired`
+- `converted`
+- `changes_requested`
 
-| Pattern | Location | Details |
-|---------|----------|---------|
-| Soft Delete | ADR-011 | `deleted_at` timestamp for most entities |
-| Timestamps | ADR-012 | i64 Unix milliseconds everywhere |
-| IDs | UUID v4 | String-based primary keys |
-| Validation | ADR-008 | Centralized via `shared/services/validation/` |
-| Repositories | ADR-005 | Trait definitions in domain, implementations in infrastructure |
+### Roles
 
-## Cross-Domain Communication
+Defined in `src-tauri/src/domains/auth/domain/models/auth.rs` and re-exported through `src-tauri/src/shared/contracts/auth.rs`.
 
-| Mechanism | Location | Purpose |
-|-----------|----------|----------|
-| Shared Contracts | `src-tauri/src/shared/contracts/` | Common types across domains |
-| Event Bus | `src-tauri/src/shared/services/event_bus/` | Decoupled domain events (ADR-016) |
-| Domain Events | `src-tauri/src/shared/services/domain_event.rs` | Event type definitions (ADR-017) |
-| Facades | `src-tauri/src/domains/*/facade.rs` | Simplified public API for cross-domain access |
-| Service Builder | `src-tauri/src/service_builder.rs` | Centralized service initialization (ADR-004) |
+- `Admin`
+- `Supervisor`
+- `Technician`
+- `Viewer`
 
-## Domain Events (ADR-017)
+## Relationships
 
-### Task Events
-| Event | Trigger |
-|-------|---------|
-| `TaskCreated` | New task created |
-| `TaskUpdated` | Task fields modified |
-| `TaskAssigned` | Technician assigned |
-| `TaskStatusChanged` | Status transition |
-| `TaskCompleted` | Task marked complete |
-| `TaskDeleted` | Soft delete |
+- A `Task` belongs to one `Client` when `client_id` is set.
+- A `Task` can be assigned to one technician at a time.
+- An `Intervention` is the execution record for a task; the UI mostly treats the current active intervention as the working copy.
+- An `Intervention` contains ordered `InterventionStep` records.
+- A `Quote` can be converted into a `Task`.
+- A `Quote` can have many `QuoteItem` and `QuoteAttachment` rows.
+- `MaterialConsumption` links a material to an intervention and optionally to a step.
+- `CalendarEvent` links schedule data to tasks and technicians.
+- `UserSession` is a UUID-backed session record; the current runtime stores sessions in memory and validates them at the IPC boundary.
 
-### Client Events
-| Event | Trigger |
-|-------|---------|
-| `ClientCreated` | New client registered |
-| `ClientUpdated` | Client data modified |
-| `ClientDeactivated` | Client marked inactive |
+## Domain Invariants
 
-### Intervention Events
-| Event | Trigger |
-|-------|---------|
-| `InterventionCreated` | New intervention |
-| `InterventionStarted` | Work begins |
-| `InterventionStepStarted` | Step begins |
-| `InterventionStepCompleted` | Step finished |
-| `InterventionCompleted` | Work finished |
-| `InterventionFinalized` | Final closure |
-| `InterventionCancelled` | Aborted |
+- IDs are UUID strings.
+- Timestamps are stored as Unix milliseconds unless a model explicitly uses a date string for a date-only field.
+- Soft delete is the default delete pattern for business entities that support trash/recovery.
+- Task status transitions must pass the task state machine.
+- Intervention finalization can only happen from a valid in-progress state.
+- Quote status changes are explicit and should not be faked in UI state.
+- Domain validation belongs in the domain/application layer, not in IPC handlers.
 
-### Material Events
-| Event | Trigger |
-|-------|---------|
-| `MaterialConsumed` | Stock deduction |
+## Storage Patterns
 
-### Quote Events
-| Event | Trigger |
-|-------|---------|
-| `QuoteCreated` | New quote created |
-| `QuoteUpdated` | Quote modified |
-| `QuoteDeleted` | Quote soft deleted |
-| `QuoteDuplicated` | Quote copied |
-| `QuoteShared` | Quote sent to client |
-| `QuoteCustomerResponded` | Client response |
-| `QuoteAccepted` | Client accepts |
-| `QuoteRejected` | Client declines |
-| `QuoteConverted` | Became a task |
+| Pattern | Where to look |
+|---|---|
+| Soft delete | `deleted_at` columns in schema and migrations, plus repository filters |
+| Audit fields | `created_at`, `updated_at`, and `*_by` fields on most entities |
+| Session records | `sessions` plus the auth session store in `src-tauri/src/domains/auth/*` for the in-memory cache |
+| Event history | `task_history`, `audit_events`, and domain events in `src-tauri/src/shared/services/domain_event.rs` |
+| Queue-like persistence | `sync_queue` exists in schema; verify current runtime usage before depending on it |
 
-### User Events
-| Event | Trigger |
-|-------|---------|
-| `UserCreated` | New user registered |
-| `UserUpdated` | User data changed |
-| `UserLoggedIn` | Successful login |
-| `UserLoggedOut` | Session ended |
-| `AuthenticationFailed` | Login failure |
-| `AuthenticationSuccess` | Login success |
+## Cross-Domain Rules
 
-### System Events
-| Event | Trigger |
-|-------|---------|
-| `SystemError` | Error occurrence |
-| `SystemMaintenance` | Maintenance mode |
-| `PerformanceAlert` | Threshold breach |
-| `NotificationReceived` | Notification created |
+- Cross-domain reads should use `src-tauri/src/shared/repositories/*` or shared services, not direct imports into another domain's internals.
+- Event-driven reactions should use `src-tauri/src/shared/event_bus/*`.
+- The event contract is defined in `src-tauri/src/shared/services/domain_event.rs`.
 
-### Trash Events
-| Event | Trigger |
-|-------|---------|
-| `EntityRestored` | Soft delete reversed |
-| `EntityHardDeleted` | Permanent deletion |
+## DOC vs CODE Mismatch
 
-## Event Buses
-
-The system uses two event buses:
-
-| Event Bus | Purpose |
-|-----------|---------|
-| `InMemoryEventBus` (global) | Cross-domain events for audit, inventory, notifications |
-| `QuoteEventBus` (dedicated) | Quote-specific events for lifecycle management |
-
-## Domain Rules
-
-1. **Business logic MUST live in the Domain Layer** (`domains/*/domain/`).
-2. **Only `Admin` or `Supervisor` can delete critical entities**.
-3. **Technicians have scoped access** to their assigned tasks (ADR-006).
-4. **Cross-domain calls MUST go through**:
-   - `shared/services/` for synchronous access
-   - `EventBus` for asynchronous reactions
-5. **Direct imports from another domain's internals are FORBIDDEN**.
-6. **All timestamps are Unix milliseconds** (ADR-012).
-7. **All primary keys are UUID v4 strings**.
+- Some older onboarding text simplifies task and intervention lifecycles too much. The current models have more statuses and more audit fields than the old summary implies. Prefer the enum definitions in the files above when implementing UI or validation.
+- `sync_queue` exists in schema, but the current runtime does not expose a clearly wired sync worker in app state. Treat it as a schema artifact until you verify a live code path.

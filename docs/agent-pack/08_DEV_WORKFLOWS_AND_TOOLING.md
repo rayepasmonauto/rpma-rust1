@@ -9,198 +9,93 @@ read_when:
 
 # 08. DEV WORKFLOWS AND TOOLING
 
-RPMA v2 provides a robust set of tools for development and verification.
+This repo has a small set of canonical commands for day-to-day development and verification.
 
-## Core Commands
-
-### Application
+## Run And Preview
 
 | Command | Purpose |
-|---------|---------|
-| `npm run dev` | Full app development (Tauri + Next.js) |
-| `npm run dev:types` | App dev with automatic type sync |
-| `npm run dev:strict` | Full type check before Tauri dev |
-| `npm run build` | Production build (syncs types first) |
-| `npm run frontend:dev` | Next.js only (browser mode) |
+|---|---|
+| `npm run dev` | Tauri dev with hot reload |
+| `npm run dev:types` | Sync types, then start dev |
+| `npm run dev:strict` | Sync types and run drift checks before dev |
+| `npm run frontend:dev` | Next.js only in the browser |
 
-### Type Sync & Validation
+## Verification
 
 | Command | Purpose |
-|---------|---------|
+|---|---|
+| `npm run doctor` | Fast health check |
+| `npm run doctor -- --fix` | Auto-fix fixable issues, including type sync drift |
+| `npm run doctor -- --full` | Full verification, including slower tests |
+| `npm run frontend:lint` | Frontend lint |
+| `npm run frontend:type-check` | Frontend TypeScript check |
+| `cd frontend && npm run test:ci` | Frontend test suite |
+| `make test` | Full Rust backend test suite |
+| `cd src-tauri && cargo test --test integration` | Integration harness |
+
+## Type Sync And Drift
+
+| Command | Purpose |
+|---|---|
 | `npm run types:sync` | Export Rust types to TypeScript |
-| `npm run types:validate` | Check for duplicate type definitions |
-| `npm run types:drift-check` | Full type drift verification |
+| `npm run types:drift-check` | Verify generated types match the Rust model |
+| `scripts/write-types.js` | Writer used by type sync |
+| `scripts/record-types-sync.js` | Records the sync stamp |
 
-### Backend
+Run `npm run types:sync` whenever a `#[derive(TS)]` struct or IPC-facing model changes.
 
-| Command | Purpose |
-|---------|---------|
-| `npm run backend:build` | Build Rust backend |
-| `npm run backend:check` | Cargo check |
-| `npm run backend:clippy` | Run Clippy linter |
-| `npm run backend:fmt` | Format Rust code |
-| `npm run backend:architecture-check` | Enforce ADR-001/002/005 |
-
-### Frontend
+## Backend Checks
 
 | Command | Purpose |
-|---------|---------|
-| `npm run frontend:lint` | Run ESLint |
-| `npm run frontend:type-check` | TypeScript type check |
-| `npm run frontend:guard` | Run TypeScript + ESLint + Jest |
-| `npm run frontend:test:ci` | Run Jest tests for CI |
+|---|---|
+| `npm run backend:architecture-check` | Enforce architecture rules |
+| `npm run backend:validate-migrations` | Validate migration numbering and structure |
+| `npm run backend:detect-schema-drift` | Compare DB schema against migrations |
+| `npm run backend:soft-delete-check` | Check soft-delete coverage |
+| `npm run backend:ts-rs-coverage` | Check TS export coverage |
 
-### Database
-
-| Command | Purpose |
-|---------|---------|
-| `npm run backend:migration:fresh-db-test` | Test migrations on fresh DB |
-| `node scripts/detect-schema-drift.js` | Check schema drift |
-
-### Domain Scaffolding
-
-```bash
-npx tsx scripts/scaffold-domain.ts <domain_name> [flags]
-```
-
-| Flag | Effect |
-|------|--------|
-| `--crud` | Add CRUD handlers + request structs |
-| `--admin-only` | Wrap IPC handlers with Admin enforcement |
-| `--no-frontend` | Skip frontend scaffolding |
-| `--no-tests` | Skip test stub generation |
-| `--dry-run` | Preview without writing |
-
-## Makefile Targets
-
-| Target | Command | Purpose |
-|--------|---------|---------|
-| `make build` | `cargo build` | Build the project |
-| `make test` | `cargo test` | Run all backend tests |
-| `make test-commands` | Specific command tests | Run all command tests |
-| `make lint` | `cargo clippy -- -D warnings` | Run Clippy |
-| `make format` | `cargo fmt` | Format Rust code |
-| `make clean` | `cargo clean` | Clean build artifacts |
-
-## Test Commands
-
-### Backend Tests
+## Frontend Checks
 
 | Command | Purpose |
-|---------|---------|
-| `cd src-tauri && cargo test <domain>` | Test specific domain |
-| `cd src-tauri && cargo test --test integration` | Run integration harness |
-| `cd src-tauri && cargo test --test domain_invariants` | Domain invariant tests |
-| `cd src-tauri && cargo test --test auth_commands_test` | Auth command tests |
-| `make test` | Run all backend tests |
+|---|---|
+| `npm run frontend:guard` | Lint, type-check, and tests |
+| `npm run frontend:lint` | ESLint only |
+| `npm run frontend:type-check` | TypeScript only |
+| `cd frontend && npm run test:ci` | Jest in CI mode |
 
-### Frontend Tests
-
-| Command | Purpose |
-|---------|---------|
-| `cd frontend && npm run test` | Run Jest tests |
-| `cd frontend && npm run test:ci` | Run tests for CI |
-| `cd frontend && npm run test:e2e` | Run Playwright E2E |
-| `cd frontend && npm run test:e2e:ui` | Playwright with UI |
-
-## Verification Gate (Before Commit)
-
-```bash
-# 1. Backend checks
-npm run backend:check
-npm run backend:clippy
-make test
-
-# 2. Frontend checks
-npm run frontend:lint
-npm run frontend:type-check
-cd frontend && npm run test:ci
-
-# 3. Type sync
-npm run types:sync
-npm run types:drift-check
-```
-
-## Scripts Directory
+## Database And Docs Scripts
 
 | Script | Purpose |
-|--------|---------|
-| `scaffold-domain.ts` | Generate new domain boilerplate |
-| `write-types.js` | Write Rust types to frontend |
-| `record-types-sync.js` | Record sync timestamp |
-| `validate-types.js` | Check for duplicate types |
-| `backend-architecture-check.js` | Enforce ADR-001/002/005 |
-| `adr-lint.js` | Full ADR compliance lint |
-| `audit-adrs.ts` | Audit ADRs for stale references |
-| `generate-docs-index.js` | Rebuild docs/README.md |
-| `git-workflow.js` | Git workflow helpers |
-| `detect-schema-drift.js` | Schema drift detection |
-| `validate-migration-system.js` | Migration validation |
-
-## CI/CD Pipeline
-
-GitHub Actions (`.github/workflows/`) handles:
-
-| Stage | Checks |
-|-------|--------|
-| CI | Linting, typing, all tests |
-| Build | Production installers for Windows |
+|---|---|
+| `scripts/validate-migration-system.js` | Migration system validation |
+| `scripts/detect-schema-drift.js` | Schema drift detection |
+| `scripts/generate-docs-index.js` | Rebuild docs index |
+| `scripts/backend-architecture-check.js` | Architecture check implementation |
 
 ## If You Change X, Run Y
 
 | Change | Run |
-|--------|-----|
-| Rust struct with `#[derive(TS)]` | `npm run types:sync` |
-| New domain | `npx tsx scripts/scaffold-domain.ts <name>` |
-| Database schema | `npm run backend:migration:fresh-db-test` |
-| IPC command | `npm run backend:check && npm run frontend:type-check` |
-| Any backend code | `make test` |
-| Any frontend code | `npm run frontend:guard` |
+|---|---|
+| Rust `#[derive(TS)]` model | `npm run types:sync` then `npm run frontend:type-check` |
+| IPC handler or command registration | `npm run frontend:type-check` and `npm run backend:architecture-check` |
+| Database schema | `npm run backend:validate-migrations`, `npm run backend:detect-schema-drift`, `npm run backend:migration:fresh-db-test` |
+| Backend business logic | `make test` |
+| Frontend feature UI | `npm run frontend:guard` |
+| Auth or session code | `npm run doctor -- --full` |
 
-## Troubleshooting
+## Minimal Setup
 
-| Issue | Solution |
-|-------|----------|
-| Type errors | `npm run types:sync` |
-| Database locked | Restart dev process; check orphans |
-| Next.js issues | Clear `.next` folder and restart |
-| Slow Rust compile | Exclude `target/` from antivirus |
-| Drift detected | Run `node scripts/detect-schema-drift.js` |
-| Clippy warnings | Run `cargo clippy --fix` |
-| Test failures | Check test database isolation |
+1. Install dependencies with `npm install`.
+2. Run `npm run types:sync`.
+3. Start the app with `npm run dev:types`.
 
 ## Key Files
 
 | File | Purpose |
-|------|---------|
-| `package.json` | Root npm scripts |
-| `frontend/package.json` | Frontend npm scripts |
-| `Makefile` | Build/test targets |
-| `scripts/` | Automation utilities |
-| `src-tauri/Cargo.toml` | Rust dependencies |
-| `AGENTS.md` | Agent instructions |
+|---|---|
+| `package.json` | Root command surface |
+| `frontend/package.json` | Frontend scripts |
+| `Makefile` | Rust build/test aliases |
+| `src-tauri/Cargo.toml` | Backend dependencies |
+| `scripts/` | Repo automation |
 
-## Development Environment Setup
-
-1. **Prerequisites**
-   - Node.js 18+
-   - Rust 1.85+ (edition 2021)
-   - pnpm or npm
-
-2. **Initial Setup**
-   ```bash
-   npm install
-   npm run types:sync
-   ```
-
-3. **Run Development**
-   ```bash
-   npm run dev:types
-   ```
-
-4. **Before Pushing**
-   ```bash
-   npm run backend:check && npm run backend:clippy && make test
-   npm run frontend:lint && npm run frontend:type-check
-   npm run types:sync
-   ```

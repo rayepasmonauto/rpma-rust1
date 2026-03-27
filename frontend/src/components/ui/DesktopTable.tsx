@@ -284,7 +284,7 @@ export function DesktopTable<T extends Record<string, unknown>>({
         </div>
         {filteredAndSortedData.length > 0 && (
           <div className="text-xs space-x-4">
-            <span>â†‘â†“ pour naviguer</span>
+            <span>↑↓ pour naviguer</span>
             <span>Enter pour sélectionner</span>
             {onRowSelect && <span>Espace pour cocher</span>}
           </div>

@@ -338,7 +338,7 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
           transition={{ duration: 0.2 }}
           className="mr-2"
         >
-          â†“
+          ↓
         </motion.div>
         <span className="text-sm text-muted-foreground">
           {isRefreshing ? 'Actualisation...' : canRefresh ? 'Relâcher pour actualiser' : 'Tirer pour actualiser'}

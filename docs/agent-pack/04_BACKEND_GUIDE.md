@@ -9,311 +9,115 @@ read_when:
 
 # 04. BACKEND GUIDE
 
-The backend is a **Rust** application managed by **Tauri**, located in `src-tauri/`.
+The backend is a Rust application hosted by Tauri in `src-tauri/`.
 
-## Architecture: The Four-Layer Rule
+## Domain Layout
 
-Every domain in `src-tauri/src/domains/` MUST follow (**ADR-001**):
-`IPC → Application → Domain ← Infrastructure`
+Most business domains live under `src-tauri/src/domains/*` and should keep business logic out of IPC handlers.
 
-### Compliance Matrix
+| Domain shape | Examples |
+|---|---|
+| Full four-layer domains | `auth`, `tasks`, `clients`, `interventions`, `inventory`, `quotes`, `trash`, `users` |
+| Hybrid handler-based domains | `calendar`, `documents`, `notifications`, `settings` |
 
-| Domain | IPC | Application | Domain | Infrastructure | Notes |
-|--------|:---:|:-----------:|:------:|:--------------:|-------|
-| auth | ✓ | ✓ | ✓ | ✓ | Full compliance |
-| tasks | ✓ | ✓ | ✓ | ✓ | Full compliance |
-| clients | ✓ | ✓ | ✓ | ✓ | Full compliance |
-| interventions | ✓ | ✓ | ✓ | ✓ | Full + sub-services |
-| inventory | ✓ | ✓ | ✓ | ✓ | Full compliance |
-| quotes | ✓ | ✓ | ✓ | ✓ | Full compliance |
-| trash | ✓ | ✓ | ✓ | ✓ | Full compliance |
-| users | ✓ | ✓ | ✓ | ✓ | Full compliance |
-| calendar | ✓ | — | — | — | Handler-based |
-| documents | ✓ | — | — | — | Flat structure |
-| notifications | ✓ | — | — | — | Handler-based |
-| settings | ✓ | — | — | — | Handler + repositories |
+## Layer Rule
 
-## Layer Details
+`IPC -> Application -> Domain -> Infrastructure`
 
-### 1. IPC Layer (`ipc/`)
-Entry points for Tauri commands (**ADR-018**).
+- IPC handlers are thin entrypoints.
+- Application code orchestrates use cases and permissions.
+- Domain code holds business rules and invariants.
+- Infrastructure code owns SQLite access and adapter details.
 
-```rust
-#[tauri::command]
-pub async fn material_create(
-    state: AppState<'_>,
-    request: CreateMaterialRequest,
-    correlation_id: Option<String>,
-) -> Result<ApiResponse<Material>, AppError> {
-    // 1. Resolve request context (auth + RBAC)
-    let ctx = resolve_context!(&state, &correlation_id, UserRole::Technician);
+## Core Backend Files
 
-    // 2. Get service
-    let service = state.material_service.clone();
+| File | Purpose |
+|---|---|
+| `src-tauri/src/main.rs` | App bootstrap and command registration |
+| `src-tauri/src/lib.rs` | Library entry point |
+| `src-tauri/src/service_builder.rs` | Service composition |
+| `src-tauri/src/shared/app_state.rs` | Shared app state |
+| `src-tauri/src/shared/context/request_context.rs` | Authenticated request context |
+| `src-tauri/src/shared/error/app_error.rs` | Backend error type |
+| `src-tauri/src/shared/ipc/response.rs` | IPC response envelope |
+| `src-tauri/src/db/*` | Database startup, WAL, and migration plumbing |
 
-    // 3. Call application service
-    match service.create_material(request, Some(ctx.user_id().to_string())) {
-        Ok(material) => Ok(ApiResponse::success(material)
-            .with_correlation_id(Some(ctx.correlation_id.clone()))),
-        Err(e) => Err(e.into_app_error()),
-    }
-}
-```
+## Command Implementation Pattern
 
-### 2. Application Layer (`application/`)
-- **Orchestration** and use cases.
-- **RBAC enforcement** via `RequestContext`.
-- **Coordinates** services and repositories.
+To add a backend command end-to-end:
 
-### 3. Domain Layer (`domain/`)
-- **Pure logic** — no SQL, no IPC, no frameworks.
-- **Entities** and business rules only.
-- **Zero external dependencies**.
+1. Add or update request and response types in the domain model or IPC module.
+2. Put business logic in the application/domain layer, not in the handler.
+3. Add a thin `#[tauri::command]` handler in `src-tauri/src/domains/<domain>/ipc/*` or `src-tauri/src/commands/*`.
+4. Register the command in `src-tauri/src/main.rs`.
+5. Export any `#[derive(TS)]` types with `npm run types:sync`.
+6. Add or update the frontend wrapper in `frontend/src/domains/<domain>/ipc/*`.
 
-### 4. Infrastructure Layer (`infrastructure/`)
-- **Repository implementations** (**ADR-005**).
-- **SQL queries** using SQLite via `rusqlite`.
+Example paths:
 
-## Intervention Sub-Services
+- Task flow: `src-tauri/src/domains/tasks/ipc/task/facade.rs`
+- Client flow: `src-tauri/src/domains/clients/ipc/handlers.rs`
+- Calendar flow: `src-tauri/src/domains/calendar/calendar_handler/ipc.rs`
+- System commands: `src-tauri/src/commands/system.rs`
 
-The Interventions domain has specialized sub-services:
+## Service Wiring
 
-| Service | Location | Purpose |
-|---------|----------|---------|
-| `InterventionService` | `infrastructure/intervention.rs` | Main coordinator |
-| `InterventionStepService` | `infrastructure/intervention_step_service.rs` | Step progression |
-| `PhotoValidationService` | `infrastructure/photo_validation_service.rs` | Photo validation |
-| `InterventionScoringService` | `infrastructure/intervention_scoring_service.rs` | Quality scoring |
-| `MaterialConsumptionService` | `infrastructure/material_consumption_service.rs` | Material tracking |
-| `InterventionWorkflowService` | `infrastructure/intervention_workflow.rs` | Workflow orchestration |
+`src-tauri/src/service_builder.rs` is where shared services, repositories, and the in-memory event bus are composed. `src-tauri/src/shared/app_state.rs` stores the resulting app state.
 
-## Facade Pattern
+The current codebase uses:
 
-Domains expose a simplified public API via a Facade:
+- `src-tauri/src/shared/event_bus/*` for local cross-domain coordination
+- `src-tauri/src/shared/services/domain_event.rs` for event payloads
+- `src-tauri/src/shared/services/global_search.rs` for search across domains
 
-```rust
-// domains/tasks/facade.rs
-pub struct TasksFacade {
-    task_service: Arc<TaskService>,
-    event_bus: Arc<dyn DomainEventBus>,
-}
+## Error Model
 
-impl TasksFacade {
-    pub async fn create_task(&self, request: CreateTaskRequest, ctx: &RequestContext) -> AppResult<Task> {
-        // Simplified public API
-    }
-}
-```
+Use `AppError` for expected failures and keep sensitive details out of frontend responses.
 
-Facades are used for cross-domain access via `shared/services/`.
+| Type | Use |
+|---|---|
+| `Authentication` | Login and session problems |
+| `Authorization` | Role or permission failures |
+| `Validation` | Invalid input or state transitions |
+| `NotFound` | Missing entity |
+| `Database` | Sanitized storage failures |
+| `Internal` | Sanitized unexpected failures |
 
-## Service Builder (**ADR-004**)
+`src-tauri/src/shared/ipc/response.rs` converts backend results into `ApiResponse<T>`.
 
-All services are wired in `src-tauri/src/service_builder.rs`:
+## Logging And Correlation
 
-```rust
-pub struct ServiceBuilder {
-    db: Arc<Database>,
-    repositories: Arc<Repositories>,
-    app_data_dir: PathBuf,
-    #[cfg(not(test))]
-    app_handle: Option<tauri::AppHandle>,
-}
+- `correlation_id` is carried through IPC and request context.
+- Use the shared logging and request-context helpers under `src-tauri/src/shared/*`.
+- Keep logs free of passwords, session tokens, and raw PII.
 
-impl ServiceBuilder {
-    pub fn build(self) -> Result<AppStateType, Box<dyn std::error::Error>> {
-        // Initialize in dependency order (see ADR-004 for full graph):
-        
-        // Layer 1: Core services
-        let task_service = Arc::new(TaskService::new(self.db.clone()));
-        let event_bus = Arc::new(InMemoryEventBus::new());
-        set_global_event_bus(event_bus.clone());
-        
-        // Layer 2: Domain services
-        let client_service = Arc::new(ClientService::new(
-            self.repositories.client.clone(),
-            event_bus.clone(),
-        ));
-        
-        // Intervention sub-services
-        let intervention_step_service = Arc::new(InterventionStepService::new(self.db.clone()));
-        // ... other sub-services
-        
-        let intervention_service = Arc::new(InterventionService::with_services(
-            self.db.clone(),
-            intervention_step_service,
-            photo_validation_service,
-            intervention_scoring_service,
-            material_consumption_service,
-        ));
-        
-        // Layer 3: Audit
-        let audit_service = Arc::new(AuditService::new(self.db.clone()));
-        
-        // Layer 4: Event handlers
-        let audit_log_handler = AuditLogHandler::new(audit_service.clone());
-        event_bus.register_handler(audit_log_handler);
-        register_handler(inventory_service.intervention_finalized_handler());
-        register_handler(Arc::new(quote_accepted_handler));
-        register_handler(Arc::new(quote_converted_handler));
-        
-        // Final services
-        let global_search_service = Arc::new(GlobalSearchService::new(self.repositories.clone()));
-        let trash_service = Arc::new(TrashService::new(self.db.clone()));
-        
-        Ok(AppStateType { /* ... */ })
-    }
-}
-```
+## Repository Rule
 
-## App State (`AppStateType`)
+- Data access belongs in infrastructure repositories.
+- Do not query SQLite directly from application code.
+- Do not put business logic in repositories.
 
-```rust
-pub struct AppStateType {
-    pub db: Arc<Database>,
-    pub async_db: Arc<AsyncDatabase>,
-    pub repositories: Arc<Repositories>,
-    pub task_service: Arc<TaskService>,
-    pub client_service: Arc<ClientService>,
-    pub task_import_service: Arc<TaskImportService>,
-    pub calendar_service: Arc<CalendarService>,
-    pub intervention_service: Arc<InterventionService>,
-    pub intervention_creator: Arc<dyn InterventionCreator>,
-    pub material_service: Arc<MaterialService>,
-    pub inventory_service: Arc<InventoryFacade>,
-    pub message_service: Arc<MessageService>,
-    pub photo_service: Arc<PhotoService>,
-    pub quote_service: Arc<QuoteService>,
-    pub auth_service: Arc<AuthService>,
-    pub session_service: Arc<SessionService>,
-    pub session_store: Arc<SessionStore>,
-    pub settings_repository: Arc<SettingsRepository>,
-    pub user_settings_repository: Arc<UserSettingsRepository>,
-    pub settings_service: Arc<SettingsService>,
-    pub user_service: Arc<UserService>,
-    pub cache_service: Arc<CacheService>,
-    pub event_bus: Arc<InMemoryEventBus>,
-    pub app_config: Arc<AppConfig>,
-    pub trash_service: Arc<TrashService>,
-    pub global_search_service: Arc<GlobalSearchService>,
-    pub audit_service: Arc<AuditService>,
-}
-```
+## Intervention Domain Notes
 
-## Error Handling (**ADR-019**)
+The interventions domain has dedicated sub-services for workflow progression, step state, photos, scoring, and material consumption. Relevant paths include:
 
-```rust
-// Use AppError for all expected failures
-pub enum AppError {
-    Authentication(String),
-    Authorization(String),
-    Validation(String),
-    NotFound(String),
-    Database(String),    // Sanitized for frontend
-    Internal(String),    // Sanitized for frontend
-    // Domain-specific...
-}
+- `src-tauri/src/domains/interventions/infrastructure/*`
+- `src-tauri/src/domains/interventions/domain/models/*`
+- `src-tauri/src/domains/interventions/ipc/intervention/workflow.rs`
+- `src-tauri/src/domains/interventions/ipc/intervention/queries.rs`
 
-// At IPC boundary
-impl From<AppError> for ApiResponse<Value> {
-    fn from(error: AppError) -> Self {
-        ApiResponse::error(error)  // Sanitizes internals
-    }
-}
-```
+## DOC vs CODE Mismatch
 
-## Security & Auth
+- `auth_refresh_token` exists as a command surface in `src-tauri/src/commands/mod.rs`, but it currently returns a validation error and token refresh is not supported in the runtime build.
+- Legacy onboarding notes may mention a richer sync service than the current app wiring exposes. Verify the runtime path before depending on sync behavior.
 
-- **Centralized Auth**: `resolve_context!` macro handles session validation and RBAC.
-- **RequestContext**: Flows through the system; raw tokens never leave the IPC layer.
-- **Location**: `src-tauri/src/shared/context/request_context.rs`
+## Key Files
 
-```rust
-pub struct RequestContext {
-    pub auth: AuthContext,
-    pub correlation_id: String,
-}
-
-impl RequestContext {
-    pub fn user_id(&self) -> &str { &self.auth.user_id }
-    pub fn role(&self) -> &UserRole { &self.auth.role }
-    
-    /// Create a minimal context for pre-authentication (bootstrap)
-    pub fn unauthenticated(correlation_id: String) -> Self { /* ... */ }
-}
-```
-
-### AuthContext Structure
-
-```rust
-pub struct AuthContext {
-    pub user_id: String,
-    pub role: UserRole,
-    pub session_id: String,
-    pub username: String,
-    pub email: String,
-}
-```
-
-## Database & Persistence
-
-| Aspect | Details |
-|--------|---------|
-| Migrations | Numbered SQL files in `src-tauri/migrations/` (**ADR-010**) |
-| Migration Range | `002` through `063` |
-| WAL Mode | Enabled by default for performance (**ADR-009**) |
-| Async DB | `AsyncDatabase` wrapper for non-blocking operations |
-| Repository Pattern | Abstract data access (**ADR-005**) |
-| Soft Delete | `deleted_at` timestamp (**ADR-011**) |
-| Timestamps | i64 Unix milliseconds (**ADR-012**) |
-| Streaming | `ChunkedQuery` for large result sets |
-| Cache | `PreparedStatementCache`, `QueryPerformanceMonitor` |
-
-## Cross-Domain Coordination
-
-| Mechanism | Location | Use Case |
-|-----------|----------|----------|
-| Event Bus | `shared/event_bus/` | Async cross-domain reactions |
-| QuoteEventBus | `service_builder.rs` | Quote-specific events |
-| Facade Pattern | `domains/*/facade.rs` | Controlled cross-domain access |
-| Service Builder | `service_builder.rs` | Centralized DI |
-| Global Search | `shared/services/global_search.rs` | Cross-domain search |
-
-## Command Registration
-
-Commands are registered in `src-tauri/src/main.rs`:
-
-```rust
-.invoke_handler(tauri::generate_handler![
-    // Auth (4 commands)
-    domains::auth::ipc::auth::auth_login,
-    domains::auth::ipc::auth::auth_create_account,
-    domains::auth::ipc::auth::auth_logout,
-    domains::auth::ipc::auth::auth_validate_session,
-    
-    // Security audit (4 commands)
-    domains::auth::ipc::audit_security_ipc::get_security_metrics,
-    domains::auth::ipc::audit_security_ipc::get_security_events,
-    domains::auth::ipc::audit_security_ipc::get_security_alerts,
-    domains::auth::ipc::audit_security_ipc::acknowledge_security_alert,
-    
-    // Users (8 commands)
-    domains::users::ipc::user::user_crud,
-    domains::users::ipc::user::bootstrap_first_admin,
-    domains::users::ipc::user::has_admins,
-    // ... ~240+ commands total
-    
-    // System
-    commands::system::health_check,
-    commands::ui::ui_window_minimize,
-    // ...
-])
-```
-
-## Coding Standards
-
-- Use **Newtypes** (e.g., `TaskId(String)`) for type safety.
-- All IPC request/response types must derive `#[derive(TS)]` and `#[ts(export)]`.
-- Run `npm run types:sync` after changing `#[derive(TS)]` types.
-- Follow `clippy` and `rustfmt` rules.
-- No `unwrap()` or `expect()` in production code.
+| File | Why it matters |
+|---|---|
+| `src-tauri/src/domains/*/ipc/*` | Thin command handlers |
+| `src-tauri/src/domains/*/application/*` | Use-case orchestration |
+| `src-tauri/src/domains/*/domain/*` | Business rules and entities |
+| `src-tauri/src/domains/*/infrastructure/*` | SQLite repositories and adapters |
+| `src-tauri/src/shared/event_bus/*` | Cross-domain coordination |
+| `src-tauri/src/db/migrations/mod.rs` | Migration runner |
