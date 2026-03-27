@@ -152,7 +152,7 @@ describe('interventionOperations IPC contract tests', () => {
       const result = await interventionOperations.getActiveByTask('task-123');
 
       expect(safeInvoke).toHaveBeenCalledWith('intervention_get_active_by_task', {
-        task_id: 'task-123',
+        taskId: 'task-123',
         correlation_id: null,
       });
       expect(result).toEqual({ intervention: mockResponse.interventions[0] });
@@ -166,7 +166,7 @@ describe('interventionOperations IPC contract tests', () => {
       const result = await interventionOperations.getLatestByTask('task-123');
 
       expect(safeInvoke).toHaveBeenCalledWith('intervention_get_latest_by_task', {
-        task_id: 'task-123',
+        taskId: 'task-123',
         correlation_id: null,
       });
       expect(result).toEqual({ intervention: mockResponse });
@@ -238,12 +238,12 @@ describe('interventionOperations IPC contract tests', () => {
       const result = await interventionOperations.advanceStep(stepData);
 
       expect(safeInvoke).toHaveBeenCalledWith('intervention_advance_step', {
-        intervention_id: 'intervention-123',
-        step_id: 'step-1',
-        collected_data: { temperature: 22 },
+        interventionId: 'intervention-123',
+        stepId: 'step-1',
+        collectedData: { temperature: 22 },
         notes: 'Step completed',
         photos: ['photo-1.jpg'],
-        quality_check_passed: true,
+        qualityCheckPassed: true,
         issues: [],
         correlation_id: null,
       });
@@ -269,7 +269,7 @@ describe('interventionOperations IPC contract tests', () => {
       await interventionOperations.getStep('step-1');
 
       expect(safeInvoke).toHaveBeenCalledWith('intervention_get_step', {
-        step_id: 'step-1',
+        stepId: 'step-1',
         correlation_id: null,
       });
       expect(validateInterventionStep).toHaveBeenCalledWith(mockStep);
@@ -300,7 +300,7 @@ describe('interventionOperations IPC contract tests', () => {
       const result = await interventionOperations.getProgress('intervention-123');
 
       expect(safeInvoke).toHaveBeenCalledWith('intervention_get_progress', {
-        intervention_id: 'intervention-123',
+        interventionId: 'intervention-123',
         correlation_id: null,
       });
       expect(result).toEqual({
@@ -455,12 +455,12 @@ describe('interventionOperations IPC contract tests', () => {
       await interventionOperations.advanceStep(invalidStepData);
 
       expect(safeInvoke).toHaveBeenCalledWith('intervention_advance_step', {
-        intervention_id: '',
-        step_id: '',
-        collected_data: undefined,
+        interventionId: '',
+        stepId: '',
+        collectedData: undefined,
         notes: undefined,
         photos: undefined,
-        quality_check_passed: undefined,
+        qualityCheckPassed: undefined,
         issues: undefined,
         correlation_id: null,
       });
@@ -526,12 +526,12 @@ describe('interventionOperations IPC contract tests', () => {
       });
 
       expect(safeInvoke).toHaveBeenCalledWith('intervention_advance_step', {
-        intervention_id: 'intervention-123',
-        step_id: 'step-1',
-        collected_data: undefined,
+        interventionId: 'intervention-123',
+        stepId: 'step-1',
+        collectedData: undefined,
         notes: undefined,
         photos: undefined,
-        quality_check_passed: undefined,
+        qualityCheckPassed: undefined,
         issues: undefined,
         correlation_id: null,
       });
@@ -740,12 +740,12 @@ describe('interventionOperations IPC contract tests', () => {
       await interventionOperations.advanceStep(stepData);
 
       expect(safeInvoke).toHaveBeenCalledWith('intervention_advance_step', {
-        intervention_id: 'intervention-123',
-        step_id: 'step-1',
-        collected_data: undefined,
+        interventionId: 'intervention-123',
+        stepId: 'step-1',
+        collectedData: undefined,
         notes: specialNotes,
         photos: undefined,
-        quality_check_passed: undefined,
+        qualityCheckPassed: undefined,
         issues: undefined,
         correlation_id: null,
       });
@@ -761,12 +761,12 @@ describe('interventionOperations IPC contract tests', () => {
       await interventionOperations.advanceStep(stepData);
 
       expect(safeInvoke).toHaveBeenCalledWith('intervention_advance_step', {
-        intervention_id: 'intervention-123',
-        step_id: 'step-1',
-        collected_data: undefined,
+        interventionId: 'intervention-123',
+        stepId: 'step-1',
+        collectedData: undefined,
         notes: undefined,
         photos: [],
-        quality_check_passed: undefined,
+        qualityCheckPassed: undefined,
         issues: undefined,
         correlation_id: null,
       });
