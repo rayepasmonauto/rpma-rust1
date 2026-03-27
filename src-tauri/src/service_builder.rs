@@ -44,6 +44,8 @@
 //! 22. InterventionFinalizedHandler   <- InventoryFacade + global EventBus registration
 //! 23. QuoteAcceptedHandler           <- InterventionWorkflowService + global EventBus registration
 // TODO(scaffold): ("TrashService", &["Database"]),   // ← wire real deps
+    // TODO(scaffold): ("RulesService", &["Database"]),   // ← wire real deps
+    // TODO(scaffold): ("IntegrationsService", &["Database"]),   // ← wire real deps
 //! 24. QuoteConvertedHandler          <- InterventionWorkflowService + global EventBus registration
 //!
 //! The graph is intentionally acyclic: every edge points from a root resource or an
@@ -95,6 +97,8 @@ const DOCUMENTED_SERVICE_INIT_ORDER: &[&str] = &[
     "AuditLogHandler",
     "InterventionFinalizedHandler",
     "QuoteAcceptedHandler",
+    // TODO(scaffold): "RulesService",   // ← insert at correct LAYER position
+    // TODO(scaffold): "IntegrationsService",   // ← insert at correct LAYER position
     "QuoteConvertedHandler",
     "TrashService",
     "GlobalSearchService",
@@ -298,6 +302,16 @@ impl ServiceBuilder {
                     as Arc<dyn crate::domains::settings::infrastructure::SettingsRepository>,
             ),
         );
+        let rules_service = Arc::new(
+            crate::domains::rules::application::services::rules_service::RulesService::new(
+                self.db.clone(),
+            ),
+        );
+        let integrations_service = Arc::new(
+            crate::domains::integrations::application::services::integrations_service::IntegrationsService::new(
+                self.db.clone(),
+            ),
+        );
         let task_import_service = Arc::new(
             crate::domains::tasks::infrastructure::task_import::TaskImportService::new(
                 self.db.clone(),
@@ -475,6 +489,8 @@ impl ServiceBuilder {
             settings_repository,
             user_settings_repository,
             settings_service,
+            rules_service,
+            integrations_service,
             user_service,
             cache_service,
             event_bus,

@@ -1,24 +1,219 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   AlertTriangle,
+  Bell,
   CheckCircle,
   Settings,
-  Zap,
   Target,
-  Bell,
+  Zap,
 } from "lucide-react";
 import { adminKeys } from "@/lib/query-keys";
-import { useLogger } from "@/shared/hooks/useLogger";
-import { LogDomain } from "@/shared/utils";
-import { settingsOperations } from "@/shared/utils";
-import type { JsonValue } from "@/shared/types";
-import type { BusinessRule } from "@/shared/types";
-import { useAuth } from "@/shared/hooks/useAuth";
+import { ipcClient } from "@/lib/ipc";
+import type {
+  BackendRuleAction,
+  BackendRuleDefinition,
+  BackendRuleMode,
+  BackendRuleTrigger,
+  BusinessRule,
+  BusinessRuleCategory,
+  RuleAction,
+  RuleCondition,
+} from "@/shared/types";
 import type { BusinessRuleFormData } from "../components/BusinessRuleFormDialog";
+
+function categoryToBackendShape(category: string): {
+  mode: BackendRuleMode;
+  trigger: BackendRuleTrigger;
+  template_key: string;
+} {
+  switch (category) {
+    case "validation":
+      return {
+        mode: "blocking",
+        trigger: "task_status_changed",
+        template_key: "task-status-policy",
+      };
+    case "escalation":
+      return {
+        mode: "blocking",
+        trigger: "intervention_finalized",
+        template_key: "intervention-escalation",
+      };
+    case "notification":
+      return {
+        mode: "reactive",
+        trigger: "task_created",
+        template_key: "task-notification",
+      };
+    case "automation":
+      return {
+        mode: "reactive",
+        trigger: "task_created",
+        template_key: "task-automation",
+      };
+    case "task_assignment":
+    default:
+      return {
+        mode: "reactive",
+        trigger: "task_created",
+        template_key: "task-assignment",
+      };
+  }
+}
+
+function backendToCategory(rule: BackendRuleDefinition): BusinessRuleCategory {
+  if (rule.mode === "blocking") {
+    return rule.trigger === "intervention_finalized"
+      ? "escalation"
+      : "validation";
+  }
+
+  if (rule.template_key.includes("notification")) return "notification";
+  if (rule.template_key.includes("assignment")) return "task_assignment";
+  return "automation";
+}
+
+function conditionsToBackend(conditions: RuleCondition[]): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const condition of conditions) {
+    if (!condition.field) continue;
+
+    const values = Array.isArray(condition.value)
+      ? condition.value
+      : [condition.value];
+
+    if (condition.field === "status") {
+      result.status_in = values.map(String);
+    } else if (condition.field === "priority") {
+      result.priority_in = values.map(String);
+    } else if (condition.field === "task_id") {
+      result.task_id_in = values.map(String);
+    }
+  }
+
+  return result;
+}
+
+function backendToConditions(conditions: unknown): RuleCondition[] {
+  const source =
+    conditions && typeof conditions === "object" && !Array.isArray(conditions)
+      ? (conditions as Record<string, unknown>)
+      : {};
+
+  const mapped: RuleCondition[] = [];
+
+  const pushArray = (field: string, key: string) => {
+    const value = source[key];
+    if (!Array.isArray(value)) return;
+    mapped.push({
+      field,
+      operator: "in",
+      value: value.map(String),
+    });
+  };
+
+  pushArray("task_id", "task_id_in");
+  pushArray("status", "status_in");
+  pushArray("priority", "priority_in");
+
+  return mapped;
+}
+
+function actionsToBackend(
+  actions: RuleAction[],
+  category: string,
+): BackendRuleAction[] {
+  if (actions.some((action) => action.type === "block_completion")) {
+    const blockAction = actions.find(
+      (action) => action.type === "block_completion",
+    );
+    return [
+      {
+        type: "block",
+        message:
+          typeof blockAction?.value === "string" && blockAction.value
+            ? blockAction.value
+            : "Action blocked by rule policy",
+      },
+    ];
+  }
+
+  return [
+    {
+      type: "queue_integration",
+      event_name: `rule.${category}`,
+      integration_ids: null,
+    },
+  ];
+}
+
+function backendToActions(actions: BackendRuleAction[]): RuleAction[] {
+  return actions.map((action) => {
+    if (action.type === "block") {
+      return {
+        type: "block_completion",
+        target: "workflow",
+        value: action.message,
+      };
+    }
+
+    return {
+      type: "send_notification",
+      target: action.event_name,
+      value: action.event_name,
+    };
+  });
+}
+
+function toUiRule(rule: BackendRuleDefinition): BusinessRule {
+  const category = backendToCategory(rule);
+  return {
+    id: rule.id,
+    name: rule.name,
+    category,
+    description: rule.description ?? undefined,
+    conditions: backendToConditions(rule.conditions),
+    actions: backendToActions(rule.actions),
+    priority: rule.mode === "blocking" ? 10 : 0,
+    is_active: rule.status === "active",
+    isActive: rule.status === "active",
+    created_at: new Date(rule.created_at).toISOString(),
+    updated_at: new Date(rule.updated_at).toISOString(),
+    createdAt: new Date(rule.created_at).toISOString(),
+  };
+}
+
+function buildTestPayload(rule: BusinessRule, backendRule?: BackendRuleDefinition) {
+  const conditions = rule.conditions;
+  const payload: Record<string, unknown> = {};
+
+  for (const condition of conditions) {
+    const firstValue = Array.isArray(condition.value)
+      ? condition.value[0]
+      : condition.value;
+
+    if (condition.field === "status") {
+      payload.status = firstValue ?? "pending";
+      payload.new_status = firstValue ?? "pending";
+    } else if (condition.field === "priority") {
+      payload.priority = firstValue ?? "normal";
+    }
+  }
+
+  const trigger = backendRule?.trigger ?? categoryToBackendShape(rule.category).trigger;
+  return {
+    trigger,
+    entity_id: rule.conditions.find((condition) => condition.field === "task_id")
+      ? "task-preview"
+      : null,
+    payload,
+  } as const;
+}
 
 export function useBusinessRules() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -29,61 +224,47 @@ export function useBusinessRules() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [ruleToDelete, setRuleToDelete] = useState<BusinessRule | null>(null);
 
-  const { session } = useAuth();
   const queryClient = useQueryClient();
-  const { logInfo, logError } = useLogger({
-    context: LogDomain.SYSTEM,
-    component: "BusinessRulesTab",
-  });
 
-  // ── Query ──────────────────────────────────────────────────────────────────
   const {
-    data: businessRules = [],
+    data: backendRules = [],
     isLoading: loading,
     refetch,
   } = useQuery({
-    queryKey: adminKeys.appSettings(),
-    queryFn: () => settingsOperations.getAppSettings(),
-    enabled: !!session?.token,
+    queryKey: adminKeys.businessRules(),
+    queryFn: () => ipcClient.rules.list(),
     staleTime: 60_000,
-    select: (data) => {
-      const appSettings = data as Record<string, JsonValue>;
-      const rules = (appSettings?.business_rules ||
-        []) as unknown as BusinessRule[];
-      const result = Array.isArray(rules) ? rules : [];
-      logInfo("Business rules loaded", { count: result.length });
-      return result;
-    },
   });
 
+  const businessRules = backendRules.map(toUiRule);
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: adminKeys.appSettings() });
+    queryClient.invalidateQueries({ queryKey: adminKeys.businessRules() });
 
-  // ── Mutations ──────────────────────────────────────────────────────────────
   const saveRuleMutation = useMutation({
     mutationFn: async (data: BusinessRuleFormData) => {
-      const newRule: BusinessRule = {
-        id: editingRule?.id || crypto.randomUUID(),
+      const backendShape = categoryToBackendShape(data.category);
+      const request = {
         name: data.name,
-        description: data.description,
-        category: data.category,
-        priority: data.priority,
-        is_active: data.isActive,
-        isActive: data.isActive,
-        conditions: data.conditions,
-        actions: data.actions,
-        created_at: editingRule?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        createdAt: editingRule?.createdAt || new Date().toISOString(),
-      };
-      const updatedRules = editingRule
-        ? businessRules.map((rule) =>
-            rule.id === editingRule.id ? newRule : rule,
-          )
-        : [...businessRules, newRule];
-      await settingsOperations.updateBusinessRules(
-        updatedRules as unknown as JsonValue[],
-      );
+        description: data.description || null,
+        template_key: backendShape.template_key,
+        trigger: backendShape.trigger,
+        mode: backendShape.mode,
+        conditions: conditionsToBackend(data.conditions),
+        actions: actionsToBackend(data.actions, data.category),
+      } as const;
+
+      if (editingRule) {
+        return ipcClient.rules.update(editingRule.id, {
+          ...request,
+          status: data.isActive ? "active" : "disabled",
+        });
+      }
+
+      const created = await ipcClient.rules.create(request);
+      if (data.isActive) {
+        return ipcClient.rules.activate(created.id);
+      }
+      return created;
     },
     onSuccess: () => {
       toast.success(
@@ -96,20 +277,13 @@ export function useBusinessRules() {
       void invalidate();
     },
     onError: (error) => {
-      logError("Error saving business rule", {
-        error: error instanceof Error ? error.message : error,
-      });
+      console.error("Error saving business rule:", error);
       toast.error("Erreur lors de la sauvegarde");
     },
   });
 
   const deleteRuleMutation = useMutation({
-    mutationFn: async (ruleId: string) => {
-      const updatedRules = businessRules.filter((rule) => rule.id !== ruleId);
-      await settingsOperations.updateBusinessRules(
-        updatedRules as unknown as JsonValue[],
-      );
-    },
+    mutationFn: async (ruleId: string) => ipcClient.rules.delete(ruleId),
     onSuccess: () => {
       toast.success("Règle supprimée avec succès");
       setRuleToDelete(null);
@@ -117,40 +291,26 @@ export function useBusinessRules() {
       void invalidate();
     },
     onError: (error) => {
-      logError("Error deleting business rule", {
-        error: error instanceof Error ? error.message : error,
-      });
+      console.error("Error deleting business rule:", error);
       toast.error("Erreur lors de la suppression");
     },
   });
 
   const toggleRuleStatusMutation = useMutation({
-    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
-      const updatedRules = businessRules.map((rule) =>
-        rule.id === id
-          ? { ...rule, is_active: !isActive, isActive: !isActive }
-          : rule,
-      );
-      await settingsOperations.updateBusinessRules(
-        updatedRules as unknown as JsonValue[],
-      );
-      return !isActive;
-    },
-    onSuccess: (newActive) => {
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) =>
+      isActive ? ipcClient.rules.disable(id) : ipcClient.rules.activate(id),
+    onSuccess: (_, variables) => {
       toast.success(
-        `Règle ${newActive ? "activée" : "désactivée"} avec succès`,
+        `Règle ${variables.isActive ? "désactivée" : "activée"} avec succès`,
       );
       void invalidate();
     },
     onError: (error) => {
-      logError("Error toggling business rule", {
-        error: error instanceof Error ? error.message : error,
-      });
+      console.error("Error toggling business rule:", error);
       toast.error("Erreur lors de la mise à jour");
     },
   });
 
-  // ── Actions ────────────────────────────────────────────────────────────────
   const openEditDialog = (rule: BusinessRule) => {
     setEditingRule(rule);
     setShowCreateDialog(true);
@@ -174,22 +334,21 @@ export function useBusinessRules() {
   const testRule = async (id: string) => {
     setTestingRule(id);
     try {
-      const rule = businessRules.find((candidate) => candidate.id === id);
-      if (!rule) {
+      const backendRule = backendRules.find((candidate) => candidate.id === id);
+      const uiRule = businessRules.find((candidate) => candidate.id === id);
+      if (!backendRule || !uiRule) {
         toast.error("Règle introuvable");
         return;
       }
-      if (rule.conditions.length === 0) {
-        toast.warning("Validation: la règle n'a aucune condition définie");
-      } else if (rule.actions.length === 0) {
-        toast.warning("Validation: la règle n'a aucune action définie");
-      } else {
-        toast.success("Validation réussie: structure de règle valide");
-      }
+
+      const result = await ipcClient.rules.test(buildTestPayload(uiRule, backendRule));
+      toast.success(
+        result.allowed
+          ? "Test réussi: aucune règle bloquante détectée"
+          : result.message ?? "Test réussi: blocage détecté",
+      );
     } catch (error) {
-      logError("Error testing business rule", {
-        error: error instanceof Error ? error.message : error,
-      });
+      console.error("Error testing business rule:", error);
       toast.error("Erreur lors du test");
     } finally {
       setTestingRule(null);

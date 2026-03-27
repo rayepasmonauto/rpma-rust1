@@ -21,6 +21,7 @@ use tauri_plugin_dialog;
 use tokio::time;
 use tracing::{debug, error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use crate::shared::contracts::integration_sink::IntegrationEventSink;
 
 // Import logging modules
 // use crate::logging::{RPMARequestLogger, LogDomain};
@@ -301,6 +302,23 @@ fn main() {
             domains::trash::ipc::restore_entity,
             domains::trash::ipc::hard_delete_entity,
             domains::trash::ipc::empty_trash,
+            // ── Rules ──────────────────────────────────────────────────────────────
+            domains::rules::ipc::list_rules,
+            domains::rules::ipc::get_rules,
+            domains::rules::ipc::create_rule,
+            domains::rules::ipc::update_rule,
+            domains::rules::ipc::activate_rule,
+            domains::rules::ipc::disable_rule,
+            domains::rules::ipc::delete_rule,
+            domains::rules::ipc::test_rule,
+            // ── Integrations ──────────────────────────────────────────────────────────────
+            domains::integrations::ipc::list_integrations,
+            domains::integrations::ipc::get_integrations,
+            domains::integrations::ipc::create_integration,
+            domains::integrations::ipc::update_integration,
+            domains::integrations::ipc::test_integration,
+            domains::integrations::ipc::delete_integration,
+            domains::integrations::ipc::retry_dead_letter_integrations,
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
@@ -459,6 +477,20 @@ fn main() {
 
             // Store in app state
             app.manage(app_state);
+
+            let integrations_service = app
+                .state::<shared::app_state::AppStateType>()
+                .integrations_service
+                .clone();
+            async_runtime::spawn(async move {
+                let mut interval = time::interval(Duration::from_secs(30));
+                loop {
+                    interval.tick().await;
+                    if let Err(error) = integrations_service.process_pending(20).await {
+                        warn!("Integration delivery worker failed: {}", error);
+                    }
+                }
+            });
 
             info!("Application setup completed successfully");
             Ok(())

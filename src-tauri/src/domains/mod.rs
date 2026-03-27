@@ -39,3 +39,5 @@ pub mod settings;
 pub mod tasks;
 pub mod trash;
 pub mod users;
+pub mod rules;
+pub mod integrations;

@@ -38,6 +38,10 @@ fn cmd_service(state: &AppState<'_>) -> TaskCommandService {
         state.calendar_service.clone()
             as std::sync::Arc<dyn crate::shared::contracts::task_scheduler::TaskScheduler>,
         state.event_bus.clone(),
+        state.rules_service.clone()
+            as std::sync::Arc<dyn crate::shared::contracts::rules_engine::BlockingRuleEngine>,
+        state.integrations_service.clone()
+            as std::sync::Arc<dyn crate::shared::contracts::integration_sink::IntegrationEventSink>,
     )
 }
 

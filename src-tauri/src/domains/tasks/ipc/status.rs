@@ -4,6 +4,8 @@ use crate::domains::tasks::application::services::task_policy_service;
 use crate::domains::tasks::domain::models::status::{StatusDistribution, StatusTransitionRequest};
 use crate::domains::tasks::domain::models::task::Task;
 use crate::resolve_context;
+use crate::shared::contracts::integration_sink::{IntegrationDispatchRequest, IntegrationEventSink};
+use crate::shared::contracts::rules_engine::{BlockingRuleEngine, RuleCheckRequest};
 use crate::shared::services::event_bus::{event_factory, EventPublisher};
 use tracing::warn;
 
@@ -53,6 +55,25 @@ pub async fn task_transition_status(
         task_policy_service::check_task_permissions(&ctx.auth, &task, "edit")?;
     }
 
+    let rule_check = state
+        .rules_service
+        .evaluate(&RuleCheckRequest {
+            trigger: "task_status_changed".to_string(),
+            entity_id: Some(request.task_id.clone()),
+            payload: serde_json::json!({
+                "old_status": old_status.to_string(),
+                "new_status": request.new_status.clone(),
+            }),
+            user_id: ctx.auth.user_id.clone(),
+            correlation_id: ctx.correlation_id.clone(),
+        })
+        .await?;
+    if !rule_check.allowed {
+        return Err(AppError::Validation(rule_check.message.unwrap_or_else(|| {
+            "Task status change blocked by active rule".to_string()
+        })));
+    }
+
     let task = state.task_service.transition_status(
         &request.task_id,
         &request.new_status,
@@ -76,6 +97,20 @@ pub async fn task_transition_status(
             e
         );
     }
+
+    let _ = state
+        .integrations_service
+        .enqueue(IntegrationDispatchRequest {
+            event_name: "task_status_changed".to_string(),
+            payload: serde_json::json!({
+                "task_id": task.id,
+                "old_status": old_status.to_string(),
+                "new_status": task.status.to_string(),
+            }),
+            correlation_id: ctx.correlation_id.clone(),
+            requested_integration_ids: None,
+        })
+        .await;
 
     Ok(ApiResponse::success(task).with_correlation_id(Some(ctx.correlation_id.clone())))
 }

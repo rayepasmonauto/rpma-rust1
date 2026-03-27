@@ -337,6 +337,25 @@ export const ipcClient = {
     getAppInfo: () => mockSafeInvoke("get_app_info"),
     getDeviceInfo: () => mockSafeInvoke("get_device_info"),
   },
+  rules: {
+    list: () => Promise.resolve([]),
+    get: () => Promise.reject(new Error("Mock rule not found")),
+    create: (request: JsonObject) => Promise.resolve({ id: crypto.randomUUID(), ...request }),
+    update: (id: string, request: JsonObject) => Promise.resolve({ id, ...request }),
+    activate: (id: string) => Promise.resolve({ id, status: "active" }),
+    disable: (id: string) => Promise.resolve({ id, status: "disabled" }),
+    delete: (id: string) => Promise.resolve({ id, deleted_at: Date.now() }),
+    test: () => Promise.resolve({ allowed: true, matched_rule_ids: [], queued_actions: [] }),
+  },
+  integrations: {
+    list: () => Promise.resolve([]),
+    get: () => Promise.reject(new Error("Mock integration not found")),
+    create: (request: JsonObject) => Promise.resolve({ id: crypto.randomUUID(), ...request }),
+    update: (id: string, request: JsonObject) => Promise.resolve({ id, ...request }),
+    test: () => Promise.resolve({ success: true, message: "Mock integration test succeeded", tested_at: Date.now() }),
+    delete: (id: string) => Promise.resolve({ id, deleted_at: Date.now() }),
+    retryDeadLetters: () => Promise.resolve(0),
+  },
   audit: {
     getMetrics: () => mockSafeInvoke("get_security_metrics", {}),
     getEvents: (limit: number) =>
