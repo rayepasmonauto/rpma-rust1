@@ -25,13 +25,6 @@
 
 ---
 
-
-## 📄 Licence
-
-Ce logiciel est **propriétaire**. Tous droits réservés — [Raye Pas Mon Auto](https://www.rayepasmonauto.com/).
-
----
-
 ## Licence
 
 Ce logiciel est proprietaire. Tous droits reserves.
