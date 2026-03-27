@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🛡️ RPMA v2
 
-### Repair Management Application — * by [Raye Pas Mon Auto](https://www.rayepasmonauto.com/)*
+
+### RPMAV2 — * by [Raye Pas Mon Auto](https://www.rayepasmonauto.com/)*
 
 <br/>
 
@@ -19,7 +19,6 @@
 
 <br/>
 
-[🚀 Démarrage rapide](#-démarrage-rapide) • [🏗️ Architecture](#️-architecture) • [📋 Fonctionnalités](#-fonctionnalités-principales) • [📖 Documentation](#-documentation) • [🤝 Contribuer](#-contribution)
 
 </div>
 
@@ -27,12 +26,9 @@
 
 ## Licence
 
-Ce logiciel est proprietaire. Tous droits reserves.
-
 La licence complete est disponible dans le fichier [LICENSE](LICENSE). Elle interdit la copie, la modification, la redistribution et la reutilisation du code sans autorisation ecrite prealable.
 
 <div align="center">
-
-**RPMA** — La solution de gestion PPF moderne, offline-first et sécurisée [Raye Pas Mon Auto](https://www.rayepasmonauto.com/) · ✉️ [Rayepasmonauto@gmail.com](mailto:Rayepasmonauto@gmail.com)
+ La solution de gestion PPF moderne, offline-first et sécurisée [Raye Pas Mon Auto](https://www.rayepasmonauto.com/) · ✉️ [Rayepasmonauto@gmail.com](mailto:Rayepasmonauto@gmail.com)
 
 </div>
