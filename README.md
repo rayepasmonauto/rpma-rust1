@@ -32,6 +32,12 @@ Ce logiciel est **propriétaire**. Tous droits réservés — [Raye Pas Mon Auto
 
 ---
 
+## Licence
+
+Ce logiciel est proprietaire. Tous droits reserves.
+
+La licence complete est disponible dans le fichier [LICENSE](LICENSE). Elle interdit la copie, la modification, la redistribution et la reutilisation du code sans autorisation ecrite prealable.
+
 <div align="center">
 
 **RPMA** — La solution de gestion PPF moderne, offline-first et sécurisée [Raye Pas Mon Auto](https://www.rayepasmonauto.com/) · ✉️ [Rayepasmonauto@gmail.com](mailto:Rayepasmonauto@gmail.com)
