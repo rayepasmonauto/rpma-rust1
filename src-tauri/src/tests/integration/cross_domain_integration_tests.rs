@@ -7,9 +7,10 @@
 //! - User permissions across multiple domains
 
 use crate::commands::AppResult;
-use crate::shared::logging::audit_service::{AuditEvent, AuditService};
 use crate::domains::auth::infrastructure::auth::AuthService;
-use crate::domains::clients::client_handler::{Client, CustomerType, ClientService, ClientStatisticsService};
+use crate::domains::clients::client_handler::{
+    Client, ClientService, ClientStatisticsService, CustomerType,
+};
 use crate::domains::interventions::domain::models::intervention::Intervention;
 use crate::domains::interventions::infrastructure::intervention_types::{
     AdvanceStepRequest, FinalizeInterventionRequest, StartInterventionRequest,
@@ -22,6 +23,7 @@ use crate::domains::inventory::infrastructure::material::{
 use crate::domains::tasks::domain::models::task::{Task, TaskPriority, TaskStatus};
 use crate::domains::tasks::infrastructure::task_crud::TaskCrudService;
 use crate::domains::users::domain::models::user::{User, UserRole};
+use crate::shared::logging::audit_service::{AuditEvent, AuditService};
 use crate::test_utils::TestDatabase;
 use crate::{test_client, test_task};
 use chrono::Utc;
@@ -168,8 +170,8 @@ impl CrossDomainTestFixture {
             batch_number: None,
             storage_location: Some("Cross-Domain Warehouse".to_string()),
             warehouse_id: None,
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
         let material = self

@@ -8,6 +8,7 @@
 // (start_datetime, end_datetime) instead of i64 milliseconds.
 
 use crate::db::Database;
+use crate::domains::calendar::domain::repositories::CalendarEventQueries;
 use crate::domains::calendar::models::CalendarEvent;
 use crate::shared::repositories::base::{RepoError, RepoResult};
 use async_trait::async_trait;
@@ -25,25 +26,6 @@ const EVENT_SELECT: &str = r#"
         created_at, updated_at, created_by, updated_by, deleted_at, deleted_by
     FROM calendar_events
 "#;
-
-// ── Trait ─────────────────────────────────────────────────────────────────────
-
-/// Query contract for calendar-event range lookups.
-#[async_trait]
-pub trait CalendarEventQueries: Send + Sync {
-    /// Return all non-deleted events whose `start_datetime` falls at or after
-    /// `from` **and** whose `end_datetime` falls at or before `to`, where both
-    /// bounds are Unix epoch **milliseconds**.
-    ///
-    /// When `technician_id` is `Some`, only events assigned to that technician
-    /// are included.
-    async fn find_events_in_range(
-        &self,
-        from: i64,
-        to: i64,
-        technician_id: Option<&str>,
-    ) -> RepoResult<Vec<CalendarEvent>>;
-}
 
 // ── Concrete struct ───────────────────────────────────────────────────────────
 
@@ -78,8 +60,7 @@ impl CalendarEventQueries for CalendarRepository {
             EVENT_SELECT
         );
 
-        let mut params_vec: Vec<rusqlite::types::Value> =
-            vec![from.into(), to.into()];
+        let mut params_vec: Vec<rusqlite::types::Value> = vec![from.into(), to.into()];
 
         if let Some(tech_id) = technician_id {
             sql.push_str(" AND technician_id = ?");
@@ -90,9 +71,7 @@ impl CalendarEventQueries for CalendarRepository {
 
         self.db
             .query_as(&sql, rusqlite::params_from_iter(params_vec.iter()))
-            .map_err(|e| {
-                RepoError::Database(format!("Failed to query events in range: {}", e))
-            })
+            .map_err(|e| RepoError::Database(format!("Failed to query events in range: {}", e)))
     }
 }
 
@@ -105,11 +84,7 @@ mod tests {
     use std::sync::Arc;
 
     async fn setup_db() -> Arc<Database> {
-        Arc::new(
-            Database::new_in_memory()
-                .await
-                .expect("in-memory database"),
-        )
+        Arc::new(Database::new_in_memory().await.expect("in-memory database"))
     }
 
     fn insert_event(db: &Database, id: &str, start: &str, end: &str, tech_id: Option<&str>) {
@@ -182,11 +157,7 @@ mod tests {
 
         let repo = CalendarRepository::new(db);
         let results = repo
-            .find_events_in_range(
-                ms("2025-06-15T00:00:00"),
-                ms("2025-06-15T23:59:59"),
-                None,
-            )
+            .find_events_in_range(ms("2025-06-15T00:00:00"), ms("2025-06-15T23:59:59"), None)
             .await
             .expect("find_events_in_range");
 
@@ -245,11 +216,7 @@ mod tests {
 
         let repo = CalendarRepository::new(db);
         let results = repo
-            .find_events_in_range(
-                ms("2025-06-15T00:00:00"),
-                ms("2025-06-15T23:59:59"),
-                None,
-            )
+            .find_events_in_range(ms("2025-06-15T00:00:00"), ms("2025-06-15T23:59:59"), None)
             .await
             .expect("find_events_in_range");
 
@@ -276,15 +243,14 @@ mod tests {
 
         let repo = CalendarRepository::new(db);
         let results = repo
-            .find_events_in_range(
-                ms("2025-06-15T00:00:00"),
-                ms("2025-06-15T23:59:59"),
-                None,
-            )
+            .find_events_in_range(ms("2025-06-15T00:00:00"), ms("2025-06-15T23:59:59"), None)
             .await
             .expect("find_events_in_range");
 
-        assert!(results.is_empty(), "Events outside the range must not appear");
+        assert!(
+            results.is_empty(),
+            "Events outside the range must not appear"
+        );
     }
 
     #[tokio::test]
@@ -307,11 +273,7 @@ mod tests {
 
         let repo = CalendarRepository::new(db);
         let results = repo
-            .find_events_in_range(
-                ms("2025-06-15T00:00:00"),
-                ms("2025-06-15T23:59:59"),
-                None,
-            )
+            .find_events_in_range(ms("2025-06-15T00:00:00"), ms("2025-06-15T23:59:59"), None)
             .await
             .expect("find_events_in_range");
 

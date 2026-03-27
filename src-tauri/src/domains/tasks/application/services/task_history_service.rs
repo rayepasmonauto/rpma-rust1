@@ -20,10 +20,7 @@ pub struct TaskHistoryService {
 }
 
 impl TaskHistoryService {
-    pub fn new(
-        task_service: Arc<TaskService>,
-        history_repo: Arc<TaskHistoryRepository>,
-    ) -> Self {
+    pub fn new(task_service: Arc<TaskService>, history_repo: Arc<TaskHistoryRepository>) -> Self {
         Self {
             task_service,
             history_repo,
@@ -49,10 +46,7 @@ impl TaskHistoryService {
             })?;
 
         if task.is_none() {
-            return Err(AppError::NotFound(format!(
-                "Task not found: {}",
-                task_id
-            )));
+            return Err(AppError::NotFound(format!("Task not found: {}", task_id)));
         }
 
         let history = self

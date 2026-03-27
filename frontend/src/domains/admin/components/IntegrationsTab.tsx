@@ -2,61 +2,68 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { 
-  Globe, 
-  Plus, 
-  Save,
-  RefreshCw,
-} from 'lucide-react';
+import { Globe, Plus, Save, RefreshCw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { LoadingState } from '@/shared/ui/layout/LoadingState';
-import { IntegrationConfig, IntegrationType, IntegrationStatus } from '@/shared/types';
+import {
+  IntegrationConfig,
+  IntegrationType,
+  IntegrationStatus,
+} from '@/shared/types';
 import { useIntegrations } from '../hooks/useIntegrations';
 import { IntegrationCard } from './IntegrationCard';
 
 export function IntegrationsTab() {
-  const { integrations, loading, saving, persistIntegrations } = useIntegrations();
+  const {
+    integrations,
+    loading,
+    saving,
+    persistIntegration,
+    deleteIntegration,
+    testIntegration: runIntegrationTest,
+  } = useIntegrations();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [editingIntegration, setEditingIntegration] = useState<IntegrationConfig | null>(null);
-  const [testingIntegration, setTestingIntegration] = useState<string | null>(null);
+  const [editingIntegration, setEditingIntegration] =
+    useState<IntegrationConfig | null>(null);
+  const [testingIntegration, setTestingIntegration] = useState<string | null>(
+    null,
+  );
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [integrationToDelete, setIntegrationToDelete] = useState<IntegrationConfig | null>(null);
+  const [integrationToDelete, setIntegrationToDelete] =
+    useState<IntegrationConfig | null>(null);
 
-  // Form state for creating/editing integrations
   const [formData, setFormData] = useState({
     name: '',
-    type: 'email' as IntegrationType,
+    type: 'webhook' as IntegrationType,
     provider: '',
     isActive: false,
     settings: {
-      smtpHost: '',
-      smtpPort: 587,
-      fromEmail: '',
-      fromName: '',
-      apiKey: '',
       url: '',
-      calendarId: '',
-      syncInterval: 15,
-      retryAttempts: 3,
-      timeout: 30
+      subscribedEvents: 'task_created',
     },
-    // Simplified credentials for form handling - will be encrypted when saving
     credentialsData: {
       apiKey: '',
-      apiSecret: '',
-      accessToken: '',
-      refreshToken: '',
-      username: '',
-      password: ''
-    }
+    },
   });
 
   const saveIntegration = async () => {
@@ -67,29 +74,27 @@ export function IntegrationsTab() {
         type: formData.type,
         provider: formData.provider,
         config: {},
-        settings: formData.settings as unknown as Record<string, string | number | boolean>,
-        credentials: {
-          encrypted: true,
-          data: JSON.stringify(formData.credentialsData)
-        },
+        settings: formData.settings as Record<string, string | number | boolean>,
+        credentials: formData.credentialsData.apiKey
+          ? {
+              encrypted: true,
+              data: formData.credentialsData.apiKey,
+            }
+          : undefined,
         isActive: formData.isActive,
-        status: formData.isActive ? 'active' as IntegrationStatus : 'inactive' as IntegrationStatus,
+        status: formData.isActive
+          ? ('active' as IntegrationStatus)
+          : ('inactive' as IntegrationStatus),
         createdAt: editingIntegration?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
-      let updatedIntegrations: IntegrationConfig[];
-      if (editingIntegration) {
-        updatedIntegrations = integrations.map(i => i.id === editingIntegration.id ? newIntegration : i);
-      } else {
-        updatedIntegrations = [...integrations, newIntegration];
-      }
-
-      await persistIntegrations(
-        updatedIntegrations,
+      await persistIntegration(
+        newIntegration,
         editingIntegration
           ? 'Intégration mise à jour avec succès'
           : 'Intégration créée avec succès',
+        editingIntegration,
       );
       setShowCreateDialog(false);
       setEditingIntegration(null);
@@ -100,11 +105,10 @@ export function IntegrationsTab() {
     }
   };
 
-  const deleteIntegration = async () => {
+  const handleDeleteIntegration = async () => {
     if (!integrationToDelete) return;
     try {
-      const updatedIntegrations = integrations.filter((integration) => integration.id !== integrationToDelete.id);
-      await persistIntegrations(updatedIntegrations, 'Intégration supprimée avec succès');
+      await deleteIntegration(integrationToDelete.id);
     } catch (error) {
       console.error('Error deleting integration:', error);
       toast.error('Erreur lors de la suppression');
@@ -122,19 +126,8 @@ export function IntegrationsTab() {
   const testIntegration = async (id: string) => {
     setTestingIntegration(id);
     try {
-      const integration = integrations.find(i => i.id === id);
-      if (!integration) {
-        toast.error('Intégration introuvable');
-        return;
-      }
-      // Validate configuration locally
-      if (integration.type === 'email' && integration.settings?.smtpHost) {
-        toast.success('Validation réussie: Configuration SMTP valide');
-      } else if (integration.type === 'webhook' && integration.settings?.url) {
-        toast.success('Validation réussie: Configuration webhook valide');
-      } else {
-        toast.info('Validation terminée: Configuration locale vérifiée');
-      }
+      const result = await runIntegrationTest(id);
+      toast[result.success ? 'success' : 'error'](result.message);
     } catch (error) {
       console.error('Error testing integration:', error);
       toast.error('Erreur lors du test');
@@ -146,14 +139,14 @@ export function IntegrationsTab() {
   const toggleIntegrationStatus = async (integration: IntegrationConfig) => {
     try {
       const newActive = !integration.isActive;
-      const updatedIntegrations = integrations.map(i =>
-        i.id === integration.id
-          ? { ...i, isActive: newActive, status: (newActive ? 'active' : 'inactive') as IntegrationStatus }
-          : i
-      );
-      await persistIntegrations(
-        updatedIntegrations,
+      await persistIntegration(
+        {
+          ...integration,
+          isActive: newActive,
+          status: (newActive ? 'active' : 'inactive') as IntegrationStatus,
+        },
         `Intégration ${integration.isActive ? 'désactivée' : 'activée'} avec succès`,
+        integration,
       );
     } catch (error) {
       console.error('Error updating integration status:', error);
@@ -164,29 +157,16 @@ export function IntegrationsTab() {
   const resetForm = () => {
     setFormData({
       name: '',
-      type: 'email',
+      type: 'webhook',
       provider: '',
       isActive: false,
       settings: {
-        smtpHost: '',
-        smtpPort: 587,
-        fromEmail: '',
-        fromName: '',
-        apiKey: '',
         url: '',
-        calendarId: '',
-        syncInterval: 15,
-        retryAttempts: 3,
-        timeout: 30
+        subscribedEvents: 'task_created',
       },
       credentialsData: {
         apiKey: '',
-        apiSecret: '',
-        accessToken: '',
-        refreshToken: '',
-        username: '',
-        password: ''
-      }
+      },
     });
   };
 
@@ -194,19 +174,18 @@ export function IntegrationsTab() {
     setEditingIntegration(integration);
     setFormData({
       name: integration.name,
-      type: integration.type,
+      type: 'webhook',
       provider: integration.provider || '',
       isActive: integration.isActive || false,
-      settings: { ...formData.settings, ...integration.settings },
-      // For editing, try to decode credentials or use empty values
+      settings: {
+        url: String(integration.settings?.url || ''),
+        subscribedEvents: String(
+          integration.settings?.subscribedEvents || 'task_created',
+        ),
+      },
       credentialsData: {
-        apiKey: '', // Would need decryption logic here
-        apiSecret: '',
-        accessToken: '',
-        refreshToken: '',
-        username: '',
-        password: ''
-      }
+        apiKey: '',
+      },
     });
     setShowCreateDialog(true);
   };
@@ -217,200 +196,155 @@ export function IntegrationsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Intégrations</h2>
           <p className="text-gray-600">
-            Gérez les intégrations avec des services externes
+            Gérez les intégrations webhook avec des services externes
           </p>
         </div>
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
-            <Button onClick={() => { resetForm(); setEditingIntegration(null); }}>
+            <Button
+              onClick={() => {
+                resetForm();
+                setEditingIntegration(null);
+              }}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Nouvelle Intégration
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingIntegration ? 'Modifier l\'Intégration' : 'Nouvelle Intégration'}
+                {editingIntegration
+                  ? "Modifier l'intégration"
+                  : 'Nouvelle intégration'}
               </DialogTitle>
               <DialogDescription>
-                Créez ou modifiez une intégration avec un service externe
+                La V1 supporte les webhooks HTTP sortants.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-6">
-              {/* Basic Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="integration-name">Nom de l&apos;intégration</Label>
+                  <Label htmlFor="integration-name">Nom</Label>
                   <Input
                     id="integration-name"
                     value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Nom de l'intégration"
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                    placeholder="Webhook ERP"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="integration-type">Type d&apos;intégration</Label>
+                  <Label htmlFor="integration-type">Type</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as IntegrationType }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        type: value as IntegrationType,
+                      }))
+                    }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="integration-type">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="sms">SMS</SelectItem>
-                      <SelectItem value="calendar">Calendrier</SelectItem>
                       <SelectItem value="webhook">Webhook</SelectItem>
-                      <SelectItem value="api">API</SelectItem>
-                      <SelectItem value="backup">Sauvegarde</SelectItem>
-                      <SelectItem value="sync">Synchronisation</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="provider">Fournisseur</Label>
+                <Label htmlFor="provider">Description / fournisseur</Label>
                 <Input
                   id="provider"
                   value={formData.provider}
-                  onChange={(e) => setFormData(prev => ({ ...prev, provider: e.target.value }))}
-                  placeholder="Ex: Gmail, Twilio, Google Calendar"
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      provider: e.target.value,
+                    }))
+                  }
+                  placeholder="ERP interne, Make, Zapier..."
                 />
               </div>
 
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, isActive: checked }))
+                  }
                 />
                 <Label>Intégration active</Label>
               </div>
 
-              {/* Integration Settings */}
-              {formData.type === 'email' && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Configuration Email</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="smtp-host">Serveur SMTP</Label>
-                      <Input
-                        id="smtp-host"
-                        value={formData.settings.smtpHost || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          settings: { ...prev.settings, smtpHost: e.target.value }
-                        }))}
-                        placeholder="smtp.gmail.com"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="smtp-port">Port</Label>
-                      <Input
-                        id="smtp-port"
-                        type="number"
-                        value={formData.settings.smtpPort || 587}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          settings: { ...prev.settings, smtpPort: parseInt(e.target.value) || 587 }
-                        }))}
-                        placeholder="587"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="from-email">Email expéditeur</Label>
-                      <Input
-                        id="from-email"
-                        type="email"
-                        value={formData.settings.fromEmail || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          settings: { ...prev.settings, fromEmail: e.target.value }
-                        }))}
-                        placeholder="noreply@company.com"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="from-name">Nom expéditeur</Label>
-                      <Input
-                        id="from-name"
-                        value={formData.settings.fromName || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          settings: { ...prev.settings, fromName: e.target.value }
-                        }))}
-                        placeholder="RPMA System"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {formData.type === 'sms' && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Configuration SMS</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="api-key">Clé API</Label>
-                      <Input
-                        id="api-key"
-                        type="password"
-                        value={formData.credentialsData.apiKey || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          credentialsData: { ...prev.credentialsData, apiKey: e.target.value }
-                        }))}
-                        placeholder="Clé API"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="api-secret">Secret API</Label>
-                      <Input
-                        id="api-secret"
-                        type="password"
-                        value={formData.credentialsData.apiSecret || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          credentialsData: { ...prev.credentialsData, apiSecret: e.target.value }
-                        }))}
-                        placeholder="Secret API"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {formData.type === 'webhook' && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Configuration Webhook</h3>
-                  <div className="space-y-2">
-                    <Label htmlFor="webhook-url">URL du Webhook</Label>
-                    <Input
-                      id="webhook-url"
-                      value={formData.settings.url || ''}
-                      onChange={(e) => setFormData(prev => ({
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Configuration Webhook</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="webhook-url">URL</Label>
+                  <Input
+                    id="webhook-url"
+                    value={formData.settings.url}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
                         ...prev,
-                        settings: { ...prev.settings, url: e.target.value }
-                      }))}
-                      placeholder="https://api.example.com/webhook"
-                    />
-                  </div>
+                        settings: { ...prev.settings, url: e.target.value },
+                      }))
+                    }
+                    placeholder="https://api.example.com/webhook"
+                  />
                 </div>
-              )}
+                <div className="space-y-2">
+                  <Label htmlFor="webhook-events">Événements abonnés</Label>
+                  <Input
+                    id="webhook-events"
+                    value={formData.settings.subscribedEvents}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        settings: {
+                          ...prev.settings,
+                          subscribedEvents: e.target.value,
+                        },
+                      }))
+                    }
+                    placeholder="task_created, task_status_changed"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="webhook-token">Bearer token</Label>
+                  <Input
+                    id="webhook-token"
+                    type="password"
+                    value={formData.credentialsData.apiKey}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        credentialsData: {
+                          ...prev.credentialsData,
+                          apiKey: e.target.value,
+                        },
+                      }))
+                    }
+                    placeholder="Optionnel"
+                  />
+                </div>
+              </div>
 
-              {/* Actions */}
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCreateDialog(false)}
+                >
                   Annuler
                 </Button>
                 <Button onClick={saveIntegration} disabled={saving}>
@@ -427,7 +361,6 @@ export function IntegrationsTab() {
         </Dialog>
       </div>
 
-      {/* Integrations List */}
       <div className="grid gap-4">
         {integrations.map((integration) => (
           <IntegrationCard
@@ -449,7 +382,7 @@ export function IntegrationsTab() {
                 Aucune intégration
               </h3>
               <p className="text-gray-600 mb-4">
-                Créez votre première intégration pour connecter des services externes
+                Créez votre première intégration webhook.
               </p>
               <Button onClick={() => setShowCreateDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -468,7 +401,7 @@ export function IntegrationsTab() {
         confirmText="Supprimer"
         cancelText="Annuler"
         variant="destructive"
-        onConfirm={deleteIntegration}
+        onConfirm={handleDeleteIntegration}
       />
     </div>
   );

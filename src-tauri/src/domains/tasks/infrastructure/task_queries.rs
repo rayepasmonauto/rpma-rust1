@@ -72,9 +72,7 @@ impl TaskQueriesService {
             params_vec.iter().map(|p| p.as_ref()).collect();
 
         let tasks: Result<Vec<Task>, _> = stmt
-            .query_map(&params_refs[..], |row| {
-                Task::from_row(row)
-            })
+            .query_map(&params_refs[..], |row| Task::from_row(row))
             .map_err(|e| e.to_string())?
             .collect();
         let tasks = tasks.map_err(|e| format!("Failed to get tasks: {}", e))?;

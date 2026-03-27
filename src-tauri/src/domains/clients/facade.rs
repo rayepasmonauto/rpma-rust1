@@ -3,7 +3,7 @@
 //! Keep this surface minimal — only expose what other domains truly need.
 //! Prefer `shared/contracts/` for type-only sharing.
 
-use crate::domains::clients::application::client_service::{ClientStat, ClientService};
+use crate::domains::clients::application::client_service::{ClientService, ClientStat};
 use crate::domains::clients::domain::models::{Client, ClientQuery};
 
 use std::sync::Arc;

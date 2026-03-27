@@ -3,7 +3,7 @@
 //! This module uses Proptest to verify client validation properties
 //! across a wide range of inputs to ensure robust validation logic.
 
-use crate::domains::clients::client_handler::{CreateClientRequest, ClientValidationService};
+use crate::domains::clients::client_handler::{ClientValidationService, CreateClientRequest};
 use crate::test_utils::TestDatabase;
 use crate::{test_client, test_db, test_intervention, test_task};
 use proptest::prelude::*;

@@ -830,10 +830,10 @@ mod quote_invariants {
             vehicle_vin: None,
         };
 
-        let result = app
-            .state
-            .quote_service
-            .update_quote(&quote.id, update, "test_user", &UserRole::Admin);
+        let result =
+            app.state
+                .quote_service
+                .update_quote(&quote.id, update, "test_user", &UserRole::Admin);
         assert!(result.is_ok(), "Draft update must succeed: {:?}", result);
     }
 

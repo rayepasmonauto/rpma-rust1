@@ -332,6 +332,20 @@ impl From<chrono::ParseError> for AppError {
     }
 }
 
+impl From<crate::shared::repositories::base::RepoError> for AppError {
+    fn from(err: crate::shared::repositories::base::RepoError) -> Self {
+        use crate::shared::repositories::base::RepoError;
+        match err {
+            RepoError::NotFound(msg) => AppError::NotFound(msg),
+            RepoError::Validation(msg) => AppError::Validation(msg),
+            RepoError::Conflict(msg) => AppError::Validation(msg),
+            RepoError::Database(msg) | RepoError::Cache(msg) => {
+                AppError::db_sanitized("repository", &msg)
+            }
+        }
+    }
+}
+
 /// Result type alias for convenience
 pub type AppResult<T> = Result<T, AppError>;
 

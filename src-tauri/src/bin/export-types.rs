@@ -190,9 +190,8 @@ fn main() {
             .expect("Failed to export SecurityEventRecord type"),
     );
     type_definitions.push_str("\n");
-    type_definitions.push_str(
-        &SecurityAlert::export_to_string().expect("Failed to export SecurityAlert type"),
-    );
+    type_definitions
+        .push_str(&SecurityAlert::export_to_string().expect("Failed to export SecurityAlert type"));
     type_definitions.push_str("\n");
     type_definitions.push_str(
         &UserActivityRecord::export_to_string().expect("Failed to export UserActivityRecord type"),

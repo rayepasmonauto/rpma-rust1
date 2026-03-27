@@ -3,8 +3,7 @@
 //! This module contains standalone test functions for network resilience testing
 
 use crate::commands::AppResult;
-use crate::shared::logging::audit_service::{AuditEvent, AuditService};
-use crate::domains::clients::client_handler::{Client, CustomerType, ClientService};
+use crate::domains::clients::client_handler::{Client, ClientService, CustomerType};
 use crate::domains::interventions::domain::models::intervention::Intervention;
 use crate::domains::interventions::infrastructure::intervention_types::{
     AdvanceStepRequest, FinalizeInterventionRequest, StartInterventionRequest,
@@ -16,6 +15,7 @@ use crate::domains::inventory::infrastructure::material::{
 };
 use crate::domains::tasks::domain::models::task::{Task, TaskPriority, TaskStatus};
 use crate::domains::tasks::infrastructure::task_crud::TaskCrudService;
+use crate::shared::logging::audit_service::{AuditEvent, AuditService};
 use crate::test_utils::TestDatabase;
 use crate::{test_client, test_task};
 use chrono::Utc;

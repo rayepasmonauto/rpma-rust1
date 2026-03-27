@@ -77,9 +77,7 @@ pub async fn task_checklist_items_get(
 
     let service = checklist_service(&state);
     match service.list_for_task(&request.task_id) {
-        Ok(items) => {
-            Ok(ApiResponse::success(items).with_correlation_id(Some(correlation_id)))
-        }
+        Ok(items) => Ok(ApiResponse::success(items).with_correlation_id(Some(correlation_id))),
         Err(e) => {
             error!(error = %e, "Failed to list checklist items");
             Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id)))
@@ -101,9 +99,7 @@ pub async fn task_checklist_item_update(
 
     let service = checklist_service(&state);
     match service.update_item(&request.item_id, &request.task_id, &user_id, request.data) {
-        Ok(item) => {
-            Ok(ApiResponse::success(item).with_correlation_id(Some(correlation_id)))
-        }
+        Ok(item) => Ok(ApiResponse::success(item).with_correlation_id(Some(correlation_id))),
         Err(e) => {
             error!(error = %e, "Failed to update checklist item");
             Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id)))
@@ -124,9 +120,7 @@ pub async fn task_checklist_item_create(
 
     let service = checklist_service(&state);
     match service.create_item(request.data) {
-        Ok(item) => {
-            Ok(ApiResponse::success(item).with_correlation_id(Some(correlation_id)))
-        }
+        Ok(item) => Ok(ApiResponse::success(item).with_correlation_id(Some(correlation_id))),
         Err(e) => {
             error!(error = %e, "Failed to create checklist item");
             Ok(ApiResponse::error(e).with_correlation_id(Some(correlation_id)))

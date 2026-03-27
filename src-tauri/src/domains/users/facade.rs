@@ -83,6 +83,7 @@ impl UsersFacade {
         }
 
         UserAccessPolicy::ensure_role_specific_rules(current_user, action)
+            .map_err(|e| AppError::Authorization(e.to_string()))
     }
 
     /// TODO: document

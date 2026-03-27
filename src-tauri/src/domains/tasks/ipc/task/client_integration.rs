@@ -5,7 +5,7 @@
 
 use crate::commands::{ApiResponse, AppError, AppState};
 use crate::domains::tasks::application::services::task_client_service::TaskClientService;
-use crate::domains::tasks::domain::models::task::Task;
+pub use crate::domains::tasks::application::TaskWithClientDetails;
 use crate::domains::tasks::ipc::task_types::TaskFilter;
 
 use crate::resolve_context;
@@ -21,17 +21,6 @@ pub struct TasksWithClientsRequest {
     pub limit: Option<u32>,
     #[serde(default)]
     pub correlation_id: Option<String>,
-}
-
-/// Enhanced task with client details
-#[derive(serde::Serialize, Debug)]
-pub struct TaskWithClientDetails {
-    pub task: Task,
-    pub client_name: String,
-    pub client_contact: Option<String>,
-    pub client_region: Option<String>,
-    pub client_priority: Option<String>,
-    pub relationship_status: String,
 }
 
 /// Construct a per-request [`TaskClientService`] from shared application state.

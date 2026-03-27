@@ -73,9 +73,10 @@ pub async fn upload_logo(
     state: AppState<'_>,
 ) -> Result<ApiResponse<Organization>, AppError> {
     let ctx = resolve_context!(&state, &request.correlation_id, UserRole::Admin);
-    let organization = state
-        .settings_service
-        .update_logo(&ctx, request.file_path, request.base64_data)?;
+    let organization =
+        state
+            .settings_service
+            .update_logo(&ctx, request.file_path, request.base64_data)?;
     Ok(ApiResponse::success(organization).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -98,6 +99,8 @@ pub async fn update_organization_settings(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<OrganizationSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let settings = state.settings_service.update_organization_settings(&ctx, &data)?;
+    let settings = state
+        .settings_service
+        .update_organization_settings(&ctx, &data)?;
     Ok(ApiResponse::success(settings).with_correlation_id(Some(ctx.correlation_id)))
 }

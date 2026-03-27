@@ -19,6 +19,6 @@ async fn clients_facade_service_is_shared_reference() {
     let db = Arc::new(Database::new_in_memory().await.expect("in-memory database"));
     let service = Arc::new(ClientService::new_with_db(db));
     let _facade = ClientsFacade::new(service.clone());
-    // Since we can't access .service directly and there is no getter, 
+    // Since we can't access .service directly and there is no getter,
     // we just verify facade creation with the service.
 }

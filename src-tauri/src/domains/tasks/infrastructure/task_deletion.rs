@@ -99,7 +99,8 @@ impl TaskDeletionService {
         // so it has been through the trash lifecycle and the deletion intent is explicit.
         if task.deleted_at.is_none() {
             return Err(AppError::Validation(
-                "Task must be soft-deleted before permanent removal. Use soft_delete_task first.".to_string(),
+                "Task must be soft-deleted before permanent removal. Use soft_delete_task first."
+                    .to_string(),
             ));
         }
 

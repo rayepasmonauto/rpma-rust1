@@ -34,7 +34,9 @@ pub async fn update_general_settings(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let updated = state.settings_service.update_general_settings(&ctx, settings)?;
+    let updated = state
+        .settings_service
+        .update_general_settings(&ctx, settings)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -46,7 +48,9 @@ pub async fn update_security_settings(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let updated = state.settings_service.update_security_settings(&ctx, settings)?;
+    let updated = state
+        .settings_service
+        .update_security_settings(&ctx, settings)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -58,7 +62,9 @@ pub async fn update_notification_settings(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let updated = state.settings_service.update_notification_settings(&ctx, settings)?;
+    let updated = state
+        .settings_service
+        .update_notification_settings(&ctx, settings)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -84,7 +90,9 @@ pub async fn update_security_policies(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let updated = state.settings_service.update_security_policies(&ctx, policies)?;
+    let updated = state
+        .settings_service
+        .update_security_policies(&ctx, policies)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -96,7 +104,9 @@ pub async fn update_integrations(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let updated = state.settings_service.update_integrations(&ctx, integrations)?;
+    let updated = state
+        .settings_service
+        .update_integrations(&ctx, integrations)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -108,7 +118,9 @@ pub async fn update_performance_configs(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<AppSettings>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
-    let updated = state.settings_service.update_performance_configs(&ctx, configs)?;
+    let updated = state
+        .settings_service
+        .update_performance_configs(&ctx, configs)?;
     Ok(ApiResponse::success(updated).with_correlation_id(Some(ctx.correlation_id)))
 }
 

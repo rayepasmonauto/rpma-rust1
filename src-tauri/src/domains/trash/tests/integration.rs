@@ -129,7 +129,10 @@ mod tests {
             .await
             .expect("list should succeed");
 
-        assert!(items.is_empty(), "non-deleted tasks must not appear in trash");
+        assert!(
+            items.is_empty(),
+            "non-deleted tasks must not appear in trash"
+        );
     }
 
     // ── restore ─────────────────────────────────────────────────────────────
@@ -163,7 +166,10 @@ mod tests {
             )
             .expect("query should succeed");
 
-        assert!(deleted_at.is_none(), "deleted_at should be NULL after restore");
+        assert!(
+            deleted_at.is_none(),
+            "deleted_at should be NULL after restore"
+        );
     }
 
     // ── hard_delete ─────────────────────────────────────────────────────────

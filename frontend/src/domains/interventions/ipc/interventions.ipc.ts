@@ -40,7 +40,7 @@ export const interventionsIpc = {
   },
 
   getActiveByTask: async (taskId: string, correlationId?: string) => {
-    const result = await safeInvoke<any>(IPC_COMMANDS.INTERVENTION_GET_ACTIVE_BY_TASK, { task_id: taskId, correlation_id: (correlationId ?? null) as JsonValue });
+    const result = await safeInvoke<any>(IPC_COMMANDS.INTERVENTION_GET_ACTIVE_BY_TASK, { taskId, correlation_id: (correlationId ?? null) as JsonValue });
     if (result && result.interventions) {
         return { intervention: result.interventions[0] || null };
     }
@@ -51,7 +51,7 @@ export const interventionsIpc = {
   },
 
   getLatestByTask: async (taskId: string, correlationId?: string) => {
-    const result = await safeInvoke<any>(IPC_COMMANDS.INTERVENTION_GET_LATEST_BY_TASK, { task_id: taskId, correlation_id: (correlationId ?? null) as JsonValue });
+    const result = await safeInvoke<any>(IPC_COMMANDS.INTERVENTION_GET_LATEST_BY_TASK, { taskId, correlation_id: (correlationId ?? null) as JsonValue });
     if (result && result.interventions) {
         const item = result.interventions[0];
         return { intervention: item ? validateIntervention(item) : null };
@@ -61,13 +61,13 @@ export const interventionsIpc = {
 
   advanceStep: async (stepData: AdvanceStepRequest, correlationId?: string) => {
     const result = await safeInvoke<any>(IPC_COMMANDS.INTERVENTION_ADVANCE_STEP, {
-        intervention_id: stepData.intervention_id,
-        step_id: stepData.step_id,
-        collected_data: stepData.collected_data,
+        interventionId: stepData.intervention_id,
+        stepId: stepData.step_id,
+        collectedData: stepData.collected_data,
         photos: stepData.photos,
         notes: stepData.notes,
-        quality_check_passed: stepData.quality_check_passed,
         issues: stepData.issues,
+        qualityCheckPassed: stepData.quality_check_passed,
         correlation_id: (correlationId ?? null) as JsonValue
     });
     invalidatePattern('intervention:');
@@ -78,16 +78,16 @@ export const interventionsIpc = {
   },
 
   getStep: async (stepId: string, correlationId?: string) => {
-    const result = await safeInvoke<InterventionStep>(IPC_COMMANDS.INTERVENTION_GET_STEP, { 
-        step_id: stepId,
+    const result = await safeInvoke<InterventionStep>(IPC_COMMANDS.INTERVENTION_GET_STEP, {
+        stepId,
         correlation_id: (correlationId ?? null) as JsonValue
     });
     return validateInterventionStep(result);
   },
 
   getProgress: async (interventionId: string, correlationId?: string) => {
-    const result = await safeInvoke<any>(IPC_COMMANDS.INTERVENTION_GET_PROGRESS, { 
-        intervention_id: interventionId,
+    const result = await safeInvoke<any>(IPC_COMMANDS.INTERVENTION_GET_PROGRESS, {
+        interventionId,
         correlation_id: (correlationId ?? null) as JsonValue
     });
     if (result && result.progress) {

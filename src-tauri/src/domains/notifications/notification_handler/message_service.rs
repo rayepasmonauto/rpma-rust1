@@ -9,10 +9,10 @@ use crate::db::Database;
 use crate::domains::notifications::models::{
     Message, MessageListResponse, MessageQuery, MessageStatus, Notification, SendMessageRequest,
 };
-use crate::shared::services::cross_domain::{UserNotificationSettings, UserSettingsRepository};
 use crate::shared::contracts::notification::{NotificationSender, SentMessage};
 use crate::shared::repositories::base::Repository;
 use crate::shared::repositories::cache::Cache;
+use crate::shared::services::cross_domain::{UserNotificationSettings, UserSettingsRepository};
 
 use crate::shared::services::event_bus::{event_factory, EventPublisher, InMemoryEventBus};
 
@@ -357,8 +357,8 @@ impl NotificationSender for MessageService {
 #[cfg(test)]
 mod tests {
     use super::{is_quiet_hours_at, should_store_notification};
-    use chrono::{TimeZone, Utc};
     use crate::shared::services::cross_domain::UserNotificationSettings;
+    use chrono::{TimeZone, Utc};
 
     #[test]
     fn test_should_store_notification_honors_global_in_app_toggle() {

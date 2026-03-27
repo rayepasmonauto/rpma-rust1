@@ -12,8 +12,6 @@ pub mod user_commands_test;
 // Test utilities for command testing
 use crate::test_utils::TestDatabase;
 use rpma_ppf_intervention::models::*;
-use serde_json::json;
-use std::sync::Arc;
 
 /// Test context for command tests
 pub struct TestContext {
@@ -23,105 +21,8 @@ pub struct TestContext {
 
 /// Create test database with app state
 pub async fn create_test_db() -> TestContext {
-    use rpma_ppf_intervention::commands::AppStateType;
-    use rpma_ppf_intervention::repositories;
-    use rpma_ppf_intervention::shared::event_bus::set_global_event_bus;
-
     let test_db = TestDatabase::new().expect("Failed to create test database");
-    let db = test_db.db();
-
-    // Create repositories
-    let repos =
-        Arc::new(repositories::Repositories::new(&db).expect("Failed to create repositories"));
-
-    // Create services
-    let auth_service = Arc::new(rpma_ppf_intervention::services::AuthService::new(
-        db.clone(),
-    ));
-    let session_service =
-        Arc::new(rpma_ppf_intervention::services::session::SessionService::new(db.clone()));
-    let two_factor_service =
-        Arc::new(rpma_ppf_intervention::services::two_factor::TwoFactorService::new(db.clone()));
-    let client_service = Arc::new(rpma_ppf_intervention::services::ClientService::new(
-        db.clone(),
-    ));
-    let task_service = Arc::new(rpma_ppf_intervention::services::TaskService::new(
-        db.clone(),
-    ));
-    let task_import_service =
-        Arc::new(rpma_ppf_intervention::services::task_import::TaskImportService::new(db.clone()));
-    let dashboard_service = Arc::new(rpma_ppf_intervention::services::DashboardService::new(
-        db.clone(),
-    ));
-    let intervention_service = Arc::new(rpma_ppf_intervention::services::InterventionService::new(
-        db.clone(),
-    ));
-    let material_service = Arc::new(rpma_ppf_intervention::services::MaterialService::new(
-        db.clone(),
-    ));
-    let inventory_service = Arc::new(
-        rpma_ppf_intervention::domains::inventory::InventoryService::new(
-            db.clone(),
-            material_service.clone(),
-        ),
-    );
-    let photo_service = Arc::new(rpma_ppf_intervention::services::PhotoService::new(
-        db.clone(),
-    ));
-    let analytics_service = Arc::new(rpma_ppf_intervention::services::AnalyticsService::new(
-        db.clone(),
-    ));
-    let settings_service = Arc::new(rpma_ppf_intervention::services::SettingsService::new(
-        db.clone(),
-    ));
-    let cache_service =
-        Arc::new(rpma_ppf_intervention::services::cache::CacheService::new(100).unwrap());
-    let performance_monitor_service = Arc::new(
-        rpma_ppf_intervention::services::performance_monitor::PerformanceMonitorService::new(),
-    );
-    let command_performance_tracker = Arc::new(
-        rpma_ppf_intervention::services::performance_monitor::CommandPerformanceTracker::new(),
-    );
-    let prediction_service =
-        Arc::new(rpma_ppf_intervention::services::prediction::PredictionService::new(db.clone()));
-    let sync_queue = std::sync::Arc::new(rpma_ppf_intervention::sync::SyncQueue::new(100));
-    let background_sync = std::sync::Arc::new(std::sync::Mutex::new(
-        rpma_ppf_intervention::sync::BackgroundSyncService::new(db.clone()),
-    ));
-    let event_bus =
-        std::sync::Arc::new(rpma_ppf_intervention::services::event_bus::InMemoryEventBus::new());
-    set_global_event_bus(event_bus.clone());
-    let app_data_dir = std::env::temp_dir();
-
-    // Create async db
-    let async_db = Arc::new(rpma_ppf_intervention::db::AsyncDatabase::new(db.clone()));
-
-    let app_state = Arc::new(AppStateType {
-        db,
-        async_db,
-        repositories: repos,
-        task_service,
-        client_service,
-        task_import_service,
-        dashboard_service,
-        intervention_service,
-        material_service,
-        inventory_service,
-        photo_service,
-        analytics_service,
-        auth_service,
-        session_service,
-        two_factor_service,
-        settings_service,
-        cache_service,
-        performance_monitor_service,
-        command_performance_tracker,
-        prediction_service,
-        sync_queue,
-        background_sync,
-        event_bus,
-        app_data_dir,
-    });
+    let app_state = std::sync::Arc::new(rpma_ppf_intervention::test_utils::build_test_app_state().await);
 
     TestContext {
         db: test_db.db(),

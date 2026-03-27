@@ -29,13 +29,13 @@ impl InterventionScoringService {
     }
 
     /// Calculate intervention progress based on completed steps.
-    pub fn get_progress(
-        &self,
-        intervention_id: &str,
-    ) -> InterventionResult<InterventionProgress> {
-        let intervention = self.data.get_intervention(intervention_id)?.ok_or_else(|| {
-            InterventionError::NotFound(format!("Intervention {} not found", intervention_id))
-        })?;
+    pub fn get_progress(&self, intervention_id: &str) -> InterventionResult<InterventionProgress> {
+        let intervention = self
+            .data
+            .get_intervention(intervention_id)?
+            .ok_or_else(|| {
+                InterventionError::NotFound(format!("Intervention {} not found", intervention_id))
+            })?;
 
         let steps = self.data.get_intervention_steps(intervention_id)?;
 

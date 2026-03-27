@@ -5,9 +5,9 @@
 //! // the application layer, and its business rules to the domain layer.
 
 use crate::commands::AppError;
-use crate::domains::auth::infrastructure::session_repository::SessionRepository;
 use crate::domains::users::infrastructure::user_repository::UserRepository;
 use crate::shared::contracts::auth::UserRole;
+use crate::shared::contracts::session::SessionRevocationPort;
 use crate::shared::repositories::base::RepoError;
 use crate::shared::repositories::Repository;
 use std::sync::Arc;
@@ -17,12 +17,15 @@ use tracing::{debug, error, info, warn};
 #[derive(Clone, Debug)]
 pub struct UserService {
     user_repo: Arc<UserRepository>,
-    session_repo: Arc<SessionRepository>,
+    session_repo: Arc<dyn SessionRevocationPort>,
 }
 
 impl UserService {
     /// TODO: document
-    pub fn new(user_repo: Arc<UserRepository>, session_repo: Arc<SessionRepository>) -> Self {
+    pub fn new(
+        user_repo: Arc<UserRepository>,
+        session_repo: Arc<dyn SessionRevocationPort>,
+    ) -> Self {
         Self {
             user_repo,
             session_repo,
@@ -32,11 +35,12 @@ impl UserService {
     /// Create a new UserService instance with database (for backward compatibility)
     #[deprecated(note = "Use new(user_repo, session_repo) instead")]
     pub fn new_with_db(db: Arc<crate::db::Database>) -> Self {
+        use crate::domains::auth::infrastructure::session_repository::SessionRepository;
         use crate::shared::repositories::Cache;
         let cache = Arc::new(Cache::new(1000));
         Self {
             user_repo: Arc::new(UserRepository::new(db.clone(), cache)),
-            session_repo: Arc::new(SessionRepository::new(db)),
+            session_repo: Arc::new(SessionRepository::new(db)) as Arc<dyn SessionRevocationPort>,
         }
     }
 
@@ -261,6 +265,7 @@ mod tests {
     use super::*;
     use crate::domains::users::domain::models::user::{User as RepoUser, UserRole as RepoUserRole};
     use crate::shared::repositories::cache::Cache;
+    use crate::shared::repositories::factory::SessionRepository;
     use crate::test_utils::setup_test_db;
     use std::sync::Arc;
 

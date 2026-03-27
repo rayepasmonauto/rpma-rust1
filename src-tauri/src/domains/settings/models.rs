@@ -913,7 +913,6 @@ pub struct UpdateOrganizationSettingsRequest {
 
 // ── Other Models ─────────────────────────────────────────────────────
 
-
 // ── Default Accessors ────────────────────────────────────────────────
 
 pub fn default_profile() -> UserProfileSettings {

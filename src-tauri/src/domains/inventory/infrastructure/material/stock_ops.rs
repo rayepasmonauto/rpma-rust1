@@ -108,8 +108,14 @@ impl super::MaterialService {
             Self::build_consumption_record(&request, &recorded_by, &material, waste_quantity);
         let new_stock = material.current_stock - total_needed;
         let now = crate::shared::contracts::common::now();
-        let transaction =
-            Self::build_consumption_transaction(&consumption, &material, total_needed, new_stock, &recorded_by, now);
+        let transaction = Self::build_consumption_transaction(
+            &consumption,
+            &material,
+            total_needed,
+            new_stock,
+            &recorded_by,
+            now,
+        );
 
         let material_id_for_update = request.material_id.clone();
         let recorded_by_for_update = recorded_by.clone();

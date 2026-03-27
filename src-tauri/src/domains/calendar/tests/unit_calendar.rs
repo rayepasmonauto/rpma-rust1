@@ -6,9 +6,9 @@ use std::sync::Arc;
 async fn calendar_facade_is_ready() {
     let db = Arc::new(Database::new_in_memory().await.expect("in-memory database"));
     let service = Arc::new(CalendarService::new(db.clone()));
-    let event_repository = Arc::new(crate::domains::calendar::calendar_handler::CalendarEventRepository::new(
-        db.clone(),
-    ));
+    let event_repository = Arc::new(
+        crate::domains::calendar::calendar_handler::CalendarEventRepository::new(db.clone()),
+    );
     let facade = CalendarFacade::new_without_rate_limiter(service, event_repository);
     assert!(facade.is_ready());
 }
@@ -17,9 +17,9 @@ async fn calendar_facade_is_ready() {
 async fn validate_date_range_accepts_valid_range() {
     let db = Arc::new(Database::new_in_memory().await.expect("in-memory database"));
     let service = Arc::new(CalendarService::new(db.clone()));
-    let event_repository = Arc::new(crate::domains::calendar::calendar_handler::CalendarEventRepository::new(
-        db.clone(),
-    ));
+    let event_repository = Arc::new(
+        crate::domains::calendar::calendar_handler::CalendarEventRepository::new(db.clone()),
+    );
     let facade = CalendarFacade::new_without_rate_limiter(service, event_repository);
     let result = facade.validate_date_range("2024-01-01", "2024-12-31");
     assert!(result.is_ok());

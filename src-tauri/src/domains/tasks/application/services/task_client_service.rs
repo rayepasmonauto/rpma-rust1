@@ -9,10 +9,10 @@ use tracing::{debug, info};
 
 use crate::commands::AppError;
 use crate::domains::tasks::application::services::task_policy_service;
+use crate::domains::tasks::application::TaskFilter;
+use crate::domains::tasks::application::TaskWithClientDetails;
 use crate::domains::tasks::domain::models::task::{TaskPriority, TaskQuery, TaskStatus};
 use crate::domains::tasks::infrastructure::task::TaskService;
-use crate::domains::tasks::ipc::task::client_integration::TaskWithClientDetails;
-use crate::domains::tasks::ipc::task_types::TaskFilter;
 use crate::shared::context::RequestContext;
 use crate::shared::contracts::auth::UserRole;
 use crate::shared::contracts::client_ops::ClientResolver;
@@ -54,10 +54,16 @@ impl TaskClientService {
                 sort_by: Some("created_at".to_string()),
                 sort_order: Some("desc".to_string()),
             },
-            status: filter.status.as_ref().and_then(|s| s.parse::<TaskStatus>().ok()),
+            status: filter
+                .status
+                .as_ref()
+                .and_then(|s| s.parse::<TaskStatus>().ok()),
             technician_id: filter.assigned_to.clone(),
             client_id: filter.client_id.clone(),
-            priority: filter.priority.as_ref().and_then(|p| p.parse::<TaskPriority>().ok()),
+            priority: filter
+                .priority
+                .as_ref()
+                .and_then(|p| p.parse::<TaskPriority>().ok()),
             search: None,
             from_date: filter.date_from.clone(),
             to_date: filter.date_to.clone(),

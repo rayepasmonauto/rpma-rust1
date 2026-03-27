@@ -654,9 +654,11 @@ impl PhotoService {
             .map_err(|e| PhotoError::Processing(format!("Semaphore error: {}", e)))?;
         let quality = self.jpeg_quality;
         let max_size = self.max_file_size;
-        tokio::task::spawn_blocking(move || helpers::compress_image_blocking(&data, quality, max_size))
-            .await
-            .map_err(|e| PhotoError::Processing(e.to_string()))?
+        tokio::task::spawn_blocking(move || {
+            helpers::compress_image_blocking(&data, quality, max_size)
+        })
+        .await
+        .map_err(|e| PhotoError::Processing(e.to_string()))?
     }
 
     // TODO(ADR-001): extract business logic to application/
@@ -1208,9 +1210,7 @@ mod helpers {
     }
 
     /// Return `(width, height)` from raw image bytes, or `(None, None)` on error.
-    pub(super) fn extract_image_dimensions(
-        data: &[u8],
-    ) -> PhotoResult<(Option<i32>, Option<i32>)> {
+    pub(super) fn extract_image_dimensions(data: &[u8]) -> PhotoResult<(Option<i32>, Option<i32>)> {
         match image::load_from_memory(data) {
             Ok(img) => {
                 let (w, h) = img.dimensions();
@@ -1277,11 +1277,7 @@ mod helpers {
     }
 
     /// Reward important pixels near the rule-of-thirds lines.
-    pub(super) fn calculate_composition_score(
-        gray: &image::GrayImage,
-        w: u32,
-        h: u32,
-    ) -> i32 {
+    pub(super) fn calculate_composition_score(gray: &image::GrayImage, w: u32, h: u32) -> i32 {
         let tw = w / 3;
         let th = h / 3;
         let mut thirds_pixels = 0;

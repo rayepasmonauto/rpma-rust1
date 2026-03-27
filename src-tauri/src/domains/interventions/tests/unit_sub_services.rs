@@ -63,14 +63,19 @@ mod scoring_service_tests {
         let db = Arc::new(Database::new_in_memory().await.expect("in-memory database"));
         let service = InterventionScoringService::new(db);
         let result = service.get_progress("nonexistent-id");
-        assert!(result.is_err(), "get_progress on missing intervention should error");
+        assert!(
+            result.is_err(),
+            "get_progress on missing intervention should error"
+        );
     }
 
     #[tokio::test]
     async fn test_scoring_service_get_stats_empty_db() {
         let db = Arc::new(Database::new_in_memory().await.expect("in-memory database"));
         let service = InterventionScoringService::new(db);
-        let stats = service.get_stats_by_technician(None).expect("stats should work on empty db");
+        let stats = service
+            .get_stats_by_technician(None)
+            .expect("stats should work on empty db");
         assert_eq!(stats.total_interventions, 0);
         assert_eq!(stats.completed_interventions, 0);
         assert_eq!(stats.in_progress_interventions, 0);

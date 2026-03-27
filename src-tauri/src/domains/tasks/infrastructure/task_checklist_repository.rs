@@ -68,9 +68,9 @@ impl TaskChecklistRepository {
     /// Insert a new checklist item.
     #[instrument(skip(self))]
     pub fn create(&self, req: CreateChecklistItemRequest) -> Result<ChecklistItem, AppError> {
-        let position = req.position.unwrap_or_else(|| {
-            self.next_position(&req.task_id).unwrap_or(0)
-        });
+        let position = req
+            .position
+            .unwrap_or_else(|| self.next_position(&req.task_id).unwrap_or(0));
         let item = ChecklistItem::new(req.task_id, req.description, position);
         let now = item.created_at;
 
@@ -82,7 +82,14 @@ impl TaskChecklistRepository {
                      completed_by, notes, created_at, updated_at)
                 VALUES (?, ?, ?, ?, 0, NULL, NULL, NULL, ?, ?)
                 "#,
-                params![item.id, item.task_id, item.description, item.position, now, now],
+                params![
+                    item.id,
+                    item.task_id,
+                    item.description,
+                    item.position,
+                    now,
+                    now
+                ],
             )
             .map_err(|e| AppError::Database(format!("Insert error: {e}")))?;
 

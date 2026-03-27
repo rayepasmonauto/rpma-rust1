@@ -549,14 +549,20 @@ impl TaskService {
         };
 
         for (status, count) in status_counts {
-            let Ok(ts) = status.parse::<TaskStatus>() else { continue };
+            let Ok(ts) = status.parse::<TaskStatus>() else {
+                continue;
+            };
             match ts {
                 TaskStatus::Draft | TaskStatus::Pending => distribution.quote += count,
-                TaskStatus::Scheduled | TaskStatus::Assigned | TaskStatus::Overdue => distribution.scheduled += count,
+                TaskStatus::Scheduled | TaskStatus::Assigned | TaskStatus::Overdue => {
+                    distribution.scheduled += count
+                }
                 TaskStatus::InProgress => distribution.in_progress += count,
                 TaskStatus::Paused | TaskStatus::OnHold => distribution.paused += count,
                 TaskStatus::Completed | TaskStatus::Archived => distribution.completed += count,
-                TaskStatus::Cancelled | TaskStatus::Failed | TaskStatus::Invalid => distribution.cancelled += count,
+                TaskStatus::Cancelled | TaskStatus::Failed | TaskStatus::Invalid => {
+                    distribution.cancelled += count
+                }
             }
         }
 
@@ -573,7 +579,7 @@ impl TaskService {
     /// Apply role-based filters to task query
     pub fn apply_role_based_filters(
         &self,
-        filter: &mut crate::domains::tasks::ipc::task_types::TaskFilter,
+        filter: &mut crate::domains::tasks::application::TaskFilter,
         auth: &crate::shared::context::AuthContext,
     ) {
         use crate::shared::contracts::auth::UserRole;
@@ -650,7 +656,7 @@ impl TaskAssignmentChecker for TaskService {
         &self,
         task_id: &str,
         user_id: &str,
-    ) -> Result<bool, crate::shared::ipc::errors::AppError> {
+    ) -> Result<bool, crate::shared::contracts::AppError> {
         self.validation
             .check_assignment_eligibility(task_id, user_id)
             .map_err(convert_to_app_error)
@@ -659,7 +665,7 @@ impl TaskAssignmentChecker for TaskService {
     async fn get_task_assignment(
         &self,
         task_id: &str,
-    ) -> Result<Option<TaskAssignmentInfo>, crate::shared::ipc::errors::AppError> {
+    ) -> Result<Option<TaskAssignmentInfo>, crate::shared::contracts::AppError> {
         let task = self
             .queries
             .get_task_async(task_id)

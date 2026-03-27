@@ -74,5 +74,14 @@ pub use crate::domains::quotes::domain::models::quote::{
 };
 pub use crate::domains::quotes::QuotesFacade;
 
-// TODO(scaffold): Uncomment if TrashService needs cross-domain access (ADR-003)
+// Intentionally not re-exported: `TrashService` does not currently have a valid
+// cross-domain consumer in the composition layer.
 // pub use crate::domains::trash::application::services::trash_service::TrashService;
+
+// Intentionally not re-exported: `RulesService` is consumed through
+// `shared::contracts::rules_engine::BlockingRuleEngine`.
+// pub use crate::domains::rules::application::services::rules_service::RulesService;
+
+// Intentionally not re-exported: `IntegrationsService` is consumed through
+// `shared::contracts::integration_sink::IntegrationEventSink`.
+// pub use crate::domains::integrations::application::services::integrations_service::IntegrationsService;

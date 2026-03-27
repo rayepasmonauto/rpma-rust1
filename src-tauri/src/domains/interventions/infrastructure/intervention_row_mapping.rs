@@ -80,8 +80,12 @@ impl FromSqlRow for Intervention {
             paused_at: TimestampString(row.get("paused_at")?),
             estimated_duration: row.get("estimated_duration")?,
             actual_duration: row.get("actual_duration")?,
-            weather_condition: parse_json_string_opt(row.get::<_, Option<String>>("weather_condition")?),
-            lighting_condition: parse_json_string_opt(row.get::<_, Option<String>>("lighting_condition")?),
+            weather_condition: parse_json_string_opt(
+                row.get::<_, Option<String>>("weather_condition")?,
+            ),
+            lighting_condition: parse_json_string_opt(
+                row.get::<_, Option<String>>("lighting_condition")?,
+            ),
             work_location: parse_json_string_opt(row.get::<_, Option<String>>("work_location")?),
             temperature_celsius: row.get("temperature_celsius")?,
             humidity_percentage: row.get("humidity_percentage")?,
@@ -129,7 +133,9 @@ impl FromSqlRow for InterventionStep {
             },
             description: row.get::<_, Option<String>>("description")?,
             instructions: parse_json_opt(row.get::<_, Option<String>>("instructions")?),
-            quality_checkpoints: parse_json_opt(row.get::<_, Option<String>>("quality_checkpoints")?),
+            quality_checkpoints: parse_json_opt(
+                row.get::<_, Option<String>>("quality_checkpoints")?,
+            ),
             is_mandatory: row.get::<_, i32>("is_mandatory")? == 1,
             requires_photos: row.get::<_, i32>("requires_photos")? == 1,
             min_photos_required: row.get("min_photos_required")?,

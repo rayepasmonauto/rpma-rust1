@@ -12,6 +12,7 @@ use tracing::{info, instrument};
 use ts_rs::TS;
 
 use crate::commands::{ApiResponse, AppError, AppState};
+use crate::domains::settings::application::avatar_validator;
 use crate::resolve_context;
 
 /// Request payload for avatar upload.
@@ -24,9 +25,6 @@ pub struct UploadAvatarRequest {
     /// MIME type (e.g., "image/png", "image/jpeg")
     pub mime_type: String,
 }
-
-const SUPPORTED_FORMATS: [&str; 3] = ["image/png", "image/jpeg", "image/gif"];
-const MAX_FILE_SIZE_BYTES: usize = 5 * 1024 * 1024; // 5 MB
 
 fn get_avatar_directory() -> Result<PathBuf, AppError> {
     let dir = dirs::data_dir()
@@ -67,23 +65,11 @@ pub async fn upload_user_avatar(
     let correlation_id =
         crate::commands::init_correlation_context(&correlation_id, Some(&ctx.auth.user_id));
 
-    if !SUPPORTED_FORMATS.contains(&request.mime_type.as_str()) {
-        return Err(AppError::Validation(format!(
-            "Unsupported image format: {}. Supported: PNG, JPEG, GIF",
-            request.mime_type
-        )));
-    }
-
     let image_data = general_purpose::STANDARD
         .decode(&request.avatar_data)
         .map_err(|e| AppError::Validation(format!("Invalid image data: {}", e)))?;
 
-    if image_data.len() > MAX_FILE_SIZE_BYTES {
-        return Err(AppError::Validation(format!(
-            "Image too large. Maximum size is {}MB",
-            MAX_FILE_SIZE_BYTES / (1024 * 1024)
-        )));
-    }
+    avatar_validator::validate_avatar_upload(&request.mime_type, &image_data)?;
 
     let ext = extension_for(&request.mime_type)?;
     let avatar_dir = get_avatar_directory()?;

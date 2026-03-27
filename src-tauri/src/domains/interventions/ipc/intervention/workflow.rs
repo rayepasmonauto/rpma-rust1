@@ -10,6 +10,8 @@ use crate::domains::interventions::application::{
 use crate::domains::interventions::infrastructure::intervention_types::UpdateInterventionRequest;
 use crate::domains::interventions::InterventionsFacade;
 use crate::resolve_context;
+use crate::shared::contracts::integration_sink::{IntegrationDispatchRequest, IntegrationEventSink};
+use crate::shared::contracts::rules_engine::{BlockingRuleEngine, RuleCheckRequest};
 use tracing::instrument;
 
 fn workflow_ctx(
@@ -21,8 +23,6 @@ fn workflow_ctx(
     Ok(ctx)
 }
 
-/// TODO: document
-/// ADR-018: Thin IPC layer
 #[tauri::command]
 #[instrument(skip(state, request), fields(task_id = %request.task_id, user_id))]
 pub async fn intervention_start(
@@ -30,20 +30,44 @@ pub async fn intervention_start(
     state: AppState<'_>,
 ) -> Result<ApiResponse<InterventionWorkflowResponse>, AppError> {
     let ctx = workflow_ctx(&state, &request.correlation_id)?;
-    let facade = InterventionsFacade::new(state.intervention_service.clone());
-
-    match facade
-        .workflow_start(request, &ctx, state.task_service.as_ref())
-        .await
-    {
-        Ok(res) => {
-            Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id)))
-        }
-        Err(e) => Err(e),
+    let rule_check = state
+        .rules_service
+        .evaluate(&RuleCheckRequest {
+            trigger: "intervention_started".to_string(),
+            entity_id: Some(request.task_id.clone()),
+            payload: serde_json::json!({
+                "task_id": request.task_id.clone(),
+                "estimated_duration_minutes": request.estimated_duration_minutes,
+                "priority": request.priority,
+            }),
+            user_id: ctx.auth.user_id.clone(),
+            correlation_id: ctx.correlation_id.clone(),
+        })
+        .await?;
+    if !rule_check.allowed {
+        return Err(AppError::Validation(rule_check.message.unwrap_or_else(|| {
+            "Intervention start blocked by active rule".to_string()
+        })));
     }
+
+    let facade = InterventionsFacade::new(state.intervention_service.clone());
+    let response = facade
+        .workflow_start(request, &ctx, state.task_service.as_ref())
+        .await?;
+
+    let _ = state
+        .integrations_service
+        .enqueue(IntegrationDispatchRequest {
+            event_name: "intervention_started".to_string(),
+            payload: serde_json::json!({ "response": &response }),
+            correlation_id: ctx.correlation_id.clone(),
+            requested_integration_ids: None,
+        })
+        .await;
+
+    Ok(ApiResponse::success(response).with_correlation_id(Some(ctx.correlation_id)))
 }
 
-/// TODO: document
 #[tauri::command]
 #[instrument(skip(state, data), fields(user_id))]
 pub async fn intervention_update(
@@ -56,14 +80,11 @@ pub async fn intervention_update(
     let facade = InterventionsFacade::new(state.intervention_service.clone());
 
     match facade.workflow_update(id, data, &ctx).await {
-        Ok(res) => {
-            Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id)))
-        }
+        Ok(res) => Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id))),
         Err(e) => Err(e),
     }
 }
 
-/// TODO: document
 #[tauri::command]
 #[instrument(skip(state), fields(user_id))]
 pub async fn intervention_delete(
@@ -75,14 +96,11 @@ pub async fn intervention_delete(
     let facade = InterventionsFacade::new(state.intervention_service.clone());
 
     match facade.workflow_delete(id, &ctx).await {
-        Ok(res) => {
-            Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id)))
-        }
+        Ok(res) => Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id))),
         Err(e) => Err(e),
     }
 }
 
-/// TODO: document
 #[tauri::command]
 #[instrument(skip(state, request), fields(intervention_id = %request.intervention_id, user_id, correlation_id))]
 pub async fn intervention_finalize(
@@ -90,20 +108,42 @@ pub async fn intervention_finalize(
     state: AppState<'_>,
 ) -> Result<ApiResponse<InterventionWorkflowResponse>, AppError> {
     let ctx = workflow_ctx(&state, &request.correlation_id)?;
-    let facade = InterventionsFacade::new(state.intervention_service.clone());
-
-    match facade.workflow_finalize(request, &ctx).await {
-        Ok(res) => {
-            // Emit here (application layer) — infrastructure must not publish events.
-            // Note: workflow_finalize in facade ALREADY publishes the event.
-            // Wait, does it? Let me check.
-            Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id)))
-        }
-        Err(e) => Err(e),
+    let rule_check = state
+        .rules_service
+        .evaluate(&RuleCheckRequest {
+            trigger: "intervention_finalized".to_string(),
+            entity_id: Some(request.intervention_id.clone()),
+            payload: serde_json::json!({
+                "intervention_id": request.intervention_id.clone(),
+                "quality_score": request.quality_score,
+                "customer_satisfaction": request.customer_satisfaction,
+            }),
+            user_id: ctx.auth.user_id.clone(),
+            correlation_id: ctx.correlation_id.clone(),
+        })
+        .await?;
+    if !rule_check.allowed {
+        return Err(AppError::Validation(rule_check.message.unwrap_or_else(|| {
+            "Intervention finalization blocked by active rule".to_string()
+        })));
     }
+
+    let facade = InterventionsFacade::new(state.intervention_service.clone());
+    let response = facade.workflow_finalize(request, &ctx).await?;
+
+    let _ = state
+        .integrations_service
+        .enqueue(IntegrationDispatchRequest {
+            event_name: "intervention_finalized".to_string(),
+            payload: serde_json::json!({ "response": &response }),
+            correlation_id: ctx.correlation_id.clone(),
+            requested_integration_ids: None,
+        })
+        .await;
+
+    Ok(ApiResponse::success(response).with_correlation_id(Some(ctx.correlation_id)))
 }
 
-/// TODO: document
 #[tauri::command]
 #[instrument(skip(state, action), fields(user_id, correlation_id))]
 pub async fn intervention_workflow(
@@ -116,29 +156,23 @@ pub async fn intervention_workflow(
 
     let response = match action {
         InterventionWorkflowAction::Start { data } => {
-            facade.workflow_start(data, &ctx, state.task_service.as_ref()).await
+            facade
+                .workflow_start(data, &ctx, state.task_service.as_ref())
+                .await
         }
-        InterventionWorkflowAction::Get { id } => {
-            facade.workflow_get(id, &ctx).await
-        }
+        InterventionWorkflowAction::Get { id } => facade.workflow_get(id, &ctx).await,
         InterventionWorkflowAction::GetActiveByTask { task_id } => {
             facade.workflow_get_active_by_task(task_id, &ctx).await
         }
         InterventionWorkflowAction::Update { id, data } => {
             facade.workflow_update(id, data, &ctx).await
         }
-        InterventionWorkflowAction::Delete { id } => {
-            facade.workflow_delete(id, &ctx).await
-        }
-        InterventionWorkflowAction::Finalize { data } => {
-            facade.workflow_finalize(data, &ctx).await
-        }
+        InterventionWorkflowAction::Delete { id } => facade.workflow_delete(id, &ctx).await,
+        InterventionWorkflowAction::Finalize { data } => facade.workflow_finalize(data, &ctx).await,
     };
 
     match response {
-        Ok(res) => {
-            Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id)))
-        }
+        Ok(res) => Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id))),
         Err(e) => Err(e),
     }
 }

@@ -174,6 +174,25 @@ export const IPC_COMMANDS = {
   CHANGE_USER_PASSWORD: "change_user_password",
   CHANGE_PASSWORD: "change_password",
 
+  // Rules commands
+  RULE_LIST: "list_rules",
+  RULE_GET: "get_rules",
+  RULE_CREATE: "create_rule",
+  RULE_UPDATE: "update_rule",
+  RULE_ACTIVATE: "activate_rule",
+  RULE_DISABLE: "disable_rule",
+  RULE_DELETE: "delete_rule",
+  RULE_TEST: "test_rule",
+
+  // Integrations commands
+  INTEGRATION_LIST: "list_integrations",
+  INTEGRATION_GET: "get_integrations",
+  INTEGRATION_CREATE: "create_integration",
+  INTEGRATION_UPDATE: "update_integration",
+  INTEGRATION_TEST: "test_integration",
+  INTEGRATION_DELETE: "delete_integration",
+  INTEGRATION_RETRY_DEAD_LETTER: "retry_dead_letter_integrations",
+
   // Bootstrap commands
   BOOTSTRAP_FIRST_ADMIN: "bootstrap_first_admin",
   HAS_ADMINS: "has_admins",

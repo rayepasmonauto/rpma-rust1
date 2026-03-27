@@ -16,11 +16,12 @@ use tracing::info;
 use crate::shared::context::request_context::RequestContext;
 use crate::shared::contracts::auth::UserRole;
 use crate::shared::ipc::errors::AppError;
+use crate::shared::repositories::base::{RepoError, RepoResult};
 
 use super::super::infrastructure::{AppSettingsRepository, SettingsRepository, UserSettingsPort};
 use super::super::models::{
-    AppSettings, CreateOrganizationRequest, GeneralSettings, NotificationSettings,
-    OnboardingData, OnboardingStatus, Organization, OrganizationSettings, SecuritySettings,
+    AppSettings, CreateOrganizationRequest, GeneralSettings, NotificationSettings, OnboardingData,
+    OnboardingStatus, Organization, OrganizationSettings, SecuritySettings,
     UpdateOrganizationRequest, UpdateOrganizationSettingsRequest, UserAccessibilitySettings,
     UserNotificationSettings, UserPerformanceSettings, UserPreferences, UserProfileSettings,
     UserSecuritySettings, UserSettings,
@@ -34,71 +35,77 @@ use super::super::user_settings_repository::UserSettingsRepository as SqliteUser
 // Per ADR-005, implementations should eventually move to infrastructure layer.
 
 impl SettingsRepository for OrganizationRepository {
-    fn get_organization_settings(&self) -> Result<OrganizationSettings, AppError> {
+    fn get_organization_settings(&self) -> RepoResult<OrganizationSettings> {
         self.get_all_settings()
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
 
     fn update_organization_settings(
         &self,
         settings: &std::collections::HashMap<String, String>,
-    ) -> Result<(), AppError> {
+    ) -> RepoResult<()> {
         self.update_settings(settings)
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
 
-    fn get_organization(&self) -> Result<Option<Organization>, AppError> {
+    fn get_organization(&self) -> RepoResult<Option<Organization>> {
         self.get_organization()
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
 
-    fn create_organization(
-        &self,
-        data: &CreateOrganizationRequest,
-    ) -> Result<Organization, AppError> {
+    fn create_organization(&self, data: &CreateOrganizationRequest) -> RepoResult<Organization> {
         self.create_organization(data)
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
 
-    fn update_organization(
-        &self,
-        data: &UpdateOrganizationRequest,
-    ) -> Result<Organization, AppError> {
+    fn update_organization(&self, data: &UpdateOrganizationRequest) -> RepoResult<Organization> {
         self.update_organization(data)
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
 
-    fn get_onboarding_status(&self) -> Result<(bool, i32), AppError> {
+    fn get_onboarding_status(&self) -> RepoResult<(bool, i32)> {
         self.get_onboarding_status()
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
 
-    fn complete_onboarding(&self) -> Result<(), AppError> {
+    fn complete_onboarding(&self) -> RepoResult<()> {
         self.complete_onboarding()
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
 
-    fn has_admin_users(&self) -> Result<bool, AppError> {
+    fn has_admin_users(&self) -> RepoResult<bool> {
         self.has_admin_users()
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
 
-    fn promote_first_user_to_admin(&self) -> Result<(), AppError> {
+    fn promote_first_user_to_admin(&self) -> RepoResult<()> {
         self.promote_first_user_to_admin()
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
 }
 
 impl AppSettingsRepository for SqliteSettingsRepository {
-    fn get_app_settings(&self) -> Result<AppSettings, AppError> {
+    fn get_app_settings(&self) -> RepoResult<AppSettings> {
         self.get_app_settings_db()
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
 
-    fn save_app_settings(&self, settings: &AppSettings, user_id: &str) -> Result<(), AppError> {
+    fn save_app_settings(&self, settings: &AppSettings, user_id: &str) -> RepoResult<()> {
         self.save_app_settings_db(settings, user_id)
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
 }
 
 impl UserSettingsPort for SqliteUserSettingsRepository {
-    fn get_user_settings(&self, user_id: &str) -> Result<UserSettings, AppError> {
+    fn get_user_settings(&self, user_id: &str) -> RepoResult<UserSettings> {
         self.get_user_settings(user_id)
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
 
-    fn save_user_settings(&self, user_id: &str, settings: &UserSettings) -> Result<(), AppError> {
+    fn save_user_settings(&self, user_id: &str, settings: &UserSettings) -> RepoResult<()> {
         self.save_user_settings(user_id, settings)
+            .map_err(|e| RepoError::Database(e.to_string()))
     }
-
 }
 
 // ── RBAC helpers ──────────────────────────────────────────────────────────────
@@ -192,7 +199,9 @@ impl SettingsService {
     /// Retrieve global application settings.  Requires Admin.
     pub fn get_app_settings(&self, ctx: &RequestContext) -> Result<AppSettings, AppError> {
         require_admin(ctx)?;
-        self.app_settings_repo.get_app_settings()
+        self.app_settings_repo
+            .get_app_settings()
+            .map_err(AppError::from)
     }
 
     /// Update the `general` sub-section of application settings.  Requires Admin.
@@ -315,7 +324,9 @@ impl SettingsService {
     /// Retrieve settings for the authenticated user.
     pub fn get_user_settings(&self, ctx: &RequestContext) -> Result<UserSettings, AppError> {
         require_at_least_viewer(ctx)?;
-        self.user_settings_repo.get_user_settings(&ctx.auth.user_id)
+        self.user_settings_repo
+            .get_user_settings(&ctx.auth.user_id)
+            .map_err(AppError::from)
     }
 
     /// Update the `profile` sub-section of the authenticated user's settings.
@@ -486,7 +497,9 @@ impl SettingsService {
         ctx: &RequestContext,
     ) -> Result<OrganizationSettings, AppError> {
         require_at_least_viewer(ctx)?;
-        self.org_repo.get_organization_settings()
+        self.org_repo
+            .get_organization_settings()
+            .map_err(AppError::from)
     }
 
     /// Persist updated organization settings.  Requires Admin.

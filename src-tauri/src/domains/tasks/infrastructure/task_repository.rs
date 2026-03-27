@@ -48,15 +48,14 @@ impl TaskRepository {
 
         let mut log_context = HashMap::new();
         log_context.insert("page".to_string(), serde_json::json!(query.pagination.page));
-        log_context.insert("limit".to_string(), serde_json::json!(query.pagination.page_size));
+        log_context.insert(
+            "limit".to_string(),
+            serde_json::json!(query.pagination.page_size),
+        );
         logger.debug("Finding tasks with query", Some(log_context));
 
-        query.pagination.page_size = Some(
-            query
-                .pagination
-                .page_size()
-                .clamp(1, Self::MAX_PAGE_SIZE),
-        );
+        query.pagination.page_size =
+            Some(query.pagination.page_size().clamp(1, Self::MAX_PAGE_SIZE));
         let (sql, params) = self.build_task_query_sql(&query);
 
         // Execute query
@@ -107,9 +106,11 @@ impl TaskRepository {
             .get_connection()
             .map_err(|e| RepoError::Database(format!("Database connection failed: {}", e)))?;
 
-        conn.query_row("SELECT status FROM tasks WHERE id = ?1 AND deleted_at IS NULL", [task_id], |row| {
-            row.get(0)
-        })
+        conn.query_row(
+            "SELECT status FROM tasks WHERE id = ?1 AND deleted_at IS NULL",
+            [task_id],
+            |row| row.get(0),
+        )
         .map_err(|e| RepoError::NotFound(format!("Task not found: {}", e)))
     }
 

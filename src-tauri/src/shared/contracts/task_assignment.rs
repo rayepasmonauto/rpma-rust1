@@ -5,7 +5,7 @@
 
 use async_trait::async_trait;
 
-use crate::shared::ipc::errors::AppError;
+use crate::shared::contracts::AppError;
 
 /// Minimal information about a task assignment needed by other domains.
 pub struct TaskAssignmentInfo {

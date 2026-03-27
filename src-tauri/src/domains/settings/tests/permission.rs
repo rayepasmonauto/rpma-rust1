@@ -19,10 +19,10 @@
 #[cfg(test)]
 mod tests {
     use crate::domains::settings::models::GeneralSettings;
+    use crate::shared::context::session_resolver::resolve_request_context;
     use crate::shared::contracts::auth::UserRole;
     use crate::shared::ipc::errors::AppError;
     use crate::test_utils::{build_test_app_state, make_test_session};
-    use crate::shared::context::session_resolver::resolve_request_context;
 
     // ── get_app_settings ─────────────────────────────────────────────────────
 
@@ -34,31 +34,45 @@ mod tests {
 
         let service = state.settings_service.clone();
         let result = service.get_app_settings(&ctx);
-        assert!(result.is_ok(), "Admin should read app settings: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "Admin should read app settings: {:?}",
+            result
+        );
     }
 
     #[tokio::test]
     async fn test_get_app_settings_supervisor_rejected() {
         let state = build_test_app_state().await;
-        state.session_store.set(make_test_session(UserRole::Supervisor));
+        state
+            .session_store
+            .set(make_test_session(UserRole::Supervisor));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
         let service = state.settings_service.clone();
         let result = service.get_app_settings(&ctx);
-        assert!(matches!(result, Err(AppError::Authorization(_))),
-            "Supervisor should not read app settings, got: {:?}", result);
+        assert!(
+            matches!(result, Err(AppError::Authorization(_))),
+            "Supervisor should not read app settings, got: {:?}",
+            result
+        );
     }
 
     #[tokio::test]
     async fn test_get_app_settings_technician_rejected() {
         let state = build_test_app_state().await;
-        state.session_store.set(make_test_session(UserRole::Technician));
+        state
+            .session_store
+            .set(make_test_session(UserRole::Technician));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
         let service = state.settings_service.clone();
         let result = service.get_app_settings(&ctx);
-        assert!(matches!(result, Err(AppError::Authorization(_))),
-            "Technician should not read app settings, got: {:?}", result);
+        assert!(
+            matches!(result, Err(AppError::Authorization(_))),
+            "Technician should not read app settings, got: {:?}",
+            result
+        );
     }
 
     #[tokio::test]
@@ -69,8 +83,11 @@ mod tests {
 
         let service = state.settings_service.clone();
         let result = service.get_app_settings(&ctx);
-        assert!(matches!(result, Err(AppError::Authorization(_))),
-            "Viewer should not read app settings, got: {:?}", result);
+        assert!(
+            matches!(result, Err(AppError::Authorization(_))),
+            "Viewer should not read app settings, got: {:?}",
+            result
+        );
     }
 
     // ── update_general_settings ───────────────────────────────────────────────
@@ -83,31 +100,45 @@ mod tests {
 
         let service = state.settings_service.clone();
         let result = service.update_general_settings(&ctx, GeneralSettings::default());
-        assert!(result.is_ok(), "Admin should update general settings: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "Admin should update general settings: {:?}",
+            result
+        );
     }
 
     #[tokio::test]
     async fn test_update_general_settings_supervisor_rejected() {
         let state = build_test_app_state().await;
-        state.session_store.set(make_test_session(UserRole::Supervisor));
+        state
+            .session_store
+            .set(make_test_session(UserRole::Supervisor));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
         let service = state.settings_service.clone();
         let result = service.update_general_settings(&ctx, GeneralSettings::default());
-        assert!(matches!(result, Err(AppError::Authorization(_))),
-            "Supervisor should not update general settings, got: {:?}", result);
+        assert!(
+            matches!(result, Err(AppError::Authorization(_))),
+            "Supervisor should not update general settings, got: {:?}",
+            result
+        );
     }
 
     #[tokio::test]
     async fn test_update_general_settings_technician_rejected() {
         let state = build_test_app_state().await;
-        state.session_store.set(make_test_session(UserRole::Technician));
+        state
+            .session_store
+            .set(make_test_session(UserRole::Technician));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
         let service = state.settings_service.clone();
         let result = service.update_general_settings(&ctx, GeneralSettings::default());
-        assert!(matches!(result, Err(AppError::Authorization(_))),
-            "Technician should not update general settings, got: {:?}", result);
+        assert!(
+            matches!(result, Err(AppError::Authorization(_))),
+            "Technician should not update general settings, got: {:?}",
+            result
+        );
     }
 
     #[tokio::test]
@@ -118,8 +149,11 @@ mod tests {
 
         let service = state.settings_service.clone();
         let result = service.update_general_settings(&ctx, GeneralSettings::default());
-        assert!(matches!(result, Err(AppError::Authorization(_))),
-            "Viewer should not update general settings, got: {:?}", result);
+        assert!(
+            matches!(result, Err(AppError::Authorization(_))),
+            "Viewer should not update general settings, got: {:?}",
+            result
+        );
     }
 
     // ── get_user_settings ─────────────────────────────────────────────────────
@@ -129,7 +163,12 @@ mod tests {
         // User settings require the caller's user_id to exist in the users table
         // (FK constraint). We verify only the RBAC gate here — the FK is a
         // DB-setup concern tested separately in the integration harness.
-        for role in [UserRole::Admin, UserRole::Supervisor, UserRole::Technician, UserRole::Viewer] {
+        for role in [
+            UserRole::Admin,
+            UserRole::Supervisor,
+            UserRole::Technician,
+            UserRole::Viewer,
+        ] {
             let state = build_test_app_state().await;
             state.session_store.set(make_test_session(role.clone()));
             let ctx = resolve_request_context(&state, None, &None).expect("ctx");
@@ -138,8 +177,13 @@ mod tests {
             // RBAC: all roles are permitted; any error must NOT be Authorization.
             let result = service.get_user_settings(&ctx);
             assert!(
-                !matches!(result, Err(crate::shared::ipc::errors::AppError::Authorization(_))),
-                "Role {:?} should not be rejected by RBAC for user settings, got: {:?}", role, result
+                !matches!(
+                    result,
+                    Err(crate::shared::ipc::errors::AppError::Authorization(_))
+                ),
+                "Role {:?} should not be rejected by RBAC for user settings, got: {:?}",
+                role,
+                result
             );
         }
     }
@@ -148,14 +192,24 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_organization_settings_all_roles_succeed() {
-        for role in [UserRole::Admin, UserRole::Supervisor, UserRole::Technician, UserRole::Viewer] {
+        for role in [
+            UserRole::Admin,
+            UserRole::Supervisor,
+            UserRole::Technician,
+            UserRole::Viewer,
+        ] {
             let state = build_test_app_state().await;
             state.session_store.set(make_test_session(role.clone()));
             let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
             let service = state.settings_service.clone();
             let result = service.get_organization_settings(&ctx);
-            assert!(result.is_ok(), "Role {:?} should read org settings: {:?}", role, result);
+            assert!(
+                result.is_ok(),
+                "Role {:?} should read org settings: {:?}",
+                role,
+                result
+            );
         }
     }
 
@@ -172,13 +226,19 @@ mod tests {
             settings: std::collections::HashMap::new(),
         };
         let result = service.update_organization_settings(&ctx, &req);
-        assert!(result.is_ok(), "Admin should update org settings: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "Admin should update org settings: {:?}",
+            result
+        );
     }
 
     #[tokio::test]
     async fn test_update_organization_settings_supervisor_rejected() {
         let state = build_test_app_state().await;
-        state.session_store.set(make_test_session(UserRole::Supervisor));
+        state
+            .session_store
+            .set(make_test_session(UserRole::Supervisor));
         let ctx = resolve_request_context(&state, None, &None).expect("ctx");
 
         let service = state.settings_service.clone();
@@ -186,8 +246,11 @@ mod tests {
             settings: std::collections::HashMap::new(),
         };
         let result = service.update_organization_settings(&ctx, &req);
-        assert!(matches!(result, Err(AppError::Authorization(_))),
-            "Supervisor should not update org settings, got: {:?}", result);
+        assert!(
+            matches!(result, Err(AppError::Authorization(_))),
+            "Supervisor should not update org settings, got: {:?}",
+            result
+        );
     }
 
     #[tokio::test]
@@ -201,7 +264,10 @@ mod tests {
             settings: std::collections::HashMap::new(),
         };
         let result = service.update_organization_settings(&ctx, &req);
-        assert!(matches!(result, Err(AppError::Authorization(_))),
-            "Viewer should not update org settings, got: {:?}", result);
+        assert!(
+            matches!(result, Err(AppError::Authorization(_))),
+            "Viewer should not update org settings, got: {:?}",
+            result
+        );
     }
 }

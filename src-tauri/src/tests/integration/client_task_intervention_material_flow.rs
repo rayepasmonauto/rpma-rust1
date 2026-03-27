@@ -5,8 +5,9 @@
 //! consuming materials during interventions, and updating client statistics.
 
 use crate::commands::AppResult;
-use crate::shared::logging::audit_service::{AuditEvent, AuditService};
-use crate::domains::clients::client_handler::{Client, CustomerType, ClientService, ClientStatisticsService};
+use crate::domains::clients::client_handler::{
+    Client, ClientService, ClientStatisticsService, CustomerType,
+};
 use crate::domains::interventions::infrastructure::intervention_types::{
     AdvanceStepRequest, FinalizeInterventionRequest, StartInterventionRequest,
 };
@@ -17,6 +18,7 @@ use crate::domains::inventory::infrastructure::material::{
 };
 use crate::domains::tasks::domain::models::task::TaskStatus;
 use crate::domains::tasks::infrastructure::task_crud::TaskCrudService;
+use crate::shared::logging::audit_service::{AuditEvent, AuditService};
 use crate::test_utils::TestDatabase;
 use crate::{test_client, test_task};
 use chrono::Utc;
@@ -112,8 +114,8 @@ impl ClientTaskInterventionMaterialFlowTestFixture {
             batch_number: Some("BATCH-WF-001".to_string()),
             storage_location: Some("Workflow Storage".to_string()),
             warehouse_id: None,
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
         let film = self
@@ -147,8 +149,8 @@ impl ClientTaskInterventionMaterialFlowTestFixture {
             batch_number: Some("BATCH-WA-001".to_string()),
             storage_location: Some("Workflow Storage".to_string()),
             warehouse_id: None,
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
         let adhesive = self
@@ -349,8 +351,7 @@ impl ClientTaskInterventionMaterialFlowTestFixture {
     pub fn get_client_statistics(
         &self,
         client_id: &str,
-    ) -> AppResult<crate::domains::clients::client_handler::ClientActivityMetrics>
-    {
+    ) -> AppResult<crate::domains::clients::client_handler::ClientActivityMetrics> {
         self.client_stats_service
             .get_client_activity_metrics(client_id)
     }

@@ -42,10 +42,8 @@ pub trait CalendarEventRepositoryContract: Send + Sync {
         Option<crate::domains::calendar::models::CalendarEvent>,
     >;
 
-    async fn delete_by_id(
-        &self,
-        id: String,
-    ) -> crate::shared::repositories::base::RepoResult<bool>;
+    async fn delete_by_id(&self, id: String)
+        -> crate::shared::repositories::base::RepoResult<bool>;
 
     async fn find_by_technician(
         &self,
@@ -139,17 +137,19 @@ impl CalendarEventRepositoryContract for CalendarEventRepository {
         let start_date = chrono::DateTime::<chrono::Utc>::from_timestamp_millis(from)
             .map(|dt| dt.format("%Y-%m-%dT%H:%M:%S").to_string())
             .ok_or_else(|| {
-                crate::shared::repositories::base::RepoError::Database(
-                    format!("Invalid calendar range start timestamp: {}", from),
-                )
+                crate::shared::repositories::base::RepoError::Database(format!(
+                    "Invalid calendar range start timestamp: {}",
+                    from
+                ))
             })?;
 
         let end_date = chrono::DateTime::<chrono::Utc>::from_timestamp_millis(to)
             .map(|dt| dt.format("%Y-%m-%dT%H:%M:%S").to_string())
             .ok_or_else(|| {
-                crate::shared::repositories::base::RepoError::Database(
-                    format!("Invalid calendar range end timestamp: {}", to),
-                )
+                crate::shared::repositories::base::RepoError::Database(format!(
+                    "Invalid calendar range end timestamp: {}",
+                    to
+                ))
             })?;
 
         CalendarEventRepository::find_by_date_range(self, &start_date, &end_date, technician_id)

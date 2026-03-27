@@ -313,8 +313,8 @@ async fn test_inventory_end_to_end_workflow() {
             batch_number: None,
             storage_location: Some("Warehouse A".to_string()),
             warehouse_id: Some("WH-01".to_string()),
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
     let material = service
@@ -441,8 +441,8 @@ async fn test_reorder_point_and_stock_levels() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
     let material = service
@@ -547,8 +547,8 @@ async fn test_batch_number_tracking() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
     let material = service
@@ -658,8 +658,8 @@ async fn test_material_location_tracking() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
     let material = service
@@ -783,8 +783,8 @@ async fn test_inventory_cost_tracking() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
     let material = service
@@ -901,8 +901,8 @@ async fn test_material_expiry_tracking() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
     let material = service
@@ -992,8 +992,8 @@ async fn test_material_quality_tracking() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
     let material = service
@@ -1108,8 +1108,8 @@ async fn test_inventory_performance_with_large_dataset() {
                 batch_number: None,
                 storage_location: None,
                 warehouse_id: None,
-            is_active: None,
-            is_discontinued: None,
+                is_active: None,
+                is_discontinued: None,
             };
 
         let material = service
@@ -1233,8 +1233,8 @@ async fn test_inventory_concurrent_access() {
             batch_number: None,
             storage_location: None,
             warehouse_id: None,
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
     let material = service

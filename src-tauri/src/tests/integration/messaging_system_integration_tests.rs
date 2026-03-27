@@ -343,7 +343,6 @@ async fn test_task_assignment_notification_workflow() {
         updated_at: chrono::Utc::now().timestamp_millis(),
     };
 
-
     // Save message
     repo.save(message).await.unwrap();
 
@@ -448,7 +447,6 @@ async fn test_task_completion_notification_workflow() {
         created_at: chrono::Utc::now().timestamp_millis(),
         updated_at: chrono::Utc::now().timestamp_millis(),
     };
-
 
     // Save message
     repo.save(message).await.unwrap();
@@ -590,7 +588,6 @@ async fn test_overdue_task_reminder_workflow() {
         created_at: chrono::Utc::now().timestamp_millis(),
         updated_at: chrono::Utc::now().timestamp_millis(),
     };
-
 
     // Save message
     repo.save(message).await.unwrap();
@@ -750,7 +747,6 @@ async fn test_multi_channel_notification_preferences() {
         updated_at: chrono::Utc::now().timestamp_millis(),
     };
 
-
     // Create in-app notification
     let in_app_message = Message {
         id: Uuid::new_v4().to_string(),
@@ -774,7 +770,6 @@ async fn test_multi_channel_notification_preferences() {
         created_at: chrono::Utc::now().timestamp_millis(),
         updated_at: chrono::Utc::now().timestamp_millis(),
     };
-
 
     // Save both messages
     repo.save(email_message).await.unwrap();
@@ -890,7 +885,6 @@ async fn test_quiet_hours_notification_filtering() {
         updated_at: chrono::Utc::now().timestamp_millis(),
     };
 
-
     // Save message
     repo.save(message).await.unwrap();
 
@@ -946,7 +940,6 @@ async fn test_message_delivery_with_retry_logic() {
         created_at: chrono::Utc::now().timestamp_millis(),
         updated_at: chrono::Utc::now().timestamp_millis(),
     };
-
 
     // Save message
     repo.save(message).await.unwrap();

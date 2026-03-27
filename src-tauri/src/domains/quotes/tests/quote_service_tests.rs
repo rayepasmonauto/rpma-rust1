@@ -16,7 +16,11 @@ async fn setup_service_async() -> (QuoteService, Arc<Database>) {
     let repo = Arc::new(QuoteRepository::new(db.clone(), cache));
     let event_bus = Arc::new(crate::shared::services::event_bus::InMemoryEventBus::new());
     let notification_sender = Arc::new(crate::test_utils::DummyNotificationSender);
-    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus, notification_sender);
+    let service = QuoteService::new(
+        repo as Arc<dyn IQuoteRepository>,
+        event_bus,
+        notification_sender,
+    );
 
     let now = chrono::Utc::now().timestamp_millis();
     db.execute(
@@ -371,7 +375,9 @@ async fn test_soft_delete_preserves_data() {
     let quote_id = quote.id.clone();
 
     // Delete (soft)
-    let deleted = service.delete_quote(&quote_id, "test_user", &UserRole::Admin).unwrap();
+    let deleted = service
+        .delete_quote(&quote_id, "test_user", &UserRole::Admin)
+        .unwrap();
     assert!(deleted);
 
     // Not visible via service
@@ -720,7 +726,9 @@ async fn test_quote_number_uses_max_not_count() {
         .unwrap();
     assert_eq!(q1.quote_number, "DEV-00001");
 
-    service.delete_quote(&q1.id, "test_user", &UserRole::Admin).unwrap();
+    service
+        .delete_quote(&q1.id, "test_user", &UserRole::Admin)
+        .unwrap();
 
     // Next quote should be DEV-00002, not DEV-00001 (COUNT vs MAX)
     let req2 = make_quote_req("test-client");
@@ -900,7 +908,11 @@ async fn test_convert_to_task_emits_event_with_current_actor() {
         converted_by: captured_actor.clone(),
     });
     let notification_sender = Arc::new(crate::test_utils::DummyNotificationSender);
-    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus, notification_sender);
+    let service = QuoteService::new(
+        repo as Arc<dyn IQuoteRepository>,
+        event_bus,
+        notification_sender,
+    );
 
     let now = chrono::Utc::now().timestamp_millis();
     db.execute(

@@ -11,8 +11,8 @@ use crate::domains::clients::client_handler::{
 };
 use crate::shared::repositories::cache::Cache;
 use crate::shared::services::cross_domain::PaginationInfo;
-use crate::shared::services::event_bus::InMemoryEventBus;
 use crate::shared::services::event_bus::EventPublisher;
+use crate::shared::services::event_bus::InMemoryEventBus;
 use chrono::{Datelike, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -20,8 +20,8 @@ use std::sync::Arc;
 use tracing::warn;
 use ts_rs::TS;
 
-use crate::domains::clients::client_handler::repository::ClientRepository;
 use crate::db::Database;
+use crate::domains::clients::client_handler::repository::ClientRepository;
 
 // ── ClientStats / ClientStat ──────────────────────────────────────────────────
 
@@ -45,8 +45,6 @@ pub struct ClientStat {
     pub name: String,
     pub total_tasks: i32,
 }
-
-
 
 // ── ClientService ─────────────────────────────────────────────────────────────
 
@@ -242,69 +240,9 @@ impl ClientService {
             }),
         );
 
-        // Field-level validation
-        CreateClientRequest::validate(&req)?;
+        self.validate_create_request(&req).await?;
 
-        // Uniqueness: reject duplicate email addresses
-        if let Some(ref email) = req.email {
-            if self
-                .client_repo
-                .find_by_email(email)
-                .await
-                .map_err(|e| format!("Failed to check email duplicates: {}", e))?
-                .is_some()
-            {
-                return Err("A client with this email address already exists".to_string());
-            }
-        }
-
-        // Business-type rules: business clients require company_name and contact_person
-        if matches!(req.customer_type, CustomerType::Business) {
-            if req
-                .company_name
-                .as_ref()
-                .map_or(true, |n| n.trim().is_empty())
-            {
-                return Err("Company name is required for business clients".to_string());
-            }
-            if req
-                .contact_person
-                .as_ref()
-                .map_or(true, |p| p.trim().is_empty())
-            {
-                return Err("Contact person is required for business clients".to_string());
-            }
-        }
-
-        let now = Utc::now().timestamp_millis();
-        let client = Client {
-            id: crate::shared::utils::uuid::generate_uuid_string(),
-            name: req.name.clone(),
-            email: req.email.clone(),
-            phone: req.phone.clone(),
-            customer_type: req.customer_type.clone(),
-            address_street: req.address_street.clone(),
-            address_city: req.address_city.clone(),
-            address_state: req.address_state.clone(),
-            address_zip: req.address_zip.clone(),
-            address_country: req.address_country.clone(),
-            tax_id: req.tax_id.clone(),
-            company_name: req.company_name.clone(),
-            contact_person: req.contact_person.clone(),
-            notes: req.notes.clone(),
-            tags: req.tags.clone(),
-            total_tasks: 0,
-            active_tasks: 0,
-            completed_tasks: 0,
-            last_task_date: None,
-            created_at: now,
-            updated_at: now,
-            created_by: Some(user_id.to_string()),
-            deleted_at: None,
-            deleted_by: None,
-            synced: false,
-            last_synced_at: None,
-        };
+        let client = self.build_client(&req, user_id);
 
         let result = IClientRepository::save(self.client_repo.as_ref(), client.clone())
             .await
@@ -354,71 +292,13 @@ impl ClientService {
         req: UpdateClientRequest,
         user_id: &str,
     ) -> Result<Client, String> {
-        use crate::domains::clients::client_handler::{is_valid_email, is_valid_phone};
-
         let mut client = self
             .get_client(&req.id)
             .await?
             .ok_or_else(|| format!("Client with id {} not found", req.id))?;
 
-        if client.created_by.as_ref() != Some(&user_id.to_string()) {
-            return Err("You can only update clients you created".to_string());
-        }
-
-        if let Some(name) = &req.name {
-            if name.trim().is_empty() {
-                return Err("Name cannot be empty".to_string());
-            }
-            if name.len() > 100 {
-                return Err("Name must be 100 characters or less".to_string());
-            }
-            client.name = name.clone();
-        }
-        if let Some(email) = &req.email {
-            if !is_valid_email(email) {
-                return Err("Invalid email format".to_string());
-            }
-            client.email = req.email.clone();
-        }
-        if let Some(phone) = &req.phone {
-            if !is_valid_phone(phone) {
-                return Err("Invalid phone number format".to_string());
-            }
-            client.phone = req.phone.clone();
-        }
-        if let Some(customer_type) = &req.customer_type {
-            client.customer_type = customer_type.clone();
-        }
-        if req.address_street.is_some() {
-            client.address_street = req.address_street.clone();
-        }
-        if req.address_city.is_some() {
-            client.address_city = req.address_city.clone();
-        }
-        if req.address_state.is_some() {
-            client.address_state = req.address_state.clone();
-        }
-        if req.address_zip.is_some() {
-            client.address_zip = req.address_zip.clone();
-        }
-        if req.address_country.is_some() {
-            client.address_country = req.address_country.clone();
-        }
-        if req.tax_id.is_some() {
-            client.tax_id = req.tax_id.clone();
-        }
-        if req.company_name.is_some() {
-            client.company_name = req.company_name.clone();
-        }
-        if req.contact_person.is_some() {
-            client.contact_person = req.contact_person.clone();
-        }
-        if req.notes.is_some() {
-            client.notes = req.notes.clone();
-        }
-        if req.tags.is_some() {
-            client.tags = req.tags.clone();
-        }
+        self.ensure_client_owner(&client, user_id, "You can only update clients you created")?;
+        self.apply_update_request(&mut client, &req)?;
 
         client.updated_at = Utc::now().timestamp_millis();
         IClientRepository::save(self.client_repo.as_ref(), client.clone())
@@ -440,7 +320,9 @@ impl ClientService {
             format!("Client with id {} not found", id)
         })?;
 
-        if client.created_by.as_ref() != Some(&user_id.to_string()) {
+        if let Err(error) =
+            self.ensure_client_owner(&client, user_id, "You can only delete clients you created")
+        {
             logger.warn(
                 "Unauthorized client deletion attempt",
                 Some({
@@ -449,7 +331,7 @@ impl ClientService {
                     ctx
                 }),
             );
-            return Err("You can only delete clients you created".to_string());
+            return Err(error);
         }
 
         let result = IClientRepository::delete_by_id(self.client_repo.as_ref(), id.to_string())
@@ -580,7 +462,9 @@ impl ClientService {
         let rate_limit_key = format!("client_ops:{}", user_id);
         if !rate_limiter
             .check_and_record(&rate_limit_key, 100, 60)
-            .map_err(|e| crate::shared::ipc::errors::AppError::internal_sanitized("rate_limit_check", &e))?
+            .map_err(|e| {
+                crate::shared::ipc::errors::AppError::internal_sanitized("rate_limit_check", &e)
+            })?
         {
             return Err(crate::shared::ipc::errors::AppError::Validation(
                 "Rate limit exceeded. Please try again later.".to_string(),
@@ -589,11 +473,168 @@ impl ClientService {
         if !crate::shared::auth_middleware::AuthMiddleware::can_perform_client_operation(
             role, permission,
         ) {
-            return Err(crate::shared::ipc::errors::AppError::Authorization(format!(
-                "Insufficient permissions to {} clients",
-                permission
-            )));
+            return Err(crate::shared::ipc::errors::AppError::Authorization(
+                format!("Insufficient permissions to {} clients", permission),
+            ));
         }
+        Ok(())
+    }
+
+    async fn validate_create_request(&self, req: &CreateClientRequest) -> Result<(), String> {
+        CreateClientRequest::validate(req)?;
+        self.ensure_unique_email(req.email.as_deref()).await?;
+        self.validate_business_client_requirements(req)?;
+        Ok(())
+    }
+
+    async fn ensure_unique_email(&self, email: Option<&str>) -> Result<(), String> {
+        let Some(email) = email else {
+            return Ok(());
+        };
+
+        let existing = self
+            .client_repo
+            .find_by_email(email)
+            .await
+            .map_err(|e| format!("Failed to check email duplicates: {}", e))?;
+        if existing.is_some() {
+            return Err("A client with this email address already exists".to_string());
+        }
+
+        Ok(())
+    }
+
+    fn validate_business_client_requirements(
+        &self,
+        req: &CreateClientRequest,
+    ) -> Result<(), String> {
+        if matches!(req.customer_type, CustomerType::Business) {
+            if req
+                .company_name
+                .as_ref()
+                .map_or(true, |name| name.trim().is_empty())
+            {
+                return Err("Company name is required for business clients".to_string());
+            }
+            if req
+                .contact_person
+                .as_ref()
+                .map_or(true, |person| person.trim().is_empty())
+            {
+                return Err("Contact person is required for business clients".to_string());
+            }
+        }
+
+        Ok(())
+    }
+
+    fn build_client(&self, req: &CreateClientRequest, user_id: &str) -> Client {
+        let now = Utc::now().timestamp_millis();
+        Client {
+            id: crate::shared::utils::uuid::generate_uuid_string(),
+            name: req.name.clone(),
+            email: req.email.clone(),
+            phone: req.phone.clone(),
+            customer_type: req.customer_type.clone(),
+            address_street: req.address_street.clone(),
+            address_city: req.address_city.clone(),
+            address_state: req.address_state.clone(),
+            address_zip: req.address_zip.clone(),
+            address_country: req.address_country.clone(),
+            tax_id: req.tax_id.clone(),
+            company_name: req.company_name.clone(),
+            contact_person: req.contact_person.clone(),
+            notes: req.notes.clone(),
+            tags: req.tags.clone(),
+            total_tasks: 0,
+            active_tasks: 0,
+            completed_tasks: 0,
+            last_task_date: None,
+            created_at: now,
+            updated_at: now,
+            created_by: Some(user_id.to_string()),
+            deleted_at: None,
+            deleted_by: None,
+            synced: false,
+            last_synced_at: None,
+        }
+    }
+
+    fn ensure_client_owner(
+        &self,
+        client: &Client,
+        user_id: &str,
+        error_message: &str,
+    ) -> Result<(), String> {
+        if client.created_by.as_ref().map(String::as_str) != Some(user_id) {
+            return Err(error_message.to_string());
+        }
+
+        Ok(())
+    }
+
+    fn apply_update_request(
+        &self,
+        client: &mut Client,
+        req: &UpdateClientRequest,
+    ) -> Result<(), String> {
+        use crate::domains::clients::client_handler::{is_valid_email, is_valid_phone};
+
+        if let Some(name) = &req.name {
+            if name.trim().is_empty() {
+                return Err("Name cannot be empty".to_string());
+            }
+            if name.len() > 100 {
+                return Err("Name must be 100 characters or less".to_string());
+            }
+            client.name = name.clone();
+        }
+        if let Some(email) = &req.email {
+            if !is_valid_email(email) {
+                return Err("Invalid email format".to_string());
+            }
+            client.email = req.email.clone();
+        }
+        if let Some(phone) = &req.phone {
+            if !is_valid_phone(phone) {
+                return Err("Invalid phone number format".to_string());
+            }
+            client.phone = req.phone.clone();
+        }
+        if let Some(customer_type) = &req.customer_type {
+            client.customer_type = customer_type.clone();
+        }
+        if req.address_street.is_some() {
+            client.address_street = req.address_street.clone();
+        }
+        if req.address_city.is_some() {
+            client.address_city = req.address_city.clone();
+        }
+        if req.address_state.is_some() {
+            client.address_state = req.address_state.clone();
+        }
+        if req.address_zip.is_some() {
+            client.address_zip = req.address_zip.clone();
+        }
+        if req.address_country.is_some() {
+            client.address_country = req.address_country.clone();
+        }
+        if req.tax_id.is_some() {
+            client.tax_id = req.tax_id.clone();
+        }
+        if req.company_name.is_some() {
+            client.company_name = req.company_name.clone();
+        }
+        if req.contact_person.is_some() {
+            client.contact_person = req.contact_person.clone();
+        }
+        if req.notes.is_some() {
+            client.notes = req.notes.clone();
+        }
+        if req.tags.is_some() {
+            client.tags = req.tags.clone();
+        }
+
         Ok(())
     }
 }

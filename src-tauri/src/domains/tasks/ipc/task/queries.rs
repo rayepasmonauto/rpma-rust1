@@ -93,7 +93,7 @@ pub async fn get_tasks_with_clients(
     // Set pagination defaults
     let page = request.page.unwrap_or(1).max(1);
     let limit = request.limit.unwrap_or(50).min(200); // Max 200 per page
-    // Construct TaskQuery from filter and pagination
+                                                      // Construct TaskQuery from filter and pagination
     let query = crate::domains::tasks::domain::models::task::TaskQuery {
         pagination: crate::shared::repositories::base::PaginationParams {
             page: Some(page as i32),

@@ -20,6 +20,8 @@ import { securityIpc } from '@/domains/admin/ipc/security.ipc';
 import { quotesIpc } from '@/domains/quotes/ipc/quotes.ipc';
 import { reportsIpc } from '@/domains/reports/ipc/reports.ipc';
 import { trashIpc } from "@/domains/trash/ipc";
+import { rulesIpc } from "@/domains/rules/ipc/rules.ipc";
+import { integrationsIpc } from "@/domains/integrations/ipc/integrations.ipc";
 import { systemOperations } from './domains/system';
 
 // Re-export necessary types that might be used by consumers of ipcClient
@@ -51,6 +53,8 @@ export const ipcClient = {
   reports: reportsIpc,
   system: systemOperations,
   trash: trashIpc,
+  rules: rulesIpc,
+  integrations: integrationsIpc,
 } as const;
 
 export type IpcClient = typeof ipcClient;

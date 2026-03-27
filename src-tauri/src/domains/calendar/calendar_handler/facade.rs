@@ -1,11 +1,11 @@
 //! CalendarFacade — command/response enums and facade orchestration.
 
 use super::*;
-use crate::domains::auth::infrastructure::rate_limiter::RateLimiterService;
 use crate::shared::context::RequestContext;
-use crate::shared::repositories::CalendarEventRepositoryContract;
+use crate::shared::contracts::rate_limiter::RateLimiterPort;
 use crate::shared::ipc::errors::AppError as IpcAppError;
 use crate::shared::repositories::base::Repository;
+use crate::shared::repositories::CalendarEventRepositoryContract;
 use std::sync::Arc;
 
 /// Command enum for the Calendar bounded context.
@@ -93,7 +93,11 @@ mod helpers {
         }
 
         // Last resort: fall back to epoch boundaries so the query stays safe.
-        if end_of_day { i64::MAX / 2 } else { 0 }
+        if end_of_day {
+            i64::MAX / 2
+        } else {
+            0
+        }
     }
 }
 
@@ -101,7 +105,7 @@ mod helpers {
 pub struct CalendarFacade {
     pub(super) calendar_service: Arc<CalendarService>,
     pub(super) calendar_event_repository: Arc<dyn CalendarEventRepositoryContract>,
-    rate_limiter: Option<Arc<RateLimiterService>>,
+    rate_limiter: Option<Arc<dyn RateLimiterPort>>,
 }
 
 impl std::fmt::Debug for CalendarFacade {
@@ -114,7 +118,7 @@ impl CalendarFacade {
     pub fn new(
         calendar_service: Arc<CalendarService>,
         calendar_event_repository: Arc<dyn CalendarEventRepositoryContract>,
-        rate_limiter: Arc<RateLimiterService>,
+        rate_limiter: Arc<dyn RateLimiterPort>,
     ) -> Self {
         Self {
             calendar_service,

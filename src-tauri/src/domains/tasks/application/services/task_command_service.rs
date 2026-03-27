@@ -11,15 +11,17 @@ use tracing::{error, info, instrument, warn};
 
 use crate::commands::AppError;
 use crate::domains::tasks::application::services::task_policy_service;
+use crate::domains::tasks::application::TaskFilter;
 use crate::domains::tasks::domain::models::task::{
     BulkImportResponse, Task, TaskPriority, TaskQuery, TaskStatus, UpdateTaskRequest,
 };
 use crate::domains::tasks::infrastructure::task::TaskService;
 use crate::domains::tasks::infrastructure::task_import::TaskImportService;
-use crate::domains::tasks::ipc::task_types::TaskFilter;
 use crate::domains::tasks::TasksFacade;
 use crate::shared::context::RequestContext;
+use crate::shared::contracts::integration_sink::IntegrationEventSink;
 use crate::shared::contracts::notification::NotificationSender;
+use crate::shared::contracts::rules_engine::BlockingRuleEngine;
 use crate::shared::contracts::task_scheduler::TaskScheduler;
 use crate::shared::services::event_bus::InMemoryEventBus;
 use crate::shared::services::validation::ValidationService;
@@ -35,6 +37,8 @@ pub struct TaskCommandService {
     pub(super) notification_sender: Arc<dyn NotificationSender>,
     pub(super) calendar_service: Arc<dyn TaskScheduler>,
     pub(super) event_bus: Arc<InMemoryEventBus>,
+    pub(super) rules_engine: Arc<dyn BlockingRuleEngine>,
+    pub(super) integration_sink: Arc<dyn IntegrationEventSink>,
 }
 
 impl TaskCommandService {
@@ -47,6 +51,8 @@ impl TaskCommandService {
         notification_sender: Arc<dyn NotificationSender>,
         calendar_service: Arc<dyn TaskScheduler>,
         event_bus: Arc<InMemoryEventBus>,
+        rules_engine: Arc<dyn BlockingRuleEngine>,
+        integration_sink: Arc<dyn IntegrationEventSink>,
     ) -> Self {
         Self {
             task_service,
@@ -54,6 +60,8 @@ impl TaskCommandService {
             notification_sender,
             calendar_service,
             event_bus,
+            rules_engine,
+            integration_sink,
         }
     }
 
@@ -195,8 +203,12 @@ impl TaskCommandService {
         task_policy_service::check_task_permissions(&ctx.auth, &task, "edit")?;
 
         let facade = self.facade();
-        let issue_entry =
-            facade.format_issue_entry(&ctx.auth.user_id, issue_type, &severity.to_string(), description);
+        let issue_entry = facade.format_issue_entry(
+            &ctx.auth.user_id,
+            issue_type,
+            &severity.to_string(),
+            description,
+        );
         let updated_notes = facade.append_note(task.notes.as_deref(), &issue_entry);
 
         let update_request = UpdateTaskRequest {

@@ -10,6 +10,8 @@ use crate::commands::{AppError, TaskAction};
 use crate::domains::tasks::domain::models::task::{CreateTaskRequest, Task, UpdateTaskRequest};
 use crate::shared::auth_middleware::AuthMiddleware;
 use crate::shared::context::RequestContext;
+use crate::shared::contracts::integration_sink::IntegrationDispatchRequest;
+use crate::shared::contracts::rules_engine::RuleCheckRequest;
 use crate::shared::services::event_bus::{event_factory, EventPublisher};
 use crate::shared::services::validation::ValidationService;
 
@@ -49,6 +51,27 @@ impl TaskCommandService {
             }
         };
 
+        let rule_check = self
+            .rules_engine
+            .evaluate(&RuleCheckRequest {
+                trigger: "task_created".to_string(),
+                entity_id: None,
+                payload: serde_json::json!({
+                    "title": validated_data.title.clone(),
+                    "priority": validated_data.priority.as_ref().map(|value| value.to_string()),
+                    "status": validated_data.status.as_ref().map(|value| value.to_string()),
+                    "technician_id": validated_data.technician_id.clone(),
+                }),
+                user_id: ctx.auth.user_id.clone(),
+                correlation_id: ctx.correlation_id.clone(),
+            })
+            .await?;
+        if !rule_check.allowed {
+            return Err(AppError::Validation(rule_check.message.unwrap_or_else(|| {
+                "Task creation blocked by active rule".to_string()
+            })));
+        }
+
         let task = self
             .task_service
             .create_task_async(validated_data, &ctx.auth.user_id)
@@ -75,6 +98,21 @@ impl TaskCommandService {
         }
 
         self.notify_assignment(&task, &ctx.auth.user_id, &ctx.correlation_id)
+            .await;
+
+        let _ = self
+            .integration_sink
+            .enqueue(IntegrationDispatchRequest {
+                event_name: "task_created".to_string(),
+                payload: serde_json::json!({
+                    "task_id": task.id,
+                    "task_number": task.task_number,
+                    "status": task.status.to_string(),
+                    "priority": task.priority.to_string(),
+                }),
+                correlation_id: ctx.correlation_id.clone(),
+                requested_integration_ids: None,
+            })
             .await;
 
         info!(
@@ -142,6 +180,23 @@ impl TaskCommandService {
                 error!(correlation_id = %ctx.correlation_id, "Task update failed: {}", e);
                 AppError::db_sanitized("tasks.update", e)
             })?;
+
+        if status_updated && existing_task.status != task.status {
+            let _ = self
+                .integration_sink
+                .enqueue(IntegrationDispatchRequest {
+                    event_name: "task_status_changed".to_string(),
+                    payload: serde_json::json!({
+                        "task_id": task.id,
+                        "old_status": existing_task.status.to_string(),
+                        "new_status": task.status.to_string(),
+                        "priority": task.priority.to_string(),
+                    }),
+                    correlation_id: ctx.correlation_id.clone(),
+                    requested_integration_ids: None,
+                })
+                .await;
+        }
 
         let updated_event = event_factory::task_updated_with_ctx(
             task.id.clone(),

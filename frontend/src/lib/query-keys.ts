@@ -157,6 +157,10 @@ export const adminKeys = {
     [...adminKeys.users(), search ?? "", role ?? ""] as const,
   /** App-wide configuration/settings loaded by admin hooks */
   appSettings: () => [...adminKeys.all, "app-settings"] as const,
+  /** Rules admin listing */
+  businessRules: () => [...adminKeys.all, "business-rules"] as const,
+  /** Integrations admin listing */
+  integrations: () => [...adminKeys.all, "integrations"] as const,
   /** Admin-scoped dashboard stats */
   dashboard: () => [...adminKeys.all, "dashboard"] as const,
   /** Security: audit metrics */

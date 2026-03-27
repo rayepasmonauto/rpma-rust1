@@ -3,9 +3,9 @@
 use crate::domains::auth::application::auth_security_service::AuthSecurityService;
 use crate::domains::auth::domain::models::auth::ChangePasswordRequest;
 use crate::domains::auth::AuthFacade;
+use crate::resolve_context;
 use crate::shared::app_state::AppState;
 use crate::shared::ipc::{ApiResponse, AppError};
-use crate::resolve_context;
 use serde::Deserialize;
 use tracing::{debug, error, info, instrument, warn};
 
@@ -197,12 +197,18 @@ pub async fn change_password(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<()>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
-    let correlation_id = crate::commands::init_correlation_context(&correlation_id, Some(&ctx.auth.user_id));
+    let correlation_id =
+        crate::commands::init_correlation_context(&correlation_id, Some(&ctx.auth.user_id));
 
     let auth_service = state.auth_service.clone();
     let sec_svc = security_service(&state);
 
-    sec_svc.change_password(&ctx, &*auth_service, &request.current_password, &request.new_password)?;
+    sec_svc.change_password(
+        &ctx,
+        &*auth_service,
+        &request.current_password,
+        &request.new_password,
+    )?;
 
     Ok(ApiResponse::success(()).with_correlation_id(Some(correlation_id)))
 }

@@ -3,12 +3,27 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { settingsOperations } from "@/shared/utils";
+import { ipcClient } from "@/lib/ipc";
 import { SystemSettingsTab } from "../SystemSettingsTab";
 import { MonitoringTab } from "../MonitoringTab";
 import { BusinessRulesTab } from "../BusinessRulesTab";
 
 jest.mock("@/shared/hooks/useAuth", () => ({
   useAuth: () => ({ session: { token: "test-token" } }),
+}));
+
+jest.mock("@/lib/ipc", () => ({
+  ipcClient: {
+    rules: {
+      list: jest.fn(),
+      delete: jest.fn(),
+      activate: jest.fn(),
+      disable: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      test: jest.fn(),
+    },
+  },
 }));
 
 jest.mock("@/shared/utils", () => ({
@@ -109,6 +124,8 @@ const mockUpdateGeneralSettings =
   settingsOperations.updateGeneralSettings as jest.Mock;
 const mockUpdateBusinessRules =
   settingsOperations.updateBusinessRules as jest.Mock;
+const mockRulesList = (ipcClient as any).rules.list as jest.Mock;
+const mockRulesDelete = (ipcClient as any).rules.delete as jest.Mock;
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -135,6 +152,8 @@ describe("Configuration tabs regressions", () => {
     mockGetAppSettings.mockResolvedValue({ general: {} });
     mockUpdateGeneralSettings.mockResolvedValue({});
     mockUpdateBusinessRules.mockResolvedValue({});
+    mockRulesList.mockResolvedValue([]);
+    mockRulesDelete.mockResolvedValue(undefined);
   });
 
   it("renders business hours schedule entries", async () => {
@@ -168,26 +187,21 @@ describe("Configuration tabs regressions", () => {
   });
 
   it("opens confirm dialog before deleting a business rule", async () => {
-    mockGetAppSettings.mockResolvedValue({
-      business_rules: [
-        {
-          id: "rule-1",
-          name: "Règle Test",
-          description: "Description",
-          category: "task_assignment",
-          priority: 1,
-          is_active: true,
-          isActive: true,
-          conditions: [{ field: "status", operator: "equals", value: "open" }],
-          actions: [
-            { type: "send_notification", target: "manager", value: "msg" },
-          ],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-        },
-      ],
-    });
+    mockRulesList.mockResolvedValue([
+      {
+        id: "rule-1",
+        name: "Règle Test",
+        description: "Description",
+        template_key: "task-assignment",
+        trigger: "task_created",
+        mode: "reactive",
+        status: "active",
+        conditions: {},
+        actions: [{ type: "queue_integration", event_name: "rule.task_assignment", integration_ids: null }],
+        created_at: Date.now(),
+        updated_at: Date.now(),
+      },
+    ]);
 
     render(<BusinessRulesTab />, { wrapper: createWrapper() });
 
@@ -208,7 +222,7 @@ describe("Configuration tabs regressions", () => {
     await user.click(screen.getByRole("button", { name: /Confirmer/i }));
 
     await waitFor(() => {
-      expect(mockUpdateBusinessRules).toHaveBeenCalled();
+      expect(mockRulesDelete).toHaveBeenCalledWith("rule-1");
     });
   });
 });

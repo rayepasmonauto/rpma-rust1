@@ -199,9 +199,12 @@ pub async fn global_search(
     correlation_id: Option<String>,
 ) -> Result<ApiResponse<GlobalSearchResponse>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id, UserRole::Viewer);
-    
-    let response = state.global_search_service.search(&query, &ctx).await
+
+    let response = state
+        .global_search_service
+        .search(&query, &ctx)
+        .await
         .map_err(|e| AppError::Internal(e))?;
-        
+
     Ok(ApiResponse::success(response).with_correlation_id(Some(ctx.correlation_id)))
 }

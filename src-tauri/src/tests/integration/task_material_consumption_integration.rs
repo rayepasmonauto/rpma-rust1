@@ -4,7 +4,6 @@
 //! ensuring proper stock updates, consumption records, and rollback behavior.
 
 use crate::commands::AppResult;
-use crate::shared::logging::audit_service::AuditService;
 use crate::domains::interventions::infrastructure::intervention_types::{
     AdvanceStepRequest, FinalizeInterventionRequest, StartInterventionRequest,
 };
@@ -19,6 +18,7 @@ use crate::domains::inventory::infrastructure::material::{
 };
 use crate::domains::tasks::domain::models::task::{CreateTaskRequest, TaskPriority, TaskStatus};
 use crate::domains::tasks::infrastructure::task_crud::TaskCrudService;
+use crate::shared::logging::audit_service::AuditService;
 use crate::test_utils::{TestDataFactory, TestDatabase};
 use crate::{test_client, test_db, test_intervention, test_task};
 use chrono::Utc;
@@ -89,8 +89,8 @@ impl TaskMaterialTestFixture {
             batch_number: None,
             storage_location: Some("Warehouse A".to_string()),
             warehouse_id: None,
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
         let material = self
