@@ -1,11 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata } from 'next';
 import RootClientLayout from './RootClientLayout';
 
 // This is a Server Component. Client Components will be imported into it.
 
 export const metadata: Metadata = {
-  title: "RPMA V2 - Gestion Professionnelle de Film de Protection",
-  description: "Système de gestion complet pour les entreprises d'installation de PPF",
+  title: 'RPMA V2 - Gestion Professionnelle de Film de Protection',
+  description:
+    "Systeme de gestion complet pour les entreprises d'installation de PPF. Logiciel proprietaire RPMA v2.",
+  applicationName: 'RPMA v2',
+  authors: [{ name: 'Raye Pas Mon Auto' }],
+  creator: 'Raye Pas Mon Auto',
+  publisher: 'Raye Pas Mon Auto',
 };
 
 export default function RootLayout({
@@ -16,9 +21,7 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body suppressHydrationWarning>
-        <RootClientLayout>
-          {children}
-        </RootClientLayout>
+        <RootClientLayout>{children}</RootClientLayout>
       </body>
     </html>
   );

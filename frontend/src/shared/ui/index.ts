@@ -8,6 +8,7 @@ export * from '@/components/ui/mobile-components';
 
 export { FadeIn } from './animations/FadeIn';
 export { UILoader } from './animations/UILoader';
+export { Watermark } from './Watermark';
 
 export { Providers } from './providers';
 export { ThemeProvider } from './theme-provider';

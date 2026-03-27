@@ -1,288 +1,16 @@
 /// ADR-005: Repository Pattern
 use crate::db::InterventionResult;
 use crate::db::{Database, FromSqlRow, InterventionError};
-use crate::domains::interventions::domain::models::intervention::{
-    Intervention, InterventionStatus,
-};
+use crate::domains::interventions::domain::models::intervention::Intervention;
 use crate::domains::interventions::domain::models::step::InterventionStep;
-use crate::shared::contracts::task_status::TaskStatus;
-use rusqlite::{params, OptionalExtension, Transaction};
+use crate::domains::interventions::infrastructure::intervention_maintenance_repository;
+use crate::domains::interventions::infrastructure::intervention_sql::{
+    insert_intervention_params, update_intervention_params, InterventionDbFields,
+    INSERT_INTERVENTION_SQL, UPDATE_INTERVENTION_SQL,
+};
+use crate::domains::interventions::infrastructure::intervention_step_repository;
+use rusqlite::{OptionalExtension, Transaction};
 use std::sync::Arc;
-use tracing::debug;
-
-/// Serialized intervention fields ready for database storage.
-struct InterventionDbFields {
-    status: String,
-    intervention_type: String,
-    weather_condition: Option<String>,
-    lighting_condition: Option<String>,
-    work_location: Option<String>,
-    film_type: Option<String>,
-    ppf_zones_config_json: Option<String>,
-    ppf_zones_extended_json: Option<String>,
-    final_observations_json: Option<String>,
-    metadata_json: Option<String>,
-    device_info_json: Option<String>,
-}
-
-impl InterventionDbFields {
-    fn from_intervention(intervention: &Intervention) -> Self {
-        Self {
-            status: intervention.status.to_string(),
-            intervention_type: intervention.intervention_type.to_string(),
-            weather_condition: intervention
-                .weather_condition
-                .as_ref()
-                .map(|wc| wc.to_string()),
-            lighting_condition: intervention
-                .lighting_condition
-                .as_ref()
-                .map(|lc| lc.to_string()),
-            work_location: intervention.work_location.as_ref().map(|wl| wl.to_string()),
-            film_type: intervention.film_type.as_ref().map(|ft| ft.to_string()),
-            ppf_zones_config_json: intervention
-                .ppf_zones_config
-                .as_ref()
-                .map(|zones| serde_json::to_string(zones).unwrap_or_default()),
-            ppf_zones_extended_json: intervention
-                .ppf_zones_extended
-                .as_ref()
-                .map(|zones| serde_json::to_string(zones).unwrap_or_default()),
-            final_observations_json: intervention
-                .final_observations
-                .as_ref()
-                .map(|obs| serde_json::to_string(obs).unwrap_or_default()),
-            metadata_json: intervention
-                .metadata
-                .as_ref()
-                .map(|meta| serde_json::to_string(meta).unwrap_or_default()),
-            device_info_json: intervention
-                .device_info
-                .as_ref()
-                .map(|info| serde_json::to_string(info).unwrap_or_default()),
-        }
-    }
-}
-
-/// Serialized step fields ready for database storage.
-struct StepDbFields {
-    step_type: String,
-    step_status: String,
-    instructions_json: Option<String>,
-    quality_checkpoints_json: Option<String>,
-    step_data_json: Option<String>,
-    collected_data_json: Option<String>,
-    measurements_json: Option<String>,
-    observations_json: Option<String>,
-    photo_urls_json: Option<String>,
-    validation_data_json: Option<String>,
-    validation_errors_json: Option<String>,
-}
-
-impl StepDbFields {
-    fn from_step(step: &InterventionStep) -> Self {
-        Self {
-            step_type: step.step_type.to_string(),
-            step_status: step.step_status.to_string(),
-            instructions_json: step
-                .instructions
-                .as_ref()
-                .and_then(|i| serde_json::to_string(i).ok()),
-            quality_checkpoints_json: step
-                .quality_checkpoints
-                .as_ref()
-                .and_then(|qc| serde_json::to_string(qc).ok()),
-            step_data_json: step
-                .step_data
-                .as_ref()
-                .and_then(|sd| serde_json::to_string(sd).ok()),
-            collected_data_json: step
-                .collected_data
-                .as_ref()
-                .and_then(|cd| serde_json::to_string(cd).ok()),
-            measurements_json: step
-                .measurements
-                .as_ref()
-                .and_then(|m| serde_json::to_string(m).ok()),
-            observations_json: step
-                .observations
-                .as_ref()
-                .and_then(|obs| serde_json::to_string(obs).ok()),
-            photo_urls_json: step
-                .photo_urls
-                .as_ref()
-                .and_then(|urls| serde_json::to_string(urls).ok()),
-            validation_data_json: step
-                .validation_data
-                .as_ref()
-                .and_then(|vd| serde_json::to_string(vd).ok()),
-            validation_errors_json: step
-                .validation_errors
-                .as_ref()
-                .and_then(|ve| serde_json::to_string(ve).ok()),
-        }
-    }
-}
-
-const INSERT_INTERVENTION_SQL: &str =
-    "INSERT INTO interventions (
-        id, task_id, status, vehicle_plate, vehicle_model, vehicle_make, vehicle_year,
-        vehicle_color, vehicle_vin, client_id, client_name, client_email, client_phone,
-        technician_id, technician_name, intervention_type, current_step, completion_percentage,
-        ppf_zones_config, ppf_zones_extended, film_type, film_brand, film_model,
-        scheduled_at, started_at, completed_at, paused_at, estimated_duration, actual_duration,
-        weather_condition, lighting_condition, work_location, temperature_celsius, humidity_percentage,
-        start_location_lat, start_location_lon, start_location_accuracy,
-        end_location_lat, end_location_lon, end_location_accuracy,
-        customer_satisfaction, quality_score, final_observations, customer_signature, customer_comments,
-        metadata, notes, special_instructions, device_info, app_version,
-        synced, last_synced_at, sync_error, created_at, updated_at, created_by, updated_by, task_number
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-const UPDATE_INTERVENTION_SQL: &str =
-    "UPDATE interventions SET
-        status = ?, vehicle_plate = ?, vehicle_model = ?, vehicle_make = ?, vehicle_year = ?,
-        vehicle_color = ?, vehicle_vin = ?, client_id = ?, client_name = ?, client_email = ?, client_phone = ?,
-        technician_id = ?, technician_name = ?, intervention_type = ?, current_step = ?, completion_percentage = ?,
-        ppf_zones_config = ?, ppf_zones_extended = ?, film_type = ?, film_brand = ?, film_model = ?,
-        scheduled_at = ?, started_at = ?, completed_at = ?, paused_at = ?, estimated_duration = ?, actual_duration = ?,
-        weather_condition = ?, lighting_condition = ?, work_location = ?, temperature_celsius = ?, humidity_percentage = ?,
-        start_location_lat = ?, start_location_lon = ?, start_location_accuracy = ?,
-        end_location_lat = ?, end_location_lon = ?, end_location_accuracy = ?,
-        customer_satisfaction = ?, quality_score = ?, final_observations = ?, customer_signature = ?, customer_comments = ?,
-        metadata = ?, notes = ?, special_instructions = ?, device_info = ?, app_version = ?,
-        synced = ?, last_synced_at = ?, sync_error = ?, updated_at = ?, updated_by = ?
-    WHERE id = ?";
-
-/// Build the params array for an INSERT intervention statement.
-fn insert_intervention_params(
-    intervention: &Intervention,
-    fields: &InterventionDbFields,
-) -> Vec<rusqlite::types::Value> {
-    vec![
-        intervention.id.clone().into(),
-        intervention.task_id.clone().into(),
-        fields.status.clone().into(),
-        intervention.vehicle_plate.clone().into(),
-        intervention.vehicle_model.clone().into(),
-        intervention.vehicle_make.clone().into(),
-        intervention.vehicle_year.clone().into(),
-        intervention.vehicle_color.clone().into(),
-        intervention.vehicle_vin.clone().into(),
-        intervention.client_id.clone().into(),
-        intervention.client_name.clone().into(),
-        intervention.client_email.clone().into(),
-        intervention.client_phone.clone().into(),
-        intervention.technician_id.clone().into(),
-        intervention.technician_name.clone().into(),
-        fields.intervention_type.clone().into(),
-        intervention.current_step.into(),
-        intervention.completion_percentage.into(),
-        fields.ppf_zones_config_json.clone().into(),
-        fields.ppf_zones_extended_json.clone().into(),
-        fields.film_type.clone().into(),
-        intervention.film_brand.clone().into(),
-        intervention.film_model.clone().into(),
-        intervention.scheduled_at.inner().into(),
-        intervention.started_at.inner().into(),
-        intervention.completed_at.inner().into(),
-        intervention.paused_at.inner().into(),
-        intervention.estimated_duration.into(),
-        intervention.actual_duration.into(),
-        fields.weather_condition.clone().into(),
-        fields.lighting_condition.clone().into(),
-        fields.work_location.clone().into(),
-        intervention.temperature_celsius.into(),
-        intervention.humidity_percentage.into(),
-        intervention.start_location_lat.into(),
-        intervention.start_location_lon.into(),
-        intervention.start_location_accuracy.into(),
-        intervention.end_location_lat.into(),
-        intervention.end_location_lon.into(),
-        intervention.end_location_accuracy.into(),
-        intervention.customer_satisfaction.into(),
-        intervention.quality_score.into(),
-        fields.final_observations_json.clone().into(),
-        intervention.customer_signature.clone().into(),
-        intervention.customer_comments.clone().into(),
-        fields.metadata_json.clone().into(),
-        intervention.notes.clone().into(),
-        intervention.special_instructions.clone().into(),
-        fields.device_info_json.clone().into(),
-        intervention.app_version.clone().into(),
-        intervention.synced.into(),
-        intervention.last_synced_at.into(),
-        intervention.sync_error.clone().into(),
-        intervention.created_at.into(),
-        intervention.updated_at.into(),
-        intervention.created_by.clone().into(),
-        intervention.updated_by.clone().into(),
-        intervention.task_number.clone().into(),
-    ]
-}
-
-/// Build the params array for an UPDATE intervention statement.
-fn update_intervention_params(
-    intervention: &Intervention,
-    fields: &InterventionDbFields,
-) -> Vec<rusqlite::types::Value> {
-    vec![
-        fields.status.clone().into(),
-        intervention.vehicle_plate.clone().into(),
-        intervention.vehicle_model.clone().into(),
-        intervention.vehicle_make.clone().into(),
-        intervention.vehicle_year.clone().into(),
-        intervention.vehicle_color.clone().into(),
-        intervention.vehicle_vin.clone().into(),
-        intervention.client_id.clone().into(),
-        intervention.client_name.clone().into(),
-        intervention.client_email.clone().into(),
-        intervention.client_phone.clone().into(),
-        intervention.technician_id.clone().into(),
-        intervention.technician_name.clone().into(),
-        fields.intervention_type.clone().into(),
-        intervention.current_step.into(),
-        intervention.completion_percentage.into(),
-        fields.ppf_zones_config_json.clone().into(),
-        fields.ppf_zones_extended_json.clone().into(),
-        fields.film_type.clone().into(),
-        intervention.film_brand.clone().into(),
-        intervention.film_model.clone().into(),
-        intervention.scheduled_at.inner().into(),
-        intervention.started_at.inner().into(),
-        intervention.completed_at.inner().into(),
-        intervention.paused_at.inner().into(),
-        intervention.estimated_duration.into(),
-        intervention.actual_duration.into(),
-        fields.weather_condition.clone().into(),
-        fields.lighting_condition.clone().into(),
-        fields.work_location.clone().into(),
-        intervention.temperature_celsius.into(),
-        intervention.humidity_percentage.into(),
-        intervention.start_location_lat.into(),
-        intervention.start_location_lon.into(),
-        intervention.start_location_accuracy.into(),
-        intervention.end_location_lat.into(),
-        intervention.end_location_lon.into(),
-        intervention.end_location_accuracy.into(),
-        intervention.customer_satisfaction.into(),
-        intervention.quality_score.into(),
-        fields.final_observations_json.clone().into(),
-        intervention.customer_signature.clone().into(),
-        intervention.customer_comments.clone().into(),
-        fields.metadata_json.clone().into(),
-        intervention.notes.clone().into(),
-        intervention.special_instructions.clone().into(),
-        fields.device_info_json.clone().into(),
-        intervention.app_version.clone().into(),
-        intervention.synced.into(),
-        intervention.last_synced_at.into(),
-        intervention.sync_error.clone().into(),
-        intervention.updated_at.into(),
-        intervention.updated_by.clone().into(),
-        intervention.id.clone().into(),
-    ]
-}
 
 /// TODO: document
 #[derive(Debug)]
@@ -401,27 +129,7 @@ impl InterventionRepository {
 
     /// TODO: document
     pub fn get_step(&self, id: &str) -> InterventionResult<Option<InterventionStep>> {
-        let conn = self.db.get_connection()?;
-
-        let mut stmt = conn.prepare(
-"SELECT id, intervention_id, step_number, step_name, step_type, step_status,
-                    description, instructions, quality_checkpoints, is_mandatory, requires_photos,
-                    min_photos_required, max_photos_allowed, started_at, completed_at, paused_at,
-                    duration_seconds, estimated_duration_seconds, step_data, collected_data, measurements,
-                    observations, photo_count, required_photos_completed, photo_urls, validation_data,
-                    validation_errors, validation_score, requires_supervisor_approval, approved_by,
-                    approved_at, rejection_reason, location_lat, location_lon, location_accuracy,
-                    device_timestamp, server_timestamp, title, notes, synced, last_synced_at,
-                    created_at, updated_at
-             FROM intervention_steps WHERE id = ?",
-        )?;
-
-        let mut rows = stmt.query_map(params![id], InterventionStep::from_row)?;
-
-        match rows.next() {
-            Some(row) => Ok(Some(row?)),
-            None => Ok(None),
-        }
+        intervention_step_repository::get_step(&self.db, id)
     }
 
     /// TODO: document
@@ -430,30 +138,7 @@ impl InterventionRepository {
         intervention_id: &str,
         step_number: i32,
     ) -> InterventionResult<Option<InterventionStep>> {
-        let conn = self.db.get_connection()?;
-
-        let mut stmt = conn.prepare(
-"SELECT id, intervention_id, step_number, step_name, step_type, step_status,
-                    description, instructions, quality_checkpoints, is_mandatory, requires_photos,
-                    min_photos_required, max_photos_allowed, started_at, completed_at, paused_at,
-                    duration_seconds, estimated_duration_seconds, step_data, collected_data, measurements,
-                    observations, photo_count, required_photos_completed, photo_urls, validation_data,
-                    validation_errors, validation_score, requires_supervisor_approval, approved_by,
-                    approved_at, rejection_reason, location_lat, location_lon, location_accuracy,
-                    device_timestamp, server_timestamp, title, notes, synced, last_synced_at,
-                    created_at, updated_at
-             FROM intervention_steps WHERE intervention_id = ? AND step_number = ?",
-        )?;
-
-        let mut rows = stmt.query_map(
-            params![intervention_id, step_number],
-            InterventionStep::from_row,
-        )?;
-
-        match rows.next() {
-            Some(row) => Ok(Some(row?)),
-            None => Ok(None),
-        }
+        intervention_step_repository::get_step_by_number(&self.db, intervention_id, step_number)
     }
 
     /// TODO: document
@@ -461,17 +146,7 @@ impl InterventionRepository {
         &self,
         intervention_id: &str,
     ) -> InterventionResult<Vec<InterventionStep>> {
-        let conn = self.db.get_connection()?;
-
-        let mut stmt = conn.prepare(
-            "SELECT * FROM intervention_steps WHERE intervention_id = ? ORDER BY step_number",
-        )?;
-
-        let steps = stmt
-            .query_map([intervention_id], |row| InterventionStep::from_row(row))?
-            .collect::<Result<Vec<_>, _>>()?;
-
-        Ok(steps)
+        intervention_step_repository::get_intervention_steps(&self.db, intervention_id)
     }
 
     /// TODO: document
@@ -501,41 +176,7 @@ impl InterventionRepository {
         tx: &Transaction,
         step: &InterventionStep,
     ) -> InterventionResult<()> {
-        let f = StepDbFields::from_step(step);
-        let rows_affected = tx.execute(
-            "INSERT OR REPLACE INTO intervention_steps (
-                id, intervention_id, step_number, step_name, step_type, step_status,
-                description, instructions, quality_checkpoints, is_mandatory, requires_photos,
-                min_photos_required, max_photos_allowed, started_at, completed_at, paused_at,
-                duration_seconds, estimated_duration_seconds, step_data, collected_data, measurements,
-                observations, photo_count, required_photos_completed, photo_urls, validation_data,
-                validation_errors, validation_score, requires_supervisor_approval, approved_by,
-                approved_at, rejection_reason, location_lat, location_lon, location_accuracy,
-                device_timestamp, server_timestamp, title, notes, synced, last_synced_at,
-                created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            params![
-                step.id, step.intervention_id, step.step_number, step.step_name, f.step_type, f.step_status,
-                step.description, f.instructions_json, f.quality_checkpoints_json, step.is_mandatory, step.requires_photos,
-                step.min_photos_required, step.max_photos_allowed, step.started_at.inner(), step.completed_at.inner(), step.paused_at.inner(),
-                step.duration_seconds, step.estimated_duration_seconds, f.step_data_json, f.collected_data_json, f.measurements_json,
-                f.observations_json, step.photo_count, step.required_photos_completed, f.photo_urls_json, f.validation_data_json,
-                f.validation_errors_json, step.validation_score, step.requires_supervisor_approval, step.approved_by,
-                step.approved_at.inner(), step.rejection_reason, step.location_lat, step.location_lon, step.location_accuracy,
-                step.device_timestamp.inner(), step.server_timestamp.inner(), step.title, step.notes, step.synced, step.last_synced_at.inner(),
-                step.created_at, step.updated_at
-            ],
-        )?;
-
-        debug!(
-            step_id = %step.id,
-            intervention_id = %step.intervention_id,
-            step_number = step.step_number,
-            rows_affected = rows_affected,
-            "Saved intervention step (transaction)"
-        );
-
-        Ok(())
+        intervention_step_repository::save_step_with_tx(tx, step)
     }
 
     /// QW-3 perf: prepare the INSERT statement once, then execute for each step.
@@ -545,115 +186,12 @@ impl InterventionRepository {
         tx: &Transaction,
         steps: &[InterventionStep],
     ) -> InterventionResult<()> {
-        if steps.is_empty() {
-            return Ok(());
-        }
-        const SQL: &str = "INSERT OR REPLACE INTO intervention_steps (
-            id, intervention_id, step_number, step_name, step_type, step_status,
-            description, instructions, quality_checkpoints, is_mandatory, requires_photos,
-            min_photos_required, max_photos_allowed, started_at, completed_at, paused_at,
-            duration_seconds, estimated_duration_seconds, step_data, collected_data, measurements,
-            observations, photo_count, required_photos_completed, photo_urls, validation_data,
-            validation_errors, validation_score, requires_supervisor_approval, approved_by,
-            approved_at, rejection_reason, location_lat, location_lon, location_accuracy,
-            device_timestamp, server_timestamp, title, notes, synced, last_synced_at,
-            created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        let mut stmt = tx.prepare_cached(SQL)?;
-        for step in steps {
-            let f = StepDbFields::from_step(step);
-            stmt.execute(params![
-                step.id,
-                step.intervention_id,
-                step.step_number,
-                step.step_name,
-                f.step_type,
-                f.step_status,
-                step.description,
-                f.instructions_json,
-                f.quality_checkpoints_json,
-                step.is_mandatory,
-                step.requires_photos,
-                step.min_photos_required,
-                step.max_photos_allowed,
-                step.started_at.inner(),
-                step.completed_at.inner(),
-                step.paused_at.inner(),
-                step.duration_seconds,
-                step.estimated_duration_seconds,
-                f.step_data_json,
-                f.collected_data_json,
-                f.measurements_json,
-                f.observations_json,
-                step.photo_count,
-                step.required_photos_completed,
-                f.photo_urls_json,
-                f.validation_data_json,
-                f.validation_errors_json,
-                step.validation_score,
-                step.requires_supervisor_approval,
-                step.approved_by,
-                step.approved_at.inner(),
-                step.rejection_reason,
-                step.location_lat,
-                step.location_lon,
-                step.location_accuracy,
-                step.device_timestamp.inner(),
-                step.server_timestamp.inner(),
-                step.title,
-                step.notes,
-                step.synced,
-                step.last_synced_at.inner(),
-                step.created_at,
-                step.updated_at
-            ])?;
-        }
-        debug!(
-            count = steps.len(),
-            "Saved intervention steps batch (transaction)"
-        );
-        Ok(())
+        intervention_step_repository::save_steps_batch_with_tx(tx, steps)
     }
 
     /// TODO: document
     pub fn save_step(&self, step: &InterventionStep) -> InterventionResult<()> {
-        let conn = self.db.get_connection()?;
-        let f = StepDbFields::from_step(step);
-
-        let rows_affected = conn.execute(
-            "INSERT OR REPLACE INTO intervention_steps (
-                id, intervention_id, step_number, step_name, step_type, step_status,
-                description, instructions, quality_checkpoints, is_mandatory, requires_photos,
-                min_photos_required, max_photos_allowed, started_at, completed_at, paused_at,
-                duration_seconds, estimated_duration_seconds, step_data, collected_data, measurements,
-                observations, photo_count, required_photos_completed, photo_urls, validation_data,
-                validation_errors, validation_score, requires_supervisor_approval, approved_by,
-                approved_at, rejection_reason, location_lat, location_lon, location_accuracy,
-                device_timestamp, server_timestamp, title, notes, synced, last_synced_at,
-                created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            params![
-                step.id, step.intervention_id, step.step_number, step.step_name, f.step_type, f.step_status,
-                step.description, f.instructions_json, f.quality_checkpoints_json, step.is_mandatory, step.requires_photos,
-                step.min_photos_required, step.max_photos_allowed, step.started_at.inner(), step.completed_at.inner(), step.paused_at.inner(),
-                step.duration_seconds, step.estimated_duration_seconds, f.step_data_json, f.collected_data_json, f.measurements_json,
-                f.observations_json, step.photo_count, step.required_photos_completed, f.photo_urls_json, f.validation_data_json,
-                f.validation_errors_json, step.validation_score, step.requires_supervisor_approval, step.approved_by,
-                step.approved_at.inner(), step.rejection_reason, step.location_lat, step.location_lon, step.location_accuracy,
-                step.device_timestamp.inner(), step.server_timestamp.inner(), step.title, step.notes, step.synced, step.last_synced_at.inner(),
-                step.created_at, step.updated_at
-            ],
-        )?;
-
-        debug!(
-            step_id = %step.id,
-            intervention_id = %step.intervention_id,
-            step_number = step.step_number,
-            rows_affected = rows_affected,
-            "Saved intervention step"
-        );
-
-        Ok(())
+        intervention_step_repository::save_step(&self.db, step)
     }
 
     /// TODO: document
@@ -746,159 +284,37 @@ impl InterventionRepository {
 
     /// Reset task workflow state for a failed intervention start
     pub fn reset_task_workflow_state(&self, task_id: &str) -> Result<(), String> {
-        let conn = self.db.get_connection()?;
-        conn.execute(
-            "UPDATE tasks SET workflow_id = NULL, current_workflow_step_id = NULL, status = ?, started_at = NULL WHERE id = ? AND workflow_id IS NOT NULL",
-            rusqlite::params![TaskStatus::Draft.to_string(), task_id]
-        ).map_err(|e| e.to_string())?;
-        Ok(())
+        intervention_maintenance_repository::reset_task_workflow_state(&self.db, task_id)
     }
 
     /// Delete orphaned intervention and steps for a specific task
     pub fn delete_orphaned_for_task(&self, task_id: &str) -> Result<(), String> {
-        let mut conn = self.db.get_connection()?;
-        let tx = conn.transaction().map_err(|e| e.to_string())?;
-        tx.execute(
-            "DELETE FROM intervention_steps WHERE intervention_id IN (SELECT id FROM interventions WHERE task_id = ?)",
-            rusqlite::params![task_id]
-        ).map_err(|e| e.to_string())?;
-        tx.execute(
-            "DELETE FROM interventions WHERE task_id = ?",
-            rusqlite::params![task_id],
-        )
-        .map_err(|e| e.to_string())?;
-        tx.commit().map_err(|e| e.to_string())?;
-        Ok(())
+        intervention_maintenance_repository::delete_orphaned_for_task(&self.db, task_id)
     }
 
     /// Count orphaned interventions (those without valid task references)
     pub fn count_orphaned(&self) -> InterventionResult<i64> {
-        let conn = self
-            .db
-            .get_connection()
-            .map_err(|e| InterventionError::Database(format!("Failed to get connection: {}", e)))?;
-
-        conn.query_row(
-            "SELECT COUNT(*) FROM interventions i
-             LEFT JOIN tasks t ON i.task_id = t.id
-             WHERE t.id IS NULL OR t.deleted_at IS NOT NULL",
-            [],
-            |row| row.get(0),
-        )
-        .map_err(|e| {
-            InterventionError::Database(format!("Failed to count orphaned interventions: {}", e))
-        })
+        intervention_maintenance_repository::count_orphaned(&self.db)
     }
 
     /// Delete all orphaned interventions and their steps
     pub fn delete_orphaned(&self) -> InterventionResult<u32> {
-        let orphaned_count = self.count_orphaned()?;
-        if orphaned_count > 0 {
-            let mut conn = self.db.get_connection().map_err(|e| {
-                InterventionError::Database(format!("Failed to get connection: {}", e))
-            })?;
-
-            let tx = conn.transaction().map_err(|e| {
-                InterventionError::Database(format!("Failed to start transaction: {}", e))
-            })?;
-
-            tx.execute(
-                "DELETE FROM intervention_steps WHERE intervention_id IN (
-                    SELECT i.id FROM interventions i
-                    LEFT JOIN tasks t ON i.task_id = t.id
-                    WHERE t.id IS NULL OR t.deleted_at IS NOT NULL
-                )",
-                [],
-            )
-            .map_err(|e| {
-                InterventionError::Database(format!("Failed to delete orphaned steps: {}", e))
-            })?;
-
-            tx.execute(
-                "DELETE FROM interventions WHERE id IN (
-                    SELECT i.id FROM interventions i
-                    LEFT JOIN tasks t ON i.task_id = t.id
-                    WHERE t.id IS NULL OR t.deleted_at IS NOT NULL
-                )",
-                [],
-            )
-            .map_err(|e| {
-                InterventionError::Database(format!(
-                    "Failed to delete orphaned interventions: {}",
-                    e
-                ))
-            })?;
-
-            tx.commit().map_err(|e| {
-                InterventionError::Database(format!("Failed to commit transaction: {}", e))
-            })?;
-        }
-
-        Ok(orphaned_count as u32)
+        intervention_maintenance_repository::delete_orphaned(&self.db)
     }
 
     /// Archive old completed interventions
     pub fn archive_old(&self, days_old: i32) -> InterventionResult<u32> {
-        let conn = self
-            .db
-            .get_connection()
-            .map_err(|e| InterventionError::Database(format!("Failed to get connection: {}", e)))?;
-
-        let cutoff_timestamp =
-            chrono::Utc::now().timestamp_millis() - (days_old as i64 * 24 * 60 * 60 * 1000);
-
-        let archived_count = conn
-            .execute(
-                "UPDATE interventions
-             SET status = 'archived', updated_at = ?
-             WHERE status = ?
-             AND completed_at < ?
-             AND status != 'archived'",
-                rusqlite::params![
-                    chrono::Utc::now().timestamp_millis(),
-                    InterventionStatus::Completed.to_string(),
-                    cutoff_timestamp
-                ],
-            )
-            .map_err(|e| {
-                InterventionError::Database(format!("Failed to archive old interventions: {}", e))
-            })?;
-
-        Ok(archived_count as u32)
+        intervention_maintenance_repository::archive_old(&self.db, days_old)
     }
 
     /// Count orphaned steps (steps without valid intervention references)
     pub fn count_orphaned_steps(&self) -> InterventionResult<i64> {
-        let conn = self
-            .db
-            .get_connection()
-            .map_err(|e| InterventionError::Database(format!("Failed to get connection: {}", e)))?;
-
-        conn.query_row(
-            "SELECT COUNT(*) FROM intervention_steps s
-             LEFT JOIN interventions i ON s.intervention_id = i.id
-             WHERE i.id IS NULL",
-            [],
-            |row| row.get(0),
-        )
-        .map_err(|e| InterventionError::Database(format!("Failed to count orphaned steps: {}", e)))
+        intervention_maintenance_repository::count_orphaned_steps(&self.db)
     }
 
     /// Count archived interventions
     pub fn count_archived(&self) -> InterventionResult<i64> {
-        let conn = self
-            .db
-            .get_connection()
-            .map_err(|e| InterventionError::Database(format!("Failed to get connection: {}", e)))?;
-
-        conn.query_row(
-            "SELECT COUNT(*) FROM interventions WHERE status = 'archived' AND deleted_at IS NULL",
-            [],
-            |row| row.get(0),
-        )
-        .map_err(|e| {
-            InterventionError::Database(format!("Failed to count archived interventions: {}", e))
-        })
+        intervention_maintenance_repository::count_archived(&self.db)
     }
 }
 
@@ -943,6 +359,33 @@ mod tests {
         step.server_timestamp = TimestampString::new(Some(1_700_000_000_100));
         step.last_synced_at = TimestampString::new(Some(1_700_000_000_200));
         step
+    }
+
+    fn seed_completed_intervention(
+        db: &crate::db::Database,
+        intervention_id: &str,
+        completed_at: i64,
+    ) {
+        let task_id = format!("task-for-{}", intervention_id);
+        db.execute(
+            "INSERT OR IGNORE INTO tasks (id, task_number, title, vehicle_plate, vehicle_model, ppf_zones, scheduled_date, status, priority, created_at, updated_at, synced)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)",
+            rusqlite::params![task_id, "T-archive", "Archive task", "BB-000-BB", "Model Y", r#"["front"]"#, "2025-01-01", "completed", "medium", completed_at, completed_at],
+        )
+        .expect("seed archive task");
+        db.execute(
+            "INSERT OR IGNORE INTO interventions (id, task_id, status, vehicle_plate, completed_at, created_at, updated_at, synced)
+             VALUES (?, ?, ?, 'ARCH-00', ?, ?, ?, 0)",
+            rusqlite::params![
+                intervention_id,
+                task_id,
+                crate::domains::interventions::domain::models::intervention::InterventionStatus::Completed.to_string(),
+                completed_at,
+                completed_at,
+                completed_at
+            ],
+        )
+        .expect("seed completed intervention");
     }
 
     #[test]
@@ -1026,5 +469,85 @@ mod tests {
         assert_eq!(steps[1].photo_urls, step_2.photo_urls);
         assert_eq!(steps[1].notes, step_2.notes);
         assert_eq!(steps[1].measurements, step_2.measurements);
+    }
+
+    #[test]
+    fn save_steps_batch_with_tx_matches_single_step_persistence() {
+        let test_db = TestDatabase::new().expect("Failed to create test database");
+        let db = test_db.db();
+        seed_intervention(&db, "intervention-3");
+        let repository = InterventionRepository::new(db.clone());
+
+        let step_1 = build_step("intervention-3", 1);
+        let mut step_2 = build_step("intervention-3", 2);
+        step_2.step_type = StepType::Preparation;
+        step_2.notes = Some("batch-note".to_string());
+
+        let mut conn = db
+            .get_connection()
+            .expect("Failed to get connection for batch transaction");
+        let tx = conn
+            .transaction()
+            .expect("Failed to open batch transaction");
+        repository
+            .save_steps_batch_with_tx(&tx, &[step_1.clone(), step_2.clone()])
+            .expect("Failed to save step batch");
+        tx.commit().expect("Failed to commit batch transaction");
+
+        let steps = repository
+            .get_intervention_steps("intervention-3")
+            .expect("Failed to fetch batch-saved steps");
+
+        assert_eq!(steps.len(), 2);
+        assert_eq!(steps[0].step_data, step_1.step_data);
+        assert_eq!(steps[0].collected_data, step_1.collected_data);
+        assert_eq!(steps[0].measurements, step_1.measurements);
+        assert_eq!(steps[0].photo_urls, step_1.photo_urls);
+        assert_eq!(steps[1].step_data, step_2.step_data);
+        assert_eq!(steps[1].collected_data, step_2.collected_data);
+        assert_eq!(steps[1].measurements, step_2.measurements);
+        assert_eq!(steps[1].photo_urls, step_2.photo_urls);
+        assert_eq!(steps[1].notes, step_2.notes);
+    }
+
+    #[test]
+    fn maintenance_queries_preserve_orphan_cleanup_and_archiving() {
+        let test_db = TestDatabase::new().expect("Failed to create test database");
+        let db = test_db.db();
+        let repository = InterventionRepository::new(db.clone());
+        let now = chrono::Utc::now().timestamp_millis();
+        let old_completed_at = now - (3 * 24 * 60 * 60 * 1000);
+
+        seed_intervention(&db, "orphan-intervention");
+        let orphan_step = build_step("orphan-intervention", 1);
+        repository
+            .save_step(&orphan_step)
+            .expect("Failed to save orphan step");
+        db.execute(
+            "UPDATE tasks SET deleted_at = ? WHERE id = ?",
+            rusqlite::params![
+                chrono::Utc::now().timestamp_millis(),
+                "task-for-orphan-intervention"
+            ],
+        )
+        .expect("soft-delete orphan task");
+
+        seed_completed_intervention(&db, "archive-intervention", old_completed_at);
+
+        assert_eq!(repository.count_orphaned().expect("count orphaned"), 1);
+        assert_eq!(repository.delete_orphaned().expect("delete orphaned"), 1);
+        assert_eq!(
+            repository.count_orphaned().expect("count orphaned after"),
+            0
+        );
+        assert_eq!(
+            repository
+                .count_orphaned_steps()
+                .expect("count orphaned steps after"),
+            0
+        );
+
+        assert_eq!(repository.archive_old(1).expect("archive old"), 1);
+        assert_eq!(repository.count_archived().expect("count archived"), 1);
     }
 }

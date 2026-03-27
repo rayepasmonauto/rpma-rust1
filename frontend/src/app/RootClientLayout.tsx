@@ -8,7 +8,7 @@ import { GlobalHealthBanner } from '@/lib/GlobalHealthBanner';
 import { Providers } from '@/app/providers';
 import "./globals.css";
 import AppNavigation from '@/app/AppNavigation';
-import { GlobalErrorBoundary, SkipLink } from '@/shared/ui';
+import { GlobalErrorBoundary, SkipLink, Watermark } from '@/shared/ui';
 import { structuredLogger as logger, CorrelationContext, LogDomain } from '@/shared/utils';
 import { useMenuEvents } from '@/shared/hooks/useMenuEvents';
 import { useTauriEvent } from '@/shared/hooks/useTauriEvent';
@@ -142,6 +142,7 @@ export default function RootClientLayout({
             </ThemeProvider>
           </Providers>
         </GlobalErrorBoundary>
+      <Watermark />
     </div>
   );
 }

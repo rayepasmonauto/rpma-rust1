@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import {
@@ -12,7 +12,7 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  User
+  User,
 } from 'lucide-react';
 import { ClientWithTasks } from '@/lib/backend';
 import { taskStatusLabels } from '@/lib/i18n/status-labels';
@@ -48,16 +48,8 @@ export function ClientDetail({
   error,
   onEdit,
   onDelete,
-  onCreateTask
+  onCreateTask,
 }: ClientDetailProps) {
-
-  // DEBT: Duplicated helper logic — `getStatusIcon` and `getStatusLabel` are defined locally
-  // here and redefined in at least 15+ other files (InventoryManager, MonitoringTab,
-  // IntegrationCard, ConfigurationPageContent, TaskListTable, TaskListCard, CalendarTaskCard, …).
-  // Rationale: status colours/labels diverge silently across the UI; `STATUS_CONFIG` in
-  // `components/ui/status-badge.tsx` already centralises this mapping but is not used here.
-  // Next step: delete both local helpers and replace calls with `<StatusBadge status={…} />` or
-  // import `STATUS_CONFIG` from `@/components/ui/status-badge`.
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
@@ -97,34 +89,24 @@ export function ClientDetail({
     return (
       <div className="text-center py-8">
         <p className="text-red-600 mb-4">{error}</p>
-        <Button onClick={() => window.location.reload()}>
-          Réessayer
-        </Button>
+        <Button onClick={() => window.location.reload()}>Réessayer</Button>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">{client.name}</h1>
-          {client.company_name && (
-            <p className="text-lg text-muted-foreground mt-1">
-              {client.company_name}
-            </p>
-          )}
+          {client.company_name && <p className="text-lg text-muted-foreground mt-1">{client.company_name}</p>}
         </div>
-        
+
         <div className="flex items-center gap-2">
-          <Badge 
-            variant={client.customer_type === 'business' ? 'default' : 'secondary'}
-            className="text-sm"
-          >
+          <Badge variant={client.customer_type === 'business' ? 'default' : 'secondary'} className="text-sm">
             {client.customer_type === 'business' ? 'Entreprise' : 'Particulier'}
           </Badge>
-          
+
           <div className="flex items-center gap-2">
             {onEdit && (
               <Button variant="outline" onClick={onEdit}>
@@ -132,14 +114,14 @@ export function ClientDetail({
                 Modifier
               </Button>
             )}
-            
+
             {onCreateTask && (
               <Button onClick={onCreateTask}>
                 <Plus className="h-4 w-4 mr-2" />
                 Nouvelle tâche
               </Button>
             )}
-            
+
             {onDelete && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -155,17 +137,14 @@ export function ClientDetail({
                       Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible.
                       {(client.tasks?.length || 0) > 0 && (
                         <span className="block mt-2 text-red-600">
-                          ⚠️ Ce client a {client.tasks?.length || 0} tâche{(client.tasks?.length || 0) !== 1 ? 's' : ''} associée{(client.tasks?.length || 0) !== 1 ? 's' : ''}.
+                          Ce client a {client.tasks?.length || 0} tâche{(client.tasks?.length || 0) !== 1 ? 's' : ''} associée{(client.tasks?.length || 0) !== 1 ? 's' : ''}.
                         </span>
                       )}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={onDelete}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
+                    <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700">
                       Supprimer
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -177,9 +156,7 @@ export function ClientDetail({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Contact Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -194,17 +171,16 @@ export function ClientDetail({
                   <span>{client.email}</span>
                 </div>
               )}
-              
-               {client.phone && (
-                 <div className="flex items-center gap-3">
-                   <Phone className="h-4 w-4 text-muted-foreground" />
-                   <span>{client.phone}</span>
-                 </div>
-               )}
+
+              {client.phone && (
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span>{client.phone}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Notes */}
           {client.notes && (
             <Card>
               <CardHeader>
@@ -214,14 +190,11 @@ export function ClientDetail({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground whitespace-pre-wrap">
-                  {client.notes}
-                </p>
+                <p className="text-muted-foreground whitespace-pre-wrap">{client.notes}</p>
               </CardContent>
             </Card>
           )}
 
-          {/* Task History */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -235,11 +208,7 @@ export function ClientDetail({
                   <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Aucune tâche pour ce client</p>
                   {onCreateTask && (
-                    <Button 
-                      variant="outline" 
-                      className="mt-4"
-                      onClick={onCreateTask}
-                    >
+                    <Button variant="outline" className="mt-4" onClick={onCreateTask}>
                       <Plus className="h-4 w-4 mr-2" />
                       Créer la première tâche
                     </Button>
@@ -255,23 +224,18 @@ export function ClientDetail({
                           <div>
                             <p className="font-medium">{task.title}</p>
                             <p className="text-sm text-muted-foreground">
-                              {task.vehicle_plate && task.vehicle_model 
+                              {task.vehicle_plate && task.vehicle_model
                                 ? `${task.vehicle_model} - ${task.vehicle_plate}`
-                                : 'Véhicule non spécifié'
-                              }
+                                : 'Véhicule non spécifié'}
                             </p>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-3">
-                          <Badge variant="outline">
-                            {getStatusLabel(task.status)}
-                          </Badge>
+                          <Badge variant="outline">{getStatusLabel(task.status)}</Badge>
                           <div className="text-right text-sm text-muted-foreground">
-                             <p>Créée le {formatDateTime(task.created_at as unknown as string)}</p>
-                             {task.completed_at && (
-                               <p>Terminée le {formatDateTime(task.completed_at as unknown as string)}</p>
-                             )}
+                            <p>Créée le {formatDateTime(task.created_at as unknown as string)}</p>
+                            {task.completed_at && <p>Terminée le {formatDateTime(task.completed_at as unknown as string)}</p>}
                           </div>
                         </div>
                       </div>
@@ -284,9 +248,7 @@ export function ClientDetail({
           </Card>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Client Info */}
           <Card>
             <CardHeader>
               <CardTitle>Informations</CardTitle>
@@ -298,25 +260,24 @@ export function ClientDetail({
                   {client.customer_type === 'business' ? 'Entreprise' : 'Particulier'}
                 </Badge>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Tâches</span>
                 <span className="font-medium">{client.tasks?.length || 0}</span>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Créé le</span>
-                 <span className="font-medium">{formatDateTime(client.created_at as unknown as string)}</span>
+                <span className="font-medium">{formatDateTime(client.created_at as unknown as string)}</span>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Modifié le</span>
-                 <span className="font-medium">{formatDateTime(client.updated_at as unknown as string)}</span>
+                <span className="font-medium">{formatDateTime(client.updated_at as unknown as string)}</span>
               </div>
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
           <Card>
             <CardHeader>
               <CardTitle>Actions rapides</CardTitle>
@@ -328,14 +289,14 @@ export function ClientDetail({
                   Envoyer un email
                 </Button>
               )}
-              
+
               {client.phone && (
                 <Button variant="outline" className="w-full justify-start">
                   <Phone className="h-4 w-4 mr-2" />
                   Appeler
                 </Button>
               )}
-              
+
               {onCreateTask && (
                 <Button className="w-full justify-start">
                   <Plus className="h-4 w-4 mr-2" />
