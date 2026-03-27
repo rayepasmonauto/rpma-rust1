@@ -24,3 +24,15 @@ pub const WORKFLOW_DURATION_REPAIR_SECS: i32 = 1800;
 
 /// Estimated duration (seconds) for a PPF final-check workflow step (5 min).
 pub const WORKFLOW_DURATION_FINAL_CHECK_SECS: i32 = 300;
+
+/// Application brand name used in logs, metadata, and UI signatures.
+pub const APP_BRAND: &str = "RPMA v2";
+
+/// Short proprietary watermark shown in the UI and app metadata.
+pub const APP_WATERMARK: &str = "RPMA v2 - Proprietary";
+
+/// Copyright notice embedded in the binary metadata and startup logs.
+pub const APP_COPYRIGHT_NOTICE: &str = "Copyright (c) 2026 RPMA v2. All rights reserved.";
+
+/// License descriptor used by the application metadata payload.
+pub const APP_LICENSE_NAME: &str = "Proprietary";

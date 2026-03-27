@@ -2,6 +2,7 @@
 
 use crate::commands::{AppState, UserRole};
 use crate::resolve_context;
+use crate::shared::constants::{APP_BRAND, APP_COPYRIGHT_NOTICE, APP_LICENSE_NAME, APP_WATERMARK};
 use crate::shared::ipc::AppError;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
@@ -325,6 +326,13 @@ pub async fn get_app_info(correlation_id: Option<String>) -> Result<serde_json::
     // Get version from Cargo.toml
     info.insert("version".to_string(), env!("CARGO_PKG_VERSION").to_string());
     info.insert("name".to_string(), env!("CARGO_PKG_NAME").to_string());
+    info.insert("brand".to_string(), APP_BRAND.to_string());
+    info.insert("watermark".to_string(), APP_WATERMARK.to_string());
+    info.insert(
+        "copyright".to_string(),
+        APP_COPYRIGHT_NOTICE.to_string(),
+    );
+    info.insert("license".to_string(), APP_LICENSE_NAME.to_string());
     info.insert(
         "description".to_string(),
         env!("CARGO_PKG_DESCRIPTION").to_string(),
@@ -382,5 +390,25 @@ mod tests {
             result,
             Err(AppError::Internal(message)) if message == "Database unavailable"
         ));
+    }
+
+    #[tokio::test]
+    async fn test_get_app_info_includes_branding_fields() {
+        let value = get_app_info(None).await.expect("app info");
+        let obj = value.as_object().expect("app info object");
+
+        assert_eq!(obj.get("brand").and_then(|v| v.as_str()), Some(APP_BRAND));
+        assert_eq!(
+            obj.get("watermark").and_then(|v| v.as_str()),
+            Some(APP_WATERMARK)
+        );
+        assert_eq!(
+            obj.get("copyright").and_then(|v| v.as_str()),
+            Some(APP_COPYRIGHT_NOTICE)
+        );
+        assert_eq!(
+            obj.get("license").and_then(|v| v.as_str()),
+            Some(APP_LICENSE_NAME)
+        );
     }
 }

@@ -13,6 +13,7 @@ mod test_utils;
 
 use commands::navigation;
 
+use crate::shared::constants::{APP_BRAND, APP_COPYRIGHT_NOTICE, APP_WATERMARK};
 use std::sync::Arc;
 use std::time::Duration;
 use tauri::async_runtime;
@@ -48,14 +49,16 @@ fn init_tracing() {
         )
         .init();
 
-    info!("RPMA v2 logging system initialized");
+    info!("{} logging system initialized", APP_BRAND);
 }
 
 fn main() {
     dotenvy::dotenv().ok();
     init_tracing();
 
-    info!("Starting RPMA v2 PPF Intervention application");
+    info!("Starting {} PPF Intervention application", APP_BRAND);
+    info!("{}", APP_COPYRIGHT_NOTICE);
+    info!("Watermark: {}", APP_WATERMARK);
     info!(
         "Build info: {} v{}",
         env!("CARGO_PKG_NAME"),
