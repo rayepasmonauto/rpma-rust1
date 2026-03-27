@@ -24,9 +24,8 @@ use tracing::{debug, info};
 
 // Re-export all request/response types so callers see no change.
 pub use super::types::{
-    AddTaskNoteRequest, DelayTaskRequest, EditTaskRequest,
-    ExportTasksCsvRequest, ImportTasksBulkRequest, ReportTaskIssueRequest, SendTaskMessageRequest,
-    TaskCrudRequest,
+    AddTaskNoteRequest, DelayTaskRequest, EditTaskRequest, ExportTasksCsvRequest,
+    ImportTasksBulkRequest, ReportTaskIssueRequest, SendTaskMessageRequest, TaskCrudRequest,
 };
 
 /// Construct a per-request [`TaskCommandService`] from shared application state.
@@ -184,8 +183,6 @@ pub async fn edit_task(
     Ok(ApiResponse::success(updated_task).with_correlation_id(Some(ctx.correlation_id.clone())))
 }
 
-
-
 async fn handle_crud_create(
     data: crate::domains::tasks::domain::models::task::CreateTaskRequest,
     correlation_id: Option<String>,
@@ -226,7 +223,9 @@ async fn handle_crud_update(
 ) -> Result<crate::commands::ApiResponse<crate::commands::TaskResponse>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
     check_task_permission!(&ctx.auth.role, "update");
-    let task = cmd_service(&state).update_task_crud(&ctx, &id, data).await?;
+    let task = cmd_service(&state)
+        .update_task_crud(&ctx, &id, data)
+        .await?;
     Ok(
         ApiResponse::success(crate::commands::TaskResponse::Updated(task))
             .with_correlation_id(Some(ctx.correlation_id.clone())),
@@ -269,9 +268,9 @@ async fn handle_crud_list(
     let result = get_tasks_with_clients(request, state).await?;
     let response_correlation_id = result.correlation_id.clone();
     match result.data {
-        Some(task_list_response) => Ok(ApiResponse::success(
-            crate::commands::TaskResponse::List(task_list_response),
-        )
+        Some(task_list_response) => Ok(ApiResponse::success(crate::commands::TaskResponse::List(
+            task_list_response,
+        ))
         .with_correlation_id(response_correlation_id)),
         None => Ok(
             ApiResponse::error(AppError::NotFound("No tasks found".to_string()))
@@ -284,11 +283,10 @@ async fn handle_crud_statistics(
     correlation_id: Option<String>,
     state: AppState<'_>,
 ) -> Result<crate::commands::ApiResponse<crate::commands::TaskResponse>, AppError> {
-    let stats_request =
-        crate::domains::tasks::ipc::task::queries::GetTaskStatisticsRequest {
-            filter: None,
-            correlation_id: correlation_id.clone(),
-        };
+    let stats_request = crate::domains::tasks::ipc::task::queries::GetTaskStatisticsRequest {
+        filter: None,
+        correlation_id: correlation_id.clone(),
+    };
 
     let stats_response = get_task_statistics(stats_request, state).await?;
     let response_correlation_id = stats_response.correlation_id.clone();
@@ -302,16 +300,14 @@ async fn handle_crud_statistics(
                 overdue: stats.overdue_tasks,
             };
             Ok(
-                ApiResponse::success(crate::commands::TaskResponse::Statistics(
-                    response_stats,
-                ))
-                .with_correlation_id(response_correlation_id),
+                ApiResponse::success(crate::commands::TaskResponse::Statistics(response_stats))
+                    .with_correlation_id(response_correlation_id),
             )
         }
-        None => Ok(ApiResponse::error(AppError::NotFound(
-            "Statistics not available".to_string(),
-        ))
-        .with_correlation_id(response_correlation_id)),
+        None => Ok(
+            ApiResponse::error(AppError::NotFound("Statistics not available".to_string()))
+                .with_correlation_id(response_correlation_id),
+        ),
     }
 }
 
@@ -358,7 +354,9 @@ pub async fn task_update(
 ) -> Result<ApiResponse<Task>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
     check_task_permission!(&ctx.auth.role, "update");
-    let task = cmd_service(&state).update_task_crud(&ctx, &id, data).await?;
+    let task = cmd_service(&state)
+        .update_task_crud(&ctx, &id, data)
+        .await?;
     Ok(ApiResponse::success(task).with_correlation_id(Some(ctx.correlation_id.clone())))
 }
 
@@ -405,8 +403,10 @@ pub async fn task_statistics(
     filter: Option<TaskFilter>,
     correlation_id: Option<String>,
     state: AppState<'_>,
-) -> Result<ApiResponse<crate::domains::tasks::infrastructure::task_statistics::TaskStatistics>, AppError>
-{
+) -> Result<
+    ApiResponse<crate::domains::tasks::infrastructure::task_statistics::TaskStatistics>,
+    AppError,
+> {
     let request = GetTaskStatisticsRequest {
         filter,
         correlation_id,
@@ -420,7 +420,9 @@ pub async fn task_statistics(
 /// `task_delete`, `task_list`, `task_statistics` commands instead.
 ///
 /// Kept as a shim so existing frontend code continues to work during migration.
-#[deprecated(note = "Use individual task_create/task_get/task_update/task_delete/task_list/task_statistics commands")]
+#[deprecated(
+    note = "Use individual task_create/task_get/task_update/task_delete/task_list/task_statistics commands"
+)]
 #[tracing::instrument(skip(state))]
 #[tauri::command]
 pub async fn task_crud(
@@ -439,9 +441,7 @@ pub async fn task_crud(
         crate::commands::TaskAction::Create { data } => {
             handle_crud_create(data, correlation_id, state).await
         }
-        crate::commands::TaskAction::Get { id } => {
-            handle_crud_get(id, correlation_id, state).await
-        }
+        crate::commands::TaskAction::Get { id } => handle_crud_get(id, correlation_id, state).await,
         crate::commands::TaskAction::Update { id, data } => {
             handle_crud_update(id, data, correlation_id, state).await
         }
@@ -460,8 +460,8 @@ pub async fn task_crud(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domains::tasks::application::services::task_policy_service;
     use crate::commands::AppError;
+    use crate::domains::tasks::application::services::task_policy_service;
     use crate::domains::tasks::domain::models::task::{
         Task, TaskPriority, TaskStatus, UpdateTaskRequest,
     };
@@ -669,12 +669,17 @@ mod tests {
 
     #[test]
     fn test_validate_status_change_valid() {
-        assert!(task_policy_service::validate_status_change(&TaskStatus::Draft, &TaskStatus::Pending).is_ok());
+        assert!(task_policy_service::validate_status_change(
+            &TaskStatus::Draft,
+            &TaskStatus::Pending
+        )
+        .is_ok());
     }
 
     #[test]
     fn test_validate_status_change_invalid_returns_task_invalid_transition() {
-        let result = task_policy_service::validate_status_change(&TaskStatus::Completed, &TaskStatus::Draft);
+        let result =
+            task_policy_service::validate_status_change(&TaskStatus::Completed, &TaskStatus::Draft);
         assert!(result.is_err());
         match result.unwrap_err() {
             AppError::TaskInvalidTransition(_) => {}

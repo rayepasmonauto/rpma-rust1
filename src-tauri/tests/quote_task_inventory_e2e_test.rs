@@ -13,9 +13,9 @@ use rpma_ppf_intervention::shared::services::cross_domain::{
 };
 use rpma_ppf_intervention::shared::services::event_bus::InMemoryEventBus;
 
+use async_trait::async_trait;
 use rpma_ppf_intervention::shared::contracts::notification::{NotificationSender, SentMessage};
 use rpma_ppf_intervention::shared::ipc::errors::AppError;
-use async_trait::async_trait;
 
 struct DummyNotificationSender;
 
@@ -36,7 +36,9 @@ impl NotificationSender for DummyNotificationSender {
         _scheduled_at: Option<i64>,
         _correlation_id: Option<String>,
     ) -> Result<SentMessage, AppError> {
-        Ok(SentMessage { id: "dummy".to_string() })
+        Ok(SentMessage {
+            id: "dummy".to_string(),
+        })
     }
 }
 
@@ -76,7 +78,8 @@ async fn quote_to_task_conversion_updates_inventory_and_audit() {
     let tester_id = tester.id.clone();
     let admin_role = UserRole::Admin;
 
-    let client_service = ClientService::new(repos.client.clone(), Arc::new(InMemoryEventBus::new()));
+    let client_service =
+        ClientService::new(repos.client.clone(), Arc::new(InMemoryEventBus::new()));
     let client = client_service
         .create_client(
             CreateClientRequest {

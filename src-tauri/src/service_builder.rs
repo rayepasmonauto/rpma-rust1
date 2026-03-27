@@ -121,7 +121,14 @@ const DOCUMENTED_SERVICE_DEPENDENCIES: &[(&str, &[&str])] = &[
         ],
     ),
     ("InterventionWorkflowService", &["Database"]),
-    ("SettingsService", &["SettingsRepository", "UserSettingsRepository", "OrganizationRepository"]),
+    (
+        "SettingsService",
+        &[
+            "SettingsRepository",
+            "UserSettingsRepository",
+            "OrganizationRepository",
+        ],
+    ),
     ("TaskImportService", &["Database"]),
     ("AuthService", &["Database"]),
     ("UserService", &["Repositories.user", "SessionRepository"]),
@@ -393,12 +400,13 @@ impl ServiceBuilder {
 
         register_handler(inventory_service.intervention_finalized_handler());
 
-        let notification_event_handler = crate::domains::notifications::NotificationEventHandler::new(
-            self.db.clone(),
-            self.repositories.cache.clone(),
-            message_service.clone(),
-            event_bus.clone(),
-        );
+        let notification_event_handler =
+            crate::domains::notifications::NotificationEventHandler::new(
+                self.db.clone(),
+                self.repositories.cache.clone(),
+                message_service.clone(),
+                event_bus.clone(),
+            );
         register_handler(Arc::new(notification_event_handler));
 
         // Register Quote Event Handlers
@@ -533,9 +541,7 @@ mod tests {
         let app_state = builder.build().expect("Failed to build app state");
 
         // Verify event bus is initialized — only events in AuditLogHandler::interested_events()
-        assert!(app_state
-            .event_bus
-            .has_handlers(DomainEvent::TASK_CREATED));
+        assert!(app_state.event_bus.has_handlers(DomainEvent::TASK_CREATED));
         assert!(app_state
             .event_bus
             .has_handlers(DomainEvent::INTERVENTION_STARTED));

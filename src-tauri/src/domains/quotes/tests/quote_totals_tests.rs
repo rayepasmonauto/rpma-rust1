@@ -11,7 +11,11 @@ async fn setup_service_async() -> (QuoteService, Arc<crate::db::Database>) {
     let repo = Arc::new(QuoteRepository::new(db.clone(), cache));
     let event_bus = Arc::new(crate::shared::services::event_bus::InMemoryEventBus::new());
     let notification_sender = Arc::new(crate::test_utils::DummyNotificationSender);
-    let service = QuoteService::new(repo as Arc<dyn IQuoteRepository>, event_bus, notification_sender);
+    let service = QuoteService::new(
+        repo as Arc<dyn IQuoteRepository>,
+        event_bus,
+        notification_sender,
+    );
 
     let now = chrono::Utc::now().timestamp_millis();
     db.execute(

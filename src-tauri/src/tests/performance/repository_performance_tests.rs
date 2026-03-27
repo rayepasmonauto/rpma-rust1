@@ -4,7 +4,6 @@
 //! including large datasets, concurrent operations, and complex queries.
 
 use crate::db::Database;
-use crate::shared::logging::audit_service::AuditService;
 use crate::domains::clients::client_handler::{Client, ClientRepository};
 use crate::domains::interventions::domain::models::intervention::{
     Intervention, InterventionStatus, InterventionType,
@@ -18,6 +17,7 @@ use crate::domains::tasks::infrastructure::task::TaskService;
 use crate::domains::tasks::infrastructure::task_repository::TaskRepository;
 use crate::domains::users::domain::models::user::{User, UserRole};
 use crate::domains::users::infrastructure::user_repository::UserRepository;
+use crate::shared::logging::audit_service::AuditService;
 use crate::shared::repositories::base::Repository;
 use crate::test_utils::{TestDataFactory, TestDatabase};
 use chrono::Utc;

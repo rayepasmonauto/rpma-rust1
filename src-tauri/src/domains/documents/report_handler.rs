@@ -22,8 +22,8 @@ pub async fn reports_get_capabilities(
 ) -> Result<ApiResponse<ReportCapabilities>, AppError> {
     let ctx = resolve_context!(&state, &correlation_id);
     debug!("Getting report capabilities");
-    let capabilities = DocumentsFacade::new(state.photo_service.clone(), state.db.clone())
-        .get_capabilities();
+    let capabilities =
+        DocumentsFacade::new(state.photo_service.clone(), state.db.clone()).get_capabilities();
     Ok(ApiResponse::success(capabilities).with_correlation_id(Some(ctx.correlation_id)))
 }
 
@@ -42,7 +42,11 @@ pub async fn report_generate(
         state.photo_service.clone(),
     );
     let report = svc
-        .generate_report(&intervention_id, &ctx.auth.to_user_session(), &state.app_config.app_data_dir)
+        .generate_report(
+            &intervention_id,
+            &ctx.auth.to_user_session(),
+            &state.app_config.app_data_dir,
+        )
         .await?;
     info!(
         report_number = %report.report_number,

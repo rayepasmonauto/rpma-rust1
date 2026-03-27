@@ -142,7 +142,9 @@ impl TaskClientIntegrationService {
     }
 
     /// Extract optional `ClientInfo` from columns appended after the task columns.
-    fn map_client_info_from_row(row: &rusqlite::Row<'_>) -> Result<Option<ClientInfo>, rusqlite::Error> {
+    fn map_client_info_from_row(
+        row: &rusqlite::Row<'_>,
+    ) -> Result<Option<ClientInfo>, rusqlite::Error> {
         if let Ok(client_id) = row.get::<_, String>(49) {
             Ok(Some(ClientInfo {
                 id: client_id,

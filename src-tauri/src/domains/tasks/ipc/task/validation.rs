@@ -84,9 +84,7 @@ pub async fn check_task_availability(
     let ctx = resolve_context!(&state, &request.correlation_id);
     debug!("Checking task availability");
 
-    let response = facade(&state)
-        .check_availability(&request.task_id)
-        .await?;
+    let response = facade(&state).check_availability(&request.task_id).await?;
 
     info!(
         "Task availability check completed for task {}",

@@ -6,9 +6,9 @@
 #[cfg(test)]
 mod tests {
     use crate::domains::settings::models::{GeneralSettings, SecuritySettings};
+    use crate::shared::context::session_resolver::resolve_request_context;
     use crate::shared::contracts::auth::UserRole;
     use crate::test_utils::{build_test_app_state, make_test_session};
-    use crate::shared::context::session_resolver::resolve_request_context;
 
     // ── App settings round-trip ───────────────────────────────────────────────
 
@@ -21,7 +21,11 @@ mod tests {
         let service = state.settings_service.clone();
         let result = service.get_app_settings(&ctx);
 
-        assert!(result.is_ok(), "get_app_settings should return seeded defaults: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "get_app_settings should return seeded defaults: {:?}",
+            result
+        );
     }
 
     #[tokio::test]
@@ -34,7 +38,9 @@ mod tests {
 
         let mut new_general = GeneralSettings::default();
         new_general.language = "en".to_string();
-        service.update_general_settings(&ctx, new_general).expect("update general");
+        service
+            .update_general_settings(&ctx, new_general)
+            .expect("update general");
 
         let loaded = service.get_app_settings(&ctx).expect("get after update");
         assert_eq!(loaded.general.language, "en");
@@ -50,7 +56,9 @@ mod tests {
 
         let mut sec = SecuritySettings::default();
         sec.session_timeout = 120;
-        service.update_security_settings(&ctx, sec).expect("update security");
+        service
+            .update_security_settings(&ctx, sec)
+            .expect("update security");
 
         let loaded = service.get_app_settings(&ctx).expect("get after update");
         assert_eq!(loaded.security.session_timeout, 120);
@@ -67,7 +75,11 @@ mod tests {
 
         let service = state.settings_service.clone();
         let result = service.get_user_settings(&ctx);
-        assert!(result.is_ok(), "get_user_settings should return defaults: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "get_user_settings should return defaults: {:?}",
+            result
+        );
     }
 
     #[tokio::test]
@@ -81,7 +93,9 @@ mod tests {
 
         let mut profile = crate::domains::settings::models::UserProfileSettings::default();
         profile.full_name = "Alice Dupont".to_string();
-        service.update_user_profile(&ctx, profile).expect("update profile");
+        service
+            .update_user_profile(&ctx, profile)
+            .expect("update profile");
 
         let loaded = service.get_user_settings(&ctx).expect("get after update");
         assert_eq!(loaded.profile.full_name, "Alice Dupont");
@@ -97,15 +111,24 @@ mod tests {
 
         let service = state.settings_service.clone();
         let result = service.get_organization_settings(&ctx);
-        assert!(result.is_ok(), "get_organization_settings should succeed: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "get_organization_settings should succeed: {:?}",
+            result
+        );
     }
 
     #[tokio::test]
     async fn test_get_onboarding_status_returns_incomplete_before_onboarding() {
         let state = build_test_app_state().await;
         let service = state.settings_service.clone();
-        let status = service.get_onboarding_status().expect("get onboarding status");
-        assert!(!status.completed, "Onboarding should not be complete in fresh DB");
+        let status = service
+            .get_onboarding_status()
+            .expect("get onboarding status");
+        assert!(
+            !status.completed,
+            "Onboarding should not be complete in fresh DB"
+        );
     }
 
     #[tokio::test]
@@ -125,13 +148,18 @@ mod tests {
         };
 
         let service = state.settings_service.clone();
-        let result = service.complete_onboarding(&crate::domains::settings::models::OnboardingData {
-            organization: org_request,
-        });
+        let result =
+            service.complete_onboarding(&crate::domains::settings::models::OnboardingData {
+                organization: org_request,
+            });
 
         assert!(result.is_ok());
 
-        let role: String = conn.query_row("SELECT role FROM users WHERE id = 'user1'", [], |row| row.get(0)).expect("Query user");
+        let role: String = conn
+            .query_row("SELECT role FROM users WHERE id = 'user1'", [], |row| {
+                row.get(0)
+            })
+            .expect("Query user");
         assert_eq!(role, "admin");
     }
 }

@@ -160,13 +160,21 @@ fn push_client_vehicle(out: &mut String, vm: &ReportViewModel) {
     // produces "Non renseigne Non renseigne". Use a match to display only what
     // is actually known.
     let ns = &vm.display.placeholder_not_specified;
-    let make_val = if &vm.vehicle.make == ns { None } else { Some(vm.vehicle.make.as_str()) };
-    let model_val = if &vm.vehicle.model == ns { None } else { Some(vm.vehicle.model.as_str()) };
+    let make_val = if &vm.vehicle.make == ns {
+        None
+    } else {
+        Some(vm.vehicle.make.as_str())
+    };
+    let model_val = if &vm.vehicle.model == ns {
+        None
+    } else {
+        Some(vm.vehicle.model.as_str())
+    };
     let make_model = match (make_val, model_val) {
         (Some(make), Some(model)) => format!("{} {}", esc(make), esc(model)),
-        (Some(make), None)        => esc(make),
-        (None, Some(model))       => esc(model),
-        (None, None)              => esc(ns),
+        (Some(make), None) => esc(make),
+        (None, Some(model)) => esc(model),
+        (None, None) => esc(ns),
     };
     kv_row(out, "Marque / Modèle", &make_model);
     kv_row(out, "Année", &esc(&vm.vehicle.year));
@@ -719,7 +727,10 @@ mod tests {
             !html.contains("Non renseigne Non renseigne"),
             "make+model placeholder doubled"
         );
-        assert!(html.contains("Non renseigne"), "placeholder should appear once");
+        assert!(
+            html.contains("Non renseigne"),
+            "placeholder should appear once"
+        );
     }
 
     #[test]
@@ -728,7 +739,10 @@ mod tests {
         vm.vehicle.make = "Tesla".to_string();
         vm.vehicle.model = "Model 3".to_string();
         let html = render_report_html(&vm);
-        assert!(html.contains("Tesla Model 3"), "make and model not concatenated");
+        assert!(
+            html.contains("Tesla Model 3"),
+            "make and model not concatenated"
+        );
     }
 
     #[test]

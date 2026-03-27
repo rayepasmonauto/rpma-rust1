@@ -5,9 +5,9 @@
 //! // the application layer, and its business rules to the domain layer.
 
 use crate::commands::AppError;
-use crate::shared::contracts::session::SessionRevocationPort;
 use crate::domains::users::infrastructure::user_repository::UserRepository;
 use crate::shared::contracts::auth::UserRole;
+use crate::shared::contracts::session::SessionRevocationPort;
 use crate::shared::repositories::base::RepoError;
 use crate::shared::repositories::Repository;
 use std::sync::Arc;
@@ -22,7 +22,10 @@ pub struct UserService {
 
 impl UserService {
     /// TODO: document
-    pub fn new(user_repo: Arc<UserRepository>, session_repo: Arc<dyn SessionRevocationPort>) -> Self {
+    pub fn new(
+        user_repo: Arc<UserRepository>,
+        session_repo: Arc<dyn SessionRevocationPort>,
+    ) -> Self {
         Self {
             user_repo,
             session_repo,

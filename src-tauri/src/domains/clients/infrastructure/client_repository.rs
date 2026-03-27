@@ -213,9 +213,7 @@ impl ClientRepository for SqliteClientRepository {
                 "SELECT COUNT(*) FROM clients WHERE id = ? AND deleted_at IS NULL",
                 params![id],
             )
-            .map_err(|e| {
-                RepoError::Database(format!("Failed to check client existence: {}", e))
-            })?;
+            .map_err(|e| RepoError::Database(format!("Failed to check client existence: {}", e)))?;
         Ok(count > 0)
     }
 
@@ -231,9 +229,7 @@ impl ClientRepository for SqliteClientRepository {
         let client = self
             .db
             .query_single_as::<Client>(&sql, params![email])
-            .map_err(|e| {
-                RepoError::Database(format!("Failed to find client by email: {}", e))
-            })?;
+            .map_err(|e| RepoError::Database(format!("Failed to find client by email: {}", e)))?;
         if let Some(ref c) = client {
             self.cache.set(&cache_key, c.clone(), ttl::MEDIUM);
         }
@@ -250,8 +246,7 @@ impl ClientRepository for SqliteClientRepository {
             eprintln!("Invalid order clause, using default: {}", e);
             "ORDER BY created_at DESC".to_string()
         });
-        let (limit, offset): (i64, Option<i64>) =
-            query.build_limit_offset().unwrap_or((50, None));
+        let (limit, offset): (i64, Option<i64>) = query.build_limit_offset().unwrap_or((50, None));
         let offset: i64 = offset.unwrap_or(0);
         let sql = format!(
             "SELECT id, name, email, phone, customer_type,
@@ -326,10 +321,7 @@ impl ClientRepository for SqliteClientRepository {
         }
         let count = self
             .db
-            .query_single_value::<i64>(
-                "SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL",
-                [],
-            )
+            .query_single_value::<i64>("SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL", [])
             .map_err(|e| RepoError::Database(format!("Failed to count clients: {}", e)))?;
         self.cache.set(&cache_key, count, ttl::MEDIUM);
         Ok(count)
@@ -385,10 +377,7 @@ impl ClientRepository for SqliteClientRepository {
     async fn get_overview_stats(&self) -> RepoResult<ClientOverviewStats> {
         let total_clients: i32 = self
             .db
-            .query_single_value(
-                "SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL",
-                [],
-            )
+            .query_single_value("SELECT COUNT(*) FROM clients WHERE deleted_at IS NULL", [])
             .map_err(|e| RepoError::Database(format!("Failed to get total clients: {}", e)))?;
         let ninety_days_ago = Utc::now().timestamp_millis() - (90 * 24 * 60 * 60 * 1000);
         let active_clients: i32 = self
@@ -406,9 +395,7 @@ impl ClientRepository for SqliteClientRepository {
             .and_then(|dt| dt.with_hour(0))
             .and_then(|dt| dt.with_minute(0))
             .and_then(|dt| dt.with_second(0))
-            .ok_or_else(|| {
-                RepoError::Database("Failed to calculate start of month".to_string())
-            })?
+            .ok_or_else(|| RepoError::Database("Failed to calculate start of month".to_string()))?
             .timestamp_millis();
         let new_clients_this_month: i32 = self
             .db

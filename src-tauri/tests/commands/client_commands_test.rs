@@ -23,14 +23,25 @@ async fn test_create_client_valid_request_succeeds() {
     let app = TestApp::new().await;
     let req = fixtures::client_fixture("Alice Corp");
 
-    let result = app.state.client_service.create_client(req, "test-user").await;
+    let result = app
+        .state
+        .client_service
+        .create_client(req, "test-user")
+        .await;
 
-    assert!(result.is_ok(), "valid create should succeed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "valid create should succeed: {:?}",
+        result.err()
+    );
     let client = result.unwrap();
     assert_eq!(client.name, "Alice Corp");
     assert_eq!(client.email.as_deref(), Some("alice-corp@test.rpma"));
     assert_eq!(client.created_by.as_deref(), Some("test-user"));
-    assert!(client.deleted_at.is_none(), "new client should not be soft-deleted");
+    assert!(
+        client.deleted_at.is_none(),
+        "new client should not be soft-deleted"
+    );
 }
 
 #[tokio::test]
@@ -94,7 +105,10 @@ async fn test_create_client_business_type_missing_company_name_returns_validatio
 
     let result = app.state.client_service.create_client(req, "user-1").await;
 
-    assert!(result.is_err(), "missing company_name for Business must fail");
+    assert!(
+        result.is_err(),
+        "missing company_name for Business must fail"
+    );
     let err = result.unwrap_err();
     assert!(
         err.to_lowercase().contains("company name"),
@@ -148,7 +162,10 @@ async fn test_soft_delete_client_with_active_tasks_succeeds_in_service() {
         .get_client(&client.id)
         .await
         .expect("get_client must not return an error");
-    assert!(found.is_none(), "soft-deleted client should not be returned by get_client");
+    assert!(
+        found.is_none(),
+        "soft-deleted client should not be returned by get_client"
+    );
 }
 
 #[tokio::test]
@@ -177,7 +194,10 @@ async fn test_restore_deleted_client_succeeds() {
         .get_client(&client.id)
         .await
         .expect("get_client must not error");
-    assert!(after_delete.is_none(), "client should be invisible after soft-delete");
+    assert!(
+        after_delete.is_none(),
+        "client should be invisible after soft-delete"
+    );
 
     // 3. Restore: clear deleted_at directly in the DB (mirrors the trash-domain restore path).
     app.db
@@ -194,7 +214,10 @@ async fn test_restore_deleted_client_succeeds() {
         .get_client(&client.id)
         .await
         .expect("get_client must not error after restore");
-    assert!(after_restore.is_some(), "restored client must be returned by get_client");
+    assert!(
+        after_restore.is_some(),
+        "restored client must be returned by get_client"
+    );
     assert_eq!(after_restore.unwrap().name, "Restore Me");
 }
 
@@ -329,7 +352,11 @@ async fn test_failed_create_does_not_persist_partial_client() {
         tags: None,
     };
 
-    let result = app.state.client_service.create_client(bad_req, "user-1").await;
+    let result = app
+        .state
+        .client_service
+        .create_client(bad_req, "user-1")
+        .await;
     assert!(result.is_err(), "invalid create must return an error");
 
     // Row count must remain identical.

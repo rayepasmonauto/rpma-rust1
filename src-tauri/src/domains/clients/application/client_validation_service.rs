@@ -186,12 +186,10 @@ impl ClientValidationService {
         if zip.trim().is_empty() {
             return Err("ZIP code is required".to_string());
         }
-        let zip_regex = Regex::new(r"^\d{5}(-\d{4})?$")
-            .map_err(|_| "Invalid ZIP regex pattern".to_string())?;
+        let zip_regex =
+            Regex::new(r"^\d{5}(-\d{4})?$").map_err(|_| "Invalid ZIP regex pattern".to_string())?;
         if !zip_regex.is_match(zip) {
-            return Err(
-                "Invalid ZIP code format (expected 12345 or 12345-6789)".to_string(),
-            );
+            return Err("Invalid ZIP code format (expected 12345 or 12345-6789)".to_string());
         }
         Ok(())
     }
@@ -203,9 +201,7 @@ impl ClientValidationService {
                 .map_err(|e| format!("Failed to check email duplicates: {}", e))?
                 .is_some();
             if exists {
-                return Err(
-                    "A client with this email address already exists".to_string(),
-                );
+                return Err("A client with this email address already exists".to_string());
             }
         }
         if let Some(ref tax_id) = req.tax_id {
@@ -234,30 +230,22 @@ impl ClientValidationService {
                     .as_ref()
                     .map_or(true, |n| n.trim().is_empty())
                 {
-                    return Err(
-                        "Company name is required for business clients".to_string(),
-                    );
+                    return Err("Company name is required for business clients".to_string());
                 }
                 if req
                     .contact_person
                     .as_ref()
                     .map_or(true, |p| p.trim().is_empty())
                 {
-                    return Err(
-                        "Contact person is required for business clients".to_string(),
-                    );
+                    return Err("Contact person is required for business clients".to_string());
                 }
                 if req.tax_id.as_ref().map_or(true, |t| t.trim().is_empty()) {
-                    return Err(
-                        "Tax ID is recommended for business clients".to_string(),
-                    );
+                    return Err("Tax ID is recommended for business clients".to_string());
                 }
             }
             CustomerType::Individual => {
                 if req.company_name.as_ref().map_or(false, |n| n.len() > 100) {
-                    return Err(
-                        "Company name cannot exceed 100 characters".to_string(),
-                    );
+                    return Err("Company name cannot exceed 100 characters".to_string());
                 }
             }
         }

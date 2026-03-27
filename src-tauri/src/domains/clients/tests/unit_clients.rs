@@ -1,7 +1,9 @@
 use crate::db::Database;
 use crate::domains::clients::application::client_orchestrator::client_into_client_with_tasks;
 use crate::domains::clients::application::ClientService;
-use crate::domains::clients::domain::models::{Client, CreateClientRequest, CustomerType};
+use crate::domains::clients::domain::models::{
+    Client, CreateClientRequest, CustomerType, UpdateClientRequest,
+};
 use crate::domains::clients::ClientsFacade;
 use crate::shared::services::event_bus::InMemoryEventBus;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -109,10 +111,11 @@ async fn test_create_client_publishes_client_created_event() {
     event_bus.register_handler(counter);
 
     let cache = Arc::new(crate::shared::repositories::cache::Cache::new(256));
-    let repo = Arc::new(crate::domains::clients::infrastructure::client_repository::SqliteClientRepository::new(
-        db,
-        cache,
-    ));
+    let repo = Arc::new(
+        crate::domains::clients::infrastructure::client_repository::SqliteClientRepository::new(
+            db, cache,
+        ),
+    );
     let service = ClientService::new(repo, event_bus);
 
     let req = CreateClientRequest {
@@ -155,10 +158,11 @@ async fn test_create_business_client_without_company_name_returns_error() {
     let db = Arc::new(Database::new_in_memory().await.expect("in-memory database"));
     let event_bus = Arc::new(InMemoryEventBus::new());
     let cache = Arc::new(crate::shared::repositories::cache::Cache::new(256));
-    let repo = Arc::new(crate::domains::clients::infrastructure::client_repository::SqliteClientRepository::new(
-        db,
-        cache,
-    ));
+    let repo = Arc::new(
+        crate::domains::clients::infrastructure::client_repository::SqliteClientRepository::new(
+            db, cache,
+        ),
+    );
     let service = ClientService::new(repo, event_bus);
 
     let req = CreateClientRequest {
@@ -172,14 +176,17 @@ async fn test_create_business_client_without_company_name_returns_error() {
         address_zip: None,
         address_country: None,
         tax_id: None,
-        company_name: None,         // missing — required for business
+        company_name: None, // missing — required for business
         contact_person: Some("Alice".to_string()),
         notes: None,
         tags: None,
     };
 
     let result = service.create_client(req, "user-1").await;
-    assert!(result.is_err(), "business client without company_name must be rejected");
+    assert!(
+        result.is_err(),
+        "business client without company_name must be rejected"
+    );
     assert!(
         result.unwrap_err().contains("Company name"),
         "error message must mention Company name"
@@ -191,10 +198,11 @@ async fn test_create_business_client_without_contact_person_returns_error() {
     let db = Arc::new(Database::new_in_memory().await.expect("in-memory database"));
     let event_bus = Arc::new(InMemoryEventBus::new());
     let cache = Arc::new(crate::shared::repositories::cache::Cache::new(256));
-    let repo = Arc::new(crate::domains::clients::infrastructure::client_repository::SqliteClientRepository::new(
-        db,
-        cache,
-    ));
+    let repo = Arc::new(
+        crate::domains::clients::infrastructure::client_repository::SqliteClientRepository::new(
+            db, cache,
+        ),
+    );
     let service = ClientService::new(repo, event_bus);
 
     let req = CreateClientRequest {
@@ -209,15 +217,127 @@ async fn test_create_business_client_without_contact_person_returns_error() {
         address_country: None,
         tax_id: None,
         company_name: Some("ACME Ltd".to_string()),
-        contact_person: None,       // missing — required for business
+        contact_person: None, // missing — required for business
         notes: None,
         tags: None,
     };
 
     let result = service.create_client(req, "user-1").await;
-    assert!(result.is_err(), "business client without contact_person must be rejected");
+    assert!(
+        result.is_err(),
+        "business client without contact_person must be rejected"
+    );
     assert!(
         result.unwrap_err().contains("Contact person"),
         "error message must mention Contact person"
+    );
+}
+
+#[tokio::test]
+async fn test_update_client_rejects_non_owner() {
+    let db = Arc::new(Database::new_in_memory().await.expect("in-memory database"));
+    let event_bus = Arc::new(InMemoryEventBus::new());
+    let cache = Arc::new(crate::shared::repositories::cache::Cache::new(256));
+    let repo = Arc::new(
+        crate::domains::clients::infrastructure::client_repository::SqliteClientRepository::new(
+            db, cache,
+        ),
+    );
+    let service = ClientService::new(repo, event_bus);
+
+    let created = service
+        .create_client(
+            CreateClientRequest {
+                name: "Owned Client".to_string(),
+                email: Some("owned@example.com".to_string()),
+                phone: None,
+                customer_type: CustomerType::Individual,
+                address_street: None,
+                address_city: None,
+                address_state: None,
+                address_zip: None,
+                address_country: None,
+                tax_id: None,
+                company_name: None,
+                contact_person: None,
+                notes: None,
+                tags: None,
+            },
+            "owner-user",
+        )
+        .await
+        .expect("client creation must succeed");
+
+    let result = service
+        .update_client(
+            UpdateClientRequest {
+                id: created.id,
+                name: Some("Renamed".to_string()),
+                email: None,
+                phone: None,
+                customer_type: None,
+                address_street: None,
+                address_city: None,
+                address_state: None,
+                address_zip: None,
+                address_country: None,
+                tax_id: None,
+                company_name: None,
+                contact_person: None,
+                notes: None,
+                tags: None,
+            },
+            "different-user",
+        )
+        .await;
+
+    assert!(result.is_err(), "non-owner update must fail");
+    assert_eq!(
+        result.unwrap_err(),
+        "You can only update clients you created"
+    );
+}
+
+#[tokio::test]
+async fn test_delete_client_rejects_non_owner() {
+    let db = Arc::new(Database::new_in_memory().await.expect("in-memory database"));
+    let event_bus = Arc::new(InMemoryEventBus::new());
+    let cache = Arc::new(crate::shared::repositories::cache::Cache::new(256));
+    let repo = Arc::new(
+        crate::domains::clients::infrastructure::client_repository::SqliteClientRepository::new(
+            db, cache,
+        ),
+    );
+    let service = ClientService::new(repo, event_bus);
+
+    let created = service
+        .create_client(
+            CreateClientRequest {
+                name: "Owned Client".to_string(),
+                email: Some("owned-delete@example.com".to_string()),
+                phone: None,
+                customer_type: CustomerType::Individual,
+                address_street: None,
+                address_city: None,
+                address_state: None,
+                address_zip: None,
+                address_country: None,
+                tax_id: None,
+                company_name: None,
+                contact_person: None,
+                notes: None,
+                tags: None,
+            },
+            "owner-user",
+        )
+        .await
+        .expect("client creation must succeed");
+
+    let result = service.delete_client(&created.id, "different-user").await;
+
+    assert!(result.is_err(), "non-owner delete must fail");
+    assert_eq!(
+        result.unwrap_err(),
+        "You can only delete clients you created"
     );
 }

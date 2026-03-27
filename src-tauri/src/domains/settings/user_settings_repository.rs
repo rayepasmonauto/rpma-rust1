@@ -295,5 +295,4 @@ impl UserSettingsRepository {
 
         Ok(())
     }
-
 }

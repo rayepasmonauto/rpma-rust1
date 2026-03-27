@@ -3,13 +3,16 @@ use std::sync::Arc;
 use crate::domains::interventions::application::{
     FinalizeInterventionRequest, InterventionWorkflowResponse, StartInterventionRequest,
 };
-use crate::domains::interventions::domain::models::intervention::{Intervention, InterventionProgress};
+use crate::domains::interventions::domain::models::intervention::{
+    Intervention, InterventionProgress,
+};
 use crate::domains::interventions::domain::models::step::InterventionStep;
 use crate::domains::interventions::infrastructure::intervention::InterventionService;
 use crate::domains::interventions::infrastructure::intervention_types::{
-    AdvanceStepRequest, AdvanceStepResponse, FinalizeInterventionRequest as ServiceFinalizeInterventionRequest,
-    FinalizeInterventionResponse, SaveStepProgressRequest, StartInterventionRequest as ServiceStartInterventionRequest,
-    UpdateInterventionRequest,
+    AdvanceStepRequest, AdvanceStepResponse,
+    FinalizeInterventionRequest as ServiceFinalizeInterventionRequest,
+    FinalizeInterventionResponse, SaveStepProgressRequest,
+    StartInterventionRequest as ServiceStartInterventionRequest, UpdateInterventionRequest,
 };
 use crate::shared::context::RequestContext;
 use crate::shared::contracts::auth::UserRole;
@@ -257,9 +260,7 @@ impl InterventionsFacade {
         let intervention = self
             .intervention_service
             .get_latest_intervention_by_task(&task_id)
-            .map_err(|_| {
-                AppError::Database("Failed to get latest intervention".to_string())
-            })?;
+            .map_err(|_| AppError::Database("Failed to get latest intervention".to_string()))?;
         Ok(intervention)
     }
 
@@ -304,9 +305,7 @@ impl InterventionsFacade {
         let progress = self
             .intervention_service
             .get_progress(&intervention_id)
-            .map_err(|_| {
-                AppError::Database("Failed to get intervention progress".to_string())
-            })?;
+            .map_err(|_| AppError::Database("Failed to get intervention progress".to_string()))?;
         Ok(progress)
     }
 
@@ -328,15 +327,11 @@ impl InterventionsFacade {
         let progress = self
             .intervention_service
             .get_progress(&intervention_id)
-            .map_err(|_| {
-                AppError::Database("Failed to get intervention progress".to_string())
-            })?;
+            .map_err(|_| AppError::Database("Failed to get intervention progress".to_string()))?;
         let steps = self
             .intervention_service
             .get_intervention_steps(&intervention_id)
-            .map_err(|_| {
-                AppError::Database("Failed to get intervention steps".to_string())
-            })?;
+            .map_err(|_| AppError::Database("Failed to get intervention steps".to_string()))?;
         Ok((progress, steps))
     }
 
@@ -443,13 +438,8 @@ impl InterventionsFacade {
         task_checker: &dyn TaskAssignmentChecker,
     ) -> Result<Intervention, AppError> {
         self.ensure_intervention_permission(ctx)?;
-        self.ensure_task_assignment(
-            ctx,
-            task_checker,
-            &request.task_id,
-            "start interventions",
-        )
-        .await?;
+        self.ensure_task_assignment(ctx, task_checker, &request.task_id, "start interventions")
+            .await?;
         match self
             .intervention_service
             .get_active_intervention_by_task(&request.task_id)
@@ -502,11 +492,7 @@ impl InterventionsFacade {
         Ok(updated)
     }
 
-    pub async fn delete(
-        &self,
-        id: String,
-        ctx: &RequestContext,
-    ) -> Result<(), AppError> {
+    pub async fn delete(&self, id: String, ctx: &RequestContext) -> Result<(), AppError> {
         self.ensure_intervention_permission(ctx)?;
         let intervention = self
             .intervention_service
@@ -539,9 +525,7 @@ impl InterventionsFacade {
                 &ctx.correlation_id,
                 Some(ctx.user_id()),
             )
-            .map_err(|e| {
-                AppError::Database(format!("Failed to finalize intervention: {e}"))
-            })?;
+            .map_err(|e| AppError::Database(format!("Failed to finalize intervention: {e}")))?;
         // Emit here (application layer) — infrastructure must not publish events.
         let completed_at_ms = response
             .intervention
@@ -572,13 +556,8 @@ impl InterventionsFacade {
         task_checker: &dyn TaskAssignmentChecker,
     ) -> Result<InterventionWorkflowResponse, AppError> {
         self.ensure_intervention_permission(ctx)?;
-        self.ensure_task_assignment(
-            ctx,
-            task_checker,
-            &request.task_id,
-            "start interventions",
-        )
-        .await?;
+        self.ensure_task_assignment(ctx, task_checker, &request.task_id, "start interventions")
+            .await?;
         match self
             .intervention_service
             .get_active_intervention_by_task(&request.task_id)
@@ -631,9 +610,7 @@ impl InterventionsFacade {
         let intervention = self
             .intervention_service
             .get_active_intervention_by_task(&task_id)
-            .map_err(|_| {
-                AppError::Database("Failed to get active intervention".to_string())
-            })?;
+            .map_err(|_| AppError::Database("Failed to get active intervention".to_string()))?;
         Ok(InterventionWorkflowResponse::ActiveByTask {
             interventions: intervention.map_or(vec![], |i| vec![i]),
         })
@@ -698,9 +675,7 @@ impl InterventionsFacade {
                 &ctx.correlation_id,
                 Some(ctx.user_id()),
             )
-            .map_err(|e| {
-                AppError::Database(format!("Failed to finalize intervention: {e}"))
-            })?;
+            .map_err(|e| AppError::Database(format!("Failed to finalize intervention: {e}")))?;
         Ok(InterventionWorkflowResponse::Finalized {
             intervention: response.intervention,
         })

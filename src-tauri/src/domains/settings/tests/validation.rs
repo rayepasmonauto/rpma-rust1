@@ -45,4 +45,3 @@ mod tests {
         assert!(data.validate().is_ok());
     }
 }
-

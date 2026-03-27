@@ -26,12 +26,16 @@ fn enrich_vehicle_from_task(db: &Database, intervention: &mut Intervention) -> A
     let conn = db
         .get_connection()
         .map_err(|e| AppError::Database(format!("DB connection error: {}", e)))?;
-    let result: rusqlite::Result<(Option<String>, Option<String>, Option<String>, Option<String>)> =
-        conn.query_row(
-            "SELECT vehicle_model, vehicle_make, vehicle_year, vin FROM tasks WHERE id = ?1",
-            [&intervention.task_id],
-            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
-        );
+    let result: rusqlite::Result<(
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+    )> = conn.query_row(
+        "SELECT vehicle_model, vehicle_make, vehicle_year, vin FROM tasks WHERE id = ?1",
+        [&intervention.task_id],
+        |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+    );
     if let Ok((model, make, year_str, vin)) = result {
         if intervention.vehicle_model.is_none() {
             intervention.vehicle_model = model;
@@ -40,8 +44,7 @@ fn enrich_vehicle_from_task(db: &Database, intervention: &mut Intervention) -> A
             intervention.vehicle_make = make;
         }
         if intervention.vehicle_year.is_none() {
-            intervention.vehicle_year =
-                year_str.as_deref().and_then(|y| y.parse::<i32>().ok());
+            intervention.vehicle_year = year_str.as_deref().and_then(|y| y.parse::<i32>().ok());
         }
         if intervention.vehicle_vin.is_none() {
             intervention.vehicle_vin = vin;

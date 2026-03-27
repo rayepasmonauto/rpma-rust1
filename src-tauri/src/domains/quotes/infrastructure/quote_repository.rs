@@ -6,8 +6,8 @@
 use crate::db::Database;
 use crate::domains::quotes::domain::models::quote::{
     AttachmentType, CreateQuoteAttachmentRequest, IQuoteRepository, Quote, QuoteAttachment,
-    QuoteItem, QuoteMonthlyCount, QuoteQuery, QuoteStats, QuoteStatus, UpdateQuoteAttachmentRequest,
-    UpdateQuoteRequest,
+    QuoteItem, QuoteMonthlyCount, QuoteQuery, QuoteStats, QuoteStatus,
+    UpdateQuoteAttachmentRequest, UpdateQuoteRequest,
 };
 use crate::shared::repositories::base::{RepoError, RepoResult};
 use crate::shared::repositories::cache::{ttl, Cache, CacheKeyBuilder};
@@ -916,7 +916,9 @@ impl QuoteRepository {
 
     /// Aggregate quote counts by status + monthly trend (last 6 months).
     pub fn get_stats(&self) -> RepoResult<QuoteStats> {
-        let conn = self.db.get_connection()
+        let conn = self
+            .db
+            .get_connection()
             .map_err(|e| RepoError::Database(format!("Failed to get connection: {}", e)))?;
 
         let total: i64 = conn
@@ -928,9 +930,7 @@ impl QuoteRepository {
             .map_err(|e| RepoError::Database(format!("Failed to count quotes: {}", e)))?;
 
         let mut stmt = conn
-            .prepare(
-                "SELECT status, COUNT(*) FROM quotes WHERE deleted_at IS NULL GROUP BY status",
-            )
+            .prepare("SELECT status, COUNT(*) FROM quotes WHERE deleted_at IS NULL GROUP BY status")
             .map_err(|e| RepoError::Database(format!("Failed to prepare stats: {}", e)))?;
 
         let mut draft = 0i64;
@@ -949,16 +949,18 @@ impl QuoteRepository {
             .map_err(|e| RepoError::Database(format!("Failed to query stats: {}", e)))?;
 
         for row in rows {
-            let (status, count) = row
-                .map_err(|e| RepoError::Database(format!("Failed to read status row: {}", e)))?;
-            let Ok(qs) = status.parse::<QuoteStatus>() else { continue };
+            let (status, count) =
+                row.map_err(|e| RepoError::Database(format!("Failed to read status row: {}", e)))?;
+            let Ok(qs) = status.parse::<QuoteStatus>() else {
+                continue;
+            };
             match qs {
-                QuoteStatus::Draft            => draft     = count,
-                QuoteStatus::Sent             => sent      = count,
-                QuoteStatus::Accepted         => accepted  = count,
-                QuoteStatus::Rejected         => rejected  = count,
-                QuoteStatus::Expired          => expired   = count,
-                QuoteStatus::Converted        => converted = count,
+                QuoteStatus::Draft => draft = count,
+                QuoteStatus::Sent => sent = count,
+                QuoteStatus::Accepted => accepted = count,
+                QuoteStatus::Rejected => rejected = count,
+                QuoteStatus::Expired => expired = count,
+                QuoteStatus::Converted => converted = count,
                 QuoteStatus::ChangesRequested => {}
             }
         }

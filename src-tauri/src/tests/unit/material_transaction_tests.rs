@@ -44,8 +44,8 @@ mod tests {
             batch_number: None,
             storage_location: Some("Warehouse A".to_string()),
             warehouse_id: None,
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
         let material = service
@@ -583,8 +583,8 @@ mod tests {
                 batch_number: None,
                 storage_location: None,
                 warehouse_id: None,
-            is_active: None,
-            is_discontinued: None,
+                is_active: None,
+                is_discontinued: None,
             };
         let expired_material = service
             .create_material(expired_request, Some("test_user".to_string()))

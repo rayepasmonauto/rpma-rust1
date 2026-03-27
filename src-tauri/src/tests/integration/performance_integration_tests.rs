@@ -7,8 +7,7 @@
 //! - Memory and resource usage under load
 
 use crate::commands::AppResult;
-use crate::shared::logging::audit_service::AuditService;
-use crate::domains::clients::client_handler::{Client, CustomerType, ClientService};
+use crate::domains::clients::client_handler::{Client, ClientService, CustomerType};
 use crate::domains::interventions::domain::models::intervention::Intervention;
 use crate::domains::interventions::infrastructure::intervention_types::{
     FinalizeInterventionRequest, StartInterventionRequest,
@@ -20,6 +19,7 @@ use crate::domains::inventory::infrastructure::material::{
 };
 use crate::domains::tasks::domain::models::task::{Task, TaskPriority, TaskStatus};
 use crate::domains::tasks::infrastructure::task_crud::TaskCrudService;
+use crate::shared::logging::audit_service::AuditService;
 use crate::test_utils::TestDatabase;
 use crate::{test_client, test_task};
 use chrono::Utc;
@@ -149,8 +149,8 @@ impl PerformanceTestFixture {
                 batch_number: Some(format!("BATCH-PERF-{:03}", i)),
                 storage_location: Some("Performance Warehouse".to_string()),
                 warehouse_id: None,
-            is_active: None,
-            is_discontinued: None,
+                is_active: None,
+                is_discontinued: None,
             };
 
             let material = self

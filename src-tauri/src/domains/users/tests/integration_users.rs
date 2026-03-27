@@ -26,7 +26,11 @@ fn test_admin_reset_password_self_reset_returns_validation_error() {
     let facade = UsersFacade::new();
 
     let err = facade
-        .ensure_not_self_action("admin-1", "admin-1", "reset your own password via admin reset")
+        .ensure_not_self_action(
+            "admin-1",
+            "admin-1",
+            "reset your own password via admin reset",
+        )
         .unwrap_err();
     assert!(matches!(err, AppError::Validation(_)));
 }

@@ -1,9 +1,9 @@
 //! Client statistics service — analytics and overview stats.
 
+use crate::db::Database;
 use crate::domains::clients::domain::models::{ClientActivityMetrics, ClientOverviewStats};
 use crate::domains::clients::domain::repositories::IClientRepository;
 use crate::domains::clients::infrastructure::client_repository::SqliteClientRepository;
-use crate::db::Database;
 use crate::shared::repositories::cache::Cache;
 use std::sync::Arc;
 

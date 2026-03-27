@@ -2,9 +2,9 @@
 //!
 //! Concrete implementations live in the infrastructure layer.
 
+use crate::domains::calendar::models::CalendarEvent;
 use crate::shared::repositories::base::RepoResult;
 use async_trait::async_trait;
-use crate::domains::calendar::models::CalendarEvent;
 
 /// Query contract for calendar-event range lookups.
 ///

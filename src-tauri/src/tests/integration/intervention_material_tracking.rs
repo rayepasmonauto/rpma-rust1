@@ -76,8 +76,8 @@ impl InterventionMaterialTrackingTestFixture {
             batch_number: Some("BATCH-FILM-2024-001".to_string()),
             storage_location: Some("Cool Storage".to_string()),
             warehouse_id: Some("WH-001".to_string()),
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
         let film = self
@@ -111,8 +111,8 @@ impl InterventionMaterialTrackingTestFixture {
             batch_number: Some("BATCH-ADH-2024-001".to_string()),
             storage_location: Some("Temperature Controlled".to_string()),
             warehouse_id: Some("WH-001".to_string()),
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
         let adhesive = self
@@ -146,8 +146,8 @@ impl InterventionMaterialTrackingTestFixture {
             batch_number: Some("BATCH-CLN-2024-001".to_string()),
             storage_location: Some("Standard Storage".to_string()),
             warehouse_id: Some("WH-002".to_string()),
-        is_active: None,
-        is_discontinued: None,
+            is_active: None,
+            is_discontinued: None,
         };
 
         let cleaner = self

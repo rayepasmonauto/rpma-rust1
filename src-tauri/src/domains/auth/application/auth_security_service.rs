@@ -132,7 +132,9 @@ impl AuthSecurityService {
         // Verify current password
         let is_valid = auth_service
             .verify_user_password(&ctx.auth.user_id, current_password)
-            .map_err(|e| AppError::Authentication(format!("Password verification failed: {}", e)))?;
+            .map_err(|e| {
+                AppError::Authentication(format!("Password verification failed: {}", e))
+            })?;
 
         if !is_valid {
             return Err(AppError::Authentication(

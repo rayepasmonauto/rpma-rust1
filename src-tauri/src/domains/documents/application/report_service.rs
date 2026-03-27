@@ -9,11 +9,8 @@ use std::sync::Arc;
 
 use crate::db::Database;
 use crate::domains::documents::{
-    facade::DocumentsFacade,
-    models::InterventionReport,
-    photo_handler::PhotoService,
-    report_export as report_export_service,
-    report_pdf::InterventionPdfReport,
+    facade::DocumentsFacade, models::InterventionReport, photo_handler::PhotoService,
+    report_export as report_export_service, report_pdf::InterventionPdfReport,
 };
 use crate::shared::contracts::auth::UserSession;
 use crate::shared::ipc::errors::AppError;
@@ -34,9 +31,7 @@ impl ReportApplicationService {
         intervention_service: Arc<
             crate::domains::interventions::infrastructure::intervention::InterventionService,
         >,
-        client_service: Arc<
-            crate::domains::clients::application::client_service::ClientService,
-        >,
+        client_service: Arc<crate::domains::clients::application::client_service::ClientService>,
         photo_service: Arc<PhotoService>,
     ) -> Self {
         Self {

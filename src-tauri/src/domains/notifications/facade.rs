@@ -7,9 +7,9 @@
 use std::sync::Arc;
 
 use crate::db::Database;
-use crate::shared::services::cross_domain::{UserSettings, UserSettingsRepository};
 use crate::shared::ipc::errors::AppError;
 use crate::shared::repositories::cache::Cache;
+use crate::shared::services::cross_domain::{UserSettings, UserSettingsRepository};
 
 use crate::shared::services::event_bus::{event_factory, EventPublisher, InMemoryEventBus};
 

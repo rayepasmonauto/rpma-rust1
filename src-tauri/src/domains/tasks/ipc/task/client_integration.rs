@@ -23,8 +23,6 @@ pub struct TasksWithClientsRequest {
     pub correlation_id: Option<String>,
 }
 
-
-
 /// Construct a per-request [`TaskClientService`] from shared application state.
 fn client_service(state: &AppState<'_>) -> TaskClientService {
     TaskClientService::new(

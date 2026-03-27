@@ -153,7 +153,10 @@ pub async fn intervention_save_step_progress(
     data: SaveStepProgressRequest,
     correlation_id: Option<String>,
     state: AppState<'_>,
-) -> Result<ApiResponse<crate::domains::interventions::domain::models::step::InterventionStep>, AppError> {
+) -> Result<
+    ApiResponse<crate::domains::interventions::domain::models::step::InterventionStep>,
+    AppError,
+> {
     let ctx = intervention_ctx(&state, &correlation_id)?;
     let facade = InterventionsFacade::new(state.intervention_service.clone());
 
@@ -215,15 +218,15 @@ pub async fn intervention_progress(
             )
             .await
         {
-            Ok(response) => Ok(ApiResponse::success(
-                InterventionProgressResponse::StepAdvanced {
+            Ok(response) => Ok(
+                ApiResponse::success(InterventionProgressResponse::StepAdvanced {
                     step: Box::new(response.step),
                     next_step: response.next_step,
                     progress_percentage: response.progress_percentage,
                     requirements_completed: response.requirements_completed,
-                },
-            )
-            .with_correlation_id(Some(ctx.correlation_id))),
+                })
+                .with_correlation_id(Some(ctx.correlation_id)),
+            ),
             Err(e) => Err(e),
         },
         InterventionProgressAction::SaveStepProgress {
@@ -243,12 +246,12 @@ pub async fn intervention_progress(
             )
             .await
         {
-            Ok(step) => Ok(ApiResponse::success(
-                InterventionProgressResponse::StepProgressSaved {
+            Ok(step) => Ok(
+                ApiResponse::success(InterventionProgressResponse::StepProgressSaved {
                     step: Box::new(step),
-                },
-            )
-            .with_correlation_id(Some(ctx.correlation_id))),
+                })
+                .with_correlation_id(Some(ctx.correlation_id)),
+            ),
             Err(e) => Err(e),
         },
     }

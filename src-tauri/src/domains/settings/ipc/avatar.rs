@@ -26,8 +26,6 @@ pub struct UploadAvatarRequest {
     pub mime_type: String,
 }
 
-
-
 fn get_avatar_directory() -> Result<PathBuf, AppError> {
     let dir = dirs::data_dir()
         .ok_or_else(|| AppError::Internal("Could not determine app data directory".to_string()))?

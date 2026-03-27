@@ -36,9 +36,7 @@ pub async fn intervention_start(
         .workflow_start(request, &ctx, state.task_service.as_ref())
         .await
     {
-        Ok(res) => {
-            Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id)))
-        }
+        Ok(res) => Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id))),
         Err(e) => Err(e),
     }
 }
@@ -56,9 +54,7 @@ pub async fn intervention_update(
     let facade = InterventionsFacade::new(state.intervention_service.clone());
 
     match facade.workflow_update(id, data, &ctx).await {
-        Ok(res) => {
-            Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id)))
-        }
+        Ok(res) => Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id))),
         Err(e) => Err(e),
     }
 }
@@ -75,9 +71,7 @@ pub async fn intervention_delete(
     let facade = InterventionsFacade::new(state.intervention_service.clone());
 
     match facade.workflow_delete(id, &ctx).await {
-        Ok(res) => {
-            Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id)))
-        }
+        Ok(res) => Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id))),
         Err(e) => Err(e),
     }
 }
@@ -116,29 +110,23 @@ pub async fn intervention_workflow(
 
     let response = match action {
         InterventionWorkflowAction::Start { data } => {
-            facade.workflow_start(data, &ctx, state.task_service.as_ref()).await
+            facade
+                .workflow_start(data, &ctx, state.task_service.as_ref())
+                .await
         }
-        InterventionWorkflowAction::Get { id } => {
-            facade.workflow_get(id, &ctx).await
-        }
+        InterventionWorkflowAction::Get { id } => facade.workflow_get(id, &ctx).await,
         InterventionWorkflowAction::GetActiveByTask { task_id } => {
             facade.workflow_get_active_by_task(task_id, &ctx).await
         }
         InterventionWorkflowAction::Update { id, data } => {
             facade.workflow_update(id, data, &ctx).await
         }
-        InterventionWorkflowAction::Delete { id } => {
-            facade.workflow_delete(id, &ctx).await
-        }
-        InterventionWorkflowAction::Finalize { data } => {
-            facade.workflow_finalize(data, &ctx).await
-        }
+        InterventionWorkflowAction::Delete { id } => facade.workflow_delete(id, &ctx).await,
+        InterventionWorkflowAction::Finalize { data } => facade.workflow_finalize(data, &ctx).await,
     };
 
     match response {
-        Ok(res) => {
-            Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id)))
-        }
+        Ok(res) => Ok(ApiResponse::success(res).with_correlation_id(Some(ctx.correlation_id))),
         Err(e) => Err(e),
     }
 }

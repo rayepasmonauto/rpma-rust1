@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use rpma_ppf_intervention::db::Database;
+use rpma_ppf_intervention::shared::contracts::notification::{NotificationSender, SentMessage};
+use rpma_ppf_intervention::shared::ipc::errors::AppError;
 use rpma_ppf_intervention::shared::repositories::Repositories;
 use rpma_ppf_intervention::shared::services::cross_domain::{
     ActionResult, AuditEventType, AuditService, AuthService, CreateQuoteRequest, QuoteService,
     QuotesFacade, UserRole,
 };
 use rpma_ppf_intervention::shared::services::event_bus::InMemoryEventBus;
-use rpma_ppf_intervention::shared::contracts::notification::{NotificationSender, SentMessage};
-use rpma_ppf_intervention::shared::ipc::errors::AppError;
-use async_trait::async_trait;
 
 struct DummyNotificationSender;
 
@@ -30,7 +30,9 @@ impl NotificationSender for DummyNotificationSender {
         _scheduled_at: Option<i64>,
         _correlation_id: Option<String>,
     ) -> Result<SentMessage, AppError> {
-        Ok(SentMessage { id: "dummy".to_string() })
+        Ok(SentMessage {
+            id: "dummy".to_string(),
+        })
     }
 }
 

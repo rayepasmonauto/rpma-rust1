@@ -1,7 +1,7 @@
 //! Unified notifications handler: repositories, services, helpers, and IPC commands.
 
-pub mod helper;
 pub mod event_handler;
+pub mod helper;
 pub mod message_repository;
 pub mod message_service;
 pub mod notification_repository;
@@ -9,8 +9,8 @@ pub mod notification_service;
 pub mod preferences_repository;
 pub mod template_repository;
 
-pub use helper::*;
 pub use event_handler::*;
+pub use helper::*;
 pub use message_repository::*;
 pub use message_service::*;
 pub use notification_repository::*;
@@ -168,7 +168,9 @@ pub async fn initialize_notification_service(
     NotificationService::initialize_global(NotificationConfig {
         quiet_hours_start: config.quiet_hours_start,
         quiet_hours_end: config.quiet_hours_end,
-        timezone: config.timezone.unwrap_or_else(|| "Europe/Paris".to_string()),
+        timezone: config
+            .timezone
+            .unwrap_or_else(|| "Europe/Paris".to_string()),
     })
     .await;
     info!("Notification service initialized (in-app only)");

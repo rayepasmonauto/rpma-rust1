@@ -64,7 +64,8 @@ impl DocumentsFacade {
 
     /// Find a report record by its ID.
     pub fn get_report(&self, id: &str) -> Result<Option<InterventionReport>, AppError> {
-        super::infrastructure::report_repository::ReportRepository::new(self.db.clone()).find_by_id(id)
+        super::infrastructure::report_repository::ReportRepository::new(self.db.clone())
+            .find_by_id(id)
     }
 
     /// Find the most recent report for a given intervention.
@@ -82,17 +83,20 @@ impl DocumentsFacade {
         limit: i32,
         offset: i32,
     ) -> Result<Vec<InterventionReport>, AppError> {
-        super::infrastructure::report_repository::ReportRepository::new(self.db.clone()).list(limit, offset)
+        super::infrastructure::report_repository::ReportRepository::new(self.db.clone())
+            .list(limit, offset)
     }
 
     /// Generate a unique report number.
     pub fn generate_report_number(&self) -> Result<String, AppError> {
-        super::infrastructure::report_repository::ReportRepository::new(self.db.clone()).generate_report_number()
+        super::infrastructure::report_repository::ReportRepository::new(self.db.clone())
+            .generate_report_number()
     }
 
     /// Persist a new report record to the database.
     pub fn save_report(&self, report: &InterventionReport) -> Result<(), AppError> {
-        super::infrastructure::report_repository::ReportRepository::new(self.db.clone()).save(report)
+        super::infrastructure::report_repository::ReportRepository::new(self.db.clone())
+            .save(report)
     }
 
     /// Return the static report capabilities for this application.

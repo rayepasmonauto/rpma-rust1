@@ -22,10 +22,7 @@ pub(crate) fn get_i64_from_row(row: &Row, column: &str) -> rusqlite::Result<i64>
 }
 
 /// Parse an optional i64 from a nullable column.
-pub(crate) fn get_optional_i64_from_row(
-    row: &Row,
-    column: &str,
-) -> rusqlite::Result<Option<i64>> {
+pub(crate) fn get_optional_i64_from_row(row: &Row, column: &str) -> rusqlite::Result<Option<i64>> {
     match row.get::<_, Option<i64>>(column) {
         Ok(value) => Ok(value),
         Err(_) => {

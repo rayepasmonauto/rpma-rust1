@@ -11,10 +11,9 @@ use tracing::instrument;
 
 #[allow(unused_imports)]
 pub use crate::domains::auth::application::audit_service::{
-    AuditActivityFilter, PaginatedUserActivity, SecurityAlert, SecurityEventRecord, SecurityMetrics,
-    UserActivityRecord,
+    AuditActivityFilter, PaginatedUserActivity, SecurityAlert, SecurityEventRecord,
+    SecurityMetrics, UserActivityRecord,
 };
-
 
 fn audit_service(state: &AppState<'_>) -> AuditService {
     AuditService::new(state.db.clone())

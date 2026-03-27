@@ -1,11 +1,11 @@
 //! CalendarFacade — command/response enums and facade orchestration.
 
 use super::*;
-use crate::shared::contracts::rate_limiter::RateLimiterPort;
 use crate::shared::context::RequestContext;
-use crate::shared::repositories::CalendarEventRepositoryContract;
+use crate::shared::contracts::rate_limiter::RateLimiterPort;
 use crate::shared::ipc::errors::AppError as IpcAppError;
 use crate::shared::repositories::base::Repository;
+use crate::shared::repositories::CalendarEventRepositoryContract;
 use std::sync::Arc;
 
 /// Command enum for the Calendar bounded context.
@@ -93,7 +93,11 @@ mod helpers {
         }
 
         // Last resort: fall back to epoch boundaries so the query stays safe.
-        if end_of_day { i64::MAX / 2 } else { 0 }
+        if end_of_day {
+            i64::MAX / 2
+        } else {
+            0
+        }
     }
 }
 

@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
-use ts_rs::TS;
 use std::sync::Arc;
 use tracing::{debug, error, info};
+use ts_rs::TS;
 
 use crate::domains::clients::client_handler::IClientRepository;
-use crate::shared::repositories::Repositories;
 use crate::shared::context::RequestContext;
+use crate::shared::repositories::Repositories;
 
 #[derive(Debug, Serialize, Deserialize, TS)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -15,22 +15,22 @@ pub enum GlobalSearchResult {
         id: String,
         task_number: String,
         title: String,
-        status: String
+        status: String,
     },
     Client {
         id: String,
         name: String,
-        email: Option<String>
+        email: Option<String>,
     },
     Material {
         id: String,
         name: String,
-        sku: String
+        sku: String,
     },
     Quote {
         id: String,
         quote_number: String,
-        description: Option<String>
+        description: Option<String>,
     },
 }
 
@@ -49,7 +49,11 @@ impl GlobalSearchService {
         Self { repos }
     }
 
-    pub async fn search(&self, query: &str, _ctx: &RequestContext) -> Result<GlobalSearchResponse, String> {
+    pub async fn search(
+        &self,
+        query: &str,
+        _ctx: &RequestContext,
+    ) -> Result<GlobalSearchResponse, String> {
         debug!("Performing global search for: {}", query);
 
         let mut results = Vec::new();
@@ -93,14 +97,15 @@ impl GlobalSearchService {
         }
 
         // 3. Search Materials
-        let material_query = crate::domains::inventory::infrastructure::material_repository::MaterialQuery {
-            search: Some(query_str.clone()),
-            pagination: crate::shared::repositories::base::PaginationParams {
-                page_size: Some(5),
+        let material_query =
+            crate::domains::inventory::infrastructure::material_repository::MaterialQuery {
+                search: Some(query_str.clone()),
+                pagination: crate::shared::repositories::base::PaginationParams {
+                    page_size: Some(5),
+                    ..Default::default()
+                },
                 ..Default::default()
-            },
-            ..Default::default()
-        };
+            };
         if let Ok(materials) = self.repos.material.search(material_query).await {
             for material in materials {
                 results.push(GlobalSearchResult::Material {

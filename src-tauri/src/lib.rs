@@ -10,9 +10,7 @@ pub mod shared;
 pub mod service_builder;
 pub mod models {
     pub mod client {
-        pub use crate::domains::clients::client_handler::{
-            CreateClientRequest, CustomerType,
-        };
+        pub use crate::domains::clients::client_handler::{CreateClientRequest, CustomerType};
     }
 }
 

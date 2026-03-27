@@ -8,12 +8,12 @@
 
 mod harness;
 
-use std::sync::Arc;
 use chrono::Utc;
 use rpma_ppf_intervention::domains::settings::UserSettingsRepository;
 use rpma_ppf_intervention::shared::contracts::auth::UserRole;
 use rpma_ppf_intervention::shared::contracts::notification::NotificationSender;
 use rusqlite::params;
+use std::sync::Arc;
 
 fn insert_test_user(app: &harness::app::TestApp, user_id: &str, role: &str) {
     app.db
@@ -39,7 +39,10 @@ fn insert_test_user(app: &harness::app::TestApp, user_id: &str, role: &str) {
 
 fn seeded_task_id(app: &harness::app::TestApp) -> String {
     app.db
-        .query_single_value("SELECT id FROM tasks WHERE vehicle_plate = ?", params!["SEED-001"])
+        .query_single_value(
+            "SELECT id FROM tasks WHERE vehicle_plate = ?",
+            params!["SEED-001"],
+        )
         .expect("seeded task lookup should succeed")
 }
 

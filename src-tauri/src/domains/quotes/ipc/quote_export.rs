@@ -14,7 +14,10 @@ use crate::resolve_context;
 
 /// Construct a per-request [`QuoteExportService`] from shared application state.
 fn export_service(state: &AppState<'_>) -> QuoteExportService {
-    QuoteExportService::new(state.quote_service.clone(), state.app_config.app_data_dir.clone())
+    QuoteExportService::new(
+        state.quote_service.clone(),
+        state.app_config.app_data_dir.clone(),
+    )
 }
 
 /// Export a quote to PDF.
@@ -91,7 +94,10 @@ pub async fn quote_convert_to_task(
 
     // Step 4 (ADR-016 saga): create the intervention synchronously instead of
     // relying on the QuoteConvertedHandler event handler.
-    match state.intervention_creator.create_from_quote(&task.id, &request.quote_id) {
+    match state
+        .intervention_creator
+        .create_from_quote(&task.id, &request.quote_id)
+    {
         Ok(()) => {
             tracing::info!(
                 task_id = %task.id,

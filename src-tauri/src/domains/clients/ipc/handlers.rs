@@ -1,5 +1,6 @@
 //! Client IPC handlers — thin Tauri command entry points (ADR-018).
 
+use crate::commands::{ApiResponse, AppError, AppState};
 use crate::domains::clients::application::client_input_validator::{
     sanitize_create_request, sanitize_update_request,
 };
@@ -9,7 +10,6 @@ use crate::domains::clients::domain::models::{
     Client, ClientListResponse, ClientQuery, ClientWithTasks, CreateClientRequest,
     UpdateClientRequest,
 };
-use crate::commands::{ApiResponse, AppError, AppState};
 use tracing::instrument;
 
 // ── Individual thin handlers (ADR-018) ────────────────────────────────────────
