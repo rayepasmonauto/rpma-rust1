@@ -47,11 +47,32 @@ impl InterventionDataService {
         request: &StartInterventionRequest,
         user_id: &str,
     ) -> InterventionResult<Intervention> {
-        // Get task_number, vehicle_plate, and client info from task
-        let (task_number, vehicle_plate, client_id, customer_name, customer_email, customer_phone):
-            (String, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>) = tx
+        // Read all task-backed intervention seed data in one round-trip.
+        let (
+            task_number,
+            vehicle_plate,
+            client_id,
+            customer_name,
+            customer_email,
+            customer_phone,
+            vehicle_model,
+            vehicle_make,
+            vehicle_year_str,
+            vehicle_vin,
+        ): (
+            String,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+        ) = tx
             .query_row(
-                "SELECT task_number, vehicle_plate, client_id, customer_name, customer_email, customer_phone FROM tasks WHERE id = ?",
+                "SELECT task_number, vehicle_plate, client_id, customer_name, customer_email, customer_phone, vehicle_model, vehicle_make, vehicle_year, vin FROM tasks WHERE id = ?",
                 params![request.task_id],
                 |row| Ok((
                     row.get(0)?,
@@ -60,6 +81,10 @@ impl InterventionDataService {
                     row.get(3)?,
                     row.get(4)?,
                     row.get(5)?,
+                    row.get(6)?,
+                    row.get(7)?,
+                    row.get(8)?,
+                    row.get(9)?,
                 )),
             )
             .map_err(|e| {
@@ -84,18 +109,6 @@ impl InterventionDataService {
         // directly as Option<i32> causes a rusqlite type error that the
         // .unwrap_or silently swallows — making ALL four fields None.  Read
         // vehicle_year as Option<String> and parse it to i32 afterward.
-        let (vehicle_model, vehicle_make, vehicle_year_str, vehicle_vin): (
-            Option<String>,
-            Option<String>,
-            Option<String>,
-            Option<String>,
-        ) = tx
-            .query_row(
-                "SELECT vehicle_model, vehicle_make, vehicle_year, vin FROM tasks WHERE id = ?",
-                params![request.task_id],
-                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
-            )
-            .unwrap_or((None, None, None, None));
         intervention.vehicle_model = vehicle_model;
         intervention.vehicle_make = vehicle_make;
         intervention.vehicle_year = vehicle_year_str
@@ -209,10 +222,7 @@ impl InterventionDataService {
                 InterventionError::Database(format!("Failed to initialize workflow: {}", e))
             })?;
 
-        // Save steps to database
-        for step in &workflow_result.steps {
-            self.save_step_with_tx(tx, step)?;
-        }
+        self.save_steps_batch_with_tx(tx, &workflow_result.steps)?;
 
         Ok(workflow_result.steps)
     }
@@ -462,13 +472,7 @@ impl InterventionDataService {
             ));
         }
 
-        // Delete steps first
-        self.db.get_connection()?.execute(
-            "DELETE FROM intervention_steps WHERE intervention_id = ?",
-            params![intervention_id],
-        )?;
-
-        // Delete intervention
+        // Repository delete already removes child steps inside the same transaction.
         self.repository.delete_intervention(intervention_id)?;
 
         Ok(())
@@ -494,25 +498,6 @@ impl InterventionDataService {
         intervention_id: &str,
         first_step_id: &str,
     ) -> InterventionResult<()> {
-        // Verify task exists before updating
-        let task_exists: i64 = tx
-            .query_row(
-                "SELECT COUNT(*) FROM tasks WHERE id = ?",
-                params![task_id],
-                |row| row.get(0),
-            )
-            .map_err(|e| {
-                InterventionError::Database(format!("Failed to verify task exists: {}", e))
-            })?;
-
-        if task_exists == 0 {
-            return Err(InterventionError::NotFound(format!(
-                "Task {} not found",
-                task_id
-            )));
-        }
-
-        // Get task number for intervention synchronization
         let task_number: Option<String> = tx
             .query_row(
                 "SELECT task_number FROM tasks WHERE id = ?",
@@ -523,6 +508,13 @@ impl InterventionDataService {
             .map_err(|e| {
                 InterventionError::Database(format!("Failed to get task number: {}", e))
             })?;
+
+        if task_number.is_none() {
+            return Err(InterventionError::NotFound(format!(
+                "Task {} not found",
+                task_id
+            )));
+        }
 
         let result = tx.execute(
             "UPDATE tasks SET
