@@ -5,7 +5,7 @@ import { PAGINATION } from "@/lib/constants";
 import { userKeys } from "@/lib/query-keys";
 import { useAuth } from "@/shared/hooks/useAuth";
 import type { UserAccount } from "@/types";
-import { userIpc } from "../ipc/users.ipc";
+import { ipcClient } from "@/lib/ipc";
 
 export interface UseUserListReturn {
   users: UserAccount[];
@@ -31,7 +31,7 @@ export function useUserList(
   const query = useQuery({
     queryKey: userKeys.list(limit, offset),
     queryFn: async () => {
-      const response = await userIpc.list(limit, offset);
+      const response = await ipcClient.users.list(limit, offset);
       return (response?.data ?? []) as UserAccount[];
     },
     enabled: isAuthenticated,
