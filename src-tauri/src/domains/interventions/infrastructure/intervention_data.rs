@@ -672,6 +672,14 @@ impl InterventionDataService {
             .list_interventions(status, technician_id, limit, offset)
     }
 
+    /// Delegate to the repository's SQL aggregate query for intervention stats.
+    pub fn get_aggregate_stats(
+        &self,
+        technician_id: Option<&str>,
+    ) -> InterventionResult<crate::domains::interventions::infrastructure::intervention::InterventionAggregateStats> {
+        self.repository.get_aggregate_stats(technician_id)
+    }
+
     /// Get legacy PPF workflow steps configuration
     /// NOTE: This method is deprecated. Use WorkflowStrategyFactory instead
     /// which provides flexible workflow strategies based on intervention type.

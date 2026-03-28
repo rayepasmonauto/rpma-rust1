@@ -331,6 +331,52 @@ impl InterventionRepository {
     pub fn count_archived(&self) -> InterventionResult<i64> {
         intervention_maintenance_repository::count_archived(&self.db)
     }
+
+    /// Returns aggregate intervention counts (total, completed, in_progress) via a
+    /// single SQL aggregate query, optionally filtered by technician.
+    ///
+    /// Replaces the previous pattern of loading all rows into memory and filtering
+    /// with iterator passes — a full-table deserialisation for every stats request.
+    pub fn get_aggregate_stats(
+        &self,
+        technician_id: Option<&str>,
+    ) -> InterventionResult<crate::domains::interventions::infrastructure::intervention::InterventionAggregateStats> {
+        use crate::domains::interventions::infrastructure::intervention::InterventionAggregateStats;
+        let conn = self.db.get_connection()?;
+        // COALESCE guards against NULL: SUM() returns NULL on an empty result set
+        // in SQLite, which cannot be deserialized into u64.
+        let (total, completed, in_progress): (u64, u64, u64) = if let Some(tech_id) = technician_id {
+            conn.query_row(
+                "SELECT
+                   COUNT(*),
+                   COALESCE(SUM(CASE WHEN status = 'completed'   THEN 1 ELSE 0 END), 0),
+                   COALESCE(SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END), 0)
+                 FROM interventions
+                 WHERE deleted_at IS NULL AND technician_id = ?1",
+                rusqlite::params![tech_id],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .map_err(|e| InterventionError::Database(e.to_string()))?
+        } else {
+            conn.query_row(
+                "SELECT
+                   COUNT(*),
+                   COALESCE(SUM(CASE WHEN status = 'completed'   THEN 1 ELSE 0 END), 0),
+                   COALESCE(SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END), 0)
+                 FROM interventions
+                 WHERE deleted_at IS NULL",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .map_err(|e| InterventionError::Database(e.to_string()))?
+        };
+        Ok(InterventionAggregateStats {
+            total_interventions: total,
+            completed_interventions: completed,
+            in_progress_interventions: in_progress,
+            average_completion_time: None,
+        })
+    }
 }
 
 #[cfg(test)]

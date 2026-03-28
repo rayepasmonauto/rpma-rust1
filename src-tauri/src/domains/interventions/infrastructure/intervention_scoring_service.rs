@@ -80,32 +80,12 @@ impl InterventionScoringService {
 
     /// Compute aggregate statistics for a given technician (or all technicians when `None`).
     ///
-    /// Counts total, completed and in-progress interventions from the database.
+    /// Delegates to a single SQL COUNT/SUM aggregate query instead of loading all
+    /// intervention rows into memory and filtering with iterator passes.
     pub fn get_stats_by_technician(
         &self,
         technician_id: Option<&str>,
     ) -> InterventionResult<InterventionAggregateStats> {
-        use crate::domains::interventions::domain::models::intervention::InterventionStatus;
-
-        let (interventions, _) = self
-            .data
-            .list_interventions(None, technician_id, None, None)?;
-
-        let total = interventions.len() as u64;
-        let completed = interventions
-            .iter()
-            .filter(|i| i.status == InterventionStatus::Completed)
-            .count() as u64;
-        let in_progress = interventions
-            .iter()
-            .filter(|i| i.status == InterventionStatus::InProgress)
-            .count() as u64;
-
-        Ok(InterventionAggregateStats {
-            total_interventions: total,
-            completed_interventions: completed,
-            in_progress_interventions: in_progress,
-            average_completion_time: None,
-        })
+        self.data.get_aggregate_stats(technician_id)
     }
 }
