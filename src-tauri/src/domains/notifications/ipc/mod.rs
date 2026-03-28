@@ -10,7 +10,7 @@
 //! # Migration intent
 //!
 //! To fully migrate to the ADR-001 four-layer layout:
-//! 1. Move `#[tauri::command]` fns from `notification_handler/mod.rs` into this file.
+//! 1. Move the `tauri::command` handler functions from `notification_handler/mod.rs` into this file.
 //! 2. Drop the `pub use notification_handler::*` glob from `notifications/mod.rs`.
 //! 3. Re-export only the command functions from this module.
 //!
