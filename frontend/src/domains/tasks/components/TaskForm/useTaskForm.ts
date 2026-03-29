@@ -19,6 +19,7 @@ import { taskIpc } from '../../ipc/task.ipc';
 import { TaskFormData, FormStep } from './types';
 
 const logger = createLogger('useTaskForm');
+const AUTO_SAVE_DELAY_MS = 8000;
 
 export const useTaskForm = (userId?: string, initialData?: Partial<TaskFormData>) => {
   const saveDraftToStorage = useCallback(async (data: TaskFormData, lastSaved: string) => {
@@ -92,6 +93,7 @@ export const useTaskForm = (userId?: string, initialData?: Partial<TaskFormData>
   const [error, setError] = useState<string | null>(null);
   const [taskNumber, setTaskNumber] = useState('');
   const [isDirty, setIsDirty] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   // Generate task number placeholder (backend will generate actual number)
@@ -107,7 +109,6 @@ export const useTaskForm = (userId?: string, initialData?: Partial<TaskFormData>
       title: '', // Will be generated based on form data before submission
       updated_at: new Date().toISOString()
     }));
-    setIsDirty(true);
 
     return placeholderNumber;
   }, []);
@@ -130,6 +131,11 @@ export const useTaskForm = (userId?: string, initialData?: Partial<TaskFormData>
 
   const updateFormData = useCallback((updates: Partial<TaskFormData>) => {
     setFormData(prev => {
+      const hasMeaningfulChanges = Object.entries(updates).some(([key, value]) => prev[key as keyof TaskFormData] !== value);
+      if (!hasMeaningfulChanges) {
+        return prev;
+      }
+
       const newData = {
         ...prev,
         ...updates,
@@ -314,10 +320,10 @@ export const useTaskForm = (userId?: string, initialData?: Partial<TaskFormData>
   }, [validateStep]);
 
   const autoSave = useCallback(async () => {
-    if (!isDirty || loading) return;
+    if (!isDirty || loading || isAutoSaving) return;
     
     try {
-      setLoading(true);
+      setIsAutoSaving(true);
       const now = new Date();
       await saveDraftToStorage(
         {
@@ -332,9 +338,9 @@ export const useTaskForm = (userId?: string, initialData?: Partial<TaskFormData>
     } catch (error) {
       logger.error('Auto-save failed:', error);
     } finally {
-      setLoading(false);
+      setIsAutoSaving(false);
     }
-  }, [formData, isDirty, loading, saveDraftToStorage, setLoading]);
+  }, [formData, isDirty, isAutoSaving, loading, saveDraftToStorage]);
 
 
 
@@ -351,8 +357,10 @@ export const useTaskForm = (userId?: string, initialData?: Partial<TaskFormData>
     validateStep,
     canProceedToNextStep,
     isDirty,
+    isAutoSaving,
     lastSaved,
     autoSave,
     clearDraft: clearDraftFromStorage,
+    autoSaveDelayMs: AUTO_SAVE_DELAY_MS,
   };
 };

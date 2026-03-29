@@ -12,6 +12,7 @@ interface TaskActionBarProps {
   autoSaveEnabled: boolean;
   onAutoSaveToggle: (enabled: boolean) => void;
   isDirty: boolean;
+  isAutoSaving: boolean;
   onAutoSave: () => void;
   loading: boolean;
   onSubmit?: (e: React.FormEvent) => void;
@@ -25,6 +26,7 @@ export const TaskActionBar: React.FC<TaskActionBarProps> = React.memo(({
   autoSaveEnabled,
   onAutoSaveToggle,
   isDirty,
+  isAutoSaving,
   onAutoSave,
   loading,
   onSubmit
@@ -76,16 +78,16 @@ export const TaskActionBar: React.FC<TaskActionBarProps> = React.memo(({
           <button
             type="button"
             onClick={onAutoSave}
-            disabled={loading}
+            disabled={loading || isAutoSaving}
             className={cn(
               'flex h-9 items-center gap-2 rounded-lg px-4 text-xs font-semibold transition-all duration-200',
               'border border-slate-200 bg-white text-slate-600',
               'hover:bg-slate-50 hover:border-slate-300',
-              loading && 'opacity-50 cursor-wait'
+              (loading || isAutoSaving) && 'opacity-50 cursor-wait'
             )}
           >
             <Save className="h-4 w-4" />
-            Sauvegarder brouillon
+            {isAutoSaving ? 'Enregistrement...' : 'Sauvegarder brouillon'}
           </button>
         )}
 
