@@ -139,8 +139,8 @@ export function useInterventionWorkflow({
   // Reset function — targeted invalidation instead of clear() to avoid nuking unrelated caches
   const reset = useCallback(() => {
     state.reset();
-    void queryClient.invalidateQueries({ queryKey: interventionKeys.all });
     if (taskId) {
+      void queryClient.invalidateQueries({ queryKey: interventionKeys.activeForTask(taskId) });
       void queryClient.invalidateQueries({ queryKey: taskKeys.byId(taskId) });
     }
   }, [state, queryClient, taskId]);
