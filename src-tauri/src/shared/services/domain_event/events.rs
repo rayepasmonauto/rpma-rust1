@@ -1,17 +1,9 @@
-//! Domain Event Models
-//!
-//! This module contains all domain event definitions used for event-driven
-//! communication between services. Events are immutable facts about things
-//! that have happened in the system.
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-/// Domain event types for system-wide communication
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DomainEvent {
-    // Task Events
     TaskCreated {
         id: String,
         task_id: String,
@@ -66,8 +58,6 @@ pub enum DomainEvent {
         timestamp: DateTime<Utc>,
         metadata: Option<serde_json::Value>,
     },
-
-    // Client Events
     ClientCreated {
         id: String,
         client_id: String,
@@ -94,8 +84,6 @@ pub enum DomainEvent {
         timestamp: DateTime<Utc>,
         metadata: Option<serde_json::Value>,
     },
-
-    // Intervention Events
     InterventionCreated {
         id: String,
         intervention_id: String,
@@ -167,8 +155,6 @@ pub enum DomainEvent {
         timestamp: DateTime<Utc>,
         metadata: Option<serde_json::Value>,
     },
-
-    // Material Events
     MaterialConsumed {
         id: String,
         material_id: String,
@@ -179,8 +165,6 @@ pub enum DomainEvent {
         timestamp: DateTime<Utc>,
         metadata: Option<serde_json::Value>,
     },
-
-    // Quote CRUD Events
     QuoteCreated {
         id: String,
         quote_id: String,
@@ -219,7 +203,6 @@ pub enum DomainEvent {
         timestamp: DateTime<Utc>,
         metadata: Option<serde_json::Value>,
     },
-    // Quote Status Events
     QuoteShared {
         id: String,
         quote_id: String,
@@ -239,7 +222,6 @@ pub enum DomainEvent {
         timestamp: DateTime<Utc>,
         metadata: Option<serde_json::Value>,
     },
-    // User Events
     UserCreated {
         id: String,
         user_id: String,
@@ -286,8 +268,6 @@ pub enum DomainEvent {
         timestamp: DateTime<Utc>,
         metadata: Option<serde_json::Value>,
     },
-
-    // System Events
     SystemError {
         id: String,
         error_code: String,
@@ -316,8 +296,6 @@ pub enum DomainEvent {
         timestamp: DateTime<Utc>,
         metadata: Option<serde_json::Value>,
     },
-
-    // Notification Events
     NotificationReceived {
         id: String,
         notification_id: String,
@@ -326,8 +304,6 @@ pub enum DomainEvent {
         timestamp: DateTime<Utc>,
         metadata: Option<serde_json::Value>,
     },
-
-    // Quote Events
     QuoteAccepted {
         id: String,
         quote_id: String,
@@ -359,8 +335,6 @@ pub enum DomainEvent {
         timestamp: DateTime<Utc>,
         metadata: Option<serde_json::Value>,
     },
-
-    // Trash Events
     EntityRestored {
         id: String,
         entity_id: String,
@@ -379,7 +353,6 @@ pub enum DomainEvent {
     },
 }
 
-/// Error severity levels
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ErrorSeverity {
     Low,
@@ -388,7 +361,6 @@ pub enum ErrorSeverity {
     Critical,
 }
 
-/// Alert severity levels
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AlertSeverity {
     Info,
@@ -398,8 +370,6 @@ pub enum AlertSeverity {
 }
 
 impl DomainEvent {
-    // Event type name constants — use these instead of hardcoded string literals
-    // when registering handlers or matching event types.
     pub const TASK_CREATED: &'static str = "TaskCreated";
     pub const TASK_UPDATED: &'static str = "TaskUpdated";
     pub const TASK_ASSIGNED: &'static str = "TaskAssigned";
@@ -439,17 +409,12 @@ impl DomainEvent {
     pub const ENTITY_RESTORED: &'static str = "EntityRestored";
     pub const ENTITY_HARD_DELETED: &'static str = "EntityHardDeleted";
 
-    // Notification-type constants — preserve the DB-stored string values.
-    // Intentionally distinct from event-bus constants (e.g., TASK_ASSIGNED vs
-    // TASK_ASSIGNMENT_NOTIF) because notification types and domain-event types
-    // are different vocabularies.
     pub const TASK_ASSIGNMENT_NOTIF: &'static str = "TaskAssignment";
     pub const TASK_UPDATE_NOTIF: &'static str = "TaskUpdate";
     pub const QUOTE_CREATED_NOTIF: &'static str = "QuoteCreated";
     pub const QUOTE_APPROVED_NOTIF: &'static str = "QuoteApproved";
     pub const SYSTEM_ALERT_NOTIF: &'static str = "SystemAlert";
 
-    /// Get the event type name as a string
     pub fn event_type(&self) -> &'static str {
         match self {
             DomainEvent::TaskCreated { .. } => Self::TASK_CREATED,
@@ -493,316 +458,46 @@ impl DomainEvent {
         }
     }
 
-    /// Get the timestamp of an event
     pub fn timestamp(&self) -> DateTime<Utc> {
         match self {
-            DomainEvent::TaskCreated { timestamp, .. } => *timestamp,
-            DomainEvent::TaskUpdated { timestamp, .. } => *timestamp,
-            DomainEvent::TaskAssigned { timestamp, .. } => *timestamp,
-            DomainEvent::TaskStatusChanged { timestamp, .. } => *timestamp,
-            DomainEvent::TaskCompleted { timestamp, .. } => *timestamp,
-            DomainEvent::TaskDeleted { timestamp, .. } => *timestamp,
-            DomainEvent::ClientCreated { timestamp, .. } => *timestamp,
-            DomainEvent::ClientUpdated { timestamp, .. } => *timestamp,
-            DomainEvent::ClientDeactivated { timestamp, .. } => *timestamp,
-            DomainEvent::InterventionCreated { timestamp, .. } => *timestamp,
-            DomainEvent::InterventionStarted { timestamp, .. } => *timestamp,
-            DomainEvent::InterventionStepStarted { timestamp, .. } => *timestamp,
-            DomainEvent::InterventionStepCompleted { timestamp, .. } => *timestamp,
-            DomainEvent::InterventionCompleted { timestamp, .. } => *timestamp,
-            DomainEvent::InterventionFinalized { timestamp, .. } => *timestamp,
-            DomainEvent::InterventionCancelled { timestamp, .. } => *timestamp,
-            DomainEvent::MaterialConsumed { timestamp, .. } => *timestamp,
-            DomainEvent::UserCreated { timestamp, .. } => *timestamp,
-            DomainEvent::UserUpdated { timestamp, .. } => *timestamp,
-            DomainEvent::UserLoggedIn { timestamp, .. } => *timestamp,
-            DomainEvent::UserLoggedOut { timestamp, .. } => *timestamp,
-            DomainEvent::AuthenticationFailed { timestamp, .. } => *timestamp,
-            DomainEvent::AuthenticationSuccess { timestamp, .. } => *timestamp,
-            DomainEvent::SystemError { timestamp, .. } => *timestamp,
-            DomainEvent::SystemMaintenance { timestamp, .. } => *timestamp,
-            DomainEvent::PerformanceAlert { timestamp, .. } => *timestamp,
-            DomainEvent::NotificationReceived { timestamp, .. } => *timestamp,
-            DomainEvent::QuoteCreated { timestamp, .. } => *timestamp,
-            DomainEvent::QuoteUpdated { timestamp, .. } => *timestamp,
-            DomainEvent::QuoteDeleted { timestamp, .. } => *timestamp,
-            DomainEvent::QuoteDuplicated { timestamp, .. } => *timestamp,
-            DomainEvent::QuoteAccepted { timestamp, .. } => *timestamp,
-            DomainEvent::QuoteRejected { timestamp, .. } => *timestamp,
-            DomainEvent::QuoteConverted { timestamp, .. } => *timestamp,
-            DomainEvent::QuoteShared { timestamp, .. } => *timestamp,
-            DomainEvent::QuoteCustomerResponded { timestamp, .. } => *timestamp,
-            DomainEvent::EntityRestored { timestamp, .. } => *timestamp,
-            DomainEvent::EntityHardDeleted { timestamp, .. } => *timestamp,
+            DomainEvent::TaskCreated { timestamp, .. }
+            | DomainEvent::TaskUpdated { timestamp, .. }
+            | DomainEvent::TaskAssigned { timestamp, .. }
+            | DomainEvent::TaskStatusChanged { timestamp, .. }
+            | DomainEvent::TaskCompleted { timestamp, .. }
+            | DomainEvent::TaskDeleted { timestamp, .. }
+            | DomainEvent::ClientCreated { timestamp, .. }
+            | DomainEvent::ClientUpdated { timestamp, .. }
+            | DomainEvent::ClientDeactivated { timestamp, .. }
+            | DomainEvent::InterventionCreated { timestamp, .. }
+            | DomainEvent::InterventionStarted { timestamp, .. }
+            | DomainEvent::InterventionStepStarted { timestamp, .. }
+            | DomainEvent::InterventionStepCompleted { timestamp, .. }
+            | DomainEvent::InterventionCompleted { timestamp, .. }
+            | DomainEvent::InterventionFinalized { timestamp, .. }
+            | DomainEvent::InterventionCancelled { timestamp, .. }
+            | DomainEvent::MaterialConsumed { timestamp, .. }
+            | DomainEvent::QuoteCreated { timestamp, .. }
+            | DomainEvent::QuoteUpdated { timestamp, .. }
+            | DomainEvent::QuoteDeleted { timestamp, .. }
+            | DomainEvent::QuoteDuplicated { timestamp, .. }
+            | DomainEvent::QuoteShared { timestamp, .. }
+            | DomainEvent::QuoteCustomerResponded { timestamp, .. }
+            | DomainEvent::UserCreated { timestamp, .. }
+            | DomainEvent::UserUpdated { timestamp, .. }
+            | DomainEvent::UserLoggedIn { timestamp, .. }
+            | DomainEvent::UserLoggedOut { timestamp, .. }
+            | DomainEvent::AuthenticationFailed { timestamp, .. }
+            | DomainEvent::AuthenticationSuccess { timestamp, .. }
+            | DomainEvent::SystemError { timestamp, .. }
+            | DomainEvent::SystemMaintenance { timestamp, .. }
+            | DomainEvent::PerformanceAlert { timestamp, .. }
+            | DomainEvent::NotificationReceived { timestamp, .. }
+            | DomainEvent::QuoteAccepted { timestamp, .. }
+            | DomainEvent::QuoteRejected { timestamp, .. }
+            | DomainEvent::QuoteConverted { timestamp, .. }
+            | DomainEvent::EntityRestored { timestamp, .. }
+            | DomainEvent::EntityHardDeleted { timestamp, .. } => *timestamp,
         }
-    }
-}
-
-/// Event metadata for additional context
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct EventMetadata {
-    /// Correlation ID for tracking events across services
-    pub correlation_id: String,
-    /// User who triggered the event
-    pub user_id: Option<String>,
-    /// Source service that generated the event
-    pub source: String,
-    /// Client IP address if applicable
-    pub ip_address: Option<String>,
-    /// Additional custom metadata
-    pub custom: Option<serde_json::Value>,
-}
-
-impl EventMetadata {
-    /// Create new event metadata
-    pub fn new(source: String) -> Self {
-        Self {
-            correlation_id: uuid::Uuid::new_v4().to_string(),
-            user_id: None,
-            source,
-            ip_address: None,
-            custom: None,
-        }
-    }
-
-    /// Create metadata with user context
-    pub fn with_user(source: String, user_id: String) -> Self {
-        Self {
-            correlation_id: uuid::Uuid::new_v4().to_string(),
-            user_id: Some(user_id),
-            source,
-            ip_address: None,
-            custom: None,
-        }
-    }
-
-    /// Add correlation ID
-    pub fn with_correlation_id(mut self, correlation_id: String) -> Self {
-        self.correlation_id = correlation_id;
-        self
-    }
-
-    /// Add IP address
-    pub fn with_ip_address(mut self, ip_address: String) -> Self {
-        self.ip_address = Some(ip_address);
-        self
-    }
-
-    /// Add custom metadata
-    pub fn with_custom(mut self, custom: serde_json::Value) -> Self {
-        self.custom = Some(custom);
-        self
-    }
-}
-
-/// Event envelope for transporting events with metadata
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct EventEnvelope {
-    /// The domain event
-    pub event: DomainEvent,
-    /// Event metadata
-    pub metadata: EventMetadata,
-    /// Event version for schema evolution
-    pub version: i32,
-}
-
-impl EventEnvelope {
-    /// Create a new event envelope
-    pub fn new(event: DomainEvent, metadata: EventMetadata) -> Self {
-        Self {
-            event,
-            metadata,
-            version: 1,
-        }
-    }
-
-    /// Create envelope with current timestamp
-    pub fn with_event(event: DomainEvent, source: String) -> Self {
-        Self::new(event, EventMetadata::new(source))
-    }
-
-    /// Create envelope with user context
-    pub fn with_user(event: DomainEvent, source: String, user_id: String) -> Self {
-        Self::new(event, EventMetadata::with_user(source, user_id))
-    }
-}
-
-/// Event filter for querying events
-#[derive(Debug, Clone)]
-pub struct EventFilter {
-    /// Filter by event types
-    pub event_types: Option<Vec<String>>,
-    /// Filter by aggregate ID
-    pub aggregate_id: Option<String>,
-    /// Filter by user ID
-    pub user_id: Option<String>,
-    /// Filter by start time
-    pub from_timestamp: Option<DateTime<Utc>>,
-    /// Filter by end time
-    pub to_timestamp: Option<DateTime<Utc>>,
-    /// Maximum number of events to return
-    pub limit: Option<usize>,
-}
-
-impl EventFilter {
-    /// Create a new empty filter
-    pub fn new() -> Self {
-        Self {
-            event_types: None,
-            aggregate_id: None,
-            user_id: None,
-            from_timestamp: None,
-            to_timestamp: None,
-            limit: None,
-        }
-    }
-
-    /// Filter by event type
-    pub fn with_event_type(mut self, event_type: String) -> Self {
-        self.event_types = Some(vec![event_type]);
-        self
-    }
-
-    /// Filter by multiple event types
-    pub fn with_event_types(mut self, event_types: Vec<String>) -> Self {
-        self.event_types = Some(event_types);
-        self
-    }
-
-    /// Filter by aggregate ID
-    pub fn with_aggregate_id(mut self, aggregate_id: String) -> Self {
-        self.aggregate_id = Some(aggregate_id);
-        self
-    }
-
-    /// Filter by user ID
-    pub fn with_user_id(mut self, user_id: String) -> Self {
-        self.user_id = Some(user_id);
-        self
-    }
-
-    /// Filter by time range
-    pub fn with_time_range(mut self, from: DateTime<Utc>, to: DateTime<Utc>) -> Self {
-        self.from_timestamp = Some(from);
-        self.to_timestamp = Some(to);
-        self
-    }
-
-    /// Set result limit
-    pub fn with_limit(mut self, limit: usize) -> Self {
-        self.limit = Some(limit);
-        self
-    }
-}
-
-impl Default for EventFilter {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-/// Event store trait for persisting events
-pub trait EventStore: Send + Sync {
-    /// Store a single event
-    fn store(&self, envelope: &EventEnvelope) -> Result<(), String>;
-
-    /// Store multiple events
-    fn store_batch(&self, envelopes: &[EventEnvelope]) -> Result<(), String>;
-
-    /// Get events by filter
-    fn query(&self, filter: EventFilter) -> Result<Vec<EventEnvelope>, String>;
-
-    /// Get events for a specific aggregate
-    fn get_aggregate_events(
-        &self,
-        aggregate_id: &str,
-        from_version: Option<i64>,
-    ) -> Result<Vec<EventEnvelope>, String>;
-}
-
-/// In-memory event store implementation for testing
-pub struct InMemoryEventStore {
-    events: std::sync::Mutex<Vec<EventEnvelope>>,
-}
-
-impl InMemoryEventStore {
-    /// Create a new in-memory event store
-    pub fn new() -> Self {
-        Self {
-            events: std::sync::Mutex::new(Vec::new()),
-        }
-    }
-
-    /// Clear all events
-    pub fn clear(&self) {
-        let mut events = self.events.lock().unwrap_or_else(|e| e.into_inner());
-        events.clear();
-    }
-
-    /// Get total event count
-    pub fn count(&self) -> usize {
-        let events = self.events.lock().unwrap_or_else(|e| e.into_inner());
-        events.len()
-    }
-}
-
-impl Default for InMemoryEventStore {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl EventStore for InMemoryEventStore {
-    fn store(&self, envelope: &EventEnvelope) -> Result<(), String> {
-        let mut events = self.events.lock().unwrap_or_else(|e| e.into_inner());
-        events.push(envelope.clone());
-        Ok(())
-    }
-
-    fn store_batch(&self, envelopes: &[EventEnvelope]) -> Result<(), String> {
-        let mut events = self.events.lock().unwrap_or_else(|e| e.into_inner());
-        events.extend_from_slice(envelopes);
-        Ok(())
-    }
-
-    fn query(&self, filter: EventFilter) -> Result<Vec<EventEnvelope>, String> {
-        let events = self.events.lock().unwrap_or_else(|e| e.into_inner());
-
-        let filtered: Vec<_> = events
-            .iter()
-            .filter(|e| {
-                if let Some(ref types) = filter.event_types {
-                    if !types.contains(&e.event.event_type().to_string()) {
-                        return false;
-                    }
-                }
-                if let Some(from) = filter.from_timestamp {
-                    if e.event.timestamp() < from {
-                        return false;
-                    }
-                }
-                if let Some(to) = filter.to_timestamp {
-                    if e.event.timestamp() > to {
-                        return false;
-                    }
-                }
-                true
-            })
-            .cloned()
-            .collect();
-
-        if let Some(limit) = filter.limit {
-            Ok(filtered.into_iter().take(limit).collect())
-        } else {
-            Ok(filtered)
-        }
-    }
-
-    fn get_aggregate_events(
-        &self,
-        _aggregate_id: &str,
-        _from_version: Option<i64>,
-    ) -> Result<Vec<EventEnvelope>, String> {
-        Ok(Vec::new())
     }
 }
