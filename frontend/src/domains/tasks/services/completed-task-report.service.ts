@@ -1,6 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { interventionKeys } from '@/lib/query-keys';
 import { documentReportOperations } from '@/shared/features/documents/report-export';
 
 export type TranslateFn = (key: string, params?: Record<string, string | number>) => string;
@@ -32,8 +31,8 @@ export async function saveCompletedInterventionReport(
 }
 
 export async function printCompletedInterventionReport({
-  queryClient,
-  taskId,
+  queryClient: _queryClient,
+  taskId: _taskId,
   interventionId,
   t,
   onProgress,
@@ -42,9 +41,6 @@ export async function printCompletedInterventionReport({
 }: PrintReportOptions): Promise<void> {
   toast.info(t('reports.generatingReport'), { duration: 3000 });
   onProgress(t('reports.generatingPdf'));
-
-  await queryClient.invalidateQueries({ queryKey: interventionKeys.byTaskData(taskId) });
-  await queryClient.refetchQueries({ queryKey: interventionKeys.byTaskData(taskId) });
 
   await new Promise((resolve) => setTimeout(resolve, 500));
 

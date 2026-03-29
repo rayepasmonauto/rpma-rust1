@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { TaskPriority, TaskStatus } from "@/lib/backend";
 import { phone } from "@/lib/utils/phone";
-import { interventionKeys, taskKeys } from "@/lib/query-keys";
+import { taskKeys } from "@/lib/query-keys";
 import { TaskWithDetails } from "@/types/task.types";
 import { useAuth } from "@/shared/hooks/useAuth";
 // ❌ CROSS-DOMAIN IMPORT
@@ -63,8 +63,7 @@ export function useTaskActions(task: TaskWithDetails) {
         console.error(opts.errorLabel, error);
       },
       onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });
-        queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+        void queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });
       },
     };
   }
@@ -180,9 +179,7 @@ export function useTaskActions(task: TaskWithDetails) {
     },
     onSuccess: (result) => {
       if (result.success && result.intervention) {
-        queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });
-        queryClient.invalidateQueries({ queryKey: interventionKeys.byTask(task.id) });
-        queryClient.invalidateQueries({ queryKey: interventionKeys.activeForTask(task.id) });
+        void queryClient.invalidateQueries({ queryKey: taskKeys.byId(task.id) });
         toast.success("Intervention demarree avec succes");
         router.push(`/tasks/${task.id}/workflow/ppf/steps/preparation`);
       }

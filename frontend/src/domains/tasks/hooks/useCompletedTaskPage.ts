@@ -158,9 +158,6 @@ export function useCompletedTaskPage() {
     setExportProgress(t("reports.preparingExport"));
 
     try {
-      await queryClient.invalidateQueries({
-        queryKey: interventionKeys.byTaskData(taskId),
-      });
       await queryClient.refetchQueries({
         queryKey: interventionKeys.byTaskData(taskId),
       });

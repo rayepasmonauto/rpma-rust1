@@ -130,15 +130,6 @@ export function PPFWorkflowProvider({ taskId, children }: PPFWorkflowProviderPro
   //
   // Every PPF mutation must refresh the workflow view and the active
   // intervention record. Keep this list limited to queries owned by this provider.
-  function invalidatePPFWorkflowCaches() {
-    queryClient.invalidateQueries({ queryKey: interventionKeys.ppfIntervention(taskId) });
-    if (interventionData?.intervention?.id) {
-      queryClient.invalidateQueries({
-        queryKey: interventionKeys.ppfInterventionSteps(interventionData.intervention.id),
-      });
-    }
-  }
-
   // Get intervention for this task
   const { data: interventionData, isLoading: interventionLoading, error: interventionError } = useQuery({
     queryKey: interventionKeys.ppfIntervention(taskId),
@@ -336,7 +327,6 @@ export function PPFWorkflowProvider({ taskId, children }: PPFWorkflowProviderPro
        return { success: true, stepId };
     },
     onSuccess: () => {
-      invalidatePPFWorkflowCaches();
       toast.success('Avancé à l\'étape suivante');
     },
     onError: (error) => {
@@ -372,7 +362,6 @@ export function PPFWorkflowProvider({ taskId, children }: PPFWorkflowProviderPro
       return { success: true, stepId, savedStep };
     },
     onSuccess: () => {
-      invalidatePPFWorkflowCaches();
       toast.success('Étape terminée');
     },
     onError: () => {
@@ -403,9 +392,6 @@ export function PPFWorkflowProvider({ taskId, children }: PPFWorkflowProviderPro
       return { success: true };
     },
     onSuccess: () => {
-      invalidatePPFWorkflowCaches();
-      queryClient.invalidateQueries({ queryKey: taskKeys.byId(taskId) });
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       toast.success('Intervention finalisée avec succès');
     },
     onError: (error) => {
