@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Desktop packaging uses a custom snapshot step in `npm run build:tauri`.
-  // `output: 'export'` stays disabled because this app still carries Next route handlers under `app/api`.
+  output: "standalone",
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,
@@ -89,7 +88,7 @@ const nextConfig = {
 
     return config;
   },
-  // Headers and redirects disabled for static export compatibility
+  // Tauri release packaging uses Next standalone output with an embedded runtime.
 };
 
 export default nextConfig;

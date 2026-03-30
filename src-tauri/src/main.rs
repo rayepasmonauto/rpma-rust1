@@ -351,6 +351,9 @@ fn main() {
                     warn!("App state not available during shutdown - skipping cleanup");
                 }
 
+                #[cfg(not(debug_assertions))]
+                infrastructure::frontend_runtime::stop_embedded_frontend();
+
                 // Step 3: Log about background tasks
                 info!("Background tasks (tokio::spawn) will be terminated by process exit");
 
@@ -494,6 +497,26 @@ fn main() {
                     }
                 }
             });
+
+            #[cfg(not(debug_assertions))]
+            {
+                let resource_dir = app
+                    .path()
+                    .resource_dir()
+                    .map_err(|e| format!("Failed to get resource dir: {e}"))?;
+                let frontend_address = infrastructure::frontend_runtime::start_embedded_frontend(&resource_dir)
+                    .map_err(|e| format!("Failed to start embedded frontend server: {e}"))?;
+                let frontend_url = tauri::Url::parse(&frontend_address)
+                    .map_err(|e| format!("Failed to parse embedded frontend URL: {e}"))?;
+
+                if let Some(window) = app.get_webview_window("main") {
+                    window
+                        .navigate(frontend_url)
+                        .map_err(|e| format!("Failed to navigate main window to embedded frontend: {e}"))?;
+                } else {
+                    return Err("Main webview window not found".into());
+                }
+            }
 
             info!("Application setup completed successfully");
             Ok(())

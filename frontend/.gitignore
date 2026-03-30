@@ -12,3 +12,4 @@ node_modules
 /.env.development.local
 /playwright-report
 /playwright-report.zip
+/out
