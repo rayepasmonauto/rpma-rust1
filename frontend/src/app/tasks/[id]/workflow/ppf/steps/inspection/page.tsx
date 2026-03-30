@@ -15,7 +15,12 @@ import {
   usePpfWorkflow,
 } from '@/domains/interventions';
 import type { Defect } from '@/domains/interventions';
-import { buildStepExportPayload, downloadJsonFile, getEffectiveStepData } from '@/domains/interventions';
+import {
+  buildStepExportPayload,
+  downloadJsonFile,
+  getEffectiveStepData,
+  getEffectiveStepNote,
+} from '@/domains/interventions';
 import { InspectionEnvironmentCard } from '@/domains/interventions/components/ppf/InspectionEnvironmentCard';
 import { CHECKLIST_ITEMS, type InspectionDefect, type InspectionDraft } from './inspection.data';
 
@@ -67,7 +72,7 @@ export default function InspectionStepPage() {
 
     setChecklist(collected.checklist ?? {});
     setDefects(normalizedDefects);
-    setNotes(collected.notes ?? '');
+    setNotes(getEffectiveStepNote(stepRecord) ?? collected.notes ?? '');
     setEnvironment({
       temp_celsius: collected.environment?.temp_celsius ?? intervention?.temperature_celsius ?? null,
       humidity_percent: collected.environment?.humidity_percent ?? intervention?.humidity_percentage ?? null,

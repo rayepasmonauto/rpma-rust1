@@ -3,6 +3,7 @@
 use crate::db::InterventionError;
 use crate::domains::interventions::domain::models::intervention::Intervention;
 use crate::domains::interventions::domain::models::step::{InterventionStep, StepStatus};
+use crate::domains::interventions::infrastructure::intervention_data::steps::sync_step_note;
 use crate::domains::interventions::infrastructure::intervention_types::{
     AdvanceStepRequest, AdvanceStepResponse, SaveStepProgressRequest,
 };
@@ -360,9 +361,7 @@ impl super::InterventionWorkflowService {
             _ => {}
         }
 
-        step.collected_data = Some(request.collected_data.clone());
-        step.step_data = step.collected_data.clone();
-        step.notes = request.notes.clone();
+        sync_step_note(&mut step, &request.collected_data, request.notes.as_deref());
 
         if let Some(photos) = &request.photos {
             step.photo_count = photos.len() as i32;

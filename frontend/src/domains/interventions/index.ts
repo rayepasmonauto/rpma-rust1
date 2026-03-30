@@ -30,7 +30,7 @@ export { PPF_STEP_CONFIG } from './components/ppf/ppfWorkflow.config';
 export { WorkflowNavigationButton } from './components/workflow/WorkflowNavigationButton';
 export type { Defect } from './components/workflow/ppf/VehicleDiagram';
 export { getPPFStepPath, getNextPPFStepId, getPPFStepTitle, getPPFStepDescription, buildPPFStepsFromData, getCurrentPPFStepId } from './utils/ppf-workflow';
-export { buildStepExportPayload, downloadJsonFile, getEffectiveStepData } from './utils/step-export';
+export { buildStepExportPayload, downloadJsonFile, getEffectiveStepData, getEffectiveStepNote } from './utils/step-export';
 export type { StepExportPayload } from './utils/step-export';
 export { WorkflowService, workflowService, WorkflowTemplatesService, workflowTemplatesService } from './workflow/services';
 export type { CreateWorkflowExecutionDTO, StartTimingDTO, SignatureDTO, WorkflowTemplate, WorkflowStepTemplate, SOPInstruction } from './workflow/services';

@@ -5,8 +5,8 @@
   "identifier": "com.rpma.ppf-intervention",
   "build": {
     "beforeDevCommand": "cd frontend && npm run dev:next",
-    "beforeBuildCommand": "cd frontend && npm run build",
-    "frontendDist": "../frontend/.next",
+    "beforeBuildCommand": "cd frontend && npm run build:tauri",
+    "frontendDist": "../frontend/out",
     "devUrl": "http://localhost:3000"
   },
   "app": {

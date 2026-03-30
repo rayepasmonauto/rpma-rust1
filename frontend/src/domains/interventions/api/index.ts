@@ -90,6 +90,7 @@ export {
   buildStepExportPayload,
   downloadJsonFile,
   getEffectiveStepData,
+  getEffectiveStepNote,
 } from '../utils/step-export';
 /** TODO: document */
 export type { StepExportPayload } from '../utils/step-export';

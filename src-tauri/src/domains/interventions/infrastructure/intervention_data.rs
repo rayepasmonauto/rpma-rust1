@@ -7,7 +7,7 @@
 //! - Query operations
 
 mod creation;
-mod steps;
+pub(crate) mod steps;
 mod task_link;
 
 use crate::db::Database;

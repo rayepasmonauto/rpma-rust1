@@ -108,6 +108,16 @@ function parseStepData(step: InterventionStep): Record<string, unknown> {
   return raw as Record<string, unknown>;
 }
 
+function getEffectiveStepNote(step: InterventionStep, data: Record<string, unknown>): string | null {
+  if (typeof step.notes === 'string' && step.notes.trim() !== '') {
+    return step.notes;
+  }
+
+  return typeof data['notes'] === 'string' && data['notes'].trim() !== ''
+    ? data['notes']
+    : null;
+}
+
 function toStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((v): v is string => typeof v === 'string');
@@ -188,7 +198,7 @@ function buildStepViewModel(step: InterventionStep): ReportStepViewModel {
     completedAt: formatTimestamp(step.completed_at),
     duration: formatDurationSeconds(step.duration_seconds),
     photoCount: step.photo_count ?? 0,
-    notes: nullable(step.notes, PLACEHOLDERS.noObservation),
+    notes: nullable(getEffectiveStepNote(step, data), PLACEHOLDERS.noObservation),
     defects: toStringArray(data['defects']),
     observations: allObservations,
     zones,

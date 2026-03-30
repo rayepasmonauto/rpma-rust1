@@ -1,11 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { StepType } from '@/lib/backend';
 import { usePpfWorkflow } from '@/domains/interventions/api/client';
 import { getNextPPFStepId, getPPFStepPath } from '../utils/ppf-workflow';
-import { buildStepExportPayload, downloadJsonFile, getEffectiveStepData } from '../utils/step-export';
+import {
+  buildStepExportPayload,
+  downloadJsonFile,
+  getEffectiveStepData,
+  getEffectiveStepNote,
+} from '../utils/step-export';
 
 const ZONE_CHECKLIST = [
   { id: 'surface_ready', title: 'Surface dégraissée et sèche', required: true },
@@ -91,10 +96,12 @@ export function useInstallationStep() {
   const [isSaving, setIsSaving] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const hasHydratedFromServerRef = useRef(false);
+  const initializedNotesStepRef = useRef<string | null>(null);
 
   // Hydrate from server data
   useEffect(() => {
     if (!stepRecord) return;
+
     const collected = getEffectiveStepData(stepRecord) as InstallationDraft;
     const baseZones = buildZoneList(task?.ppf_zones ?? null);
     const savedZones = Array.isArray(collected.zones) ? collected.zones : [];
@@ -128,10 +135,13 @@ export function useInstallationStep() {
 
     setZones(adjustedZones as ZoneDraft[]);
     setActiveZoneId(activeCandidate);
-    setNotes(collected.notes ?? '');
+    if (initializedNotesStepRef.current !== stepRecord.id) {
+      setNotes(getEffectiveStepNote(stepRecord) ?? collected.notes ?? '');
+      initializedNotesStepRef.current = stepRecord.id;
+    }
     hasHydratedFromServerRef.current = true;
     autosaveReady.current = false;
-  }, [stepRecord, stepRecord?.updated_at, stepRecord?.collected_data, task?.ppf_zones]);
+  }, [stepRecord?.id, stepRecord?.updated_at, stepRecord?.collected_data, stepRecord?.notes, task?.ppf_zones]);
 
   const allPhotos = useMemo(() => {
     const set = new Set<string>();
@@ -221,6 +231,10 @@ export function useInstallationStep() {
     );
   };
 
+  const handleNotesChange = useCallback((value: string) => {
+    setNotes(value);
+  }, []);
+
   const handleValidateZone = () => {
     if (!activeZone || !canValidateZone) return;
     setZones((prev) => {
@@ -276,7 +290,7 @@ export function useInstallationStep() {
     activeZone,
     activeZoneId,
     notes,
-    setNotes,
+    setNotes: handleNotesChange,
     isSaving,
     isValidating,
     completedZones,

@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: 'export', // Disabled for API routes compatibility
+  // Desktop packaging uses a custom snapshot step in `npm run build:tauri`.
+  // `output: 'export'` stays disabled because this app still carries Next route handlers under `app/api`.
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,

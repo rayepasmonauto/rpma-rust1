@@ -23,6 +23,20 @@ type DraftOptions = {
   showToast?: boolean;
 };
 
+const extractStepNote = (value: JsonValue): string | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const rawNote = (value as Record<string, unknown>).notes;
+  if (typeof rawNote !== 'string') {
+    return null;
+  }
+
+  const trimmedNote = rawNote.trim();
+  return trimmedNote.length > 0 ? trimmedNote : null;
+};
+
 export function usePpfWorkflow(taskIdOverride?: string) {
   const workflow = usePPFWorkflow();
   const { session } = useAuth();
@@ -84,7 +98,7 @@ export function usePpfWorkflow(taskIdOverride?: string) {
         {
           step_id: step.id,
           collected_data: collectedData,
-          notes: null,
+          notes: extractStepNote(collectedData),
           photos: options?.photos ?? null,
         },
       );

@@ -3,6 +3,7 @@
 use std::collections::HashMap;
 
 use crate::shared::services::cross_domain::{Intervention, InterventionStep, Photo};
+use serde_json::Value;
 
 use super::extractors::{
     extract_checklist, extract_defects, extract_key_values, extract_ppf_zones,
@@ -93,10 +94,7 @@ pub(super) fn build_report_step(step: &InterventionStep, photos: &[Photo]) -> Re
             .map(|d| format_duration_seconds(d))
             .unwrap_or_else(|| NOT_SPECIFIED.to_string()),
         photo_count: effective_photo_count,
-        notes: step
-            .notes
-            .clone()
-            .unwrap_or_else(|| NO_OBSERVATION.to_string()),
+        notes: resolve_step_notes(step, effective_data),
         checklist,
         defects,
         observations,
@@ -135,13 +133,48 @@ pub(super) fn build_quality_section(
         })
         .collect();
 
-    let final_observations = intervention.final_observations.clone().unwrap_or_default();
+    let final_observations = intervention
+        .final_observations
+        .clone()
+        .filter(|observations| !observations.is_empty())
+        .unwrap_or_else(|| derive_final_observations_from_steps(report_steps));
 
     ReportQuality {
         global_quality_score: global_score,
         checkpoints,
         final_observations,
     }
+}
+
+fn resolve_step_notes(step: &InterventionStep, effective_data: Option<&Value>) -> String {
+    step.notes
+        .clone()
+        .or_else(|| extract_string_value(effective_data, "notes"))
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| NO_OBSERVATION.to_string())
+}
+
+fn derive_final_observations_from_steps(report_steps: &[ReportStep]) -> Vec<String> {
+    report_steps
+        .iter()
+        .rev()
+        .find_map(|step| {
+            let note = step.notes.trim();
+            if note.is_empty() || note == NO_OBSERVATION {
+                None
+            } else {
+                Some(vec![note.to_string()])
+            }
+        })
+        .unwrap_or_default()
+}
+
+fn extract_string_value(data: Option<&Value>, key: &str) -> Option<String> {
+    data.and_then(|value| value.get(key))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
 }
 
 pub(super) fn build_photos_section(photos: &[Photo], steps: &[InterventionStep]) -> ReportPhotos {

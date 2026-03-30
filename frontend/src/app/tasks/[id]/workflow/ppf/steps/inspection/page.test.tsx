@@ -7,7 +7,13 @@ jest.useFakeTimers();
 const pushMock = jest.fn();
 const saveDraftMock = jest.fn().mockResolvedValue(undefined);
 
-let stepRecord: { id: string; collected_data: Record<string, unknown>; photo_urls: string[]; updated_at: string } | null =
+let stepRecord: {
+  id: string;
+  collected_data: Record<string, unknown>;
+  photo_urls: string[];
+  updated_at: string;
+  notes?: string | null;
+} | null =
   null;
 
 jest.mock('next/navigation', () => ({
@@ -22,6 +28,8 @@ jest.mock('@/domains/interventions', () => ({
   PpfWorkflowLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   VehicleDiagram: () => <div data-testid="diagram" />,
   getEffectiveStepData: (step: { collected_data?: Record<string, unknown> | null }) => step.collected_data ?? {},
+  getEffectiveStepNote: (step: { notes?: string | null; collected_data?: Record<string, unknown> | null }) =>
+    step.notes ?? ((step.collected_data?.notes as string | undefined) ?? null),
   getNextPPFStepId: () => null,
   getPPFStepPath: () => 'steps/inspection',
   usePpfWorkflow: () => ({
@@ -70,5 +78,19 @@ describe('InspectionStepPage autosave hydration guard', () => {
     });
 
     expect(saveDraftMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('hydrates notes from step.notes when collected_data.notes is missing', () => {
+    stepRecord = {
+      id: 'step-1',
+      collected_data: {},
+      photo_urls: [],
+      updated_at: '2026-03-01T10:00:00.000Z',
+      notes: 'persisted in column',
+    };
+
+    render(<InspectionStepPage />);
+
+    expect(screen.getByPlaceholderText(/Observations/i)).toHaveValue('persisted in column');
   });
 });

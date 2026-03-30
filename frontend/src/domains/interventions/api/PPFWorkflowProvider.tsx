@@ -11,6 +11,29 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { buildPPFStepsFromData, getCurrentPPFStepId } from '../utils/ppf-workflow';
 import { interventionsIpc } from '../ipc/interventions.ipc';
 
+const extractStepNote = (value: unknown): string | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const rawNote = (value as Record<string, unknown>).notes;
+  if (typeof rawNote !== 'string') {
+    return null;
+  }
+
+  const trimmedNote = rawNote.trim();
+  return trimmedNote.length > 0 ? trimmedNote : null;
+};
+
+const deriveFinalObservations = (collectedData?: FinalizationCollectedData): string[] | null => {
+  if (Array.isArray(collectedData?.final_observations) && collectedData.final_observations.length > 0) {
+    return collectedData.final_observations;
+  }
+
+  const note = extractStepNote(collectedData);
+  return note ? [note] : null;
+};
+
 
 interface PPFStep {
   id: StepType;
@@ -314,12 +337,12 @@ export function PPFWorkflowProvider({ taskId, children }: PPFWorkflowProviderPro
 
        // Advance current step (this will complete it and move to next)
       // Use provided collectedData and photos, or fall back to existing data
-      const _advanceResponse = await interventionsIpc.advanceStep({
+       const _advanceResponse = await interventionsIpc.advanceStep({
         intervention_id: interventionData.intervention.id,
         step_id: currentStep.id,
         collected_data: collectedData || currentStep.collected_data || {},
         photos: photos || currentStep.photo_urls || null,
-        notes: currentStep.notes || null,
+        notes: extractStepNote(collectedData) ?? currentStep.notes ?? null,
         quality_check_passed: true,
         issues: null
        });
@@ -355,7 +378,7 @@ export function PPFWorkflowProvider({ taskId, children }: PPFWorkflowProviderPro
        const savedStep = await interventionsIpc.saveStepProgress({
          step_id: step.id,
          collected_data: collectedData || {},
-         notes: null,
+         notes: extractStepNote(collectedData),
          photos: photos || null
        });
       
@@ -381,7 +404,7 @@ export function PPFWorkflowProvider({ taskId, children }: PPFWorkflowProviderPro
          photos: photos || null,
          customer_satisfaction: typeof collectedData?.customer_satisfaction === 'number' ? collectedData.customer_satisfaction : null,
          quality_score: typeof collectedData?.quality_score === 'number' ? collectedData.quality_score : null,
-         final_observations: Array.isArray(collectedData?.final_observations) ? collectedData.final_observations : null,
+         final_observations: deriveFinalObservations(collectedData),
          customer_signature: collectedData?.customer_signature?.svg_data || null,
          customer_comments: collectedData?.customer_signature?.customer_comments || null,
         };

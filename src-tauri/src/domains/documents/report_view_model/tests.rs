@@ -326,6 +326,35 @@ fn test_vm_quality_section() {
 }
 
 #[test]
+fn test_vm_step_notes_fall_back_to_collected_data_for_legacy_records() {
+    let intervention = build_test_intervention();
+    let mut steps = build_test_steps();
+    steps[0].notes = None;
+    steps[0].collected_data = Some(json!({
+        "notes": "Note historique depuis collected_data"
+    }));
+
+    let vm = build_intervention_report_view_model(&intervention, &steps, &[], &[], None);
+
+    assert_eq!(vm.steps[0].notes, "Note historique depuis collected_data");
+}
+
+#[test]
+fn test_vm_quality_falls_back_to_final_step_note_for_legacy_records() {
+    let mut intervention = build_test_intervention();
+    intervention.final_observations = None;
+    let mut steps = build_test_steps();
+    steps[3].notes = None;
+    steps[3].collected_data = Some(json!({
+        "notes": "Observation finale historique"
+    }));
+
+    let vm = build_intervention_report_view_model(&intervention, &steps, &[], &[], None);
+
+    assert_eq!(vm.quality.final_observations, vec!["Observation finale historique"]);
+}
+
+#[test]
 fn test_vm_customer_validation() {
     let intervention = build_test_intervention();
     let vm = build_intervention_report_view_model(&intervention, &[], &[], &[], None);
