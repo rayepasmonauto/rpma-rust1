@@ -66,6 +66,9 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Sync Types
+        run: npm run types:sync
+
       - name: Verify project
         run: npm run doctor -- --serial
 
