@@ -48,8 +48,10 @@ const TaskFormWizard: React.FC<TaskFormProps> = React.memo(({
     validateStep,
     canProceedToNextStep,
     isDirty,
+    isAutoSaving,
     autoSave,
     clearDraft,
+    autoSaveDelayMs,
   } = useTaskForm(user?.user_id, mergedInitialData);
 
   const stepsConfig = useMemo(() => STEPS_CONFIG, []);
@@ -58,11 +60,11 @@ const TaskFormWizard: React.FC<TaskFormProps> = React.memo(({
     if (autoSaveEnabled && isDirty && !loading) {
       const timer = setTimeout(() => {
         autoSave();
-      }, 2000);
+      }, autoSaveDelayMs);
       return () => clearTimeout(timer);
     }
     return () => {};
-  }, [autoSaveEnabled, isDirty, loading, autoSave]);
+  }, [autoSaveEnabled, isDirty, loading, autoSave, autoSaveDelayMs]);
 
   useEffect(() => {
     const newlyCompleted = new Set<FormStep>();
@@ -192,6 +194,7 @@ const TaskFormWizard: React.FC<TaskFormProps> = React.memo(({
           autoSaveEnabled={autoSaveEnabled}
           onAutoSaveToggle={setAutoSaveEnabled}
           isDirty={isDirty}
+          isAutoSaving={isAutoSaving}
           onAutoSave={autoSave}
           loading={loading}
           onSubmit={handleSubmit}

@@ -30,11 +30,6 @@ export function useTaskMutations() {
     if (!user?.token) throw new Error("Authentication required");
   }
 
-  const invalidateTask = (taskId: string) => {
-    queryClient.invalidateQueries({ queryKey: taskKeys.byId(taskId) });
-    queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
-  };
-
   const updateTaskMutation = useMutation({
     mutationFn: async ({
       taskId,
@@ -74,7 +69,11 @@ export function useTaskMutations() {
         { task_id: taskId },
       );
     },
-    onSettled: (_, __, { taskId }) => invalidateTask(taskId),
+    onSettled: (_, __, { taskId }, context) => {
+      if (context?.previous) {
+        void queryClient.invalidateQueries({ queryKey: taskKeys.byId(taskId) });
+      }
+    },
   });
 
   const deleteTaskMutation = useMutation({
@@ -84,7 +83,6 @@ export function useTaskMutations() {
     },
     onSuccess: (_, taskId) => {
       queryClient.removeQueries({ queryKey: taskKeys.byId(taskId) });
-      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
     onError: (err: unknown, taskId: string) => {
       logger.error(
@@ -107,7 +105,9 @@ export function useTaskMutations() {
       requireToken();
       return taskIpc.editTask(taskId, data);
     },
-    onSuccess: (_, { taskId }) => invalidateTask(taskId),
+    onSuccess: (_, { taskId }) => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.byId(taskId) });
+    },
     onError: (
       err: unknown,
       { taskId }: { taskId: string; data: JsonObject },
@@ -136,7 +136,9 @@ export function useTaskMutations() {
       requireToken();
       return taskIpc.reportTaskIssue(taskId, issueType, severity, description);
     },
-    onSuccess: (_, { taskId }) => invalidateTask(taskId),
+    onSuccess: (_, { taskId }) => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.byId(taskId) });
+    },
     onError: (
       err: unknown,
       {
@@ -170,7 +172,9 @@ export function useTaskMutations() {
       requireToken();
       return taskIpc.delayTask(taskId, newDate, reason);
     },
-    onSuccess: (_, { taskId }) => invalidateTask(taskId),
+    onSuccess: (_, { taskId }) => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.byId(taskId) });
+    },
     onError: (
       err: unknown,
       { taskId }: { taskId: string; newDate: string; reason: string },
@@ -197,7 +201,9 @@ export function useTaskMutations() {
       requireToken();
       return taskIpc.sendTaskMessage(taskId, message, messageType);
     },
-    onSuccess: (_, { taskId }) => invalidateTask(taskId),
+    onSuccess: (_, { taskId }) => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.byId(taskId) });
+    },
     onError: (
       err: unknown,
       { taskId }: { taskId: string; message: string; messageType: string },

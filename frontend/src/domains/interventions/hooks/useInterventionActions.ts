@@ -1,6 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { AuthSecureStorage } from "@/lib/secureStorage";
-import { interventionKeys, taskKeys } from "@/lib/query-keys";
 import { logger } from "@/lib/logging";
 import { LogDomain } from "@/lib/logging/types";
 import type {
@@ -47,8 +46,6 @@ export function useInterventionActions({
   onStepUpdate,
   onStepsUpdate,
 }: UseInterventionActionsProps = {}) {
-  const queryClient = useQueryClient();
-
   // ── Session guard ───────────────────────────────────────────────────────────
   //
   // All mutations require an active authenticated session.  Centralise the
@@ -71,18 +68,6 @@ export function useInterventionActions({
   // Guard against empty-string cache keys: `interventionKeys.byTask('')`
   // produces a valid but wrong key that can pollute unrelated cache entries
   // when taskId is undefined.
-  function invalidateInterventionCaches(resolvedTaskId: string) {
-    if (!resolvedTaskId) return;
-    queryClient.invalidateQueries({
-      queryKey: interventionKeys.byTask(resolvedTaskId),
-    });
-    queryClient.invalidateQueries({
-      queryKey: interventionKeys.activeForTask(resolvedTaskId),
-    });
-    queryClient.invalidateQueries({ queryKey: taskKeys.byId(resolvedTaskId) });
-    queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
-  }
-
   // Create intervention mutation
   const createInterventionMutation = useMutation<
     InterventionCreationResponse,
@@ -133,16 +118,6 @@ export function useInterventionActions({
       // and intervention caches need to refresh while the user is inside the
       // active workflow.  taskKeys.lists() is intentionally omitted here —
       // the finalize path calls invalidateInterventionCaches() which includes it.
-      const tid = taskId ?? "";
-      if (tid) {
-        void queryClient.invalidateQueries({
-          queryKey: interventionKeys.byTask(tid),
-        });
-        void queryClient.invalidateQueries({
-          queryKey: interventionKeys.activeForTask(tid),
-        });
-        void queryClient.invalidateQueries({ queryKey: taskKeys.byId(tid) });
-      }
     },
     onError: (err: Error) => {
       logger.error(
@@ -227,11 +202,6 @@ export function useInterventionActions({
         );
       }
 
-      if (taskId) {
-        queryClient.invalidateQueries({
-          queryKey: interventionKeys.byTask(taskId),
-        });
-      }
     },
     onError: (err: Error, variables) => {
       logger.error(
@@ -287,7 +257,6 @@ export function useInterventionActions({
       onInterventionUpdate?.(
         mapBackendInterventionToFrontend(backendIntervention, taskId ?? ""),
       );
-      invalidateInterventionCaches(taskId ?? "");
     },
     onError: (err: Error, variables) => {
       logger.error(
@@ -327,13 +296,6 @@ export function useInterventionActions({
         );
       }
       return result.data;
-    },
-    onSuccess: () => {
-      if (taskId) {
-        queryClient.invalidateQueries({
-          queryKey: interventionKeys.byTask(taskId),
-        });
-      }
     },
   });
 
