@@ -1,84 +1,21 @@
----
-title: "Database and Migrations"
-summary: "SQLite configuration, migration system, and data access patterns."
-read_when:
-  - "Adding new database tables or columns"
-  - "Troubleshooting database performance"
-  - "Writing SQL migrations"
----
-
 # 07. DATABASE AND MIGRATIONS
 
-RPMA v2 uses SQLite as its primary local data store.
+## SQLite Configuration
+- **Database Path**: Typically stored in the OS-specific application data directory (resolved by Tauri at runtime).
+- **WAL Mode** (ADR-009): Write-Ahead Logging is enabled via pragmas on connection to allow concurrent reads and prevent locking issues.
+- **Soft Deletes** (ADR-011): Records are rarely hard-deleted. They are marked with a `deleted_at` timestamp. Queries must filter out `deleted_at IS NOT NULL`.
 
-## SQLite Setup
+## Migration Mechanism (ADR-010)
+- RPMA uses numbered SQL migrations located in `src-tauri/migrations/` (e.g., `001_initial_schema.sql`, `002_add_users.sql`).
+- Migrations are applied automatically on application startup by the database bootstrap logic (`src-tauri/src/db/`).
+- A `schema_version` or `migrations` table tracks applied migrations.
 
-| Setting | Value | Where |
-|---|---|---|
-| WAL mode | Enabled | `src-tauri/src/db/connection.rs` |
-| Foreign keys | `ON` | `src-tauri/src/db/connection.rs` |
-| Busy timeout | `5000` ms | `src-tauri/src/db/connection.rs` |
-| WAL autocheckpoint | `1000` | `src-tauri/src/db/connection.rs` |
-| Journal size limit | Set | `src-tauri/src/db/connection.rs` |
-
-The database file is created under the app data directory as `rpma.db` from `src-tauri/src/main.rs`.
-
-## Migration System
-
-- Migration SQL lives in `src-tauri/migrations/`.
-- Files are numbered and embedded into the binary.
-- `src-tauri/src/db/migrations/mod.rs` creates or reads `schema_version`, then applies missing migrations on startup.
-- `Database::initialize_or_migrate()` is the startup entrypoint.
-
-At the time of this scan, the migration set runs through `064_rules_and_integrations.sql`.
-
-## Schema Files
-
-| File | Purpose |
-|---|---|
-| `src-tauri/src/db/schema.sql` | Base schema and legacy structures |
-| `src-tauri/migrations/*` | Incremental SQL migrations |
-| `src-tauri/src/db/migrations/mod.rs` | Migration discovery and application |
-
-## Safe Migration Workflow
-
-1. Add a new numbered SQL file under `src-tauri/migrations/`.
-2. Keep the migration idempotent if possible.
-3. Run `npm run backend:validate-migrations`.
-4. Run `npm run backend:detect-schema-drift`.
-5. Run `npm run backend:migration:fresh-db-test`.
-
-## Repository Rule
-
-- All SQLite access should go through repositories in the infrastructure layer.
-- Do not query SQLite directly from application or domain code.
-- Keep transactions and joins inside repository implementations when possible.
-
-## Common Patterns
-
-| Pattern | What to look for |
-|---|---|
-| Soft delete | `deleted_at` columns and repository filters |
-| Audit fields | `created_at`, `updated_at`, and `*_by` columns |
-| Timestamps | Unix milliseconds |
-| Sessions | Session rows plus in-memory session cache |
-| Legacy queue | `sync_queue` exists in schema, but verify runtime usage before depending on it |
+## Adding a Migration Safely
+1. Create a new SQL file in `src-tauri/migrations/` following the numbering convention (e.g., `XXX_description.sql`).
+2. Write raw SQLite SQL. Avoid complex logic; keep schemas declarative.
+3. Test locally by running the app and inspecting the database state.
+4. Run `node scripts/validate-migration-system.js` or `npm run doctor` to ensure no schema drift.
 
 ## Troubleshooting
-
-| Issue | Likely fix |
-|---|---|
-| Database locked | Restart the dev process and check for orphaned app instances |
-| Migration failed | Check SQL syntax and numbering |
-| Schema drift | Run `npm run backend:detect-schema-drift` |
-| Fresh DB test fails | Run `npm run backend:validate-migrations` first, then inspect the migration that diverged |
-| WAL checkpoint needed | Use `force_wal_checkpoint` or run a checkpoint pragma |
-
-## Key Commands And Scripts
-
-- `npm run backend:validate-migrations`
-- `npm run backend:detect-schema-drift`
-- `npm run backend:migration:fresh-db-test`
-- `scripts/validate-migration-system.js`
-- `scripts/detect-schema-drift.js`
-
+- **Migration Failed on Startup**: Check the Rust console logs. Often caused by syntax errors in SQLite or attempting to alter tables in an unsupported way (SQLite has limited `ALTER TABLE` support).
+- **Locked Database**: Usually means a transaction was started but not committed/rolled back, or WAL mode wasn't applied correctly.

@@ -1,101 +1,26 @@
----
-title: "Development Workflows and Tooling"
-summary: "Essential commands, scripts, and verification steps for developers."
-read_when:
-  - "Setting up the development environment"
-  - "Preparing a pull request"
-  - "Automating repetitive tasks"
----
-
 # 08. DEV WORKFLOWS AND TOOLING
 
-This repo has a small set of canonical commands for day-to-day development and verification.
+## Core Commands
+Always use the commands specified in `package.json` and the root `Makefile`.
+- **Run App (Dev)**: `npm run dev` (Starts Tauri dev environment with hot reloading).
+- **Run App (Dev, with type sync)**: `npm run dev:types` (runs `types:sync` then starts Tauri).
+- **Frontend Only**: `npm run frontend:dev` (Runs Next.js in the browser).
+- **Test (Backend)**: `make test` or `cargo test`.
+- **Test (Frontend)**: `npm run frontend:test`.
 
-## Run And Preview
+## The Doctor Command
+The project includes a comprehensive health check: `npm run doctor`.
+- Use this **before declaring any task complete**.
+- It runs type checking, linting, architecture validation, and schema drift checks.
+- Add `--serial` for sequential execution (safer on Windows) and `--fix` to auto-fix issues like out-of-sync types.
 
-| Command | Purpose |
-|---|---|
-| `npm run dev` | Tauri dev with hot reload |
-| `npm run dev:types` | Sync types, then start dev |
-| `npm run dev:strict` | Sync types and run drift checks before dev |
-| `npm run frontend:dev` | Next.js only in the browser |
+## Important Scripts (`scripts/`)
+- `scripts/backend-architecture-check.js`: Validates the 4-layer rule in Rust source.
+- `scripts/detect-schema-drift.js`: Compares DB schema against migrations.
+- `scripts/scaffold-domain.ts`: Generates boilerplate for a new bounded context. Use this instead of manual creation.
 
-## Verification
-
-| Command | Purpose |
-|---|---|
-| `npm run doctor` | Fast health check |
-| `npm run doctor -- --fix` | Auto-fix fixable issues, including type sync drift |
-| `npm run doctor -- --full` | Full verification, including slower tests |
-| `npm run frontend:lint` | Frontend lint |
-| `npm run frontend:type-check` | Frontend TypeScript check |
-| `cd frontend && npm run test:ci` | Frontend test suite |
-| `make test` | Full Rust backend test suite |
-| `cd src-tauri && cargo test --test integration` | Integration harness |
-
-## Type Sync And Drift
-
-| Command | Purpose |
-|---|---|
-| `npm run types:sync` | Export Rust types to TypeScript |
-| `npm run types:drift-check` | Verify generated types match the Rust model |
-| `scripts/write-types.js` | Writer used by type sync |
-| `scripts/record-types-sync.js` | Records the sync stamp |
-
-Run `npm run types:sync` whenever a `#[derive(TS)]` struct or IPC-facing model changes.
-
-## Backend Checks
-
-| Command | Purpose |
-|---|---|
-| `npm run backend:architecture-check` | Enforce architecture rules |
-| `npm run backend:validate-migrations` | Validate migration numbering and structure |
-| `npm run backend:detect-schema-drift` | Compare DB schema against migrations |
-| `npm run backend:soft-delete-check` | Check soft-delete coverage |
-| `npm run backend:ts-rs-coverage` | Check TS export coverage |
-
-## Frontend Checks
-
-| Command | Purpose |
-|---|---|
-| `npm run frontend:guard` | Lint, type-check, and tests |
-| `npm run frontend:lint` | ESLint only |
-| `npm run frontend:type-check` | TypeScript only |
-| `cd frontend && npm run test:ci` | Jest in CI mode |
-
-## Database And Docs Scripts
-
-| Script | Purpose |
-|---|---|
-| `scripts/validate-migration-system.js` | Migration system validation |
-| `scripts/detect-schema-drift.js` | Schema drift detection |
-| `scripts/generate-docs-index.js` | Rebuild docs index |
-| `scripts/backend-architecture-check.js` | Architecture check implementation |
-
-## If You Change X, Run Y
-
-| Change | Run |
-|---|---|
-| Rust `#[derive(TS)]` model | `npm run types:sync` then `npm run frontend:type-check` |
-| IPC handler or command registration | `npm run frontend:type-check` and `npm run backend:architecture-check` |
-| Database schema | `npm run backend:validate-migrations`, `npm run backend:detect-schema-drift`, `npm run backend:migration:fresh-db-test` |
-| Backend business logic | `make test` |
-| Frontend feature UI | `npm run frontend:guard` |
-| Auth or session code | `npm run doctor -- --full` |
-
-## Minimal Setup
-
-1. Install dependencies with `npm install`.
-2. Run `npm run types:sync`.
-3. Start the app with `npm run dev:types`.
-
-## Key Files
-
-| File | Purpose |
-|---|---|
-| `package.json` | Root command surface |
-| `frontend/package.json` | Frontend scripts |
-| `Makefile` | Rust build/test aliases |
-| `src-tauri/Cargo.toml` | Backend dependencies |
-| `scripts/` | Repo automation |
-
+## "If you change X, you must run Y" Checklist
+- Change an IPC Rust struct (`#[derive(TS)]`) -> **Run `npm run types:sync`**.
+- Add a new database table -> **Create a migration and run app to apply**.
+- Modify frontend UI -> **Run `npm run frontend:lint` and `npm run frontend:type-check`**.
+- Change domain logic -> **Run `cargo check` and `make test`**.
