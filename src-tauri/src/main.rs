@@ -81,6 +81,8 @@ fn main() {
             commands::get_database_pool_stats,
             commands::vacuum_database,
             commands::system::force_wal_checkpoint,
+            commands::system::export_data_backup,
+            commands::system::restore_data_backup,
             // ── Auth ─────────────────────────────────────────────────────
             domains::auth::ipc::auth::auth_login,
             domains::auth::ipc::auth::auth_create_account,
@@ -351,6 +353,9 @@ fn main() {
                     warn!("App state not available during shutdown - skipping cleanup");
                 }
 
+                #[cfg(not(debug_assertions))]
+                infrastructure::frontend_runtime::stop_embedded_frontend();
+
                 // Step 3: Log about background tasks
                 info!("Background tasks (tokio::spawn) will be terminated by process exit");
 
@@ -393,6 +398,16 @@ fn main() {
                 "Database file exists: {}, size: {} bytes",
                 db_exists, db_size
             );
+
+            // Apply staged restore if one was prepared by a previous restore_data_backup call.
+            // Must happen before the connection pool is opened so the file is not locked.
+            let restore_path = app_dir.join("rpma.restore.db");
+            if restore_path.exists() {
+                info!("Staged restore file detected — applying before opening database pool");
+                std::fs::rename(&restore_path, &db_path)
+                    .map_err(|e| format!("Failed to apply staged restore: {e}"))?;
+                info!("Staged restore applied successfully: {:?}", db_path);
+            }
 
             // Initialize database
             let encryption_key = std::env::var("RPMA_DB_KEY").unwrap_or_else(|_| "".to_string());
@@ -494,6 +509,26 @@ fn main() {
                     }
                 }
             });
+
+            #[cfg(not(debug_assertions))]
+            {
+                let resource_dir = app
+                    .path()
+                    .resource_dir()
+                    .map_err(|e| format!("Failed to get resource dir: {e}"))?;
+                let frontend_address = infrastructure::frontend_runtime::start_embedded_frontend(&resource_dir)
+                    .map_err(|e| format!("Failed to start embedded frontend server: {e}"))?;
+                let frontend_url = tauri::Url::parse(&frontend_address)
+                    .map_err(|e| format!("Failed to parse embedded frontend URL: {e}"))?;
+
+                if let Some(window) = app.get_webview_window("main") {
+                    window
+                        .navigate(frontend_url)
+                        .map_err(|e| format!("Failed to navigate main window to embedded frontend: {e}"))?;
+                } else {
+                    return Err("Main webview window not found".into());
+                }
+            }
 
             info!("Application setup completed successfully");
             Ok(())

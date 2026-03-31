@@ -1,4 +1,18 @@
 fn main() {
+    let frontend_out_dir = std::path::PathBuf::from("../frontend/out");
+    let placeholder_index = frontend_out_dir.join("index.html");
+    if !placeholder_index.exists() {
+        std::fs::create_dir_all(&frontend_out_dir)
+            .expect("failed to create placeholder frontend/out directory");
+        std::fs::write(
+            &placeholder_index,
+            r#"<!doctype html><html><head><meta charset="utf-8"><title>RPMA</title></head><body>RPMA desktop frontend placeholder</body></html>"#,
+        )
+        .expect("failed to write placeholder frontend/out/index.html");
+    }
+    println!("cargo:rerun-if-changed=../frontend/out");
+    println!("cargo:rerun-if-changed=frontend-prod");
+
     // Check for SQLCipher feature
     if std::env::var("CARGO_FEATURE_SQLCIPHER").is_ok() {
         // Set environment variables for SQLCipher compilation

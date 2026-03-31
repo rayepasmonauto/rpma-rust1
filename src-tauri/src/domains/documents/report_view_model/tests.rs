@@ -304,7 +304,7 @@ fn test_vm_summary_fields() {
     let steps = build_test_steps();
     let vm = build_intervention_report_view_model(&intervention, &steps, &[], &[], None);
 
-    assert_eq!(vm.summary.status, "Terminee");
+    assert_eq!(vm.summary.status, "Terminée");
     assert_eq!(vm.summary.status_badge, "[OK]");
     assert_eq!(vm.summary.technician_name, "Jean Dupont");
     assert_eq!(vm.summary.estimated_duration, "120 min");
@@ -323,6 +323,35 @@ fn test_vm_quality_section() {
     assert_eq!(vm.quality.checkpoints.len(), 3);
     assert_eq!(vm.quality.final_observations.len(), 1);
     assert_eq!(vm.quality.final_observations[0], "Travail soigne");
+}
+
+#[test]
+fn test_vm_step_notes_fall_back_to_collected_data_for_legacy_records() {
+    let intervention = build_test_intervention();
+    let mut steps = build_test_steps();
+    steps[0].notes = None;
+    steps[0].collected_data = Some(json!({
+        "notes": "Note historique depuis collected_data"
+    }));
+
+    let vm = build_intervention_report_view_model(&intervention, &steps, &[], &[], None);
+
+    assert_eq!(vm.steps[0].notes, "Note historique depuis collected_data");
+}
+
+#[test]
+fn test_vm_quality_falls_back_to_final_step_note_for_legacy_records() {
+    let mut intervention = build_test_intervention();
+    intervention.final_observations = None;
+    let mut steps = build_test_steps();
+    steps[3].notes = None;
+    steps[3].collected_data = Some(json!({
+        "notes": "Observation finale historique"
+    }));
+
+    let vm = build_intervention_report_view_model(&intervention, &steps, &[], &[], None);
+
+    assert_eq!(vm.quality.final_observations, vec!["Observation finale historique"]);
 }
 
 #[test]
@@ -386,13 +415,19 @@ fn test_format_duration_seconds_function() {
 #[test]
 fn test_extract_checklist_from_json() {
     let data = json!({
-        "checklist": {"wash": true, "clay_bar": true, "ipa_wipe": false}
+        "checklist": {
+            "clean_dry": true,
+            "client_informed": true,
+            "ipa_wipe": false
+        }
     });
     let result = extract_checklist(Some(&data));
     assert_eq!(result.len(), 3);
-    let wash = result.iter().find(|c| c.label == "Wash");
-    assert!(wash.is_some());
-    assert!(wash.unwrap().checked);
+    let clean_dry = result.iter().find(|c| c.label == "Surface propre et sèche");
+    assert!(clean_dry.is_some());
+    assert!(clean_dry.unwrap().checked);
+    assert!(result.iter().any(|c| c.label == "Client informé"));
+    assert!(result.iter().any(|c| c.label == "Nettoyage IPA"));
 }
 
 #[test]
@@ -405,24 +440,28 @@ fn test_extract_string_array_from_json() {
 
 #[test]
 fn test_extract_ppf_zones_string_array() {
-    let data = json!({"zones": ["full_front", "full_vehicle"]});
+    let data = json!({"zones": ["front_bumper", "full_vehicle"]});
     let result = extract_ppf_zones(Some(&data));
     assert_eq!(result.len(), 2);
-    assert!(result.iter().any(|z| z.id == "full_front"));
+    assert!(result.iter().any(|z| z.id == "front_bumper" && z.name == "Pare-chocs avant"));
+    assert!(result.iter().any(|z| z.name == "Véhicule complet"));
 }
 
 #[test]
 fn test_extract_ppf_zones_object_array() {
     let data = json!({"zones": [
-        {"id": "capot", "name": "Capot", "status": "completed", "quality_score": 9.5},
-        {"id": "bumper", "name": "Pare-chocs", "status": "completed", "quality_score": 8.0}
+        {"id": "hood", "name": "Capot", "status": "completed", "quality_score": 9.5},
+        {"id": "front_bumper", "name": "front_bumper", "status": "completed", "quality_score": 8.0}
     ]});
     let result = extract_ppf_zones(Some(&data));
     assert_eq!(result.len(), 2);
-    let capot = result.iter().find(|z| z.id == "capot").unwrap();
+    let capot = result.iter().find(|z| z.id == "hood").unwrap();
     assert_eq!(capot.name, "Capot");
-    assert_eq!(capot.status, "completed");
+    assert_eq!(capot.status, "Terminé");
     assert!((capot.quality_score.unwrap() - 9.5).abs() < 0.01);
+    let bumper = result.iter().find(|z| z.id == "front_bumper").unwrap();
+    assert_eq!(bumper.name, "Pare-chocs avant");
+    assert_eq!(bumper.status, "Terminé");
 }
 
 #[test]
@@ -430,7 +469,8 @@ fn test_extract_ppf_zones_fallback_installation_zones() {
     let data = json!({"installation_zones": ["hood", "bumper"]});
     let result = extract_ppf_zones(Some(&data));
     assert_eq!(result.len(), 2);
-    assert!(result.iter().any(|z| z.id == "hood"));
+    assert!(result.iter().any(|z| z.id == "hood" && z.name == "Capot"));
+    assert!(result.iter().any(|z| z.id == "bumper" && z.name == "Pare-chocs avant"));
 }
 
 #[test]
@@ -444,12 +484,24 @@ fn test_extract_defects_string_array() {
 #[test]
 fn test_extract_defects_object_array() {
     let data = json!({"defects": [
-        {"id": "d1", "zone": "trunk", "type": "scratch", "severity": "high", "notes": "deep"}
+        {"id": "d1", "zone": "trunk", "type": "scratch", "severity": "HIGH", "notes": "deep"}
     ]});
     let result = extract_defects(Some(&data));
     assert_eq!(result.len(), 1);
-    assert_eq!(result[0].zone, "trunk");
-    assert_eq!(result[0].defect_type, "scratch");
-    assert_eq!(result[0].severity, "high");
+    assert_eq!(result[0].zone, "Coffre");
+    assert_eq!(result[0].defect_type, "Rayure");
+    assert_eq!(result[0].severity, "Élevé");
     assert_eq!(result[0].notes, "deep");
+}
+
+#[test]
+fn test_extract_defects_fallback_humanizes_unknown_values() {
+    let data = json!({"defects": [
+        {"id": "d1", "zone": "door_edge", "type": "paint_chip", "severity": "urgent_case", "notes": ""}
+    ]});
+    let result = extract_defects(Some(&data));
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].zone, "Door Edge");
+    assert_eq!(result[0].defect_type, "Paint Chip");
+    assert_eq!(result[0].severity, "Urgent Case");
 }

@@ -11,7 +11,9 @@ import {
   Badge,
   CheckCircle,
 } from 'lucide-react';
+import { getPpfZoneLabel } from '@/lib/i18n/status-labels';
 import { Badge as UIBadge } from '@/components/ui/badge';
+import { useTranslation } from '@/shared/hooks';
 
 type CompletedSidebarProps = {
   task: {
@@ -40,6 +42,7 @@ type CompletedSidebarProps = {
     humidity_percentage?: number | null;
   };
   workflowProgress: number;
+  duration: string | null;
 };
 
 export function CompletedSidebar({
@@ -47,103 +50,93 @@ export function CompletedSidebar({
   customer,
   intervention,
   workflowProgress,
+  duration,
 }: CompletedSidebarProps) {
+  const { t } = useTranslation();
   const vehicleDisplay = [task.vehicle_make, task.vehicle_model, task.vehicle_year]
     .filter(Boolean)
     .join(' ');
 
-  const calculateDuration = () => {
-    if (!task.start_time || !task.end_time) return null;
-    const start = new Date(task.start_time);
-    const end = new Date(task.end_time);
-    const diffMs = end.getTime() - start.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    return `${diffHours}h ${diffMins}min`;
-  };
-
-  const duration = calculateDuration();
-
   return (
     <div className="space-y-4">
       {/* Task Status Card */}
-      <div className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 shadow-sm">
+      <div className="rounded-xl border border-success/30 bg-gradient-to-br from-success/5 to-success/10 p-4 shadow-sm">
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
-            Statut
+          <span className="text-xs font-semibold uppercase tracking-wider text-success">
+            {t('completed.status')}
           </span>
-          <CheckCircle className="h-5 w-5 text-emerald-600" />
+          <CheckCircle className="h-5 w-5 text-success" />
         </div>
 
         <div className="mb-3">
-          <div className="flex items-center justify-between text-xs text-emerald-600 mb-1">
-            <span>Progression</span>
+          <div className="mb-1 flex items-center justify-between text-xs text-success">
+            <span>{t('completed.progression')}</span>
             <span className="font-bold">{workflowProgress}%</span>
           </div>
-          <div className="h-2 rounded-full bg-emerald-200">
+          <div className="h-2 rounded-full bg-success/20">
             <div
-              className="h-2 rounded-full bg-emerald-600 transition-all duration-500"
+              className="h-2 rounded-full bg-success transition-all duration-500"
               style={{ width: `${workflowProgress}%` }}
             />
           </div>
         </div>
 
-        <div className="space-y-2 text-xs text-gray-700">
+        <div className="space-y-2 text-xs text-muted-foreground">
           <div className="flex items-center justify-between">
-            <span className="text-gray-500">ID Tâche</span>
-            <span className="font-mono">{task.id?.slice(-8) || '—'}</span>
+            <span className="text-muted-foreground/70">{t('completed.taskId')}</span>
+            <span className="font-mono text-foreground">{task.id?.slice(-8) || '—'}</span>
           </div>
           {task.task_number && (
             <div className="flex items-center justify-between">
-              <span className="text-gray-500">N° Tâche</span>
-              <span className="font-medium">{task.task_number}</span>
+              <span className="text-muted-foreground/70">{t('completed.taskNumber')}</span>
+              <span className="font-medium text-foreground">{task.task_number}</span>
             </div>
           )}
           {task.external_id && (
             <div className="flex items-center justify-between">
-              <span className="text-gray-500">ID Externe</span>
-              <span className="font-medium">{task.external_id}</span>
+              <span className="text-muted-foreground/70">{t('completed.externalId')}</span>
+              <span className="font-medium text-foreground">{task.external_id}</span>
             </div>
           )}
         </div>
       </div>
 
       {/* Vehicle Information */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
         <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
-            <Car className="h-4 w-4 text-blue-600" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10">
+            <Car className="h-4 w-4 text-info" />
           </div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-gray-700">
-            Véhicule
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t('completed.vehicle')}
           </span>
         </div>
 
         <div className="space-y-3 text-sm">
           <div>
-            <div className="text-base font-bold text-gray-900">{vehicleDisplay || '—'}</div>
+            <div className="text-base font-bold text-foreground">{vehicleDisplay || '—'}</div>
           </div>
 
           {task.vin && (
-            <div className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
-              <Shield className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-2 rounded-lg bg-muted p-2">
+              <Shield className="h-4 w-4 text-muted-foreground/50 mt-0.5 flex-shrink-0" />
               <div className="text-xs">
-                <div className="text-gray-500">VIN</div>
-                <div className="font-mono text-gray-900">{task.vin}</div>
+                <div className="text-muted-foreground">VIN</div>
+                <div className="font-mono text-foreground">{task.vin}</div>
               </div>
             </div>
           )}
 
           {task.lot_film && (
-            <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-              <span className="text-xs text-gray-500">Lot Film</span>
-              <span className="text-sm font-medium text-gray-900">{task.lot_film}</span>
+            <div className="flex items-center justify-between rounded-lg bg-muted p-2">
+              <span className="text-xs text-muted-foreground">{t('completed.batch')} Film</span>
+              <span className="text-sm font-medium text-foreground">{task.lot_film}</span>
             </div>
           )}
 
           {task.ppf_zones && task.ppf_zones.length > 0 && (
             <div>
-              <div className="text-xs text-gray-500 mb-1">Zones PPF</div>
+              <div className="mb-1 text-xs text-muted-foreground">{t('tasks.ppfZone')}</div>
               <div className="flex flex-wrap gap-1">
                 {task.ppf_zones.slice(0, 5).map((zone, index) => (
                   <UIBadge
@@ -151,7 +144,7 @@ export function CompletedSidebar({
                     variant="secondary"
                     className="text-[10px] font-normal"
                   >
-                    {zone}
+                    {getPpfZoneLabel(zone)}
                   </UIBadge>
                 ))}
                 {task.ppf_zones.length > 5 && (
@@ -169,36 +162,36 @@ export function CompletedSidebar({
       </div>
 
       {/* Client Information */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
         <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100">
-            <User className="h-4 w-4 text-purple-600" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10">
+            <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-gray-700">
-            Client
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {t('completed.client')}
           </span>
         </div>
 
         <div className="space-y-2 text-sm">
-          <div className="font-semibold text-gray-900">{customer.name || '—'}</div>
+          <div className="font-semibold text-foreground">{customer.name || '—'}</div>
 
           {customer.email && (
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <Mail className="h-3.5 w-3.5 text-gray-400" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Mail className="h-3.5 w-3.5 text-muted-foreground/50" />
               <span className="truncate">{customer.email}</span>
             </div>
           )}
 
           {customer.phone && (
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <Phone className="h-3.5 w-3.5 text-gray-400" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Phone className="h-3.5 w-3.5 text-muted-foreground/50" />
               <span className="truncate">{customer.phone}</span>
             </div>
           )}
 
           {customer.address && (
-            <div className="flex items-start gap-2 text-xs text-gray-600">
-              <MapPin className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-2 text-xs text-muted-foreground">
+              <MapPin className="h-3.5 w-3.5 text-muted-foreground/50 mt-0.5 flex-shrink-0" />
               <span className="line-clamp-2">{customer.address}</span>
             </div>
           )}
@@ -207,35 +200,35 @@ export function CompletedSidebar({
 
       {/* Environmental Conditions */}
       {(intervention.temperature_celsius !== null || intervention.humidity_percentage !== null) && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100">
-              <Thermometer className="h-4 w-4 text-orange-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10">
+              <Thermometer className="h-4 w-4 text-warning" />
             </div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-700">
-              Conditions
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t('completed.conditions')}
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             {intervention.temperature_celsius !== null && (
-              <div className="rounded-lg bg-red-50 p-3 text-center">
-                <div className="text-2xl font-bold text-red-600">
+              <div className="rounded-lg bg-red-50 p-3 text-center dark:bg-red-950/30">
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                   {intervention.temperature_celsius}°C
                 </div>
-                <div className="text-[10px] uppercase tracking-wider text-red-500 mt-1">
-                  Température
+                <div className="mt-1 text-[10px] uppercase tracking-wider text-red-500">
+                  {t('completed.temperature')}
                 </div>
               </div>
             )}
 
             {intervention.humidity_percentage !== null && (
-              <div className="rounded-lg bg-blue-50 p-3 text-center">
-                <div className="text-2xl font-bold text-blue-600">
+              <div className="rounded-lg bg-blue-50 p-3 text-center dark:bg-blue-950/30">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {intervention.humidity_percentage}%
                 </div>
-                <div className="text-[10px] uppercase tracking-wider text-blue-500 mt-1">
-                  Humidité
+                <div className="mt-1 text-[10px] uppercase tracking-wider text-blue-500">
+                  {t('completed.humidity')}
                 </div>
               </div>
             )}
@@ -245,32 +238,32 @@ export function CompletedSidebar({
 
       {/* Timing Information */}
       {duration && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100">
-              <Clock className="h-4 w-4 text-green-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10">
+              <Clock className="h-4 w-4 text-success" />
             </div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-700">
-              Durée
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t('completed.duration')}
             </span>
           </div>
 
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">{duration}</div>
-            <div className="text-xs text-gray-500 mt-1">Temps total</div>
+            <div className="text-2xl font-bold text-foreground">{duration}</div>
+            <div className="mt-1 text-xs text-muted-foreground">{t('completed.totalDuration')}</div>
           </div>
         </div>
       )}
 
       {/* Priority Badge */}
       {task.priority && (
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-yellow-100">
-              <Badge className="h-4 w-4 text-yellow-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-warning/10">
+              <Badge className="h-4 w-4 text-warning" />
             </div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-700">
-              Priorité
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t('completed.priority')}
             </span>
           </div>
 
@@ -278,7 +271,7 @@ export function CompletedSidebar({
             variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'default' : 'secondary'}
             className="w-full justify-center"
           >
-            {task.priority === 'high' ? 'Haute' : task.priority === 'medium' ? 'Moyenne' : 'Basse'}
+            {task.priority === 'high' ? t('completed.priorityHigh') : task.priority === 'medium' ? t('completed.priorityMedium') : t('completed.priorityLow')}
           </UIBadge>
         </div>
       )}

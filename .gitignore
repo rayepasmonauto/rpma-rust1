@@ -3,6 +3,8 @@
 /node_modules
 /.next
 _tmp_
+/src-tauri/frontend-prod
+
 
 # Tauri generated
 /WixTools

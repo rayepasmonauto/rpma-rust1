@@ -46,11 +46,12 @@ impl InterventionCreator for InterventionWorkflowService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domains::interventions::domain::models::intervention::InterventionStatus;
     use crate::db::InterventionError;
     use crate::domains::interventions::domain::models::step::StepType;
     use crate::domains::interventions::domain::models::step::{InterventionStep, StepStatus};
     use crate::domains::interventions::infrastructure::intervention_types::{
-        AdvanceStepRequest, SaveStepProgressRequest,
+        AdvanceStepRequest, FinalizeInterventionRequest, SaveStepProgressRequest,
     };
     use crate::shared::contracts::common::TimestampString;
     use crate::shared::logging::{LogDomain, RPMARequestLogger};
@@ -193,6 +194,15 @@ mod tests {
             .expect("Failed to fetch saved step")
             .expect("Step should exist");
         assert_eq!(persisted.collected_data, persisted.step_data);
+        assert_eq!(persisted.notes, Some("saved note".to_string()));
+        assert_eq!(
+            persisted
+                .collected_data
+                .as_ref()
+                .and_then(|data| data.get("notes"))
+                .and_then(|note| note.as_str()),
+            Some("saved note")
+        );
     }
 
     #[test]
@@ -238,5 +248,131 @@ mod tests {
             .expect("Step should exist");
         assert_eq!(persisted.step_status, StepStatus::Completed);
         assert_eq!(persisted.collected_data, persisted.step_data);
+    }
+
+    #[test]
+    fn test_advance_step_persists_note_in_column_and_json() {
+        let test_db = TestDatabase::new().expect("Failed to create test database");
+        seed_intervention(&test_db.db(), "intervention-advance");
+        let service = InterventionWorkflowService::new(test_db.db());
+        let mut intervention = service
+            .data
+            .get_intervention("intervention-advance")
+            .expect("Failed to get intervention")
+            .expect("Intervention should exist");
+        intervention.status = InterventionStatus::InProgress;
+        service
+            .data
+            .save_intervention(&intervention)
+            .expect("Failed to update intervention");
+
+        let mut step = InterventionStep::new(
+            "intervention-advance".to_string(),
+            1,
+            "Inspection".to_string(),
+            StepType::Inspection,
+        );
+        step.step_status = StepStatus::InProgress;
+        let step_id = step.id.clone();
+        service.data.save_step(&step).expect("Failed to seed step");
+
+        let request = AdvanceStepRequest {
+            intervention_id: "intervention-advance".to_string(),
+            step_id: step_id.clone(),
+            collected_data: serde_json::json!({
+                "checklist": { "clean_dry": true },
+                "notes": "advance note"
+            }),
+            photos: None,
+            notes: Some("advance note".to_string()),
+            quality_check_passed: true,
+            issues: None,
+        };
+
+        let runtime = tokio::runtime::Runtime::new().expect("Failed to create runtime");
+        let response = runtime
+            .block_on(service.advance_step(request, "test-correlation", Some("tech-1")))
+            .expect("Failed to advance step");
+
+        assert_eq!(response.step.notes, Some("advance note".to_string()));
+
+        let persisted = service
+            .data
+            .get_step(&step_id)
+            .expect("Failed to fetch saved step")
+            .expect("Step should exist");
+        assert_eq!(persisted.notes, Some("advance note".to_string()));
+        assert_eq!(
+            persisted
+                .collected_data
+                .as_ref()
+                .and_then(|data| data.get("notes"))
+                .and_then(|note| note.as_str()),
+            Some("advance note")
+        );
+    }
+
+    #[test]
+    fn test_finalize_intervention_derives_final_observations_from_note() {
+        let test_db = TestDatabase::new().expect("Failed to create test database");
+        seed_intervention(&test_db.db(), "intervention-finalize");
+        let service = InterventionWorkflowService::new(test_db.db());
+
+        let mut intervention = service
+            .data
+            .get_intervention("intervention-finalize")
+            .expect("Failed to get intervention")
+            .expect("Intervention should exist");
+        intervention.status = InterventionStatus::InProgress;
+        intervention.started_at = TimestampString::now();
+        service
+            .data
+            .save_intervention(&intervention)
+            .expect("Failed to update intervention");
+
+        let mut final_step = InterventionStep::new(
+            "intervention-finalize".to_string(),
+            4,
+            "Finalization".to_string(),
+            StepType::Finalization,
+        );
+        final_step.step_status = StepStatus::InProgress;
+        let final_step_id = final_step.id.clone();
+        service
+            .data
+            .save_step(&final_step)
+            .expect("Failed to seed finalization step");
+
+        let response = service
+            .finalize_intervention(
+                FinalizeInterventionRequest {
+                    intervention_id: "intervention-finalize".to_string(),
+                    collected_data: Some(serde_json::json!({
+                        "checklist": { "client_briefed": true },
+                        "notes": "final note"
+                    })),
+                    photos: None,
+                    customer_satisfaction: None,
+                    quality_score: None,
+                    final_observations: None,
+                    customer_signature: None,
+                    customer_comments: None,
+                },
+                "test-correlation",
+                Some("tech-1"),
+            )
+            .expect("Failed to finalize intervention");
+
+        assert_eq!(
+            response.intervention.final_observations,
+            Some(vec!["final note".to_string()])
+        );
+
+        let persisted_step = service
+            .data
+            .get_step(&final_step_id)
+            .expect("Failed to get final step")
+            .expect("Final step should exist");
+        assert_eq!(persisted_step.notes, Some("final note".to_string()));
     }
 }

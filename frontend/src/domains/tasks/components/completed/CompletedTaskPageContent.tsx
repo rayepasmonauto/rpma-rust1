@@ -80,16 +80,25 @@ export function CompletedTaskPageContent() {
   if (loading) {
     return (
       <PageShell>
-        <div className="space-y-3">
-          <Skeleton className="h-16 w-3/4" />
-          <Skeleton className="h-6 w-1/2" />
-        </div>
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <Skeleton className="h-96" />
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
           </div>
-          <div>
-            <Skeleton className="h-64" />
+          <Skeleton className="h-48 w-full" />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-28" />
+            ))}
+          </div>
+          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="space-y-6 lg:col-span-2">
+              <Skeleton className="h-64" />
+              <Skeleton className="h-48" />
+            </div>
+            <div>
+              <Skeleton className="h-96" />
+            </div>
           </div>
         </div>
       </PageShell>
@@ -121,7 +130,7 @@ export function CompletedTaskPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted/30">
       <CompletedActionBar
         onSaveReport={handleSaveReport}
         onDownloadDataJson={handleDownloadDataJson}
@@ -135,101 +144,106 @@ export function CompletedTaskPageContent() {
         taskId={taskId}
       />
 
-      <div className="container mx-auto max-w-7xl px-4 py-6">
-        <CompletedHero
-          task={task}
-          duration={duration}
-          photoCount={photoCount}
-          checklistCount={checklistCount}
-          checklistTotal={checklistTotal}
-          progressPercentage={progressPercentage}
-        />
+      <PageShell>
+        <div className="mx-auto max-w-7xl space-y-6">
+          <CompletedHero
+            task={task}
+            duration={duration}
+            photoCount={photoCount}
+            checklistCount={checklistCount}
+            checklistTotal={checklistTotal}
+            progressPercentage={progressPercentage}
+          />
 
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
-            <SummaryStats
-              checklistCompleted={checklistCount}
-              checklistTotal={checklistTotal}
-              photoCount={photoCount}
-              satisfaction={fullInterventionData?.customer_satisfaction || null}
-              qualityScore={fullInterventionData?.quality_score || null}
-              zonesCount={task.ppf_zones?.length || 0}
-              duration={duration}
-              customerName={customerDisplayName}
-            />
+          <SummaryStats
+            checklistCompleted={checklistCount}
+            checklistTotal={checklistTotal}
+            photoCount={photoCount}
+            satisfaction={fullInterventionData?.customer_satisfaction || null}
+            qualityScore={fullInterventionData?.quality_score || null}
+            zonesCount={task.ppf_zones?.length || 0}
+            duration={duration}
+            customerName={customerDisplayName}
+          />
 
-            <Card className="rounded-xl border-gray-200 shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileText className="h-5 w-5 text-emerald-600" />
-                  Workflow d&apos;Intervention
-                </CardTitle>
-                <CardDescription>
-                  Chronologie détaillée de toutes les étapes complétées
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <WorkflowCompletionTimeline
-                  steps={workflowStepsArray}
-                  expandedSteps={expandedWorkflowSteps}
-                  onToggleStep={toggleWorkflowStep}
-                  onEditStep={handleEditStep}
-                  onDownloadStep={handleDownloadStepData}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="space-y-6 lg:col-span-2">
+              <Card className="rounded-xl border-border shadow-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FileText className="h-5 w-5 text-rpma-primary" />
+                    {t('completed.workflowTimeline')}
+                  </CardTitle>
+                  <CardDescription>
+                    {t('completed.workflowTimelineDesc')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <WorkflowCompletionTimeline
+                    steps={workflowStepsArray}
+                    expandedSteps={expandedWorkflowSteps}
+                    onToggleStep={toggleWorkflowStep}
+                    onEditStep={handleEditStep}
+                    onDownloadStep={handleDownloadStepData}
+                  />
+                </CardContent>
+              </Card>
+
+              <ChecklistSection
+                checklistItems={task.checklist_items || []}
+                checklistCount={checklistCount}
+                checklistTotal={checklistTotal}
+              />
+
+              <QualitySection fullInterventionData={fullInterventionData} />
+
+              <MaterialsSection materials={materials} />
+
+              <PhotoGallerySection
+                photoCount={photoCount}
+                allStepPhotoUrls={allStepPhotoUrls}
+                photosBefore={mapPhotoUrls(task.photos_before)}
+                photosAfter={mapPhotoUrls(task.photos_after)}
+                photosDuring={mapPhotoUrls(task.photos?.during)}
+                onSelectPhoto={setSelectedPhoto}
+              />
+
+              <AuditTrailSection
+                task={task}
+                fullInterventionData={
+                  fullInterventionData
+                    ? {
+                        id: fullInterventionData.id,
+                        created_at: fullInterventionData.created_at,
+                        updated_at: fullInterventionData.updated_at,
+                      }
+                    : null
+                }
+              />
+            </div>
+
+            <div className="lg:col-span-1">
+              <div className="sticky top-20">
+                <CompletedSidebar
+                  task={task}
+                  customer={{
+                    name: customerDisplayName,
+                    email: customerInfo?.email,
+                    phone: customerInfo?.phone,
+                    address: customerInfo?.address,
+                  }}
+                  intervention={{
+                    temperature_celsius: fullInterventionData?.temperature_celsius || null,
+                    humidity_percentage: fullInterventionData?.humidity_percentage || null,
+                  }}
+                  workflowProgress={progressPercentage}
+                  duration={duration}
                 />
-              </CardContent>
-            </Card>
-
-            <ChecklistSection
-              checklistItems={task.checklist_items || []}
-              checklistCount={checklistCount}
-              checklistTotal={checklistTotal}
-            />
-
-            <QualitySection fullInterventionData={fullInterventionData} />
-
-            <MaterialsSection materials={materials} />
-
-            <PhotoGallerySection
-              photoCount={photoCount}
-              allStepPhotoUrls={allStepPhotoUrls}
-              photosBefore={mapPhotoUrls(task.photos_before)}
-              photosAfter={mapPhotoUrls(task.photos_after)}
-              photosDuring={mapPhotoUrls(task.photos?.during)}
-              onSelectPhoto={setSelectedPhoto}
-            />
-
-            <AuditTrailSection
-              task={task}
-              fullInterventionData={
-                fullInterventionData
-                  ? {
-                      id: fullInterventionData.id,
-                      created_at: fullInterventionData.created_at,
-                      updated_at: fullInterventionData.updated_at,
-                    }
-                  : null
-              }
-            />
-          </div>
-
-          <div className="lg:col-span-1">
-            <CompletedSidebar
-              task={task}
-              customer={{
-                name: customerDisplayName,
-                email: customerInfo?.email,
-                phone: customerInfo?.phone,
-                address: customerInfo?.address,
-              }}
-              intervention={{
-                temperature_celsius: fullInterventionData?.temperature_celsius || null,
-                humidity_percentage: fullInterventionData?.humidity_percentage || null,
-              }}
-              workflowProgress={progressPercentage}
-            />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </PageShell>
 
       <SelectedPhotoOverlay selectedPhoto={selectedPhoto} onClose={() => setSelectedPhoto(null)} />
     </div>

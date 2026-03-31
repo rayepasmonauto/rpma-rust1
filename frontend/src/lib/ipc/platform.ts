@@ -24,6 +24,16 @@ export interface SaveDialogOptions {
   filters?: Array<{ name: string; extensions: string[] }>;
 }
 
+/** Options accepted by {@link showOpenDialog}. */
+export interface OpenDialogOptions {
+  /** Window title for the native open dialog. */
+  title?: string;
+  /** File-type filters shown in the dialog. */
+  filters?: Array<{ name: string; extensions: string[] }>;
+  /** Whether multiple files can be selected. */
+  multiple?: boolean;
+}
+
 /** Callback supplied to {@link listenToEvent}. */
 export type EventCallback<T> = (event: { payload: T }) => void;
 
@@ -78,6 +88,30 @@ export async function showSaveDialog(
 
   const { save } = await import('@tauri-apps/plugin-dialog');
   return save(options);
+}
+
+/**
+ * Opens the native **Open** dialog and returns the chosen file path, or
+ * `null` if the user cancelled.
+ *
+ * Wraps `@tauri-apps/plugin-dialog` → `open()`.  Uses a dynamic import so
+ * the plugin is only pulled in when actually needed.
+ *
+ * @throws {Error} When called outside a Tauri environment.
+ */
+export async function showOpenDialog(
+  options: OpenDialogOptions = {},
+): Promise<string | null> {
+  if (!isTauriEnvironment()) {
+    throw new Error(
+      '[platform] showOpenDialog is only available inside a Tauri context.',
+    );
+  }
+
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  const result = await open({ ...options, multiple: false });
+  if (Array.isArray(result)) return result[0] ?? null;
+  return result;
 }
 
 // ---------------------------------------------------------------------------

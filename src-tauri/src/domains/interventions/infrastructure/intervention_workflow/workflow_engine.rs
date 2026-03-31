@@ -17,8 +17,26 @@ use crate::shared::contracts::common::TimestampString;
 use crate::shared::contracts::task_status::TaskStatus;
 use crate::shared::logging::{LogDomain, RPMARequestLogger};
 use chrono::Utc;
-use serde_json::json;
 use tracing::info;
+
+fn extract_finalization_note(collected_data: Option<&serde_json::Value>) -> Option<String> {
+    collected_data
+        .and_then(|data| data.as_object())
+        .and_then(|payload| payload.get("notes"))
+        .and_then(|note| note.as_str())
+        .map(str::trim)
+        .filter(|note| !note.is_empty())
+        .map(str::to_string)
+}
+
+fn derive_final_observations(
+    request: &FinalizeInterventionRequest,
+) -> Option<Vec<String>> {
+    request
+        .final_observations
+        .clone()
+        .or_else(|| extract_finalization_note(request.collected_data.as_ref()).map(|note| vec![note]))
+}
 
 impl super::InterventionWorkflowService {
     /// Start a new PPF intervention
@@ -310,10 +328,16 @@ impl super::InterventionWorkflowService {
             })
             .cloned();
 
+        let finalization_note = extract_finalization_note(request.collected_data.as_ref());
+        let derived_final_observations = derive_final_observations(&request);
+
         let updated_step = finalization_step.map(|mut step| {
             if let Some(collected_data) = &request.collected_data {
-                step.collected_data = Some(collected_data.clone());
-                step.step_data = step.collected_data.clone();
+                crate::domains::interventions::infrastructure::intervention_data::steps::sync_step_note(
+                    &mut step,
+                    collected_data,
+                    finalization_note.as_deref(),
+                );
             }
 
             if let Some(photos) = &request.photos {
@@ -335,7 +359,7 @@ impl super::InterventionWorkflowService {
                 completed_at_ms,
                 request.customer_satisfaction,
                 request.quality_score,
-                request.final_observations,
+                derived_final_observations,
                 request.customer_signature,
                 request.customer_comments,
             )

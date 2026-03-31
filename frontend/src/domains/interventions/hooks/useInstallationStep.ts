@@ -1,11 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { PpfDraftGuard } from '@/domains/interventions/components/ppf/PpfWorkflowLayout';
 import { useRouter } from 'next/navigation';
 import type { StepType } from '@/lib/backend';
 import { usePpfWorkflow } from '@/domains/interventions/api/client';
 import { getNextPPFStepId, getPPFStepPath } from '../utils/ppf-workflow';
-import { buildStepExportPayload, downloadJsonFile, getEffectiveStepData } from '../utils/step-export';
+import {
+  buildStepExportPayload,
+  downloadJsonFile,
+  getEffectiveStepData,
+  getEffectiveStepNote,
+} from '../utils/step-export';
 
 const ZONE_CHECKLIST = [
   { id: 'surface_ready', title: 'Surface dégraissée et sèche', required: true },
@@ -91,10 +97,36 @@ export function useInstallationStep() {
   const [isSaving, setIsSaving] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const hasHydratedFromServerRef = useRef(false);
+  const autosaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPersistedSignatureRef = useRef<string | null>(null);
+  const lastHydratedVersionRef = useRef<string | null>(null);
+
+  const currentDraft = useMemo(
+    () => ({
+      zones,
+      activeZoneId,
+      notes,
+    }),
+    [zones, activeZoneId, notes]
+  );
+
+  const allPhotos = useMemo(() => {
+    const set = new Set<string>();
+    zones.forEach((zone) => {
+      zone.photos?.forEach((photo) => set.add(photo));
+    });
+    return Array.from(set);
+  }, [zones]);
+
+  const currentSignature = useMemo(
+    () => JSON.stringify({ draft: currentDraft, photos: allPhotos }),
+    [allPhotos, currentDraft]
+  );
 
   // Hydrate from server data
   useEffect(() => {
     if (!stepRecord) return;
+
     const collected = getEffectiveStepData(stepRecord) as InstallationDraft;
     const baseZones = buildZoneList(task?.ppf_zones ?? null);
     const savedZones = Array.isArray(collected.zones) ? collected.zones : [];
@@ -126,20 +158,61 @@ export function useInstallationStep() {
         )
       : merged;
 
-    setZones(adjustedZones as ZoneDraft[]);
-    setActiveZoneId(activeCandidate);
-    setNotes(collected.notes ?? '');
+    const serverDraft = {
+      zones: adjustedZones as ZoneDraft[],
+      activeZoneId: activeCandidate,
+      notes: getEffectiveStepNote(stepRecord) ?? collected.notes ?? '',
+    };
+    const serverPhotos = Array.from(new Set(serverDraft.zones.flatMap((zone) => zone.photos ?? [])));
+    const serverSignature = JSON.stringify({ draft: serverDraft, photos: serverPhotos });
+    const serverVersion = `${stepRecord.id}:${String(stepRecord.updated_at ?? '')}`;
+    const hasUnsavedLocalChanges =
+      hasHydratedFromServerRef.current && currentSignature !== lastPersistedSignatureRef.current;
+    const serverIsBehindPersisted =
+      hasHydratedFromServerRef.current &&
+      lastPersistedSignatureRef.current !== null &&
+      serverSignature !== lastPersistedSignatureRef.current &&
+      serverVersion === lastHydratedVersionRef.current;
+
+    if (hasUnsavedLocalChanges || serverIsBehindPersisted) {
+      return;
+    }
+
+    setZones(serverDraft.zones);
+    setActiveZoneId(serverDraft.activeZoneId);
+    setNotes(serverDraft.notes);
     hasHydratedFromServerRef.current = true;
     autosaveReady.current = false;
-  }, [stepRecord, stepRecord?.updated_at, stepRecord?.collected_data, task?.ppf_zones]);
+    lastPersistedSignatureRef.current = serverSignature;
+    lastHydratedVersionRef.current = serverVersion;
+  }, [currentSignature, stepRecord?.id, stepRecord?.updated_at, stepRecord?.collected_data, stepRecord?.notes, task?.ppf_zones]);
 
-  const allPhotos = useMemo(() => {
-    const set = new Set<string>();
-    zones.forEach((zone) => {
-      zone.photos?.forEach((photo) => set.add(photo));
-    });
-    return Array.from(set);
-  }, [zones]);
+  const saveNow = useCallback(
+    async (options?: { showToast?: boolean; invalidate?: boolean }) => {
+      if (!stepRecord) {
+        return false;
+      }
+
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current);
+        autosaveTimeoutRef.current = null;
+      }
+
+      if (currentSignature === lastPersistedSignatureRef.current) {
+        return false;
+      }
+
+      await saveDraft('installation', currentDraft, {
+        photos: allPhotos,
+        showToast: options?.showToast,
+        invalidate: options?.invalidate,
+      });
+
+      lastPersistedSignatureRef.current = currentSignature;
+      return true;
+    },
+    [allPhotos, currentDraft, currentSignature, saveDraft, stepRecord]
+  );
 
   // Autosave effect
   useEffect(() => {
@@ -148,11 +221,19 @@ export function useInstallationStep() {
       autosaveReady.current = true;
       return;
     }
-    const timeout = setTimeout(() => {
-      void saveDraft('installation', { zones, activeZoneId, notes }, { photos: allPhotos });
+    if (currentSignature === lastPersistedSignatureRef.current) {
+      return;
+    }
+    autosaveTimeoutRef.current = setTimeout(() => {
+      void saveNow();
     }, 800);
-    return () => clearTimeout(timeout);
-  }, [zones, activeZoneId, notes, allPhotos, saveDraft]);
+    return () => {
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current);
+        autosaveTimeoutRef.current = null;
+      }
+    };
+  }, [currentSignature, saveNow]);
 
   const activeZone = zones.find((zone) => zone.id === activeZoneId) ?? zones[0];
   const completedZones = zones.filter((zone) => zone.status === 'completed').length;
@@ -221,6 +302,10 @@ export function useInstallationStep() {
     );
   };
 
+  const handleNotesChange = useCallback((value: string) => {
+    setNotes(value);
+  }, []);
+
   const handleValidateZone = () => {
     if (!activeZone || !canValidateZone) return;
     setZones((prev) => {
@@ -241,7 +326,7 @@ export function useInstallationStep() {
   const handleSaveDraft = async () => {
     setIsSaving(true);
     try {
-      await saveDraft('installation', { zones, activeZoneId, notes }, { photos: allPhotos, showToast: true, invalidate: true });
+      await saveNow({ showToast: true, invalidate: true });
     } finally {
       setIsSaving(false);
     }
@@ -276,7 +361,7 @@ export function useInstallationStep() {
     activeZone,
     activeZoneId,
     notes,
-    setNotes,
+    setNotes: handleNotesChange,
     isSaving,
     isValidating,
     completedZones,
@@ -296,5 +381,10 @@ export function useInstallationStep() {
     handleSaveDraft,
     handleValidate,
     handleDownloadStepData,
+    draftGuard: {
+      hasPendingDraft:
+        hasHydratedFromServerRef.current && currentSignature !== lastPersistedSignatureRef.current,
+      saveNow,
+    } satisfies PpfDraftGuard,
   };
 }

@@ -8,6 +8,7 @@
     "dev:next": "next dev",
     "predev": "npm run types:sync",
     "build": "next build",
+    "build:tauri": "next build && node ../scripts/prepare-tauri-frontend.mjs",
     "prebuild": "node -e \"if(process.env.CI !== 'true') require('child_process').execSync('npm run types:sync', {stdio:'inherit'})\"",
     "build:analyze": "ANALYZE=true next build",
     "start": "next start",

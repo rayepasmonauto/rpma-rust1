@@ -79,6 +79,12 @@ describe('usePpfWorkflow', () => {
     await result.current.saveDraft('inspection', { notes: 'draft' }, { invalidate: true });
 
     expect(mockPpfWorkflowIpc.saveStepDraft).toHaveBeenCalledTimes(1);
+    expect(mockPpfWorkflowIpc.saveStepDraft).toHaveBeenCalledWith({
+      step_id: 'step-1',
+      collected_data: { notes: 'draft' },
+      notes: 'draft',
+      photos: null,
+    });
     expect(invalidateSpy).toHaveBeenNthCalledWith(1, {
       queryKey: ['interventions', 'ppf-steps', 'int-1'],
     });

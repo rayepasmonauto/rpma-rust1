@@ -43,6 +43,11 @@ export const interventionKeys = {
     "photos",
     interventionId,
   ],
+  list: (filters: Record<string, unknown>) => [
+    ...interventionKeys.all,
+    "list",
+    filters,
+  ],
 };
 
 export const taskKeys = {

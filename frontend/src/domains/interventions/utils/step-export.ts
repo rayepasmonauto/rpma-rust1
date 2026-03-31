@@ -25,6 +25,25 @@ export function getEffectiveStepData(step: {
   return step.collected_data ?? step.step_data ?? {};
 }
 
+export function getEffectiveStepNote(step: {
+  notes?: InterventionStep['notes'];
+  collected_data?: unknown | null;
+  step_data?: unknown | null;
+}): InterventionStep['notes'] {
+  if (step.notes) {
+    return step.notes;
+  }
+
+  const effectiveData = getEffectiveStepData(step);
+  if (!effectiveData || typeof effectiveData !== 'object' || Array.isArray(effectiveData)) {
+    return null;
+  }
+
+  return typeof (effectiveData as Record<string, unknown>).notes === 'string'
+    ? ((effectiveData as Record<string, unknown>).notes as string)
+    : null;
+}
+
 export function buildStepExportPayload(
   taskId: string,
   interventionId: string,
@@ -41,7 +60,7 @@ export function buildStepExportPayload(
     collected_data: step.collected_data ?? null,
     step_data: step.step_data ?? null,
     effective_data: getEffectiveStepData(step),
-    notes: step.notes,
+    notes: getEffectiveStepNote(step),
     photo_urls: step.photo_urls,
     measurements: step.measurements,
     observations: step.observations,

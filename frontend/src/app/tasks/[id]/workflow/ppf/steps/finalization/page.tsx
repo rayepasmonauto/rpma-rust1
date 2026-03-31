@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { StepType } from '@/lib/backend';
 import {
@@ -18,8 +18,6 @@ import {
   PpfPhotoGrid,
   PpfStepHero,
   PpfWorkflowLayout,
-  getPPFStepPath,
-  getNextPPFStepId,
   usePpfWorkflow,
 } from '@/domains/interventions';
 import { buildStepExportPayload, downloadJsonFile, getEffectiveStepData } from '@/domains/interventions';
@@ -40,7 +38,7 @@ const FINAL_CHECKLIST = [
   {
     id: 'smooth_surface',
     title: 'Surface lisse',
-    description: 'Pas de plis ni sur-épaisseurs',
+    description: 'Pas de plis ni surépaisseurs',
     required: true,
   },
   {
@@ -81,16 +79,80 @@ export default function FinalizationStepPage() {
   const [isValidating, setIsValidating] = useState(false);
   const [isFinalizeDialogOpen, setIsFinalizeDialogOpen] = useState(false);
   const hasHydratedFromServerRef = useRef(false);
+  const autosaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPersistedSignatureRef = useRef<string | null>(null);
+  const lastHydratedVersionRef = useRef<string | null>(null);
+
+  const currentDraft = useMemo(
+    () => ({
+      checklist,
+      notes,
+    }),
+    [checklist, notes]
+  );
+
+  const currentSignature = useMemo(
+    () => JSON.stringify({ draft: currentDraft, photos }),
+    [currentDraft, photos]
+  );
 
   useEffect(() => {
     if (!stepRecord) return;
     const collected = getEffectiveStepData(stepRecord) as FinalizationDraft;
-    setChecklist(collected.checklist ?? {});
-    setNotes(collected.notes ?? '');
-    setPhotos(stepRecord?.photo_urls ?? []);
+    const serverDraft = {
+      checklist: collected.checklist ?? {},
+      notes: collected.notes ?? '',
+    };
+    const serverPhotos = stepRecord?.photo_urls ?? [];
+    const serverSignature = JSON.stringify({ draft: serverDraft, photos: serverPhotos });
+    const serverVersion = `${stepRecord.id}:${String(stepRecord.updated_at ?? '')}`;
+    const hasUnsavedLocalChanges =
+      hasHydratedFromServerRef.current && currentSignature !== lastPersistedSignatureRef.current;
+    const serverIsBehindPersisted =
+      hasHydratedFromServerRef.current &&
+      lastPersistedSignatureRef.current !== null &&
+      serverSignature !== lastPersistedSignatureRef.current &&
+      serverVersion === lastHydratedVersionRef.current;
+
+    if (hasUnsavedLocalChanges || serverIsBehindPersisted) {
+      return;
+    }
+
+    setChecklist(serverDraft.checklist);
+    setNotes(serverDraft.notes);
+    setPhotos(serverPhotos);
     hasHydratedFromServerRef.current = true;
     autosaveReady.current = false;
-  }, [stepRecord, stepRecord?.updated_at, stepRecord?.collected_data, stepRecord?.photo_urls]);
+    lastPersistedSignatureRef.current = serverSignature;
+    lastHydratedVersionRef.current = serverVersion;
+  }, [stepRecord, stepRecord?.updated_at, stepRecord?.collected_data, stepRecord?.photo_urls, currentSignature]);
+
+  const saveNow = useCallback(
+    async (options?: { showToast?: boolean; invalidate?: boolean }) => {
+      if (!stepRecord) {
+        return false;
+      }
+
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current);
+        autosaveTimeoutRef.current = null;
+      }
+
+      if (currentSignature === lastPersistedSignatureRef.current) {
+        return false;
+      }
+
+      await saveDraft('finalization', currentDraft, {
+        photos,
+        showToast: options?.showToast,
+        invalidate: options?.invalidate,
+      });
+
+      lastPersistedSignatureRef.current = currentSignature;
+      return true;
+    },
+    [currentDraft, currentSignature, photos, saveDraft, stepRecord]
+  );
 
   useEffect(() => {
     if (!hasHydratedFromServerRef.current) return;
@@ -98,24 +160,25 @@ export default function FinalizationStepPage() {
       autosaveReady.current = true;
       return;
     }
-    const timeout = setTimeout(() => {
-      void saveDraft(
-        'finalization',
-        {
-          checklist,
-          notes,
-        },
-        { photos }
-      );
+    if (currentSignature === lastPersistedSignatureRef.current) {
+      return;
+    }
+    autosaveTimeoutRef.current = setTimeout(() => {
+      void saveNow();
     }, 800);
-    return () => clearTimeout(timeout);
-  }, [checklist, notes, photos, saveDraft]);
+    return () => {
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current);
+        autosaveTimeoutRef.current = null;
+      }
+    };
+  }, [currentSignature, saveNow]);
 
   const checklistCount = FINAL_CHECKLIST.filter((item) => checklist[item.id]).length;
   const checklistTotal = FINAL_CHECKLIST.length;
   const canValidate = checklistCount === checklistTotal;
 
-  const summaryText = `${checklistCount}/${checklistTotal} checklist · ${photos.length} photo${photos.length !== 1 ? 's' : ''}`;
+  const summaryText = `${checklistCount}/${checklistTotal} points de contrôle · ${photos.length} photo${photos.length !== 1 ? 's' : ''}`;
 
   const stepLabel = `ÉTAPE 4 / ${steps.length || 4}`;
   const completedBadges = steps
@@ -126,7 +189,7 @@ export default function FinalizationStepPage() {
   const handleSaveDraft = async () => {
     setIsSaving(true);
     try {
-      await saveDraft('finalization', { checklist, notes }, { photos, showToast: true, invalidate: true });
+      await saveNow({ showToast: true, invalidate: true });
     } finally {
       setIsSaving(false);
     }
@@ -174,10 +237,15 @@ export default function FinalizationStepPage() {
           downloadDisabled: !stepRecord,
           validateDisabled: !canValidate || isValidating,
         }}
+        draftGuard={{
+          hasPendingDraft:
+            hasHydratedFromServerRef.current && currentSignature !== lastPersistedSignatureRef.current,
+          saveNow,
+        }}
       >
         <PpfStepHero
           stepLabel={stepLabel}
-          title="🏁 Finalisation et Validation"
+          title="Finalisation et validation"
           subtitle="Contrôle qualité final et validation client"
           badge={badge}
           rightSlot={
@@ -195,7 +263,7 @@ export default function FinalizationStepPage() {
           <div className="space-y-4">
             <div className="rounded-xl border border-[hsl(var(--rpma-border))] bg-white p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
-                <div className="text-sm font-semibold text-foreground">✅ Checklist Finale</div>
+                <div className="text-sm font-semibold text-foreground">Checklist finale</div>
                 <span className="rounded-full bg-[hsl(var(--rpma-surface))] px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                   {checklistCount} / {checklistTotal}
                 </span>
@@ -229,7 +297,7 @@ export default function FinalizationStepPage() {
                 photos={photos}
                 minPhotos={0}
                 onChange={setPhotos}
-                title="📷 Photos de finalisation"
+                title="Photos de finalisation"
                 hint="Vue avant · latérales · arrière"
               />
             </div>
@@ -247,7 +315,7 @@ export default function FinalizationStepPage() {
             <AlertDialogTitle>Finaliser l&apos;intervention ?</AlertDialogTitle>
             <AlertDialogDescription>
               Cette action est irréversible. Assurez-vous que toutes les étapes sont complètes et que les photos ont
-              était prises.
+              été prises.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
