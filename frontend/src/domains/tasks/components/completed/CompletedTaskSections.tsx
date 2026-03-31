@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect } from 'react';
 import {
   Camera,
   CheckCircle,
@@ -23,6 +24,7 @@ import {
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import type { MaterialConsumption } from '@/shared/types/inventory.types';
+import { useTranslation } from '@/shared/hooks';
 
 export function ChecklistSection({
   checklistItems,
@@ -39,37 +41,38 @@ export function ChecklistSection({
   checklistCount: number;
   checklistTotal: number;
 }) {
+  const { t } = useTranslation();
   if (checklistItems.length === 0) return null;
 
   return (
-    <Card className="rounded-xl border-gray-200 shadow-sm">
+    <Card className="rounded-xl border-border shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <CheckSquare className="h-5 w-5 text-emerald-600" />
-          Checklist
+          <CheckSquare className="h-5 w-5 text-success" />
+          {t('completed.checklistSection')}
         </CardTitle>
         <CardDescription>
-          {checklistCount}/{checklistTotal} éléments complétés
+          {t('completed.checklistProgress', { completed: checklistCount, total: checklistTotal })}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y divide-border">
           {checklistItems.map((item) => (
             <div key={item.id} className="flex items-start gap-3 py-2.5">
               <CheckCircle
-                className={`mt-0.5 h-4 w-4 flex-shrink-0 ${item.is_completed ? 'text-emerald-500' : 'text-gray-300'}`}
+                className={`mt-0.5 h-4 w-4 flex-shrink-0 ${item.is_completed ? 'text-success' : 'text-muted-foreground/30'}`}
               />
               <div className="min-w-0 flex-1">
-                <p className={`text-sm ${item.is_completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                <p className={`text-sm ${item.is_completed ? 'line-through text-muted-foreground/50' : 'text-foreground'}`}>
                   {item.description}
                 </p>
                 {item.completed_at && (
-                  <p className="mt-0.5 text-[10px] text-gray-400">
+                  <p className="mt-0.5 text-[10px] text-muted-foreground/50">
                     {formatDateTime(item.completed_at)}
                   </p>
                 )}
                 {item.notes && (
-                  <p className="mt-0.5 text-xs italic text-gray-500">{item.notes}</p>
+                  <p className="mt-0.5 text-xs italic text-muted-foreground">{item.notes}</p>
                 )}
               </div>
             </div>
@@ -91,37 +94,38 @@ export function QualitySection({
     customer_comments?: string | null;
   } | null;
 }) {
+  const { t } = useTranslation();
   if (!fullInterventionData) return null;
 
   return (
-    <Card className="rounded-xl border-gray-200 shadow-sm">
+    <Card className="rounded-xl border-border shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Star className="h-5 w-5 text-amber-600" />
-          Qualité & Satisfaction
+          <Star className="h-5 w-5 text-warning" />
+          {t('completed.qualitySection')}
         </CardTitle>
-        <CardDescription>Évaluation client et scores de qualité</CardDescription>
+        <CardDescription>{t('completed.qualityDesc')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {(fullInterventionData.customer_satisfaction !== null ||
           fullInterventionData.quality_score !== null) && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {fullInterventionData.customer_satisfaction !== null && (
-              <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100 p-4">
+              <div className="rounded-xl border border-warning/20 bg-warning/5 p-4">
                 <div className="mb-2 flex items-center justify-between">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-amber-700">
-                    Satisfaction Client
+                  <div className="text-xs font-semibold uppercase tracking-wider text-warning">
+                    {t('completed.customerSatisfaction')}
                   </div>
-                  <Star className="h-4 w-4 text-amber-500" />
+                  <Star className="h-4 w-4 text-warning" />
                 </div>
-                <div className="mb-2 text-3xl font-extrabold text-amber-600">
+                <div className="mb-2 text-3xl font-bold text-warning">
                   {fullInterventionData.customer_satisfaction}/5
                 </div>
                 <div className="flex gap-0.5">
                   {[...Array(5)].map((_, index) => (
                     <span
                       key={index}
-                      className={`text-lg ${index < fullInterventionData.customer_satisfaction! ? 'text-amber-500' : 'text-amber-200'}`}
+                      className={`text-lg ${index < fullInterventionData.customer_satisfaction! ? 'text-warning' : 'text-warning/20'}`}
                     >
                       ★
                     </span>
@@ -131,19 +135,19 @@ export function QualitySection({
             )}
 
             {fullInterventionData.quality_score !== null && (
-              <div className="rounded-xl border border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 p-4">
+              <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-4">
                 <div className="mb-2 flex items-center justify-between">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-purple-700">
-                    Score Qualité
+                  <div className="text-xs font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                    {t('completed.qualityScore')}
                   </div>
-                  <TrendingUp className="h-4 w-4 text-purple-500" />
+                  <TrendingUp className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                 </div>
-                <div className="mb-2 text-3xl font-extrabold text-purple-600">
+                <div className="mb-2 text-3xl font-bold text-purple-600 dark:text-purple-400">
                   {fullInterventionData.quality_score}%
                 </div>
-                <div className="h-2 w-full rounded-full bg-purple-200">
+                <div className="h-2 w-full rounded-full bg-purple-500/20">
                   <div
-                    className="h-2 rounded-full bg-purple-600 transition-all duration-500"
+                    className="h-2 rounded-full bg-purple-600 dark:bg-purple-400 transition-all duration-500"
                     style={{ width: `${fullInterventionData.quality_score}%` }}
                   />
                 </div>
@@ -156,15 +160,15 @@ export function QualitySection({
           <>
             <Separator />
             <div>
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
-                <CheckCircle className="h-4 w-4 text-emerald-600" />
-                Observations Finales
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <CheckCircle className="h-4 w-4 text-success" />
+                {t('completed.finalObservations')}
               </div>
               <div className="space-y-2">
                 {fullInterventionData.final_observations.map((observation, index) => (
-                  <div key={index} className="flex items-start gap-2 rounded-lg border border-emerald-100 bg-emerald-50 p-3">
-                    <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600" />
-                    <span className="text-sm text-gray-700">{observation}</span>
+                  <div key={index} className="flex items-start gap-2 rounded-lg border border-success/20 bg-success/5 p-3">
+                    <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-success" />
+                    <span className="text-sm text-foreground">{observation}</span>
                   </div>
                 ))}
               </div>
@@ -176,29 +180,29 @@ export function QualitySection({
           <>
             <Separator />
             <div>
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
-                <Signature className="h-4 w-4 text-blue-600" />
-                Signature & Commentaires Client
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Signature className="h-4 w-4 text-info" />
+                {t('completed.signatureComments')}
               </div>
-              <div className="rounded-xl border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 p-4">
+              <div className="rounded-xl border border-info/20 bg-info/5 p-4">
                 {Boolean(fullInterventionData.customer_signature) && (
                   <div className="mb-3">
-                    <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-blue-700">
-                      Signataire
+                    <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-info">
+                      {t('completed.signer')}
                     </div>
-                    <div className="text-sm font-medium text-blue-900">
+                    <div className="text-sm font-medium text-foreground">
                       {String(fullInterventionData.customer_signature ?? '')}
                     </div>
                   </div>
                 )}
                 {fullInterventionData.customer_comments && (
                   <div className="flex items-start gap-2">
-                    <MessageSquare className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+                    <MessageSquare className="mt-0.5 h-4 w-4 flex-shrink-0 text-info" />
                     <div>
-                      <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-blue-700">
-                        Commentaires
+                      <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-info">
+                        {t('completed.comments')}
                       </div>
-                      <div className="text-sm italic text-blue-900">
+                      <div className="text-sm italic text-foreground">
                         &quot;{fullInterventionData.customer_comments}&quot;
                       </div>
                     </div>
@@ -218,6 +222,7 @@ export function MaterialsSection({
 }: {
   materials: MaterialConsumption[];
 }) {
+  const { t } = useTranslation();
   if (materials.length === 0) return null;
 
   const totalCost = materials.reduce(
@@ -226,38 +231,38 @@ export function MaterialsSection({
   );
 
   return (
-    <Card className="rounded-xl border-gray-200 shadow-sm">
+    <Card className="rounded-xl border-border shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Package className="h-5 w-5 text-indigo-600" />
-          Matériaux Utilisés
+          <Package className="h-5 w-5 text-info" />
+          {t('completed.materialsSection')}
         </CardTitle>
-        <CardDescription>Consommation de matériaux durant l&apos;intervention</CardDescription>
+        <CardDescription>{t('completed.materialsDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
           {materials.map((material) => (
             <div
               key={material.id}
-              className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm"
+              className="flex items-center justify-between rounded-lg border border-border bg-muted px-3 py-2.5 text-sm"
             >
               <div className="flex items-center gap-2">
-                <span className="font-mono text-xs text-gray-600" title={material.material_id}>
+                <span className="font-mono text-xs text-muted-foreground" title={material.material_id}>
                   {material.material_id.slice(0, 8)}&hellip;{material.material_id.slice(-4)}
                 </span>
                 {material.batch_used && (
-                  <span className="text-xs text-gray-500">Lot: {material.batch_used}</span>
+                  <span className="text-xs text-muted-foreground">{t('completed.batch')}: {material.batch_used}</span>
                 )}
               </div>
-              <div className="flex items-center gap-4 text-xs text-gray-600">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span>
-                  Qté: <span className="font-semibold text-gray-900">{material.quantity_used}</span>
+                  {t('completed.quantity')}: <span className="font-semibold text-foreground">{material.quantity_used}</span>
                 </span>
                 {material.waste_quantity > 0 && (
-                  <span className="text-amber-600">Déchet: {material.waste_quantity}</span>
+                  <span className="text-warning">{t('completed.waste')}: {material.waste_quantity}</span>
                 )}
                 {material.total_cost != null && (
-                  <span className="font-semibold text-indigo-700">
+                  <span className="font-semibold text-info">
                     {material.total_cost.toFixed(2)} €
                   </span>
                 )}
@@ -265,9 +270,9 @@ export function MaterialsSection({
             </div>
           ))}
           {materials.some((material) => material.total_cost != null) && (
-            <div className="mt-3 flex justify-end border-t border-gray-200 pt-3">
-              <span className="text-sm font-extrabold text-indigo-700">
-                Total: {totalCost.toFixed(2)} €
+            <div className="mt-3 flex justify-end border-t border-border pt-3">
+              <span className="text-sm font-bold text-info">
+                {t('completed.total')}: {totalCost.toFixed(2)} €
               </span>
             </div>
           )}
@@ -292,35 +297,42 @@ export function PhotoGallerySection({
   photosDuring?: unknown[];
   onSelectPhoto: (url: string) => void;
 }) {
+  const { t } = useTranslation();
   if (photoCount === 0 && allStepPhotoUrls.length === 0) return null;
 
+  const photoEntries = [
+    { label: t('completed.photoTotal'), value: allStepPhotoUrls.length || photoCount, color: 'info' },
+    { label: t('completed.photoBefore'), value: photosBefore?.length || 0, color: 'success' },
+    { label: t('completed.photoAfter'), value: photosAfter?.length || 0, color: 'purple' },
+    { label: t('completed.photoDuring'), value: photosDuring?.length || 0, color: 'warning' },
+  ] as const;
+
+  const colorMap = {
+    info: 'bg-info/5 border-info/20 text-info',
+    success: 'bg-success/5 border-success/20 text-success',
+    purple: 'bg-purple-500/5 border-purple-500/20 text-purple-600 dark:text-purple-400',
+    warning: 'bg-warning/5 border-warning/20 text-warning',
+  };
+
   return (
-    <Card className="rounded-xl border-gray-200 shadow-sm">
+    <Card className="rounded-xl border-border shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Camera className="h-5 w-5 text-cyan-600" />
-          Galerie Photos
+          <Camera className="h-5 w-5 text-info" />
+          {t('completed.photoGallery')}
         </CardTitle>
-        <CardDescription>Photos documentées pendant l&apos;intervention</CardDescription>
+        <CardDescription>{t('completed.photoGalleryDesc')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {[
-            { label: 'Total', value: allStepPhotoUrls.length || photoCount, classes: 'from-blue-50 to-blue-100 border-blue-200 text-blue-600 text-blue-700' },
-            { label: 'Avant', value: photosBefore?.length || 0, classes: 'from-emerald-50 to-emerald-100 border-emerald-200 text-emerald-600 text-emerald-700' },
-            { label: 'Après', value: photosAfter?.length || 0, classes: 'from-purple-50 to-purple-100 border-purple-200 text-purple-600 text-purple-700' },
-            { label: 'Pendant', value: photosDuring?.length || 0, classes: 'from-amber-50 to-amber-100 border-amber-200 text-amber-600 text-amber-700' },
-          ].map((entry) => {
-            const [gradientClasses, borderClass, valueClass, labelClass] = entry.classes.split(' ');
-            return (
-              <div key={entry.label} className={`rounded-xl border ${borderClass} bg-gradient-to-br ${gradientClasses} p-4 text-center`}>
-                <div className={`mb-1 text-3xl font-extrabold ${valueClass}`}>{entry.value}</div>
-                <div className={`text-xs font-semibold uppercase tracking-wider ${labelClass}`}>
-                  {entry.label}
-                </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {photoEntries.map((entry) => (
+            <div key={entry.label} className={`rounded-xl border p-4 text-center ${colorMap[entry.color]}`}>
+              <div className="mb-1 text-3xl font-bold">{entry.value}</div>
+              <div className="text-xs font-semibold uppercase tracking-wider">
+                {entry.label}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         {allStepPhotoUrls.length > 0 && (
@@ -332,7 +344,8 @@ export function PhotoGallerySection({
                   key={`${url}-${index}`}
                   type="button"
                   onClick={() => onSelectPhoto(resolveLocalImageUrl(url))}
-                  className="aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-100 transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  className="aspect-square overflow-hidden rounded-lg border border-border bg-muted transition-opacity hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring"
+                  aria-label={`Photo ${index + 1}`}
                 >
                   <img
                     src={resolveLocalImageUrl(url)}
@@ -369,49 +382,50 @@ export function AuditTrailSection({
     updated_at?: string | number | bigint;
   } | null;
 }) {
+  const { t } = useTranslation();
   return (
-    <Card className="rounded-xl border-gray-200 shadow-sm">
+    <Card className="rounded-xl border-border shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <FileText className="h-5 w-5 text-gray-600" />
-          Audit Trail
+          <FileText className="h-5 w-5 text-muted-foreground" />
+          {t('completed.auditTrail')}
         </CardTitle>
-        <CardDescription>Informations système et historique</CardDescription>
+        <CardDescription>{t('completed.auditTrailDesc')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <div className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-              Tâche
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t('completed.task')}
             </div>
-            <div className="space-y-1 text-gray-700">
-              <div><span className="font-medium">ID:</span> {task.id?.slice(-8) || 'N/A'}</div>
-              <div><span className="font-medium">Créé:</span> {task.created_at ? formatDateTime(task.created_at) : 'N/A'}</div>
-              <div><span className="font-medium">Modifié:</span> {task.updated_at ? formatDateTime(task.updated_at) : 'N/A'}</div>
+            <div className="space-y-1 text-muted-foreground">
+              <div><span className="font-medium">{t('completed.taskId')}:</span> {task.id?.slice(-8) || 'N/A'}</div>
+              <div><span className="font-medium">{t('completed.created')}:</span> {task.created_at ? formatDateTime(task.created_at) : 'N/A'}</div>
+              <div><span className="font-medium">{t('completed.updated')}:</span> {task.updated_at ? formatDateTime(task.updated_at) : 'N/A'}</div>
             </div>
           </div>
           {fullInterventionData && (
             <div className="space-y-2">
-              <div className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                Intervention
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {t('completed.intervention')}
               </div>
-              <div className="space-y-1 text-gray-700">
-                <div><span className="font-medium">ID:</span> {fullInterventionData.id?.slice(-8) || 'N/A'}</div>
-                <div><span className="font-medium">Créé:</span> {formatDateTime(String(fullInterventionData.created_at || ''))}</div>
-                <div><span className="font-medium">Modifié:</span> {formatDateTime(String(fullInterventionData.updated_at || ''))}</div>
+              <div className="space-y-1 text-muted-foreground">
+                <div><span className="font-medium">{t('completed.taskId')}:</span> {fullInterventionData.id?.slice(-8) || 'N/A'}</div>
+                <div><span className="font-medium">{t('completed.created')}:</span> {formatDateTime(String(fullInterventionData.created_at || ''))}</div>
+                <div><span className="font-medium">{t('completed.updated')}:</span> {formatDateTime(String(fullInterventionData.updated_at || ''))}</div>
               </div>
             </div>
           )}
         </div>
 
         <div className="flex items-center gap-2 text-xs">
-          <div className={`h-2 w-2 rounded-full ${task.synced ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-          <span className="text-gray-700">
-            {task.synced ? 'Synchronisé' : 'Non synchronisé'}
+          <div className={`h-2 w-2 rounded-full ${task.synced ? 'bg-success' : 'bg-warning'}`} />
+          <span className="text-muted-foreground">
+            {task.synced ? t('completed.synced') : t('completed.notSynced')}
           </span>
           {task.last_synced_at && (
-            <span className="text-gray-500">
-              · Dernière sync: {formatDateTime(task.last_synced_at)}
+            <span className="text-muted-foreground/60">
+              · {t('completed.lastSync')}: {formatDateTime(task.last_synced_at)}
             </span>
           )}
         </div>
@@ -427,14 +441,30 @@ export function SelectedPhotoOverlay({
   selectedPhoto: string | null;
   onClose: () => void;
 }) {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!selectedPhoto) return;
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedPhoto, handleKeyDown]);
+
   if (!selectedPhoto) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 animate-fadeIn"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Photo preview"
+    >
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20"
+        className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
         aria-label="Fermer"
       >
         <X className="h-6 w-6" />

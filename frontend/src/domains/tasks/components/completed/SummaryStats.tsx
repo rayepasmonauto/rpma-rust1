@@ -9,6 +9,7 @@ import {
   User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/shared/hooks';
 
 type SummaryStatCardProps = {
   icon: React.ReactNode;
@@ -19,11 +20,11 @@ type SummaryStatCardProps = {
 };
 
 const variantStyles = {
-  default: 'bg-gray-50 border-gray-200 text-gray-900',
-  success: 'bg-emerald-50 border-emerald-200 text-emerald-900',
-  warning: 'bg-amber-50 border-amber-200 text-amber-900',
-  info: 'bg-blue-50 border-blue-200 text-blue-900',
-  purple: 'bg-purple-50 border-purple-200 text-purple-900',
+  default: 'bg-muted/50 border-border text-foreground',
+  success: 'bg-success/10 border-success/20 text-success',
+  warning: 'bg-warning/10 border-warning/20 text-warning',
+  info: 'bg-info/10 border-info/20 text-info',
+  purple: 'bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400',
 };
 
 function SummaryStatCard({
@@ -36,17 +37,15 @@ function SummaryStatCard({
   return (
     <div
       className={cn(
-        'rounded-xl border p-4 transition-all hover:shadow-md',
+        'rounded-xl border p-4 transition-all hover:shadow-md animate-fadeIn',
         variantStyles[variant]
       )}
     >
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm">
-          {icon}
-        </div>
+      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-background shadow-sm">
+        {icon}
       </div>
-      <div className="text-2xl font-extrabold mb-1">{value}</div>
-      <div className="text-xs font-semibold uppercase tracking-wider mb-0.5">
+      <div className="mb-1 text-2xl font-bold">{value}</div>
+      <div className="mb-0.5 text-xs font-semibold uppercase tracking-wider">
         {label}
       </div>
       {description && (
@@ -77,68 +76,71 @@ export function SummaryStats({
   duration,
   customerName,
 }: SummaryStatsProps) {
+  const { t } = useTranslation();
+  const checklistPercent = checklistTotal > 0 ? Math.round((checklistCompleted / checklistTotal) * 100) : 0;
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
       <SummaryStatCard
-        icon={<CheckSquare className="h-5 w-5 text-emerald-600" />}
-        label="Checklist"
+        icon={<CheckSquare className="h-5 w-5 text-success" />}
+        label={t('completed.checklist')}
         value={`${checklistCompleted}/${checklistTotal}`}
-        description={`${checklistTotal > 0 ? Math.round((checklistCompleted / checklistTotal) * 100) : 0}% complété`}
+        description={`${checklistPercent}% ${t('completed.stepCompleted').toLowerCase()}`}
         variant="success"
       />
 
       <SummaryStatCard
-        icon={<Camera className="h-5 w-5 text-blue-600" />}
-        label="Photos"
+        icon={<Camera className="h-5 w-5 text-info" />}
+        label={t('completed.photos')}
         value={photoCount}
-        description="Documentées"
+        description={t('completed.documented')}
         variant="info"
       />
 
       {satisfaction !== null && satisfaction !== undefined && (
         <SummaryStatCard
-          icon={<Star className="h-5 w-5 text-amber-600" />}
-          label="Satisfaction"
+          icon={<Star className="h-5 w-5 text-warning" />}
+          label={t('completed.customerSatisfaction')}
           value={`${satisfaction}/5`}
-          description="Note client"
+          description={t('completed.qualityDesc')}
           variant="warning"
         />
       )}
 
       {qualityScore !== null && qualityScore !== undefined && (
         <SummaryStatCard
-          icon={<TrendingUp className="h-5 w-5 text-purple-600" />}
-          label="Qualité"
+          icon={<TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
+          label={t('completed.qualityScore')}
           value={`${qualityScore}%`}
-          description="Score qualité"
+          description={t('completed.qualityDesc')}
           variant="purple"
         />
       )}
 
       <SummaryStatCard
-        icon={<Shield className="h-5 w-5 text-emerald-600" />}
-        label="Zones PPF"
+        icon={<Shield className="h-5 w-5 text-success" />}
+        label={t('tasks.ppfZone')}
         value={zonesCount}
-        description="Traitées"
+        description={t('completed.treated')}
         variant="success"
       />
 
       {duration && (
         <SummaryStatCard
-          icon={<Clock className="h-5 w-5 text-gray-600" />}
-          label="Durée"
+          icon={<Clock className="h-5 w-5 text-muted-foreground" />}
+          label={t('completed.duration')}
           value={duration}
-          description="Temps total"
+          description={t('completed.totalDuration')}
           variant="default"
         />
       )}
 
       {customerName && (
         <SummaryStatCard
-          icon={<User className="h-5 w-5 text-blue-600" />}
-          label="Client"
+          icon={<User className="h-5 w-5 text-info" />}
+          label={t('completed.client')}
           value={customerName.split(' ').slice(0, 2).join(' ')}
-          description="Destinataire"
+          description={t('completed.recipient')}
           variant="info"
         />
       )}
