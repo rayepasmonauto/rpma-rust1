@@ -81,6 +81,8 @@ fn main() {
             commands::get_database_pool_stats,
             commands::vacuum_database,
             commands::system::force_wal_checkpoint,
+            commands::system::export_data_backup,
+            commands::system::restore_data_backup,
             // ── Auth ─────────────────────────────────────────────────────
             domains::auth::ipc::auth::auth_login,
             domains::auth::ipc::auth::auth_create_account,
@@ -396,6 +398,16 @@ fn main() {
                 "Database file exists: {}, size: {} bytes",
                 db_exists, db_size
             );
+
+            // Apply staged restore if one was prepared by a previous restore_data_backup call.
+            // Must happen before the connection pool is opened so the file is not locked.
+            let restore_path = app_dir.join("rpma.restore.db");
+            if restore_path.exists() {
+                info!("Staged restore file detected — applying before opening database pool");
+                std::fs::rename(&restore_path, &db_path)
+                    .map_err(|e| format!("Failed to apply staged restore: {e}"))?;
+                info!("Staged restore applied successfully: {:?}", db_path);
+            }
 
             // Initialize database
             let encryption_key = std::env::var("RPMA_DB_KEY").unwrap_or_else(|_| "".to_string());

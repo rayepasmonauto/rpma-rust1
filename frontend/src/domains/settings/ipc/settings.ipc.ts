@@ -152,4 +152,14 @@ export const settingsIpc = {
       invalidateUserSettingsCache();
       return result;
     }),
+
+  exportDataBackup: (destPath: string) =>
+    safeInvoke<JsonValue>(IPC_COMMANDS.EXPORT_DATA_BACKUP, {
+      dest_path: destPath,
+    }),
+
+  restoreDataBackup: (sourcePath: string) =>
+    safeInvoke<JsonValue>(IPC_COMMANDS.RESTORE_DATA_BACKUP, {
+      source_path: sourcePath,
+    }),
 };

@@ -283,6 +283,10 @@ export const IPC_COMMANDS = {
   HARD_DELETE_ENTITY: "hard_delete_entity",
   EMPTY_TRASH: "empty_trash",
 
+  // Data retention commands
+  EXPORT_DATA_BACKUP: "export_data_backup",
+  RESTORE_DATA_BACKUP: "restore_data_backup",
+
   // Audit/Security commands
   GET_SECURITY_METRICS: "get_security_metrics",
   GET_SECURITY_EVENTS: "get_security_events",

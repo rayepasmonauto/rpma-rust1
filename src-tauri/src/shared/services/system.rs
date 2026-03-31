@@ -43,6 +43,23 @@ impl SystemService {
         SystemRepository::get_database_stats(pool)
     }
 
+    /// Export the live database to `dest_path` after a FULL WAL checkpoint.
+    pub fn export_data_backup(
+        pool: &r2d2::Pool<r2d2_sqlite::SqliteConnectionManager>,
+        db_path: &std::path::Path,
+        dest_path: &str,
+    ) -> Result<serde_json::Value, String> {
+        SystemRepository::export_data_backup(pool, db_path, dest_path)
+    }
+
+    /// Stage a restore: validate `source_path` as SQLite then copy to `staged_path`.
+    pub fn stage_restore_backup(
+        source_path: &str,
+        staged_path: &std::path::Path,
+    ) -> Result<(), String> {
+        SystemRepository::stage_restore_backup(source_path, staged_path)
+    }
+
     /// Get database status (initialisation, tables, version) via the Database
     /// abstraction.  This moves the status logic out of the IPC command handler.
     pub fn get_database_status(db: &crate::db::Database) -> Result<serde_json::Value, String> {

@@ -356,6 +356,69 @@ pub async fn get_app_info(correlation_id: Option<String>) -> Result<serde_json::
     Ok(serde_json::to_value(info).map_err(|e| format!("Serialization error: {}", e))?)
 }
 
+/// Export the live SQLite database to a user-chosen destination.
+///
+/// Performs a FULL WAL checkpoint before copying so the snapshot is
+/// consistent.  The destination path is supplied by the frontend (after the
+/// user picks it via the native save-file dialog).
+///
+/// Requires Admin role (data export is a privileged operation).
+#[tracing::instrument(skip_all)]
+#[tauri::command]
+pub async fn export_data_backup(
+    state: AppState<'_>,
+    dest_path: String,
+    correlation_id: Option<String>,
+) -> Result<serde_json::Value, String> {
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
+    let pool = state.db.pool().clone();
+    let db_path = state.app_config.app_data_dir.join("rpma.db");
+
+    tokio::task::spawn_blocking(move || {
+        crate::shared::services::system::SystemService::export_data_backup(
+            &pool, &db_path, &dest_path,
+        )
+    })
+    .await
+    .map_err(|e| String::from(AppError::Internal(format!("Task join error: {}", e))))?
+    .map_err(|e| String::from(AppError::Internal(e)))
+}
+
+/// Stage a database restore from a user-selected backup file.
+///
+/// The backup is validated (SQLite magic header) and copied to
+/// `{app_data_dir}/rpma.restore.db`.  On the next application startup the
+/// staged file is automatically renamed to `rpma.db` before the connection
+/// pool is opened.
+///
+/// Requires Admin role (restore overwrites all local data).
+#[tracing::instrument(skip_all)]
+#[tauri::command]
+pub async fn restore_data_backup(
+    state: AppState<'_>,
+    source_path: String,
+    correlation_id: Option<String>,
+) -> Result<serde_json::Value, String> {
+    let _ctx = resolve_context!(&state, &correlation_id, UserRole::Admin);
+    let staged_path = state.app_config.app_data_dir.join("rpma.restore.db");
+
+    tokio::task::spawn_blocking(move || {
+        crate::shared::services::system::SystemService::stage_restore_backup(
+            &source_path,
+            &staged_path,
+        )
+    })
+    .await
+    .map_err(|e| String::from(AppError::Internal(format!("Task join error: {}", e))))?
+    .map_err(|e| String::from(AppError::Internal(e)))?;
+
+    Ok(serde_json::json!({
+        "success": true,
+        "staged": true,
+        "message": "Backup staged successfully. Quit and restart the application to complete the restore."
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

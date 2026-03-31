@@ -17,6 +17,7 @@ import {
   RefreshCw,
   CheckCircle,
   AlertTriangle,
+  Database,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,6 +75,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
           { id: 'security-policies', label: 'Sécu. Système',   icon: Shield,    href: '/settings/security-policies' },
           { id: 'integrations',      label: 'Intégrations',     icon: Globe,     href: '/settings/integrations' },
           { id: 'observability',     label: 'Observabilité',    icon: Activity,  href: '/settings/observability' },
+          { id: 'data',             label: 'Données',           icon: Database,  href: '/settings/data' },
         ],
       },
     ],
