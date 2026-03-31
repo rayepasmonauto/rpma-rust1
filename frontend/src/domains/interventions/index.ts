@@ -37,3 +37,4 @@ export type { CreateWorkflowExecutionDTO, StartTimingDTO, SignatureDTO, Workflow
 export type { PPFInterventionData, PPFInterventionStep, PPFInterventionStepStatus, PPFStepId, StartInterventionDTO, AdvanceStepDTO, FinalizeInterventionDTO, InterventionCreationResponse, StepProgressResponse, InterventionFinalizationResponse, WorkflowExecution, WorkflowExecutionStep, WorkflowStepStatus, TaskWorkflowProgress } from './api/types';
 
 export type { Intervention, InterventionStep } from './ipc/interventions.ipc';
+export { AtelierPageContent } from './components/atelier/AtelierPageContent';

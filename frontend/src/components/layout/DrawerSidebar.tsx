@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronRight, Users, Package, Workflow, Settings, Trash2, X, LogOut, User, Shield, HelpCircle, Building2 } from 'lucide-react';
+import { ChevronRight, Users, Package, Workflow, Settings, Trash2, X, LogOut, User, Shield, HelpCircle, Building2, Wrench } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,6 +23,7 @@ const mainItems: NavItem[] = [
   { href: '/staff', label: 'Employés/Ressources', icon: <Users className="h-5 w-5" /> },
   { href: '/inventory', label: 'Inventaire', icon: <Package className="h-5 w-5" /> },
   { href: '/tasks', label: 'Flux de travail', icon: <Workflow className="h-5 w-5" /> },
+  { href: '/interventions', label: 'Interventions', icon: <Wrench className="h-5 w-5" /> },
   { href: '/trash', label: 'Corbeille', icon: <Trash2 className="h-5 w-5" /> },
 ];
 
@@ -212,6 +213,7 @@ export function DrawerSidebar({ isOpen, onToggle }: { isOpen: boolean; onToggle:
     if (!href) return false;
     if (href === '/tasks' && pathname.startsWith('/tasks')) return true;
     if (href === '/staff' && pathname.startsWith('/staff')) return true;
+    if (href === '/interventions' && pathname.startsWith('/interventions')) return true;
     if (href === '/settings' && (pathname === '/settings' || pathname.startsWith('/configuration'))) return true;
     return pathname === href;
   };
@@ -330,6 +332,7 @@ export function DrawerSidebarMobile({ isOpen, onClose }: { isOpen: boolean; onCl
     if (!href) return false;
     if (href === '/tasks' && pathname.startsWith('/tasks')) return true;
     if (href === '/staff' && pathname.startsWith('/staff')) return true;
+    if (href === '/interventions' && pathname.startsWith('/interventions')) return true;
     if (href === '/settings' && (pathname === '/settings' || pathname.startsWith('/configuration'))) return true;
     return pathname === href;
   };

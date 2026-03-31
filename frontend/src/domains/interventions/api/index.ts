@@ -134,3 +134,6 @@ export type {
 // Raw backend model types surfaced for consumers (e.g. reports) that need
 // the canonical Intervention/InterventionStep shapes.
 export type { Intervention, InterventionStep } from '../ipc/interventions.ipc';
+
+/** TODO: document */
+export { AtelierPageContent } from '../components/atelier/AtelierPageContent';

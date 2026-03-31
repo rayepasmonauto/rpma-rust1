@@ -227,10 +227,23 @@ impl InterventionsFacade {
         task_checker: &dyn TaskAssignmentChecker,
     ) -> Result<Vec<Intervention>, AppError> {
         self.validate_task_id(&task_id)?;
-        let task_access = task_checker
-            .check_task_assignment(&task_id, ctx.user_id())
-            .unwrap_or(false);
-        self.check_task_intervention_access(&ctx.auth.role, task_access)?;
+        // Technicians are restricted to tasks they are actually assigned to.
+        // Admin, Supervisor, and Viewer may read any task's interventions.
+        if matches!(ctx.auth.role, UserRole::Technician) {
+            let assignment = task_checker
+                .get_task_assignment(&task_id)
+                .await
+                .map_err(|_| AppError::Database("Failed to get task assignment".to_string()))?;
+            let is_assigned = assignment
+                .as_ref()
+                .and_then(|a| a.technician_id.as_deref())
+                .map_or(false, |tech_id| tech_id == ctx.user_id());
+            if !is_assigned {
+                return Err(AppError::Authorization(
+                    "Not authorized to view interventions for this task".to_string(),
+                ));
+            }
+        }
 
         let payload = match self
             .intervention_service
@@ -254,10 +267,23 @@ impl InterventionsFacade {
         task_checker: &dyn TaskAssignmentChecker,
     ) -> Result<Option<Intervention>, AppError> {
         self.validate_task_id(&task_id)?;
-        let task_access = task_checker
-            .check_task_assignment(&task_id, ctx.user_id())
-            .unwrap_or(false);
-        self.check_task_intervention_access(&ctx.auth.role, task_access)?;
+        // Technicians are restricted to tasks they are actually assigned to.
+        // Admin, Supervisor, and Viewer may read any task's interventions.
+        if matches!(ctx.auth.role, UserRole::Technician) {
+            let assignment = task_checker
+                .get_task_assignment(&task_id)
+                .await
+                .map_err(|_| AppError::Database("Failed to get task assignment".to_string()))?;
+            let is_assigned = assignment
+                .as_ref()
+                .and_then(|a| a.technician_id.as_deref())
+                .map_or(false, |tech_id| tech_id == ctx.user_id());
+            if !is_assigned {
+                return Err(AppError::Authorization(
+                    "Not authorized to view interventions for this task".to_string(),
+                ));
+            }
+        }
         let intervention = self
             .intervention_service
             .get_latest_intervention_by_task(&task_id)
@@ -681,6 +707,16 @@ impl InterventionsFacade {
         Ok(InterventionWorkflowResponse::Finalized {
             intervention: response.intervention,
         })
+    }
+
+    /// Allow any authenticated user to read the atelier intervention list.
+    ///
+    /// Access rules are enforced downstream by scoping:
+    /// - Technician → only their own interventions (caller must apply filter)
+    /// - Viewer     → all interventions, read-only (no mutation endpoints share this guard)
+    /// - Admin/Supervisor → all interventions
+    pub fn ensure_atelier_read_access(&self, _ctx: &RequestContext) -> Result<(), AppError> {
+        Ok(())
     }
 
     /// Enforce that the caller is an Admin or Supervisor for management operations.

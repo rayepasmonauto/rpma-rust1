@@ -10,6 +10,7 @@ use crate::commands::{ApiResponse, AppError, AppState};
 use crate::domains::interventions::application::InterventionWorkflowResponse;
 use crate::domains::interventions::InterventionsFacade;
 use crate::resolve_context;
+use crate::shared::contracts::auth::UserRole;
 use serde::Deserialize;
 use tracing::{error, info, instrument};
 
@@ -36,11 +37,18 @@ pub async fn intervention_list(
     info!("Listing interventions");
 
     let facade = InterventionsFacade::new(state.intervention_service.clone());
-    facade.ensure_management_access(&ctx)?;
+    facade.ensure_atelier_read_access(&ctx)?;
+
+    // Technicians are scoped to their own interventions server-side.
+    // Admin/Supervisor/Viewer use the caller-supplied filter as-is.
+    let effective_technician_id = match ctx.auth.role {
+        UserRole::Technician => Some(ctx.auth.user_id.clone()),
+        _ => request.technician_id.clone(),
+    };
 
     match state.intervention_service.list_interventions(
         request.status.as_deref(),
-        request.technician_id.as_deref(),
+        effective_technician_id.as_deref(),
         request.limit,
         request.offset,
     ) {
