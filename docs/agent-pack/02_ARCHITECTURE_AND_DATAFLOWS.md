@@ -1,139 +1,133 @@
----
-title: "Architecture and Dataflows"
-summary: "Frontend -> IPC -> Rust -> SQLite layering, service wiring, and core flows."
-read_when:
-  - "Implementing new IPC commands"
-  - "Tracing data from frontend to backend"
-  - "Understanding layer boundaries"
----
+# 02 — Architecture and Dataflows
 
-# 02. ARCHITECTURE AND DATAFLOWS
+## 4-Layer Architecture (ADR-001)
 
-RPMA v2 uses a thin IPC boundary and keeps business logic in Rust, with local SQLite as the source of truth.
+Each bounded context under `src-tauri/src/domains/<domain>/` follows a strict layer hierarchy:
 
-`Next.js UI -> typed IPC wrapper -> Tauri command -> Rust application/domain/infrastructure -> SQLite`
+| Layer | Location | Responsibility |
+|-------|----------|---------------|
+| **IPC** | `domains/*/ipc/` | Thin Tauri command adapters — no business logic |
+| **Application** | `domains/*/application/` | Use-case orchestration, validation, event emission |
+| **Domain** | `domains/*/domain/` | Pure business models, invariants, errors |
+| **Infrastructure** | `domains/*/infrastructure/` | SQL repositories, external adapters |
 
-## Layer Map
+Rules:
+- Each layer may only import the layer **below** it, never above.
+- Cross-domain communication goes only through `shared/contracts/` traits (ADR-003).
+- Business logic forbidden in IPC or infrastructure layers.
 
-| Layer | Main paths | Rule |
-|---|---|---|
-| Frontend | `frontend/src/app/*`, `frontend/src/domains/*`, `frontend/src/lib/ipc/*` | Use typed wrappers, not raw `invoke()` |
-| IPC | `src-tauri/src/domains/*/ipc/*`, `src-tauri/src/commands/*` | Thin handlers only |
-| Application / Domain | `src-tauri/src/domains/*/application/*`, `src-tauri/src/domains/*/domain/*` | Business rules and invariants live here |
-| Infrastructure | `src-tauri/src/domains/*/infrastructure/*`, `src-tauri/src/db/*` | SQLite, repositories, adapters |
+## Service Initialization (`src-tauri/src/service_builder.rs`)
 
-## Runtime Wiring
+Services are wired in a specific acyclic order (26 steps). Key dependencies:
 
-- `src-tauri/src/main.rs` initializes the app, opens the DB, applies migrations, and registers commands.
-- `src-tauri/src/service_builder.rs` builds shared services and app state.
-- `src-tauri/src/shared/app_state.rs` holds long-lived services, repositories, and shared state.
-- `src-tauri/src/shared/event_bus/*` provides the in-memory event bus used for cross-domain reactions.
-- `src-tauri/src/shared/services/domain_event.rs` defines domain event payloads.
-
-## Task Creation Flow
-
-```mermaid
-flowchart TD
-  A["Frontend task screen or form"] --> B["frontend/src/domains/tasks/ipc/task.ipc.ts"]
-  B --> C["frontend/src/lib/ipc/utils.ts safeInvoke()"]
-  C --> D["Rust task_create handler"]
-  D --> E["RequestContext + RBAC"]
-  E --> F["Task application/domain service"]
-  F --> G["Task repository"]
-  G --> H["SQLite tasks tables"]
-  F --> I["Domain event"]
-  I --> J["In-memory event bus subscribers"]
+```
+Database + Repositories (roots)
+  → TaskService, ClientService
+  → EventBus (in-memory)
+  → InterventionService, InterventionWorkflowService
+  → SettingsService, AuthService, UserService
+  → SessionService, SessionStore
+  → MaterialService, InventoryFacade
+  → QuoteService, MessageService, AuditService
+  → EventBus handlers registered (AuditLogHandler, InterventionFinalizedHandler, QuoteAcceptedHandler)
+  → TrashService, GlobalSearchService
 ```
 
-Key frontend paths:
+All services exposed as `Arc<T>` fields on `AppStateType` (`shared/app_state.rs`).
 
-- `frontend/src/app/tasks/*`
-- `frontend/src/domains/tasks/api/*`
-- `frontend/src/domains/tasks/ipc/task.ipc.ts`
+## Dataflows
 
-Key Rust paths:
-
-- `src-tauri/src/domains/tasks/ipc/task/facade.rs`
-- `src-tauri/src/domains/tasks/domain/models/task.rs`
-- `src-tauri/src/domains/tasks/domain/services/task_state_machine.rs`
-- `src-tauri/src/domains/tasks/infrastructure/*`
-
-## Intervention Step Advance / Complete
-
-```mermaid
-flowchart TD
-  A["Frontend PPF workflow screens"] --> B["frontend/src/domains/interventions/ipc/ppfWorkflow.ipc.ts"]
-  B --> C["safeInvoke() + correlation_id"]
-  C --> D["Rust intervention_advance_step / intervention_finalize"]
-  D --> E["RequestContext + role checks"]
-  E --> F["Intervention application/services"]
-  F --> G["SQLite intervention tables"]
-  F --> H["Domain event"]
-  H --> I["Event bus subscribers"]
+### Task Creation
+```
+Frontend Component
+  → useMutation (TanStack Query)
+  → taskIpc.create() [frontend/src/domains/tasks/ipc/task.ipc.ts]
+  → safeInvoke("task_create", payload + session_token + correlation_id)
+  → Tauri IPC boundary
+  → task_create handler [domains/tasks/ipc/task/facade.rs]
+    → resolve_context!(&state, &correlation_id, UserRole::Supervisor)
+    → TaskCommandService.create_task(&ctx, request)
+      → Application layer: validate, build domain model
+      → TaskRepository.insert(task) [infrastructure/]
+        → SQLite INSERT (WAL)
+    → EventBus.publish(TaskCreated { ... })
+  → ApiResponse<Task> returned
+  → TanStack Query cache invalidated (taskKeys.lists())
 ```
 
-Relevant paths:
-
-- `frontend/src/app/tasks/[id]/workflow/ppf/*`
-- `frontend/src/domains/interventions/ipc/interventions.ipc.ts`
-- `frontend/src/domains/interventions/ipc/ppfWorkflow.ipc.ts`
-- `src-tauri/src/domains/interventions/ipc/intervention/workflow.rs`
-- `src-tauri/src/domains/interventions/ipc/intervention/queries.rs`
-- `src-tauri/src/domains/interventions/domain/models/*`
-- `src-tauri/src/domains/interventions/infrastructure/*`
-
-## Calendar Updates
-
-```mermaid
-flowchart TD
-  A["Frontend calendar or schedule view"] --> B["frontend/src/domains/calendar/ipc/calendar.ts"]
-  B --> C["safeInvoke()"]
-  C --> D["Rust calendar handler"]
-  D --> E["RequestContext + role checks"]
-  E --> F["Calendar service / repository"]
-  F --> G["SQLite calendar tables"]
-  F --> H["Query invalidation"]
+### Intervention Step Advance
+```
+Technician UI (advance step button)
+  → interventionsIpc.advanceStep() [domains/interventions/ipc/interventions.ipc.ts]
+  → safeInvoke("intervention_advance_step", ...)
+  → intervention_advance_step handler [domains/interventions/ipc/intervention/facade.rs]
+    → resolve_context!(&state, &correlation_id, UserRole::Technician)
+    → InterventionService.advance_step(&ctx, step_id)
+      → Domain: validate step ordering, update status
+      → Repository: persist step status + timestamps
+      → EventBus.publish(InterventionStepAdvanced { ... })
+  → Tauri emits UI event → TanStack Query invalidates interventionKeys
 ```
 
-Relevant paths:
+### Calendar Scheduling
+```
+Calendar UI (drag/reschedule)
+  → calendarIpc.scheduleTask() [lib/ipc/calendar.ts]
+  → safeInvoke("calendar_schedule_task", { task_id, date })
+  → calendar_schedule_task handler [domains/calendar/]
+    → resolve_context!(&state, &correlation_id, UserRole::Supervisor)
+    → CalendarService.schedule_task()
+      → Conflict check → Update task scheduled_date → SQLite UPDATE
+```
 
-- `frontend/src/app/page.tsx`
-- `frontend/src/app/schedule/*`
-- `frontend/src/domains/calendar/ipc/calendar.ts`
-- `src-tauri/src/domains/calendar/calendar_handler/ipc.rs`
+## Request Context & Auth Flow (`src-tauri/src/shared/context/`)
 
-## Offline-First Notes
+Every protected command uses:
+```rust
+let ctx = resolve_context!(&state, &correlation_id);           // any role
+let ctx = resolve_context!(&state, &correlation_id, UserRole::Admin); // min role
+```
 
-- The local SQLite database is the primary source of truth on each machine.
-- `src-tauri/src/db/schema.sql` includes `sync_queue` and related legacy sync fields, but there is no clearly wired runtime sync worker in `AppStateType`.
-- The current runtime uses in-memory sessions and an in-memory event bus for local coordination.
-- Verify the actual runtime path in code before building features on legacy sync tables alone.
+`session_resolver.rs` flow:
+1. Retrieve active `UserSession` from `SessionStore` (in-memory `Arc<Mutex<T>>`)
+2. Gate: call `has_permission(user_role, required_role)` → 403 if insufficient
+3. Build `RequestContext { auth: AuthContext, correlation_id }` — no raw tokens downstream
 
-## Dependency Rules
+## Event Bus (`src-tauri/src/shared/event_bus/bus.rs`)
 
-1. Outer layers may depend on inner layers, not the other way around.
-2. Domain code should not import frontend code or Tauri APIs.
-3. Cross-domain work should flow through shared services, repositories, or the event bus.
-4. IPC handlers should validate the request context and delegate, not host business logic.
+- **Process-global singleton** (`OnceLock<Arc<InMemoryEventBus>>`)
+- **Fire-and-forget**: `tokio::spawn` per handler — failures logged, bus never crashes
+- **Registered handlers** (registered during service_builder init):
+  - `AuditLogHandler` — writes audit entries for sensitive actions
+  - `InterventionFinalizedHandler` — triggers inventory deduction on completion
+  - `QuoteAcceptedHandler` / `QuoteConvertedHandler` — lifecycle side-effects
 
-## Where To Start
+```rust
+// Publishing (from application layer):
+event_bus.publish(DomainEvent::TaskCreated { task_id, ... }).await;
 
-| Question | Start here |
-|---|---|
-| New feature end-to-end | `frontend/src/domains/<domain>/*` and `src-tauri/src/domains/<domain>/*` |
-| New IPC command | `src-tauri/src/domains/<domain>/ipc/*` and `frontend/src/domains/<domain>/ipc/*` |
-| DB impact | `src-tauri/src/db/schema.sql` and `src-tauri/migrations/*` |
-| Cross-domain reactions | `src-tauri/src/shared/event_bus/*` |
-| Shared context/auth | `src-tauri/src/shared/context/*` |
+// Subscribing (registered once in service_builder):
+event_bus.register_handler(Arc::new(AuditLogHandler::new(audit_service)));
+```
 
-## Key Files
+## IPC Transport Layer
 
-| File | Why it matters |
-|---|---|
-| `src-tauri/src/main.rs` | App startup and command registration |
-| `src-tauri/src/service_builder.rs` | Service composition |
-| `src-tauri/src/shared/app_state.rs` | Long-lived app state |
-| `src-tauri/src/shared/context/request_context.rs` | Authenticated request context |
-| `src-tauri/src/shared/event_bus/bus.rs` | In-memory event bus |
-| `src-tauri/src/shared/services/domain_event.rs` | Domain event types |
-| `src-tauri/src/db/migrations/mod.rs` | Startup migration application |
+```
+Frontend                          │  Rust Backend
+──────────────────────────────────┼──────────────────────────────────
+safeInvoke(command, args)         │  #[tauri::command]
+  + correlation_id injected       │  async fn command_name(
+  + session_token injected        │      request: RequestDTO,
+  + timeout 15s                   │      state: AppState<'_>
+  + error normalization           │  ) -> Result<ApiResponse<T>, AppError>
+  + retry logic                   │
+                                  │
+frontend/src/lib/ipc/utils.ts     │  domains/*/ipc/facade.rs
+```
+
+## Offline-First Architecture
+
+- All writes go to local SQLite (WAL mode) — no blocking on remote calls.
+- `synced` flag on records tracks what has been confirmed to any remote service.
+- No remote server dependency at runtime; the app functions fully offline.
+- `shared/contracts/sync.rs` defines sync-queue types for future remote sync.

@@ -1,127 +1,119 @@
----
-title: "User Flows and UX"
-summary: "Standard user journeys, design system rules, and interaction patterns."
-read_when:
-  - "Designing new UI screens"
-  - "Implementing complex workflows"
-  - "Reviewing UX consistency"
----
+# 09 — User Flows and UX
 
-# 09. USER FLOWS AND UX
+## Main User Flows
 
-This guide summarizes the main user journeys and the UI rules that keep them consistent.
+### 1. Bootstrap / First Admin Setup
+- **Route**: `/bootstrap-admin`
+- **Trigger**: `has_admins` returns false (public IPC command)
+- **Flow**: System detects no admin exists → redirects to bootstrap page → admin fills form → `bootstrap_first_admin` IPC command → redirects to `/login`
+- **Frontend**: `domains/bootstrap/api/bootstrapProvider.tsx`, `useAdminBootstrapCheck()` hook
+- **Backend**: `domains/auth/ipc/auth.rs` → `AuthService.bootstrap_first_admin()`
 
-## Global UX Rules
+### 2. Authentication
+- **Routes**: `/login`, `/signup`, `/unauthorized`
+- **Login flow**: `LoginForm` → `authIpc.login()` → `safeInvoke('auth_login', credentials)` → session stored in `AuthProvider` context → redirect to `/dashboard`
+- **Auth guard**: `useAuthRedirect()` in `AppLayout` redirects unauthenticated users
+- **Session check**: `auth_validate_session` called on app load
+- **Frontend**: `domains/auth/api/AuthProvider.tsx`, `ipc/auth.ipc.ts`
+- **Backend**: `domains/auth/ipc/auth.rs`, `infrastructure/auth/authentication.rs`
+- **Key states**: loading (skeleton), authenticated, unauthenticated, unauthorized (RBAC denial)
 
-- Use Tailwind and shadcn/ui primitives for standard surfaces.
-- Use Zod plus react-hook-form for all forms.
-- Use TanStack Query for backend data and Zustand only for shared UI state.
-- Prefer step-by-step flows for intervention work on tablet-sized screens.
-- Keep error messages sanitized and actionable.
+### 3. Task Planning (Supervisor)
+- **Routes**: `/dashboard`, `/tasks`, `/schedule`
+- **Flow**: Supervisor opens Tasks → creates task (client + vehicle + scheduled date required) → assigns technician → task appears on `/schedule` calendar
+- **IPC commands**: `task_create`, `task_list`, `calendar_schedule_task`, `update_task_status`
+- **Frontend**: `domains/tasks/ipc/task.ipc.ts`, `domains/calendar/ipc/calendar.ts`
+- **Backend**: `domains/tasks/ipc/task/facade.rs`, `domains/calendar/`
+- **Query keys**: `taskKeys.lists()`, `calendarKeys`
+- **Validation**: `vehicle_plate` and `scheduled_date` required; Zod schema in `domains/tasks/`
 
-## Authentication And Bootstrap
+### 4. Quote Creation and Conversion (Supervisor)
+- **Route**: `/quotes`
+- **Flow**: Create quote (client + items + amounts) → send to client → mark accepted → convert to task
+- **IPC commands**: `quote_create`, `quote_update`, `quote_mark_accepted`, `quote_convert_to_task`, `quote_export_pdf`
+- **Frontend**: `domains/quotes/ipc/quotes.ipc.ts`, `schema/quote.schema.ts` (Zod)
+- **Backend**: `domains/quotes/ipc/quote/`, `infrastructure/quote_validation.rs`
+- **Query keys**: `quoteKeys`
 
-| Entry route | Key commands | Key states |
-|---|---|---|
-| `/login` | `auth_login`, `auth_validate_session`, `auth_logout` | loading, invalid credentials, session restored, unauthorized redirect |
-| `/bootstrap-admin` | `has_admins`, `bootstrap_first_admin` | first-run check, bootstrap form, success redirect |
-| `/unauthorized` | none | access denied, role mismatch |
+### 5. Intervention Execution (Technician)
+- **Route**: `/interventions`
+- **Flow**: Technician opens assigned task → starts intervention (`intervention_start`) → works through steps in order → uploads photos per step → advances each step → finalizes intervention
+- **IPC commands**: `intervention_start`, `intervention_get`, `intervention_advance_step`, `document_store_photo`, `document_get_photos`, `intervention_finalize`
+- **Frontend**: `domains/interventions/ipc/interventions.ipc.ts`, `ipc/photos.ipc.ts`, `ipc/ppfWorkflow.ipc.ts`
+- **Backend**: `domains/interventions/ipc/intervention/`, `infrastructure/intervention_workflow/`
+- **Query keys**: `interventionKeys.byTask(taskId)`, `interventionKeys.ppfWorkflow(taskId)`, `interventionKeys.photos(interventionId)`
+- **Domain rules**: Steps must advance in order; mandatory steps require minimum photo count before advance
 
-Validation and errors:
+### 6. Inventory Management (Admin/Supervisor)
+- **Route**: `/inventory`
+- **Flow**: Add materials → adjust stock levels → view consumption reports; stock deducted automatically on intervention completion (via `InterventionFinalizedHandler` domain event)
+- **IPC commands**: `material_create`, `material_list`, `material_update_stock`, `material_record_consumption`
+- **Frontend**: `domains/inventory/ipc/material.ipc.ts`, `inventory.ipc.ts`
+- **Backend**: `domains/inventory/ipc/material/`, `infrastructure/material/` (8 modules)
+- **Query keys**: `inventoryKeys.materials()`, `inventoryKeys.dashboard()`
 
-- Login forms should validate locally before invoking IPC.
-- Invalid sessions should redirect to `/login`.
-- Bootstrap should only appear when no admin exists.
+### 7. Client Management (Supervisor)
+- **Route**: `/clients`
+- **Flow**: Create/search clients → view client statistics (task history, spending) → link to tasks/quotes
+- **IPC commands**: `client_create`, `client_get`, `client_list`, `client_search`, `client_get_stats`
+- **Frontend**: `domains/clients/ipc/client.ipc.ts`
+- **Backend**: `domains/clients/ipc/`, `infrastructure/client_statistics.rs`
+- **Query keys**: `clientKeys`
+- **Stats**: denormalized via SQLite triggers (automatically maintained)
 
-## Tasks And Scheduling
+### 8. Calendar / Scheduling (Supervisor)
+- **Route**: `/schedule`
+- **Flow**: View technician availability → drag tasks to dates → check conflicts → confirm assignments
+- **IPC commands**: `get_events`, `create_event`, `calendar_schedule_task`, `calendar_check_conflicts`
+- **Frontend**: `domains/calendar/stores/calendarStore.ts` (Zustand + persist), `lib/ipc/calendar.ts`
+- **Backend**: `domains/calendar/calendar_handler/`, `infrastructure/calendar_repository.rs`
+- **State**: Calendar view (`day/week/month`), selected date, filters, and preferences persisted to localStorage and synced to backend on 800ms debounce
 
-| Entry route | Key commands | Key states |
-|---|---|---|
-| `/tasks` | `task_list`, `task_create`, `task_update` | list, empty state, filters, pagination |
-| `/tasks/[id]` | `task_get`, `task_checklist_items_get`, `get_task_history` | detail, history, checklist, loading |
-| `/tasks/new` | `task_create`, `task_draft_save` | draft, validation errors, save success |
-| `/tasks/[id]/edit` | `task_update`, `task_draft_save`, `task_draft_delete` | edit form, dirty state, conflict or validation errors |
-| `/schedule` and `/` | `calendar_get_tasks`, `get_events`, `calendar_schedule_task` | day/week views, drag or click scheduling, conflict warnings |
+### 9. Notifications (All roles)
+- **Panel**: global `NotificationPanel` component (in root providers)
+- **Flow**: Backend emits `DomainEvent` → `AuditLogHandler` or notification service writes notification → frontend polls/subscribes → panel shows unread count
+- **IPC commands**: `get_notifications`, `message_send`
+- **Frontend**: `domains/notifications/stores/notificationStore.ts` (Zustand), `ipc/notifications.ipc.ts`
 
-Validation and errors:
+### 10. Settings and Configuration (Admin)
+- **Routes**: `/settings`, `/configuration`, `/admin`
+- **Flow**: Admin updates business hours, security policies, organization settings; all persisted to SQLite `app_settings` table (since migration 035, replacing in-memory Mutex statics)
+- **IPC commands**: `get_app_settings`, `update_business_hours`, `update_security_policies`
+- **Frontend**: `domains/settings/ipc/settings.ipc.ts`, `domains/admin/ipc/`
+- **Backend**: `domains/settings/application/system_config_service.rs`, `infrastructure/app_settings.rs`
 
-- Required task fields should be blocked before submit.
-- Status transitions should be validated by the backend state machine.
-- Draft save should survive navigation and partial data entry.
+### 11. Trash / Recycle Bin (Admin)
+- **Route**: `/trash`
+- **Flow**: Lists soft-deleted entities → restore to active state or permanently delete
+- **IPC commands**: `list_trash`, `restore_entity`, `hard_delete_entity`, `empty_trash`
+- **Frontend**: `domains/trash/ipc/trash.ipc.ts`
 
-## PPF Intervention Execution
+## UX and Design System
 
-| Entry route | Key commands | Key states |
-|---|---|---|
-| `/tasks/[id]/workflow/ppf` | `intervention_get_progress`, `intervention_start`, `intervention_advance_step`, `intervention_finalize` | active step, progress bar, completion gate |
-| `/tasks/[id]/workflow/ppf/steps/[step]` | `intervention_get_step`, `intervention_save_step_progress` | step-specific form, photo prompts, validation state |
+- **Framework**: Tailwind CSS (^3.4.0) + shadcn/ui components
+- **Language**: French (UI text, error messages, metadata title: "RPMA V2 - Gestion Professionnelle de Film de Protection")
+- **Theme**: Light/dark auto-detect via `ThemeProvider` (`RootClientLayout.tsx`)
 
-Validation and errors:
+### Styling Rules
+- Prefer utility classes for layout and spacing
+- Use semantic color tokens from `tailwind.config.ts`: `bg-primary`, `text-muted-foreground`, `border`, `destructive`, etc.
+- Do not introduce custom CSS files unless absolutely necessary
+- Components live in `frontend/src/components/` (shadcn/ui primitives) or in domain `components/`
 
-- Step changes should be explicit and visibly confirmed.
-- Finalization should require all required step data.
-- Material and photo submission should fail fast with inline feedback when the backend rejects the payload.
+### Interaction Patterns
+| Pattern | Implementation |
+|---------|---------------|
+| Optimistic updates | TanStack Query `optimisticUpdate` in mutation config |
+| Loading states | Skeleton components during IPC calls; `loading.tsx` for route transitions |
+| Toast notifications | Sonner (`<Toaster position="top-right" richColors closeButton />`) |
+| Form validation | Zod schemas before IPC call; errors shown inline |
+| Error boundary | `error.tsx` (route-level), `global-error.tsx` (top-level) |
+| Offline feedback | Local SQLite always writable; UI remains functional offline |
 
-## Clients, Quotes, And Conversion
-
-| Entry route | Key commands | Key states |
-|---|---|---|
-| `/clients` | `client_list`, `client_get_stats`, `client_search` | list, search results, empty state |
-| `/clients/[id]` | `client_get`, `client_get_with_tasks` | detail, related tasks |
-| `/clients/new` | `client_create` | create form, validation errors |
-| `/quotes` | `quote_list`, `quote_get_stats` | list, status filters |
-| `/quotes/new` | `quote_create` | create form, validation errors |
-| `/quotes/[id]` | `quote_get`, `quote_item_add`, `quote_mark_sent`, `quote_mark_accepted`, `quote_convert_to_task` | edit, status changes, conversion success |
-
-Validation and errors:
-
-- Quote status changes should be reflected in the UI only after the backend confirms them.
-- Conversion to task should surface any backend validation failure directly.
-
-## Inventory And Documents
-
-| Entry route | Key commands | Key states |
-|---|---|---|
-| `/inventory` | `material_list`, `inventory_get_dashboard_data` | list, low-stock alerts, expired items |
-| `/inventory/[id]` or feature panels | `material_create`, `material_update_stock`, `material_record_consumption` | stock edit, consumption entry, error states |
-| Intervention photo surfaces | `document_store_photo`, `document_get_photos`, `document_get_photo_data` | upload, preview, delete, metadata edit |
-| Report surfaces | `report_generate`, `report_get_by_intervention`, `export_intervention_report` | generation, preview, failure states |
-
-Validation and errors:
-
-- Treat photo and report commands as potentially large or slow operations.
-- Use progress or loading states rather than blocking the whole app.
-
-## Admin, Users, Settings, Trash
-
-| Entry route | Key commands | Key states |
-|---|---|---|
-| `/users` and `/staff` | `get_users`, `create_user`, `update_user`, `delete_user` | table, edit dialog, permission error |
-| `/settings` | `get_app_settings`, `update_general_settings` | section navigation, saved state |
-| `/settings/security` | `update_security_settings`, `get_active_sessions`, `revoke_session` | session list, revoke confirmation |
-| `/settings/profile` | `get_user_settings`, `update_user_profile` | profile form, avatar upload |
-| `/trash` | `list_trash`, `restore_entity`, `hard_delete_entity`, `empty_trash` | soft-delete list, recovery, destructive confirmation |
-| `/dashboard` | `dashboard_get_stats`, `get_entity_counts`, `get_recent_activities` | summary cards, recent activity, placeholder handling |
-
-Validation and errors:
-
-- Admin-only destructive actions should require strong confirmations.
-- Trash restore should preserve the original entity shape where possible.
-- The current `dashboard_get_stats` and `get_recent_activities` UI surfaces should be treated carefully because the backend currently returns placeholder-style data for those commands.
-
-## Navigation And Search
-
-| Surface | Key commands | Notes |
-|---|---|---|
-| Global navigation | `navigation_update`, `navigation_go_back`, `navigation_go_forward`, `navigation_get_current`, `navigation_refresh` | Keep history state in sync with the shell |
-| Search | `global_search` | Use for cross-domain lookup and quick jump UX |
-| Shell actions | `ui_shell_open_url`, `ui_initiate_customer_call`, `ui_gps_get_current_position` | Keep user feedback explicit for OS-level actions |
-
-## Design System Guardrails
-
-- Prefer clear hierarchy, spacing, and contrast over dense screens.
-- Use cards, sheets, dialogs, and toasts consistently.
-- Keep destructive actions visually distinct.
-- Use the existing theme tokens and component primitives instead of custom one-off styling.
-- On mobile or tablet-sized intervention screens, keep controls large enough for touch.
-
+### RBAC UI Guards
+Use `createPermissionChecker` from `lib/rbac.ts` to conditionally render or disable controls:
+```typescript
+const { can } = createPermissionChecker(currentUser);
+<Button disabled={!can('task:write')}>Create Task</Button>
+```
+Backend is always authoritative — frontend guards are defense-in-depth only.

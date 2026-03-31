@@ -1,94 +1,118 @@
----
-title: "Security and RBAC"
-summary: "Authentication flow, role-based access control, and data protection rules."
-read_when:
-  - "Implementing role-gated features"
-  - "Reviewing security controls"
-  - "Adding new user roles"
----
+# 06 — Security and RBAC
 
-# 06. SECURITY AND RBAC
+## Authentication Flow (ADR-006)
 
-RPMA v2 uses centralized request-context based authentication and role enforcement.
+**Login sequence:**
+1. Frontend calls `auth_login({ email, password })` via `safeInvoke` (no session token needed — public command)
+2. IPC handler: `domains/auth/ipc/auth.rs` → `auth_input_validator.validate_login_input()`
+3. `AuthService.authenticate()` verifies password hash in `infrastructure/auth/authentication.rs`
+4. `SessionService.create_session()` issues `UserSession { id (UUID token), user_id, role, expires_at }`
+5. Session stored in `SessionStore` (in-memory `Arc<Mutex<Option<UserSession>>>`)
+6. Session token returned to frontend → stored in `AuthProvider` context
 
-## Roles
+**Session resolution (every protected command):**
+```rust
+// In IPC handler:
+let ctx = resolve_context!(&state, &request.correlation_id);              // any role
+let ctx = resolve_context!(&state, &request.correlation_id, UserRole::Admin); // min role enforced
+```
+`session_resolver.rs` does:
+1. Retrieve `UserSession` from `SessionStore`
+2. Check expiry
+3. `has_permission(user_role, required_role)` — return `AppError::Authorization` if insufficient
+4. Build `RequestContext { auth: AuthContext { user_id, role, session_id, username, email }, correlation_id }`
 
-| Role | Typical access |
-|---|---|
-| `Admin` | Full system access, user management, app settings, hard delete, security audit |
-| `Supervisor` | Planning, clients, quotes, calendar, trash recovery, most operational management |
-| `Technician` | Assigned work execution, status changes, material consumption, photos |
-| `Viewer` | Read-only access to approved dashboards and reports |
+**Critical principle:** No service or repository ever sees a raw session token. The session resolver is the exclusive validation boundary.
 
-## Auth Flow
+## RBAC Hierarchy (ADR-007)
 
-1. `auth_login` validates credentials.
-2. The backend creates a UUID session in the in-memory session store.
-3. The frontend keeps the session and `safeInvoke()` injects it for protected commands.
-4. Rust handlers call `resolve_context!()` to validate the session and role.
-5. `auth_logout` ends the session.
+### Backend enforcement matrix (`shared/auth_middleware.rs`)
 
-## Current Runtime Notes
+```rust
+pub fn has_permission(user_role: &UserRole, required_role: &UserRole) -> bool {
+    match (user_role, required_role) {
+        (Admin, _)                           => true,   // Admin: full access
+        (Supervisor, Admin)                  => false,
+        (Supervisor, _)                      => true,   // Supervisor: supervisor/technician/viewer
+        (Technician, Admin | Supervisor)     => false,
+        (Technician, _)                      => true,   // Technician: technician/viewer
+        (Viewer, Viewer)                     => true,
+        (Viewer, _)                          => false,
+    }
+}
+```
 
-- The current build uses UUID-backed sessions, not JWTs.
-- `auth_refresh_token` is present as a command surface but currently returns a validation error.
-- The repo still contains some legacy 2FA-related schema fields, but there is no clearly wired runtime 2FA flow in the current app path.
+### Operation-specific checks (`auth_middleware.rs`)
+- `can_perform_task_operation(role, op)`: Admin→all; Supervisor→create/read/update/assign (no delete); Technician→create/read/update; Viewer→read
+- `can_perform_client_operation(role, op)`: same hierarchy
+- `can_perform_user_operation(role, op, target_user_id, current_user_id)`: Admin→all; Supervisor→read/update; others→self-only
 
-## Enforcement Points
+### Role definitions (`domains/auth/domain/models/auth.rs`)
+```rust
+pub enum UserRole {
+    Admin,       // Full system access
+    Supervisor,  // Create/assign tasks, manage clients/quotes
+    Technician,  // Execute interventions, update own tasks
+    Viewer,      // Read-only
+}
+```
 
-| File | Role |
-|---|---|
-| `src-tauri/src/shared/context/request_context.rs` | RequestContext creation and accessors |
-| `src-tauri/src/shared/context/auth_context.rs` | AuthContext payload |
-| `src-tauri/src/shared/contracts/auth.rs` | `UserRole` contract |
-| `src-tauri/src/domains/*/ipc/*` | Command-level session and role checks |
-| `frontend/src/lib/ipc/utils.ts` | Session injection and public command list |
+## Frontend RBAC (`frontend/src/lib/rbac.ts`)
 
-## RequestContext Rules
+Frontend enforcement is **UI-layer defense-in-depth**. The backend is always authoritative.
 
-- Never pass raw session tokens deeper than the IPC boundary.
-- Use `RequestContext::unauthenticated(...)` only for bootstrap-style pre-auth flows.
-- Keep role checks in Rust so the UI cannot bypass them.
+### 26 permission set
+```
+task:read, task:write, task:update, task:delete
+client:read, client:write, client:update, client:delete
+report:read, report:write
+settings:read, settings:write
+user:read, user:write, user:update, user:delete
+inventory:read, inventory:write
+calendar:read, calendar:write
+photo:upload, photo:delete
+```
+
+### Role-permission matrix
+| Role | Allowed permissions |
+|------|-------------------|
+| **admin** | All 26 |
+| **supervisor** | task(R/W/U), client(R/W/U), report(R/W), inventory(R/W), calendar(R/W), photo(upload/delete), user(R) |
+| **technician** | task(R/W/U), client(R), inventory(R), calendar(R), photo(upload) |
+| **viewer** | task(R), client(R), report(R), inventory(R), calendar(R) |
+
+### Usage
+```typescript
+import { createPermissionChecker } from '@/lib/rbac';
+const { can } = createPermissionChecker(currentUser);
+
+if (can('task:delete')) { /* show delete button */ }
+```
+
+## Audit Logging
+
+- Sensitive actions (task deletion, intervention completion, role changes) emit `DomainEvent` to the EventBus
+- `AuditLogHandler` (registered in `service_builder.rs`) persists events to the `audit_log` table
+- Audit service: `domains/auth/application/audit_service.rs`
+- Security monitoring: `domains/auth/infrastructure/audit_repository.rs`
+- Security metrics and alerts exposed via admin IPC commands (`admin/ipc/audit.ipc.ts`)
+
+## Rate Limiting
+
+- Login attempts tracked in `login_attempts` table
+- Composite index `idx_login_attempts_identifier_locked` (migration 066)
+- Rate limiter config in `shared/contracts/rate_limiter.rs`
+- Enforced at auth IPC boundary via `AuthService`
+
+## Content Security Policy (Tauri)
+
+CSP configured in `src-tauri/tauri.conf.json`:
+- `style-src` does **not** include `unsafe-inline` (patched in security audit)
+- `script-src unsafe-inline` retained (required for Next.js — CSP nonce phase 2 is planned)
 
 ## Data Protection
 
-| Concern | Current approach |
-|---|---|
-| Local DB | SQLite under the app data directory |
-| DB key | `RPMA_DB_KEY` env var is read during startup |
-| Passwords | Hashed before storage |
-| Soft delete | `deleted_at` fields keep recoverable records out of normal views |
-| Error output | `AppError` and `ApiResponse` sanitize backend failures before they reach the UI |
-| Audit trail | Security and domain events are recorded through shared audit/logging services |
-
-## Authorization Matrix
-
-| Area | Admin | Supervisor | Technician | Viewer |
-|---|---:|---:|---:|---:|
-| Auth and bootstrap | Yes | Yes | Yes | Yes |
-| Users | Full | No | No | No |
-| Tasks | Full | Manage | Assigned work | Read-only |
-| Quotes | Full | Manage | No | Read-only |
-| Inventory | Full | Manage | Execute consumption | Read-only |
-| Clients | Full | Manage | No | Read-only |
-| Settings | Full | Limited user settings | Limited user settings | Limited user settings |
-| Trash | Hard delete | Restore | No | No |
-| Security audit | Yes | No | No | No |
-
-## Key Files
-
-| File | Purpose |
-|---|---|
-| `src-tauri/src/domains/auth/ipc/auth.rs` | Login, logout, validation |
-| `src-tauri/src/domains/auth/ipc/auth_security.rs` | Session management commands |
-| `src-tauri/src/domains/auth/ipc/audit_security_ipc.rs` | Security audit commands |
-| `src-tauri/src/domains/users/ipc/user.rs` | User bootstrap and admin CRUD |
-| `src-tauri/src/shared/logging/*` | Logging and audit support |
-| `frontend/src/lib/ipc/utils.ts` | `PUBLIC_COMMANDS` and session injection |
-
-## Security Checks
-
-- Do not log passwords, session tokens, or raw PII.
-- Keep sensitive DB access behind repositories and domain services.
-- Validate state transitions in the domain layer, not in the UI.
-- Review legacy schema fields before assuming a feature exists at runtime.
+- **Local DB**: SQLite file stored in OS app data directory (resolved by Tauri at runtime)
+- **Password hashing**: `password_hash` field uses salted hash — `#[serde(skip_serializing)]` prevents it ever appearing in API responses
+- **Secrets**: Never committed; no plaintext secrets in SQLite DB
+- **Soft deletes only**: User deletion is soft-delete via `deleted_at` (ADR-011) — audit trail preserved

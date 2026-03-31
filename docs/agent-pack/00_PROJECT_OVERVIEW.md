@@ -1,116 +1,90 @@
----
-title: "Project Overview"
-summary: "RPMA v2 mission, stack, boundaries, and the fastest paths into the codebase."
-read_when:
-  - "Onboarding to the project"
-  - "Understanding the high-level architecture"
-  - "Finding the right module for a change"
----
+# 00 — Project Overview: RPMA v2
 
-# 00. PROJECT OVERVIEW
+RPMA v2 (Resource Planning & Management Application) is an **offline-first desktop application** for planning, executing, and auditing **PPF (Paint Protection Film)** field interventions. It runs as a Tauri desktop client with a Rust backend, Next.js frontend, and SQLite local persistence.
 
-RPMA v2 is an offline-first desktop app for planning, executing, and auditing PPF field interventions. The app ships as a Tauri desktop client with a Rust backend and a Next.js frontend, and the local SQLite database is the source of truth on each machine.
+## Primary Users
+| Role | Responsibilities |
+|------|----------------|
+| **Field Technician** | Execute interventions, log steps, upload photos |
+| **Supervisor** | Create/assign tasks, manage quotes, schedule via calendar |
+| **Administrator** | Manage users, security policies, system configuration |
+| **Viewer** | Read-only access to dashboards and reports |
 
-## What Lives Where
-
-| Layer | Main paths |
-|---|---|
-| Desktop shell | `src-tauri/src/main.rs`, `src-tauri/src/lib.rs` |
-| Backend domains | `src-tauri/src/domains/*` |
-| Shared backend kernel | `src-tauri/src/shared/*` |
-| Database | `src-tauri/src/db/*`, `src-tauri/migrations/*`, `src-tauri/src/db/schema.sql` |
-| Frontend routes | `frontend/src/app/*` |
-| Frontend feature domains | `frontend/src/domains/*` |
-| IPC wrappers | `frontend/src/lib/ipc/*`, `frontend/src/domains/*/ipc/*` |
-| Generated TS contracts | `frontend/src/lib/backend.ts` |
+## Core Goals
+- **Offline-First**: SQLite WAL is the local source of truth. No remote dependency at runtime.
+- **Surgical Accuracy**: Precise tracking of PPF intervention steps and material consumption.
+- **Auditability**: Complete history of tasks, interventions, and system changes via domain event audit trail.
 
 ## Tech Stack
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| Desktop shell | Tauri | 2.1 |
+| Backend language | Rust | Edition 2021, min 1.85 |
+| Frontend framework | Next.js (App Router) | ^14.2.35 |
+| UI runtime | React | ^18.3.1 |
+| Frontend language | TypeScript | ^5.3.0 |
+| Database | SQLite WAL | via rusqlite + r2d2 (pool max 10) |
+| Server state | TanStack Query | ^5.90.2 |
+| UI local state | Zustand | ^5.0.8 |
+| Styling | Tailwind CSS + shadcn/ui | ^3.4.0 |
+| Type generation | ts-rs | 10.1 |
 
-| Area | Stack |
-|---|---|
-| Desktop shell | Tauri 2.1 |
-| Backend | Rust 2021 |
-| Frontend | Next.js 14, React 18, TypeScript 5 |
-| Server state | TanStack Query 5 |
-| Local UI state | Zustand |
-| Styling | Tailwind CSS 3 + shadcn/ui |
-| Persistence | SQLite in WAL mode |
-| Rust -> TS types | ts-rs |
+Source of truth: `package.json`, `frontend/package.json`, `src-tauri/Cargo.toml`.
 
-## Boundaries
+## Backend Bounded Contexts (`src-tauri/src/domains/`)
+| Domain | Purpose |
+|--------|---------|
+| `auth` | Login, session management, rate limiting, audit |
+| `users` | User CRUD, RBAC role assignment |
+| `clients` | Client CRM, statistics (denormalized via triggers) |
+| `tasks` | Task lifecycle, checklists, status transitions |
+| `interventions` | PPF workflow execution, photos, step progression |
+| `inventory` | Material stock, consumption, low-stock alerts |
+| `quotes` | Quote/devis lifecycle, items, PDF export |
+| `calendar` | Event scheduling, conflict detection |
+| `notifications` | In-app notifications, messaging |
+| `documents` | Photo storage, intervention report generation |
+| `settings` | App/user/org config — **SQLite-backed since migration 035** |
+| `trash` | Soft-delete recycle bin (restore / hard-delete) |
+| `rules` | Business rules engine (validation, escalation) |
+| `integrations` | Third-party API integration stubs |
 
-- The local SQLite database under the app data directory is the source of truth.
-- `RequestContext` and `ApiResponse` define the IPC contract.
-- Frontend components should use feature wrappers, not raw `invoke()`.
-- Business logic belongs in Rust domain/application layers, not in IPC handlers.
-- Generated frontend types now land in `frontend/src/lib/backend.ts` via `scripts/write-types.js`.
+## Frontend Bounded Contexts (`frontend/src/domains/`)
+Mirrors backend: `auth`, `users`, `clients`, `tasks`, `interventions`, `inventory`, `quotes`, `calendar`, `notifications`, `reports`, `settings`, `admin`, `bootstrap`, `trash`, `rules`, `integrations`, `dashboard`.
 
-## Core Backend Modules
-
-| Module | Purpose |
-|---|---|
-| `src-tauri/src/commands/` | Cross-domain commands such as system, navigation, and window actions |
-| `src-tauri/src/domains/auth/` | Login, session, RBAC, and audit security |
-| `src-tauri/src/domains/tasks/` | Task lifecycle, drafts, history, checklist, and status transitions |
-| `src-tauri/src/domains/interventions/` | PPF workflow, steps, photos, and finalization |
-| `src-tauri/src/domains/clients/` | Client CRUD and task lookup |
-| `src-tauri/src/domains/inventory/` | Materials, stock, suppliers, and consumption |
-| `src-tauri/src/domains/quotes/` | Quote lifecycle and quote -> task conversion |
-| `src-tauri/src/domains/settings/` | App settings, onboarding, organization, and user preferences |
-| `src-tauri/src/domains/documents/` | Photos and report generation |
-| `src-tauri/src/domains/notifications/` | Notifications and messaging |
-| `src-tauri/src/domains/trash/` | Soft-delete recovery and hard delete |
-| `src-tauri/src/shared/event_bus/` | In-memory domain event bus |
-
-## Frontend Shell
-
-The root client layout is `frontend/src/app/RootClientLayout.tsx`. It wires:
-
-- `frontend/src/app/providers.tsx`
-- `AuthProvider`
-- `NotificationInitializer` and `NotificationPanel`
-- TanStack Query
-- `ThemeProvider`
-- `GlobalErrorBoundary`
-- `AppNavigation`
-
-The home route is `frontend/src/app/page.tsx`, which renders the calendar dashboard.
+## Repository Layout
+```
+rpma-rust/
+├── CLAUDE.md                         # Dev rules + ADR index (mandatory reading)
+├── Makefile                          # Backend build/test aliases
+├── package.json                      # Root task runner (71 scripts)
+├── src-tauri/
+│   ├── migrations/                   # 70 numbered SQL migrations (002–070)
+│   ├── src/
+│   │   ├── main.rs                   # Tauri bootstrap + 100+ command registration
+│   │   ├── service_builder.rs        # 26-step service initialization order
+│   │   ├── shared/                   # Cross-domain kernel
+│   │   └── domains/                  # 14 bounded contexts
+│   └── tests/harness/                # TestApp, fixtures, auth contexts
+└── frontend/
+    ├── src/
+    │   ├── app/                      # 18 Next.js App Router routes
+    │   ├── domains/                  # 18 frontend feature modules
+    │   ├── lib/ipc/                  # safeInvoke, ipcClient singleton, cache
+    │   ├── lib/query-keys.ts         # TanStack Query key factories
+    │   ├── lib/rbac.ts               # Frontend permission matrix (26 permissions)
+    │   └── types/                    # AUTO-GENERATED from ts-rs (never hand-edit)
+    └── package.json                  # 36 frontend scripts
+```
 
 ## Golden Paths
-
-1. [Domain Model](./01_DOMAIN_MODEL.md)
-2. [Architecture and Dataflows](./02_ARCHITECTURE_AND_DATAFLOWS.md)
-3. [Frontend Guide](./03_FRONTEND_GUIDE.md)
-4. [Backend Guide](./04_BACKEND_GUIDE.md)
-5. [IPC API and Contracts](./05_IPC_API_AND_CONTRACTS.md)
-6. [Security and RBAC](./06_SECURITY_AND_RBAC.md)
-7. [Database and Migrations](./07_DATABASE_AND_MIGRATIONS.md)
-8. [Development Workflows and Tooling](./08_DEV_WORKFLOWS_AND_TOOLING.md)
-9. [User Flows and UX](./09_USER_FLOWS_AND_UX.md)
-
-## DOC vs CODE Mismatch
-
-- Legacy onboarding text may describe a live sync worker and 2FA as if they are part of the current runtime. The schema still contains some legacy sync and 2FA fields, but the current app wiring uses local SQLite, UUID sessions, and an in-memory event bus. Verify current behavior before building on those legacy fields.
-- `frontend/src/lib/backend.ts` is the actual type-sync output target; `frontend/src/types/` is not the current generated contract destination.
-
-## Repo Shape
-
-```text
-rpma-rust/
-+-- docs/
-|   +-- agent-pack/
-+-- frontend/
-|   +-- src/
-|       +-- app/
-|       +-- domains/
-|       +-- lib/
-|       +-- types/
-+-- scripts/
-+-- src-tauri/
-    +-- migrations/
-    +-- src/
-        +-- commands/
-        +-- db/
-        +-- domains/
-        +-- shared/
-```
+| Question | Document |
+|----------|----------|
+| Add a feature end-to-end | [04_BACKEND_GUIDE.md](04_BACKEND_GUIDE.md) + [03_FRONTEND_GUIDE.md](03_FRONTEND_GUIDE.md) |
+| Which IPC command handles X? | [05_IPC_API_AND_CONTRACTS.md](05_IPC_API_AND_CONTRACTS.md) |
+| What tables store Y? How do migrations work? | [07_DATABASE_AND_MIGRATIONS.md](07_DATABASE_AND_MIGRATIONS.md) |
+| RBAC roles and enforcement points | [06_SECURITY_AND_RBAC.md](06_SECURITY_AND_RBAC.md) |
+| Core entities and business rules | [01_DOMAIN_MODEL.md](01_DOMAIN_MODEL.md) |
+| Architecture diagrams and dataflows | [02_ARCHITECTURE_AND_DATAFLOWS.md](02_ARCHITECTURE_AND_DATAFLOWS.md) |
+| Dev commands, scripts, CI checklist | [08_DEV_WORKFLOWS_AND_TOOLING.md](08_DEV_WORKFLOWS_AND_TOOLING.md) |
+| User flows and UX patterns | [09_USER_FLOWS_AND_UX.md](09_USER_FLOWS_AND_UX.md) |
